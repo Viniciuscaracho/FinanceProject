@@ -1,0 +1,39 @@
+%header.header.z-30{ id: @options.fetch(:id, object_id), class: @options.fetch(:class, '') }
+  .header__container
+    %button.header__hamburguer-button.sm:hidden{"data-action": "sidebar#open", type: "button"}
+      %span.sr-only= t('.open_sidenav')
+      = heroicon "bars-3", options: { class: "header__hamburguer" }
+    .header__title.sm:ml-0
+      = @title
+      - if @subtitle.present?
+        .header__subtitle= @subtitle
+
+    .header__body
+      - if body
+        = body
+
+    - if search
+      .header__search.hidden.sm:block
+        = search
+    .header__eye
+      = turbo_frame_tag :hide_amount do
+        - if Current.user.visible_amount?
+          = button_tag type: :button, class: 'btn-circle', data: { value: false, controller: :tooltip, tooltip_content_value: t('hide_values'), hide_amount_target: "button", action: 'click->hide-amount#toggleVisible'} do
+            = heroicon 'eye', options: { class: 'btn-circle__icon' }
+        - else 
+          = button_tag type: :button, class: 'btn-circle btn--primary bg-indigo-500 border-transparent', data: { value: true, controller: :tooltip, tooltip_content_value: t('show_values'), hide_amount_target: "button", action: 'click->hide-amount#toggleVisible'} do
+            = heroicon 'eye-slash', options: { class: 'text-white' }  
+    .header__notifications
+      = render 'notifications'
+    - if actions
+      .header__actions
+        - actions.each do |action|
+          = action
+- if search
+  %header.header.sticky.z-10.sm:z-30.border-t.sm:hidden
+    .header__container
+      .header__search.flex-1
+        = search
+
+
+        

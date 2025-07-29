@@ -1,0 +1,4 @@
+# frozen_string_literal: true
+
+# config/initializers/encryption.rb
+# Rails.application.config.active_record.encryption.key_derivation_salt = 'a7f21c84949eca555ac36ae577b08e69aab8bfb6ae2d47432033b97cd244e490cca315368e7fc745c007af28b2125ad263642d91ad2899852fb81cc2298466db'

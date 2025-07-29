@@ -1,0 +1,43 @@
+.sidebar {
+  @apply relative flex flex-col flex-grow bg-white sm:bg-gray-100 h-full;
+
+  &--phone {
+    @apply relative flex-1 flex flex-col max-w-xs w-full pb-3 bg-white;
+  }
+
+  &--fixed {
+    @apply fixed inset-0 flex z-40;
+  }
+
+  &__close {
+    @apply absolute top-0 right-0 -mr-11 pt-3;
+  }
+
+  &__close-button {
+    @apply ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-400;
+  }
+
+  &__header {
+    @apply flex items-center justify-start flex-shrink-0 py-1.5 sm:py-3 px-3 space-x-3 h-16;
+  }
+
+  &__footer {
+    @apply flex flex-col items-start justify-center mt-auto flex-shrink-0;
+  }
+
+  &__logo {
+    @apply h-8 w-auto;
+  }
+
+  &__title {
+    @apply font-semibold text-primary-700;
+  }
+
+  &__subtitle {
+    @apply text-xs text-gray-500;
+  }
+
+  &__body {
+    @apply flex-1 flex flex-col max-h-max;
+  }
+}

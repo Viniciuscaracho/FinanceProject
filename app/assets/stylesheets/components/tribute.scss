@@ -1,0 +1,30 @@
+.tribute-container {
+  @apply z-50 max-h-96 h-auto overflow-y-auto;
+
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.1), 0 5px 20px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+
+  ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    background: #fff;
+    padding: 0.2em 1em;
+    min-width: 15em;
+    max-width: 100%;
+  }
+
+  .highlight {
+    background: #6366F1;
+    color: #fff;
+
+    span {
+      font-weight: bold;
+    }
+  }
+}

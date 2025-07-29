@@ -1,0 +1,6 @@
+%ul{ class: 'flex items-center space-x-1.5' }
+  - items.each_with_index do |item, index|
+    = item
+    %li= heroicon 'chevron-right', options: { class: "h-3 w-3" } if index < (items.length - 1)
+
+  - content

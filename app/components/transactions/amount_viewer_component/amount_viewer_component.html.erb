@@ -1,0 +1,19 @@
+<% if !@transaction.transfer? && @transaction.detailed? %>
+  <div class="block"><%= @transaction.amount.format %></div>
+  <div class="block text-gray-400 text-xs font-semibold">
+    <%= I18n.t('transactions.transaction.detailed_paid', value: @transaction.paid_amount.format) %>
+  </div>
+<% else %>
+  <% if @transaction.same_currency? %>
+    <div class="paragraph-base text-left">
+      <%= @transaction&.exchanged_amount&.format %>
+    </div>
+  <% else %>
+    <div class="paragraph-base text-left">
+      <%= @transaction&.amount&.format %>
+    </div>
+    <div class="paragraph-muted text-left text-xs">
+      <%= "~ #{@transaction&.exchanged_amount&.format}" %>
+    </div>
+  <% end %>
+<% end %>

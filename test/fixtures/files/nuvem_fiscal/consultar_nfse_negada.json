@@ -1,0 +1,17 @@
+{
+  "id": "nfs_3a10f8d01d8e4ff59170a5d985e01faf",
+  "created_at": "2024-02-25T18:17:56.351Z",
+  "status": "negada",
+  "ambiente": "homologacao",
+  "referencia": "hmg10",
+  "DPS": {
+    "serie": "1",
+    "nDPS": "8"
+  },
+  "mensagens": [
+    {
+      "codigo": "1604",
+      "descricao": "Esse lote está aguardando processamento."
+    }
+  ]
+}

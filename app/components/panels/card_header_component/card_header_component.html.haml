@@ -1,0 +1,4 @@
+.card__header{ class: @options.fetch(:class, '') }
+  - if @title.present?
+    .block.font-bold.truncate.text-center.w-full= @title
+  = content

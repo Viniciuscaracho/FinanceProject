@@ -1,0 +1,35 @@
+.paragraph-base {
+  @apply truncate w-full leading-6 sm:leading-4;
+}
+
+.paragraph-muted {
+  @apply truncate w-full text-gray-400 leading-4 text-sm sm:text-xs print:text-gray-700 print:text-xs;
+}
+
+.paragraph {
+  @apply truncate w-full print:text-black print:text-sm;
+  &__base {
+    @apply text-base sm:text-sm leading-5 print:text-sm
+  }
+  &__sm {
+    @apply text-sm sm:text-xs leading-4 print:text-xs
+  }
+  &__gray {
+    @apply text-gray-500 print:text-black
+  }
+  &__success {
+    @apply text-success-500 print:text-black
+  }
+  &__danger {
+    @apply text-danger-500 print:text-black
+  }
+}
+
+.text-muted {
+  @apply text-gray-400 leading-4 text-sm text-sm sm:text-xs print:text-gray-700 print:text-xs
+}
+
+.text-mutedh {
+  @apply truncate w-full leading-6 sm:leading-4;
+  padding-top: 5px;
+}

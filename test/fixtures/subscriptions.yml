@@ -1,0 +1,45 @@
+# == Schema Information
+#
+# Table name: subscriptions
+#
+#  id                   :bigint           not null, primary key
+#  cancel_at_period_end :boolean          default(FALSE), not null
+#  current_period_end   :datetime         not null
+#  current_period_start :datetime         not null
+#  data                 :jsonb            not null
+#  metadata             :jsonb            not null
+#  name                 :string           not null
+#  status               :string           not null
+#  created_at           :datetime         not null
+#  updated_at           :datetime         not null
+#  account_id           :bigint           not null
+#  processor_id         :string           not null
+#  processor_plan_id    :string
+#  processor_product_id :string
+#
+# Indexes
+#
+#  index_subscriptions_on_account_id                   (account_id)
+#  index_subscriptions_on_account_id_and_processor_id  (account_id,processor_id)
+#  index_subscriptions_on_processor_id                 (processor_id) UNIQUE
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#
+
+one:
+  account: one
+  procesor_id: MyString
+  status: MyString
+  cancel_at_period_end: false
+  current_period_start: 2023-08-15 10:38:00
+  current_period_end: 2023-08-15 10:38:00
+
+two:
+  account: two
+  procesor_id: MyString
+  status: MyString
+  cancel_at_period_end: false
+  current_period_start: 2023-08-15 10:38:00
+  current_period_end: 2023-08-15 10:38:00

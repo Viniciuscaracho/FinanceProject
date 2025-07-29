@@ -1,0 +1,30 @@
+# == Schema Information
+#
+# Table name: imports
+#
+#  id              :bigint           not null, primary key
+#  discarded_at    :datetime
+#  message         :string
+#  progress_number :bigint
+#  progress_total  :bigint
+#  source_cd       :integer
+#  state_cd        :integer
+#  created_at      :datetime         not null
+#  updated_at      :datetime         not null
+#  account_id      :bigint           not null
+#
+# Indexes
+#
+#  index_imports_on_account_id  (account_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#
+
+import_one:
+  account: account
+  source_cd: 1
+  state_cd: 1
+  progress_number: 100
+  progress_total: 100

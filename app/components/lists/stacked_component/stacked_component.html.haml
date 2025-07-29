@@ -1,0 +1,5 @@
+%ul.stacked-list{ id: @options.fetch(:id, object_id), class: @options.fetch(:class, '') }
+  - if items?
+    - items.each do
+      = item
+  = content

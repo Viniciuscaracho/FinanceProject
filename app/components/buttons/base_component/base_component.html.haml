@@ -1,0 +1,6 @@
+= link_to @url, { id: @options.fetch(:id, object_id),
+                  disabled: @options.fetch(:disabled, false),
+                  class: "btn #{@options.fetch(:class, '')}",
+                  data: @options.fetch(:data, { turbo_frame: '_top' }) } do
+  = content
+

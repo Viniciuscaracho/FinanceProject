@@ -1,0 +1,33 @@
+<%= turbo_frame_tag :outcome, class: 'h-full' do %>
+  <div class="flex items-start space-x-1.5">
+    <% if @show_value %>
+      <div class="flex-1 block text-left w-full">
+        <div class="block text-base sm:text-xs xl:text-sm text-gray-500">
+          <%= t('components.transactions.outcome.title') %>
+        </div>
+        <% if @amount.positive? %>
+          <div class="block text-lg font-medium text-emerald-500 " data-hide-amount-target='amountField'>
+            <%= @amount.format %>
+          </div>
+        <% elsif @amount.zero? %>
+          <div class="block text-lg font-medium animate__animated" data-hide-amount-target='amountField' >
+            <%= @amount.format %>
+          </div>
+        <% else %>
+          <div class="block text-lg font-medium text-rose-500" data-hide-amount-target='amountField' >
+            <%= @amount.format %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="flex-1 block text-left w-full">
+        <div class="block text-base sm:text-xs xl:text-sm text-gray-500">
+          <%= t('components.transactions.outcome.title') %>
+        </div>
+        <div class="block text-bse xl:text-lg font-medium"><%= t("shared.currency_placeholder") %></div>
+      </div>
+    <% end %>
+
+    <%= render(@about) if @about.present? %>
+  </div>
+<% end %>

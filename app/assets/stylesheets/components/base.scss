@@ -1,0 +1,199 @@
+html, body {
+  @apply h-full w-full antialiased subpixel-antialiased
+}
+
+html {
+  @apply scroll-smooth font-sans;
+}
+
+body {
+  @apply w-full text-gray-700 print:text-black block h-full bg-gray-100 print:bg-white text-base sm:text-xs xl:text-sm print:text-base;
+}
+
+@media print {
+  @media (orientation: portrait) {
+    body {
+      min-width: 1024px;
+      width: 100%;
+    }
+  }
+  @media (orientation: landscape) {
+    body {
+      min-width: 1360px;
+      width: 100%;
+    }
+  }
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-semibold tracking-tight p-0 m-0;
+}
+
+h1 {
+  @apply text-4xl print:text-3xl;
+}
+
+h2 {
+  @apply text-3xl print:text-2xl;
+}
+
+h3 {
+  @apply text-2xl print:text-xl;
+}
+
+h4 {
+  @apply text-xl print:text-lg;
+}
+
+h5 {
+  @apply text-lg print:text-base;
+}
+
+h6 {
+  @apply text-base print:text-sm;
+}
+
+p {
+  @apply leading-4 m-0 p-0;
+}
+
+button, a {
+  @apply cursor-pointer
+}
+
+form {
+  @apply block
+}
+
+[type='checkbox'],[type='radio'] {
+  @apply h-5 w-5 text-primary-500 focus:ring-primary-500;
+}
+
+turbo-frame {
+  @apply flex flex-col w-full box-content self-stretch justify-start print:overflow-visible
+}
+
+li {
+  @apply box-content
+}
+
+input, select, button {
+  @apply text-base sm:text-xs xl:text-sm
+}
+
+.px-base {
+  @apply px-3
+}
+
+.py-base {
+  @apply py-2 sm:py-1.5
+}
+
+.p-base {
+  @apply p-2 sm:p-1.5
+}
+
+.turbo-progress-bar {
+  @apply bg-primary-500;
+  height: 3px;
+}
+
+fieldset {
+  @apply block w-full;
+
+  legend {
+    @apply block text-base font-semibold leading-5 py-1.5 border-b w-full;
+
+    small {
+      @apply block w-full font-normal text-xs text-gray-500
+    }
+  }
+}
+
+.link {
+  @apply text-primary-500 hover:text-primary-700 hover:underline print:text-black;
+
+  &--sm {
+    @apply text-sm sm:text-xs
+  }
+
+  &--danger {
+    @apply text-danger-700 hover:text-danger-800
+  }
+
+  &--warning {
+    @apply text-warning-700 hover:text-warning-800
+  }
+
+  &--light {
+    @apply text-primary-100 hover:text-primary-200
+  }
+
+  &--white {
+    @apply text-white hover:text-gray-100
+  }
+}
+
+.icon {
+  @apply h-5 w-5 text-gray-700;
+
+  &--primary {
+    @apply h-5 w-5 text-primary-500;
+  }
+  &--danger {
+    @apply h-5 w-5 text-danger-500;
+  }
+  &--success {
+    @apply h-5 w-5 text-success-500;
+  }
+}
+
+.action-text {
+  a {
+    @apply text-primary-500 hover:text-primary-700 hover:underline print:text-black;
+  }
+  ul {
+    @apply list-disc;
+  }
+  ol {
+    @apply list-decimal;
+  }
+}
+
+@layer components {
+  .w-25 {
+    width: 6.25rem;
+  }
+  .w-37 {
+    width: 9.25rem;
+  }
+  .w-51 {
+    width: 12.75rem;
+  }
+  .text-2xs {
+    font-size: 0.625rem; /* 10px */
+    line-height: 0.75rem; /* 14px */
+  }
+  .text-3xs {
+    font-size: 0.5rem; /* 10px */
+    line-height: 0.75rem; /* 14px */
+  }
+}
+
+.air-datepicker-cell.-day-.-current- {
+    @apply bg-primary-100 text-primary-500;
+}
+
+.air-datepicker-cell.-day-.-current-:hover {
+    @apply bg-primary-200 text-primary-600;
+}
+
+.air-datepicker-cell.-day-.-selected-,
+.air-datepicker-cell.-day-.-current-.-selected-{
+  @apply bg-primary-500 text-white;
+}
+
+.air-datepicker-cell.-day-.-selected-:hover,
+.air-datepicker-cell.-day-.-current-.-selected-:hover{
+  @apply bg-primary-600 text-white;
+}

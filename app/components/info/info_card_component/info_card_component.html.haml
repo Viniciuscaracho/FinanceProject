@@ -1,0 +1,14 @@
+= link_to @link, class: "self-stretch #{@options.fetch(:class, '')}", data: @options.fetch(:data, {}) do
+  .flex.flex-col.overflow-hidden.sm:rounded-lg.bg-white.border-y.sm:border
+    .flex.space-x-3.p-3
+      .block
+        .rounded-md.bg-indigo-500.p-3
+          = heroicon @icon, options: { class: "h-6 w-6 text-white" }
+      .block
+        .truncate.text-sm.font-medium.text-gray-500= @title
+        .flex.items-baseline.text-base
+          -if body
+            = body
+    .inset-x-0.bg-gray-50.px-3.py-3
+      - if footer
+        = footer

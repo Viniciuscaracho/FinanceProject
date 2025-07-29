@@ -1,0 +1,74 @@
+# == Schema Information
+#
+# Table name: accounts
+#
+#  id                                                   :bigint           not null, primary key
+#  account_invitations_count                            :integer
+#  account_type_cd                                      :integer          default(0), not null
+#  account_users_count                                  :integer
+#  admin                                                :boolean          default(FALSE), not null
+#  balance_cents                                        :bigint           default(0), not null
+#  balance_currency                                     :string(3)        default("BRL"), not null
+#  bank_accounts_count                                  :integer
+#  categories_count                                     :integer
+#  contacts_count                                       :integer
+#  cost_centers_count                                   :integer
+#  country_code                                         :string(2)        default("BR")
+#  current_period_ends_at                               :datetime
+#  current_period_starts_at                             :datetime
+#  default_currency                                     :string(3)        default("BRL")
+#  discarded_at                                         :datetime
+#  free                                                 :boolean          default(FALSE), not null
+#  max_active_users                                     :integer          default(3), not null
+#  max_storage_size_in_bytes                            :bigint           default(5368709120), not null
+#  preferences                                          :jsonb            not null
+#  processor_plan_name                                  :string
+#  relation_type_cd(Relation type)                      :integer
+#  subscription_status                                  :string           default("incomplete")
+#  suspended                                            :boolean          default(FALSE), not null
+#  transactions_count                                   :integer
+#  trial                                                :boolean          default(FALSE), not null
+#  trial_ends_at                                        :date
+#  created_at                                           :datetime         not null
+#  updated_at                                           :datetime         not null
+#  company_id                                           :bigint           not null
+#  owner_id                                             :bigint
+#  processor_customer_id                                :string
+#  processor_plan_id                                    :string
+#  referral_code_id(Referral code used by the referrer) :bigint
+#  related_to_id(Related to account)                    :bigint
+#  subscription_id                                      :bigint
+#
+# Indexes
+#
+#  index_accounts_on_company_id        (company_id)
+#  index_accounts_on_discarded_at      (discarded_at)
+#  index_accounts_on_owner_id          (owner_id)
+#  index_accounts_on_referral_code_id  (referral_code_id)
+#  index_accounts_on_related_to_id     (related_to_id)
+#  index_accounts_on_subscription_id   (subscription_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (company_id => people.id)
+#  fk_rails_...  (owner_id => users.id)
+#  fk_rails_...  (referral_code_id => referral_codes.id)
+#  fk_rails_...  (related_to_id => accounts.id)
+#  fk_rails_...  (subscription_id => subscriptions.id)
+#
+account:
+  default_currency: BRL
+  country_code: BR
+  company: company_1
+  referral_code_id: referral_one
+  owner: user_one
+  #  users: user_one
+  admin: true
+  subscription_status: incomplete
+  trial: false
+  max_storage_size_in_bytes: 100000000000000000
+  max_active_users: 3
+  free: false
+  balance_currency: BRL
+  account_invitations_count: 0
+  account_users_count: 1

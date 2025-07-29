@@ -1,0 +1,217 @@
+# == Schema Information
+#
+# Table name: transactions
+#
+#  id                        :bigint           not null, primary key
+#  amount                    :decimal(, )
+#  amount_cents              :bigint           default(0), not null
+#  amount_currency           :string(3)        default("BRL"), not null
+#  competency_date           :date
+#  description               :text
+#  document_number           :string
+#  due_date                  :date             not null
+#  exchanged_amount_cents    :bigint           default(0), not null
+#  exchanged_amount_currency :string(3)        default("BRL"), not null
+#  installment_number        :integer
+#  installment_total         :integer
+#  installment_type_cd       :integer
+#  kind_cd                   :integer          default(0), not null
+#  name                      :string
+#  paid                      :boolean          default(FALSE), not null
+#  paid_amount_cents         :bigint           default(0), not null
+#  paid_amount_currency      :string(3)        default("BRL"), not null
+#  paid_at                   :datetime
+#  payment_method_cd         :integer          default(0), not null
+#  payment_type_cd           :integer          default(0), not null
+#  transaction_type_cd       :integer          default(0), not null
+#  tsv_body                  :tsvector
+#  created_at                :datetime         not null
+#  updated_at                :datetime         not null
+#  account_id                :bigint           not null
+#  bank_account_id           :bigint
+#  category_id               :bigint
+#  contact_id                :bigint
+#  cost_center_id            :bigint
+#  created_by_id             :bigint
+#  import_id                 :bigint
+#  installment_source_id     :bigint
+#  parent_id                 :bigint
+#  payment_plan_id           :bigint
+#  service_id                :bigint
+#  transfer_to_id            :bigint
+#  updated_by_id             :bigint
+#
+# Indexes
+#
+#  index_transactions_on_account_id                          (account_id)
+#  index_transactions_on_account_id_and_category_id          (account_id,category_id)
+#  index_transactions_on_account_id_and_contact_id           (account_id,contact_id)
+#  index_transactions_on_account_id_and_cost_center_id       (account_id,cost_center_id)
+#  index_transactions_on_account_id_and_due_date             (account_id,due_date DESC)
+#  index_transactions_on_account_id_and_id                   (account_id,id DESC)
+#  index_transactions_on_account_id_and_transaction_type_cd  (account_id,transaction_type_cd)
+#  index_transactions_on_bank_acccount_balance               (paid DESC,kind_cd,transaction_type_cd,account_id,bank_account_id)
+#  index_transactions_on_bank_account_id                     (bank_account_id)
+#  index_transactions_on_category_id                         (category_id)
+#  index_transactions_on_contact_id                          (contact_id)
+#  index_transactions_on_cost_center_id                      (cost_center_id)
+#  index_transactions_on_created_by_id                       (created_by_id)
+#  index_transactions_on_credit_balance                      (paid DESC,kind_cd,transaction_type_cd,account_id,transfer_to_id)
+#  index_transactions_on_delayed_transactions_filter         (account_id,paid,due_date)
+#  index_transactions_on_import_id                           (import_id)
+#  index_transactions_on_installment_source_id               (installment_source_id)
+#  index_transactions_on_installment_type_cd                 (installment_type_cd)
+#  index_transactions_on_kind_cd                             (account_id,kind_cd)
+#  index_transactions_on_multisearch_columns                 (kind_cd,account_id,bank_account_id,due_date DESC)
+#  index_transactions_on_paid                                (account_id,paid)
+#  index_transactions_on_parent_id                           (parent_id)
+#  index_transactions_on_payment_method_cd                   (payment_method_cd)
+#  index_transactions_on_payment_plan_id                     (payment_plan_id)
+#  index_transactions_on_payment_type_cd                     (payment_type_cd)
+#  index_transactions_on_search                              (kind_cd,transaction_type_cd,account_id,due_date DESC)
+#  index_transactions_on_search_bank_account                 (kind_cd,transaction_type_cd,account_id,bank_account_id,due_date DESC)
+#  index_transactions_on_search_transfer_to                  (kind_cd,transaction_type_cd,account_id,transfer_to_id,due_date DESC)
+#  index_transactions_on_search_without_due_date             (kind_cd,transaction_type_cd,account_id)
+#  index_transactions_on_service_id                          (service_id)
+#  index_transactions_on_transfer_to_id                      (transfer_to_id)
+#  index_transactions_on_tsv_body                            (tsv_body) USING gin
+#  index_transactions_on_updated_by_id                       (updated_by_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#  fk_rails_...  (bank_account_id => bank_accounts.id)
+#  fk_rails_...  (category_id => domains.id)
+#  fk_rails_...  (contact_id => people.id)
+#  fk_rails_...  (cost_center_id => domains.id)
+#  fk_rails_...  (created_by_id => users.id)
+#  fk_rails_...  (import_id => imports.id)
+#  fk_rails_...  (installment_source_id => transactions.id)
+#  fk_rails_...  (parent_id => transactions.id)
+#  fk_rails_...  (payment_plan_id => payment_plans.id)
+#  fk_rails_...  (service_id => offers.id)
+#  fk_rails_...  (transfer_to_id => bank_accounts.id)
+#  fk_rails_...  (updated_by_id => users.id)
+#
+
+<% 1.upto(10) do |i| %>
+receipt_<%= i %>:
+  account: account
+  bank_account: bank_one
+  contact: contact_one
+  category: category_one
+  cost_center: cost_center_one
+  description: Description <%= i %>
+  transaction_type_cd: 0
+  payment_method_cd: 1
+  payment_type_cd: 0
+  paid: false
+  competency_date: 2022-09-16 16:40:47
+  due_date: 2022-09-16 16:40:47
+  paid_at: 2022-09-16 16:40:47
+  amount_cents: <%= i * 9 %>
+  amount_currency: BRL
+  exchanged_amount_cents: <%= i * 9 %>
+  exchanged_amount_currency: BRL
+<% end %>
+  
+<% 1.upto(10) do |i| %>
+fixed_expense_<%= i %>:
+  account: account
+  bank_account: bank_one
+  contact: contact_one
+  category: category_one
+  cost_center: cost_center_one
+  description: Fixed expense <%= i %>
+  transaction_type_cd: 1
+  payment_method_cd: 1
+  payment_type_cd: 1
+  paid: false
+  due_date: 2022-09-16 16:40:47
+  paid_at: 2022-09-16 16:40:47
+  amount_cents: <%= i * 9 %>
+  amount_currency: BRL
+  exchanged_amount_cents: <%= i * 9 %>
+  exchanged_amount_currency: BRL
+<% end %>
+  
+<% 1.upto(10) do |i| %>
+variable_expense_<%= i %>:
+  account: account
+  bank_account: bank_one
+  contact: contact_one
+  category: category_one
+  cost_center: cost_center_one
+  description: Variable expense <%= i %>
+  transaction_type_cd: 2
+  payment_method_cd: 1
+  payment_type_cd: 1
+  paid: false
+  due_date: 2022-09-16 16:40:47
+  paid_at: 2022-09-16 16:40:47
+  amount_cents: <%= i * 9 %>
+  amount_currency: BRL
+  exchanged_amount_cents: <%= i * 9 %>
+  exchanged_amount_currency: BRL
+<% end %>
+  
+<% 1.upto(10) do |i| %>
+tax_<%= i %>:
+  account: account
+  bank_account: bank_one
+  contact: contact_one
+  category: category_one
+  cost_center: cost_center_one
+  description: Tax <%= i %>
+  transaction_type_cd: 4
+  payment_method_cd: 1
+  payment_type_cd: 1
+  paid: false
+  due_date: 2022-09-16 16:40:47
+  paid_at: 2022-09-16 16:40:47
+  amount_cents: <%= i * 9 %>
+  amount_currency: BRL
+  exchanged_amount_cents: <%= i * 9 %>
+  exchanged_amount_currency: BRL
+<% end %>
+
+<% 1.upto(10) do |i| %>
+payroll_<%= i %>:
+  account: account
+  bank_account: bank_one
+  contact: contact_one
+  category: category_one
+  cost_center: cost_center_one
+  description: Payroll <%= i %>
+  transaction_type_cd: 3
+  payment_method_cd: 1
+  payment_type_cd: 1
+  paid: false
+  due_date: 2022-09-16 16:40:47
+  paid_at: 2022-09-16 16:40:47
+  amount_cents: <%= i * 9 %>
+  amount_currency: BRL
+  exchanged_amount_cents: <%= i * 9 %>
+  exchanged_amount_currency: BRL
+<% end %>
+
+<% 1.upto(10) do |i| %>
+transfer_<%= i %>:
+  account: account
+  bank_account: bank_one
+  transfer_to: bank_two
+  contact: contact_one
+  category: category_one
+  cost_center: cost_center_one
+  description: Transfer <%= i %>
+  transaction_type_cd: 5
+  payment_method_cd: 1
+  payment_type_cd: 1
+  paid: false
+  due_date: 2022-09-16 16:40:47
+  paid_at: 2022-09-16 16:40:47
+  amount_cents: <%= i * 9 %>
+  amount_currency: BRL
+  exchanged_amount_cents: <%= i * 9 %>
+  exchanged_amount_currency: BRL
+<% end %>

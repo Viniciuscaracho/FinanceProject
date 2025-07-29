@@ -1,0 +1,4 @@
+- if @href
+  = link_to @href, { class: "btn btn--primary #{@options.fetch(:class, '')}".strip, data: @options.fetch(:data, {}) } do
+    = heroicon @options.fetch(:icon, 'plus'), options: { class: 'h-5 w-5' }
+    %span= @value

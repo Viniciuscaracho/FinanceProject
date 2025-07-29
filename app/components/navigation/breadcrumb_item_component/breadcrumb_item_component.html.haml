@@ -1,0 +1,7 @@
+- if @options[:href].present?
+  %li
+    = link_to @options.fetch(:href, 'javascript:;'), data: @options.fetch(:data, {}), class: "text-primary-500 hover:text-primary-600 print:hidden #{@options.fetch(:class, '')}".strip do
+      = @text
+- else
+  %li{ class: "text-gray-500"}
+    = @text

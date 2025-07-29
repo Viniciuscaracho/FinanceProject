@@ -1,0 +1,2359 @@
+---
+en:
+  true: Yes
+  false: No
+
+  activerecord:
+    errors:
+      models:
+        transaction:
+          transfer_same_bank_account: 'The transfer must be carried out between different accounts'
+          bank_account: "This bank account does not exist"
+          attributes:
+            payment_method:
+              invalid: "Invalid payment method"
+              nil: "Payment method not informed"
+            payment_type:
+              invalid: "Invalid payment type"
+              nil: "Payment type not informed"
+            transaction_type:
+              invalid: "Transaction type invalid"
+              nil: "Transaction type not informed"
+          transfer_to: "Destination account does not exist"
+          cost_center: "Cost center does not exist"
+          category: "Category does not exist"
+          contact: "Contact does not exist"
+        user:
+          email_is_not_verified: 'cannot be verified, please provide a valid email.'
+          email_is_dummy: 'cannot be a temporary email.'
+        account_invitation:
+          email_is_not_verified: 'cannot be verified, please provide a valid email.'
+          email_is_dummy: 'cannot be a temporary email.'
+        bank_account:
+          default: "Cannot archive or destroy the default bank account"
+        contact:
+          attributes:
+            transaction_type:
+              invalid: "Invalid transaction type"
+    models:
+      active_storage/attachment:
+        one: Attachment
+        other: Attachments
+      active_storage/blob:
+        one: File
+        other: Files
+      active_storage/variant_record:
+        one: Variant
+        other: Variants
+      action_text/rich_text:
+        one: Rich Text
+        other: Rich Texts
+      acts_as_taggable_on/tag:
+        one: Tag
+        other: Tags
+      address:
+        one: Address
+        other: Addresses
+      bank_account:
+        one: Bank Account
+        other: Bank Accounts
+      category:
+        one: Category
+        other: Categories
+      cost_center:
+        one: Cost Center
+        other: Cost Centers
+      company:
+        one: Company
+        other: Companies
+      contact:
+        one: Contact
+        other: Contacts
+      transaction:
+        one: Transaction
+        other: Transactions
+      domain:
+        one: Domain
+        other: Domains
+      account_user:
+        one: Account User
+        other: Account Users
+      person:
+        one: Person
+        other: People
+      account_invitation:
+        one: Invitation
+        other: Pending Invitations
+      account:
+        one: Account
+        other: Accounts
+      exchange_rate:
+        one: Conversion Factor
+        other: Conversion Factors
+      import:
+        one: Import
+        other: Imports
+      user:
+        one: User
+        other: Users
+      bank:
+        one: Bank
+        other: Banks
+      audit:
+        one: Audit
+        other: Audits
+      zero_paper_item:
+        one: Import item
+        other: Import items
+      document_template:
+        one: Document Template
+        other: Document Templates
+      receipt_template:
+        one: Receipt Template
+        other: Receipt Templates
+      ContractTemplate:
+        one: Contract Template
+        other: Contract Templates
+      export:
+        one: Export
+        other: Exports
+      statement:
+        one: Statement
+        other: Statements
+      statement_item:
+        one: Statement item
+        other: Statement items
+      payment_plan:
+        one: Installment plan
+        other: Installment plans
+      announcement:
+        one: Announcement
+        other: Announcements
+      notification:
+        one: Notification
+        other: Notifications
+      referral_code:
+        one: Referral code
+        other: Referral codes
+      segment:
+        one: Segment
+        other: Segments
+      business_sector:
+        one: Business sector
+        other: Business sectors
+      sector_activity:
+        one: Sector activity
+        other: Sector activities
+      category_preset:
+        one: Default category
+        other: Default categories
+      partner:
+        one: Partner
+        other: Partners
+      plan:
+        one: Plan
+        other: Plans
+      service:
+        one: Service
+        other: Services
+      invoice:
+        one: Invoice
+        other: Invoices
+
+    attributes:
+      account:
+        id: Code
+        default_currency: Default Currency
+        processor_plan_name: Plan
+        processor_plan_id: Plan
+        balance: Current Balance
+        account_type: Account Type
+        subscription_status: Status
+        name: Company / Person Name
+        owner: Owner
+        free: Free?
+        trial: Trial?
+        trial_ends_at: Trial Ends At
+        account_users_count: Members Count
+        account_invitations_count: Invitations Count
+        bank_accounts_count: Bank Accounts Count
+        contacts_count: Contacts Count
+        categories_count: Categories Count
+        cost_centers_count: Cost Centers Count
+        transactions_count: Transactions Count
+        account_users: Members
+        users: Linked Users
+        bank_accounts: Bank Accounts
+        imports: Imports
+        connected_users: Connected Users on Account
+        created_at: Created At
+        updated_at: Updated At
+        referral_code: Referral Code
+        related_to: Related to
+        relation_type: Relation type
+        related_accounts: Related accounts
+      account_user:
+        id: Code
+        name: Name
+        account: Account
+        user: User
+        role: Role
+        created_at: Created At
+        updated_at: Updated At
+      account_invitation:
+        id: Code
+        account: Account
+        name: Name
+        email: Email
+        role: Role
+        created_at: Created At
+        updated_at: Sent At
+      address:
+        id: Code
+        addressable: Entity
+        postcode: Postal Code
+        address_line1: Address
+        address_line2: Complement
+        district: District
+        city: City
+        state: State
+        country: Country
+        created_at: Created At
+        updated_at: Updated At
+      bank_account:
+        id: Code
+        agency: "Agency and Number"
+        account: Account
+        name: Name
+        account_type: Account Type
+        account_agency: Account Agency
+        account_number: Account Number
+        balance_cents: Current Balance
+        balance: Current Balance
+        initial_balance_cents: Initial Balance
+        default: Is Primary?
+        created_at: Created At
+        updated_at: Updated At
+        bank: Bank
+      category:
+        transaction_type: Type
+        id: Code
+        account: Account
+        name: Name
+        description: Description
+        created_at: Created at
+        updated_at: Updated at
+      cost_center:
+        id: Code
+        account: Account
+        name: Name
+        description: Description
+        created_at: Created at
+        updated_at: Updated at
+      company:
+        id: Code
+        account: Account
+        name: Company name
+        sector_activity: Segment
+        sector_activity_id: Segment
+        document_1: CNPJ
+        document_2: State registration number
+        name_natural: Full name
+        document_1_natural: CPF
+        document_2_natural: RG
+        email: Email
+        phone_number: Contact phone number
+        description: Observations
+        created_at: Created at
+        updated_at: Updated at
+      contact:
+        id: Code
+        account: Account
+        contact_type: Contact type
+        person_type: Person type
+        sector_activity: Segment
+        sector_activity_id: Segment
+        name: Name
+        document_1: CPF/CNPJ
+        document_2: RG/State registration number
+        email: Email
+        phone_number: Phone number
+        cell_phone_number: Cell phone
+        birth_date: Birth date
+        description: Comments
+        created_at: Created at
+        updated_at: Updated at
+      transaction:
+        id: Code
+        account: Account
+        transaction_type: Transaction type
+        due_date: Date
+        name: Description
+        contact_id: Contact
+        receipted_from: Received from
+        paid_to: Paid to
+        category_id: Category
+        payment_type: Payment type
+        paid: Paid?
+        paid_at: Paid at
+        amount: Amount
+        amount_cents: Amount
+        exchanged_amount: Confirmed amount
+        exchanged_amount_cents: Confirmed amount
+        competency_date: Competency date
+        document_number: Document number
+        cost_center_id: Cost center
+        bank_account_id: Origin account
+        payment_method: Payment method
+        description: Comments
+        attachments: Receipts and attachments
+        transfer_to_id: Destination account
+        transfer_to: Destination account
+        installment_type: Frequency
+        installment_total: Number of installments
+        installment_number: Installment number
+        installments: Installments / Recurrences
+        tags: Tags
+        created_at: Created at
+        updated_at: Updated at
+      import:
+        id: Code
+        account: Account
+        file_name: File name
+        source: Source
+        state: Status
+        progress_number: Imported transactions
+        progress_total: Total transactions
+        file: File
+        created_at: Created at
+        updated_at: Imported at
+      export:
+        id: Code
+        account: Account
+        source: Source
+        state: Status
+        file: File
+        progress: Progress
+        created_at: Created at
+        updated_at: Exported at
+        progress_number: Exported transactions
+        progress_total: Total transactions
+      audit:
+        id: Code
+        action: Action
+        associated: Associated with
+        auditable: Auditable
+        audited_changes: Changes
+        comment: Comment
+        remote_address: Remote address
+        request_uuid: Request uuid
+        username: Username
+        version: Version
+        created_at: Created at
+        user_id: User ID
+        user: User
+      document_template:
+        id: Code
+        account: Account
+        name: Name
+        description: Description
+        transaction_type: Transaction Type
+      statement:
+        id: Code
+        type: Type
+        state: Status
+        file: OFX File
+        bank_account: Bank Account
+        statement_items: Statement items
+        created_at: Created at
+        updated_at: Updated at
+      statement_item:
+        transaction_type: Transaction Type
+      payment_plan:
+        amount_cents: Value (R$)
+        number_of_installments: Number of installments
+        frequency: Frequency
+        transactions: Transactions (installments)
+      announcement:
+        id: Code
+        kind: Kind
+        title: Title
+        abstract: Message
+        description: Description
+        show_banner: Display banner?
+        send_notification: Send notification?
+        notification_sent_at: Notification sent at
+        published_at: Published at
+        created_at: Created at
+        updated_at: Updated at
+      notification:
+        id: Code
+        recipient: Recipient
+        type: Type
+        params: Params
+        read_at: Read at
+        created_at: Created at
+        updated_at: Updated at
+      referral_code:
+        id: Code
+        referrer: Referrer
+        code: Referral code
+        benefit_type: Benefit type
+        benefit: Benefit
+        short_referral_url: Referral link
+        referees: Recipients
+        created_at: Created at
+        updated_at: Updated at
+      segment:
+        id: Code
+        parent: Parent segment
+        type: Type
+        name: Name
+        description: Description
+        language: Language
+        created_at: Created at
+        updated_at: Updated at
+        discarded_at: Archived at
+      business_sector:
+        id: Code
+        name: Name
+        description: Description
+        sector_activities: Activities
+        people: People
+        language: Language
+        created_at: Created at
+        updated_at: Updated at
+        discarded_at: Archived at
+      sector_activity:
+        id: Code
+        business_sector: Business sector
+        name: Name
+        description: Description
+        people: People
+        language: Language
+        created_at: Created at
+        updated_at: Updated at
+        discarded_at: Archived at
+      category_preset:
+        id: Code
+        sector_activity: Sector Activity
+        transaction_type: Transaction type
+        name: Name
+        description: Description
+        language: Language
+        created_at: Created at
+        updated_at: Updated at
+        discarded_at: Archived at
+      acts_as_taggable_on/tag:
+        id: Code
+        name: Name
+        created_at: Created at
+        updated_at: Updated at
+        discarded_at: Archived at
+      service:
+        internal_code: Internal code
+        name: Name
+        description: Description
+        economic_activity_id: Economic activity
+        created_at: Created at
+        updated_at: Updated at
+        discarded_at: Discarded at
+      api_token:
+        id: Code
+        name: Name
+        description: Description
+        token: Token
+        last_used_at: Last used at
+        expires_at: Expires at
+        created_at: Created at
+        updated_at: Updated at
+      webhook:
+        id: Code
+        account: Account
+        url: URL
+        last_used_at: Last used at
+        last_response: Last response
+        event_type: Event type
+        created_at: Created at
+        updated_at: Updated at
+
+  bank_accounts:
+    title_info_card: "Initial Balance"
+    info_card: "This field is used to inform the current balance of the bank account, before posting to Procfy. If you have already made entries in Procfy, enter the discounted value of the entries made, and after that, check whether the balance in Procfy matches the current balance in your bank account."
+    new:
+      title: "New bank account"
+    index:
+      new: "New bank account"
+      add: "Add"
+    edit:
+      title: "Edit bank account"
+    show:
+      title: "Bank account details"
+    update:
+      success: "Bank account updated successfully"
+    create:
+      success: "Bank account created successfully"
+    destroy:
+      success: "Bank account deleted successfully"
+    default_name: "Main Account"
+    bank_account:
+      this_is_default: "Yes"
+      turn_to_default: "Use as main account"
+    turn_default:
+      success: "Main account set successfully"
+    toggle_archived:
+      success: "Bank account archived successfully"
+      error: "Bank account could not be archived"
+    default_wallet_name: "Wallet"
+    default_cash_name: "Cash"
+    archive:
+      success: "Bank account successfully archived"
+    unarchive:
+      success: "Bank account sucessfully unarchived"
+
+  categories:
+    new:
+      title: "New category"
+    index:
+      new: "New category"
+      add: "Add"
+    edit:
+      title: "Edit category"
+    show:
+      title: "Category details"
+    update:
+      success: "Category updated successfully"
+    create:
+      success: "Category created successfully"
+    destroy:
+      success: "Category deleted successfully"
+      fail: "Category cannot be deleted"
+    import:
+      title: "Import categories presets"
+    new_import:
+      title: "New import"
+    new_import_from_presets:
+      title: "Import category presets"
+
+  cost_centers:
+    new:
+      title: "New cost center"
+    index:
+      new: "New cost center"
+    edit:
+      title: "Edit cost center"
+    show:
+      title: "Cost center details"
+    create:
+      success: "Cost center created successfully"
+    update:
+      success: "Cost center updated successfully"
+    destroy:
+      success: "Cost center deleted successfully"
+
+  contacts:
+    new:
+      title: "New contact"
+    index:
+      new: "New contact"
+    edit:
+      title: "Edit contact"
+    show:
+      title: "Contact details"
+    create:
+      success: "Contact created successfully"
+    update:
+      success: "Contact updated successfully"
+    destroy:
+      success: "Contact deleted successfully"
+    graphs:
+      title: "Debtors"
+      debt_me: "Owes me"
+      i_debt: "I owe"
+      birthdays: "Birthdays this month"
+      see_more: "See more"
+    debt_me:
+      title: "I owe"
+      total: "Total"
+    i_debt:
+      title: "I am owed"
+      total: "Total"
+    birthdays:
+      title: "Birthdays"
+      total: "Total"
+      annual_income: "Annual income"
+      name: "Name"
+    form:
+      search: "Search"
+      searching: "Searching"
+    search_cnpj:
+      success: "Information updated successfully"
+      error: "CNPJ not found or invalid"
+    details:
+      title: "Contact"
+      contracts: "Contracts"
+    contracts:
+      header:
+        title: "Edit %{contact_name}`s contract"
+        save_on_contact: "Save on contact"
+    attachments:
+      index:
+        title: "Attachments"
+        contracts: "Contracts"
+
+  imports:
+    create:
+      success: "Importation created successfully"
+      fail_import: "Unable to import this file, no transactions found, please try again later"
+      fail_contact_import: "Unable to import this file, no contacts found, please try again later"
+      error: "File not compatible"
+      wait_pending_import: "Already exists an import in progress, please try again later"
+    destroy:
+      success: "Import deleted successfully and all transactions were reverted"
+    update:
+      error: "You don't have permission to edit"
+    show:
+      error: "You don't have permission to view"
+    find:
+      error: "Unable to find"
+    import:
+      are_you_sure?: "Imported transactions will be reverted! Do you want to continue?"
+    form:
+      select_file: "Select the Zeropaper file to be imported"
+      start_import: "Start import"
+      select_source: "Select the file source"
+    new:
+      title: "New ZeroPaper import"
+    import_suggestions:
+      xlsx_default:
+        title: "Default Import"
+        description: "Import data from other systems using our default Excel format"
+      zero_paper:
+        title: "Zero Paper"
+        description: "Import data from Zero Paper"
+      ofx:
+        title: "OFX"
+        description: "Import data from OFX files"
+      contacts:
+        title: "Contacts"
+        description: "Importing contacts from Excel"
+    new_xlsx_default:
+      title: "New default import"
+      description: "Import data from other systems using our default Excel format"
+      download_template: "Download template"
+      view_tutorial: 'View import tutorial'
+      file_name: "import_model_procfy"
+      select_file: "Select the file to be imported"
+      start_import: "Start import"
+    import_xlsx_explanation:
+      step: "Step %{step}"
+      intro: "Learn how to import data from other systems using our Excel format. <strong>Let's get started!</strong>"
+      step_1: "Download the default Excel format by clicking the button below."
+      step_2: "Prepare the spreadsheet of the previous system you want to import."
+      step_3: "Identify the correct columns for import."
+      step_4: "Copy the information from the previous spreadsheet and paste it into our spreadsheet."
+      step_5: "Import the data to finish the process."
+    discard:
+      success: "Import archived successfully"
+    discarded_imports_modal:
+      title: "Archived imports"
+    undiscard:
+      success: "Import unarchive successfully"
+    new_xlsx_contacts:
+      file_name: "import_contacts_model_procfy"
+      title: "Import contacts"
+      select_file: "Select the file to import"
+    import_contacts_explanation:
+      intro: "Learn how to import contacts from other systems using our Excel format. <strong>Let's get started!</strong>"
+      step: "Step %{step}"
+      step_1: "Download the default contact import template by clicking the button below."
+      step_2: "Prepare the spreadsheet you want to import."
+      step_3: "Identify the correct columns for import."
+      step_4: "Fill in the information in the spreadsheet."
+      step_5: "Import the data to finish the process."
+
+
+
+  document_templates:
+    index:
+      new: "New document template"
+    tabs:
+      coming_soon: Coming soon
+      receipts: Receipts
+      invoices: Invoices
+      contracts: Contracts
+      proposals: Proposals
+      budgets: Budgets
+      service_orders: Service Orders
+    index_actions:
+      new: "New template"
+    destroy:
+      success: "Success destroy document"
+    update:
+      success: "Success update document"
+    create:
+      success: "Success on create document"
+
+  receipt:
+    generate_receipt: "Generate receipt"
+    two_parts_page: "Two copies on one page"
+    models: "Models"
+    generate_invoice: "Generate invoice"
+
+  tags:
+    new:
+      title: "New tag"
+
+  receipt_templates:
+    index:
+      title: new
+    create:
+      success: "Successfully created the receipt template"
+    update:
+      success: "Successfully updated the receipt template"
+
+    new:
+      title: "New document template"
+    form:
+      name: "Template name"
+      description: "Description"
+      transaction_type: "Transaction type"
+      show_header: "Show header"
+      document_body: "Document body"
+      insert_variable: 'Type "@" to insert variables in your receipt.'
+      submit_button: "Save template"
+      reset_default_button: "Reset to default"
+    variable:
+      title: "System variables"
+      variable: "Variable"
+      result: "Converts to"
+      insert_variable: "Insert Variable"
+    suggestion_variables: [
+      "CURRENT_DATE",
+      "MY_NAME",
+      "MY_COMPANY",
+      "MY_COMPANY_DOCUMENT",
+      "MY_COMPANY_STATE",
+      "MY_COMPANY_CITY",
+      "ITEM_CODE",
+      "ITEM_BANK_ACCOUNT",
+      "ITEM_DATE",
+      "ITEM_VALUE",
+      "ITEM_DOCUMENT_NUMBER",
+      "ITEM_PAYMENT_METHOD",
+      "ITEM_DESCRIPTION",
+      "ITEM_DETAILS",
+      "ITEM_CATEGORY",
+      "CLIENT_NAME",
+      "CLIENT_DOCUMENT",
+      "CLIENT_PHONE",
+      "CLIENT_EMAIL",
+      "CLIENT_DESCRIPTION",
+      "CLIENT_FULL_ADDRESS",
+      "CLIENT_SIMPLE_ADDRESS",
+      "CLIENT_ADDRESS_COMPLEMENT",
+      "CLIENT_ADDRESS_NEIGHBORHOOD",
+      "CLIENT_ADDRESS_ZIPCODE",
+      "CLIENT_ADDRESS_STATE",
+      "CLIENT_ADDRESS_CITY",
+    ]
+  feedbacks:
+    new:
+      feedback: "Send your feedback"
+      help_us: "Help us improve <strong>Procfy</strong> by sending your review and providing your suggestions"
+      evaluate: "How do you evaluate our system?"
+      bad: "Bad"
+      regular: "Regular"
+      good: "Good"
+      great: "Great"
+      excellent: "Excellent"
+      provide_your_feedback: "Provide your feedback or suggestion"
+      enter_your_opinion: "Enter your opinion about Procfy here. It can be a compliment, a criticism or a suggestion"
+      submit: "Send"
+    create:
+      success: "Feedback sent successfully"
+      error: "Something went wrong"
+      empty: "No observations"
+  help_users:
+    no_result: "No results"
+    no_videos: "We are currently out of help materials"
+    no_suggestions: "No article suggestions"
+    no_suggestions_description: "We are currently out of article suggestions"
+    index:
+      video_lessons_for_beginners: "Video lessons for beginners"
+      help_guides: "Help guides"
+      other_help_channels: "Other help channels"
+      feedback: "Send your feedback"
+    videos_modal:
+      video_lessons_for_beginners: "Video lessons for beginners"
+    initial_modal:
+      welcome_procfy: "Welcome to Procfy"
+      welcome_user: "Hello <strong>%{name}</strong>, we've prepared some help material for you to start well on <strong>Procfy</strong>. Enjoy and good management!"
+      video_lessons_for_beginners: "Video lessons for beginners"
+      help_guides: "Help guides"
+      see_all: "See all"
+      do_not_display_again: "Do not display again"
+      thanks: "Okay, thank you!"
+      thanks_mobile: "Ok!"
+      more_informations: 'If you choose not to display this guide, you will find more options in the help button located in the bottom right corner of the screen, as illustrated below: <div class="flex justify-center items-center m-2"> <div class="w-14 h-14 rounded-full bg-pink-500 shadow-md text-white font-bold text-3xl flex justify-center items-center"> ?</div> </div> '
+    search_modal:
+      supporting_materials: 'Supporting Materials'
+      search: 'Search'
+      search_here: "Search for content here..."
+      search_here_mobile: "Search here..."
+      help_guides: "Help guides"
+      see_all: "See all"
+
+
+  exports:
+    export: "Export"
+    due_date: "Payment Date"
+    competency_date: "Competency date"
+    value: "Value"
+    received_paid_at: "Received from/Paid to"
+    transfer_in: "Incoming transfer"
+    transfer_out: "Outgoing transfer"
+    tags: Tags
+    table:
+      empty_state:
+        title: "No export found"
+
+
+    header:
+      title: "Download your transactions."
+      subtitle: "Select the options and click on the <strong>Export</strong> button to export your <strong>XLSX</strong> file."
+    form:
+      starting_date: "Initial date"
+      ending_date: "Final date"
+      select_bank_account: "Bank accounts"
+      select_cost_center: "Cost centers"
+      include: "Include releases"
+      paid: "Paid"
+      not_paid: "Not paid"
+    contacts:
+      title: "Contacts"
+      name: "Name"
+      type: "Type"
+    create:
+      success: "Export created successfully"
+      fail: "Unable to create export"
+      error: "Unable to create export"
+      wait_pending_export: "Already exists an export in progress, please try again later"
+
+  application:
+    profile_menu_dropdown:
+      sign_out: "Sign Out"
+      user_settings: "My User Profile"
+      account_settings: "%{account} Settings"
+      checkout: "Subscribe..."
+      billing: "My Bills"
+      change_plan: "Change My Plan"
+      change_payment_method: "Change Payment Method"
+      rails_admin: "Administration (Rails Admin)"
+      adm_area: "Restricted Area (Super User)"
+      my_accounts: "Configure Other Accounts"
+      settings: "Settings"
+      subscribe: "Subscribe to Plan..."
+      manage_my_subscription: "Manage My Subscription"
+      my_subscription: "My Subscription..."
+      users: "System Users"
+      exports: "Export Data"
+    sidenav_content:
+      home: "Dashboard"
+      dashboard: "Home"
+      settings: "Organization"
+    help_dropdown:
+      interrogation: "?"
+      help_center: "Help Center"
+    empty_state:
+      empty_result: "This list is empty"
+      empty_search: "No results found"
+      click_to_create_a_new_one: "Click the button below to add your first item"
+      click_to_clear_search: "Click the button below to clear your search"
+      no_permission_to_create: "Nothing here yet"
+      add: "Add"
+      clear_search: "Clear search"
+    empty_search:
+      search_not_found: "No results found"
+    footer:
+      about: "About"
+      privacy: "Privacy"
+      terms: "Terms of Use"
+      help: "Help"
+    mailer_footer:
+      lgpd: "ATTENTION: In accordance with the General Data Protection Law, all information acquired in this message is confidential and intended solely for the recipient(s) or company(ies) concerned. In the event of an error resulting in third parties receiving this message who are not interested parties, please note that its disclosure is prohibited by law, and if this occurs, we kindly ask that you delete the information and notify the sender immediately. Furthermore, we instruct that any misuse will be dealt with in accordance with company policies and current legislation, Law No. 13,709/2018. In addition, the data subject may request any information related to the exercise of his/her personal data rights, such as access to data, rectification or deletion, through the Data Protection Officer, via the email juridico@codengage.com."
+    trial_notification:
+      access: "Access"
+      current_plan: "My Current Plan"
+      trial_period: "Your trial period ends in <strong>%{count_down}</strong> days."
+      trial_description: "You can subscribe at any time during this period by clicking the <strong>Subscribe</strong> button."
+      trial_expired_title: "Your trial period has expired"
+      trial_expired_description: "Subscribe to our plan to continue using our platform."
+      suspended: "Your account has been partially blocked for administrative reasons"
+      suspended_description: "There is an administrative issue with your account. Please contact our support for more information."
+      access_billing_portal: "Access portal"
+    subscription_notification:
+      waiting_payment_confirmation: "Waiting for payment confirmation"
+      waiting_payment_confirmation_description: "If you are paying via boleto, confirmation may take up to 24 hours."
+      payment_failed: "The subscription payment failed."
+      payment_failed_description: "Access the client portal for more information."
+      incomplete: "There is pending payment (boleto)"
+      incomplete_description: "Avoid suspensions by paying your invoice before the due date."
+      past_due_title: "Your subscription is past due!"
+      past_due_description: "We were unable to auto-renew your subscription, please visit the subscription portal for details."
+      access_billing_portal: "Access portal"
+      unpaid_title: "Your account was partially blocked"
+      unpaid_description: "Avoid the cancellation of your account, access the subscription portal to carry out the regularization."
+      account_canceled: "You have canceled your subscription <strong>%{type_account}</strong>"
+      account_canceled_description: "You will be able to access the system until <strong>%{date}</strong>. If you want to renew, access the subscription manager."
+      account_canceled_expired: "Your account was canceled temporarily"
+      account_canceled_expired_description: "Renew your subscription to continue using our platform, or within 3 months of canceling your account will be deleted."
+      incomplete_expired_with_days: "Your trial period ends in <strong>%{count_down}</strong> days"
+      incomplete_expired_without_days: "Your trial period has expired"
+      incomplete_expired_description: "There is a payment in process awaiting confirmation from the operator."
+      subscription_past_due_and_last_invoice_open: "There is an open invoice that requires your attention."
+      subscription_past_due_and_last_invoice_open_description: "If the invoice has already been settled, please disregard this message."
+      incomplete_expired: "Your subscription has expired."
+    switch_account:
+      switch_account: "Switch Account"
+      current_account: "Current"
+    pending_invitations:
+      view_invitation: "You can accept/reject this invitation"
+      instructions: "<strong>%{inviter}</strong> has invited you to join the team <strong>%{account}</strong>."
+    empty_state_file:
+      click_to_upload: "Click here to upload an external file"
+      import_external_file: "Import External File"
+      select_file: "Select file"
+
+
+  daily_notification_mailer:
+    send_daily_notification:
+      title: "Daily Report for %{company} - Procfy"
+      release: "Releases"
+      mail_header:
+        hello: "Hello %{name}!"
+        expiration: 'We have <span style="padding: 2px 5px; background-color: #6366f1; color: #FFF">%{number_of_expirations}</span> expiration(s) for today.'
+      mail_body:
+        revenues: "Revenues:"
+        expenses: "Expenses:"
+        show_transactions: "View my transactions"
+        transaction_without_name: "No description"
+      mail_footer:
+        alert_mail_configurations: 'You are receiving this email because the <strong>"Email notifications"</strong> settings are enabled in <strong>Procfy</strong>. If you no longer wish to receive our emails, access <strong>Procfy</strong> and go to <strong>Profile</strong>, select <strong>"%{company_name} Settings"</strong>. Check the settings options and make your choices.'
+        proof_policies: '<span style="font-size:11px"><p>Codengage respects your privacy. To learn more, read our <a href="https://procfy.io/policy.html#privacy" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">Privacy Policy.</a> If you receive a suspicious email, report it to us by forwarding it to <a href="mailto:atendimento@procfy.io" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">atendimento@procfy.io</a>.</p><p>©2023 Codengage Tecnologia. All rights reserved. CNPJ: 24.477.617/0001-60.<br>Address: Av. Prefeito Dedi Barrichelo Montagner, 250, térreo. Dois Vizinhos - Paraná. Zip code: 85660-000.</p></span>'
+
+
+  shared:
+    past:
+      create: "Created"
+      update: "Updated"
+      destroy: "Deleted"
+      archive: "Archived"
+      delete: "Deleted"
+      deleted: "Deleted"
+      archived: "Archived"
+      created: "Created"
+      updated: "Updated"
+      unarchived: "Unarchived"
+
+    attributes:
+      name:
+        not_informed: "Name not informed"
+        blank: "Unnamed"
+      bank_account:
+        not_informed: "Uninformed bank account"
+      email:
+        not_informed: "Email not informed"
+      phone:
+        not_informed: "Phone not informed"
+    at: "at"
+    archive: "Archive"
+    not_informed_agency: "Agency not informed"
+    are_you_sure?: "Are you sure?"
+    error: "%{count} prohibited this domain from being saved:"
+    search: "Search..."
+    all: "All"
+    female_all: "All"
+    not_informed: "Not informed"
+    default: "Default"
+    edit: "Edit"
+    remove: "Delete"
+    date_format: "MM/dd/yyyy"
+    date_pattern: "00/00/0000"
+    upload_a_file: "Click here"
+    or_drag_and_drop: "Click here or drag and drop files you want to upload"
+    accepted_formats: "PNG, JPG, XML, PDF, DOC and XLS up to 5MB"
+    read: "Read"
+    create: "Create"
+    details: "Edit details"
+    go_to_transaction: "Go to transaction"
+    loading: "Loading..."
+    duplicate: "Duplicate"
+    move_to: "Move to..."
+    yes: "Yes"
+    no: "No"
+    setup_installments: "Installments..."
+    create_installments: "Create installments"
+    setup_recurrence: "Make recurring..."
+    create_transactions: "Create transactions"
+    delete: "Delete"
+    destroy_dialog: "Delete..."
+    turn_default: "Set as default"
+    main: "Main"
+    turn_main: "Set as main"
+    download: "Download"
+    import: "Import"
+    new_import: "New import"
+    you_are_not_authorized_to_access_this_page: "<strong>Access denied!</strong><br>You do not have permission to access this page or perform this action."
+    good_morning: "Good morning, %{name}."
+    good_afternoon: "Good afternoon, %{name}."
+    good_evening: "Good evening, %{name}."
+    good_night: "Good night, %{name}."
+    attachments: "Attachments"
+    attach: "Attach files"
+    send_files: "Send files"
+    guest: "System"
+    free_plan: "Free"
+    other: "Other"
+    others: "Others"
+    trial: "Trial"
+    back_to_home: "Back to home page"
+    copyright: "©%{year} Codengage"
+    financially_simple: "Financially Simple"
+    required: "* required"
+    edit_permissions: "Edit permissions"
+    show: "View details"
+    destroy: "Delete"
+    update: "Update"
+    cancel: "Cancel"
+    invalid_option: "Invalid option"
+    currency_placeholder: "R$ -,--"
+    percentage_placeholder: "-,--%"
+    under_construction: "Under construction"
+    processing: "Processing..."
+    none: "None"
+    select_all_female: "Select all"
+    unselect_all_female: "Unselect all"
+    selected_options_female: " selected"
+    select_all_male: "Select all"
+    unselect_all_male: "Unselect all"
+    selected_options_male: " selected"
+    total: "Total"
+    not_informed_female: "Not informed"
+    outcome: "Month preview:"
+    app_name: "Procfy - Financially Simple"
+    month_preview: "Month preview: <strong>%{amount}</strong>"
+    new: "Add"
+    percentage: "Percentage"
+    period: "Period:"
+    from_to: "%{from} to %{to}"
+    print: "Generate PDF or print"
+    export: "Export to Excel"
+    add: "Add"
+    empty_state_title: "Nothing here"
+    empty_state_message: "Start by adding your first item"
+    empty_search_title: "No results found"
+    empty_search_message: "Clear your search and try again"
+    clear_search: "Clear search"
+    untitled: "Untitled"
+    not_authorized: "<strong>Not authorized</strong>"
+    import_ofx_extract: "Import OFX extract"
+    account_type: "%{type} account"
+    personal_photo: "Personal photo"
+    bank_account: "Bank account"
+    expenses: "Expenses"
+    tags: "Tags"
+    modules: "Modules"
+    search_min_length_message: "Search must be at least 2 characters"
+    searching: "Searching..."
+    search_contact_text: "No result found..."
+    search_contact_placeholder: "Search..."
+    search_category_text: "No result found"
+    search_cost_center_text: "No result found"
+    search_category_placeholder: "Search..."
+    search_cost_center_placeholder: "Search..."
+    general_search: "General search..."
+    back: "Back"
+    next: "Next"
+    confirm: "Confirm"
+    search_other: "Search other"
+    discard: "Ignore/discard"
+    select: "Select"
+    ignore: "Ignore"
+    actions: "Actions"
+    reset: "Undo"
+    fix: "Correct"
+    reconcile: "Confirm"
+    start_date: "Start date"
+    end_date: "End date"
+    no_result_found: "No result found"
+    current: "Current"
+    alternative: "Alternative"
+    reconcile_selected: "Reconcile selected"
+    ignore_selected: "Ignore selected"
+    finish: "Finish"
+    payment_date: "Payment date"
+    go_to_transactions: "Go to transactions"
+    several: "Several"
+    partially_paid: "Paid partially"
+    fully_paid: "Fully paid"
+    unpaid: "Unpaid"
+    create_entry_of: "Create entry of %{amount}"
+    or: "or"
+    status: "Status"
+    unarchive: "Unarchive"
+    archived: "Archived"
+    installment_amount: "Installment amount"
+    save: "Save"
+    update_installments: "Update installments"
+    clear: "Clear"
+    apply: "Apply"
+    dismiss: "Dismiss"
+    show_details: "Show detalhes"
+    referral_link: "Referral link"
+    copied: "Copied!"
+    copy: "Copy!"
+    copy_referral_link: "Click to copy!"
+    edit_installments: "Edit installments..."
+    system: "System"
+    expenses_of: "Expenses of"
+    discarded: "Deleted"
+    title: "Procfy your financial management tool"
+    description: "User-friendly financial management system that will help you manage your finances"
+    description2: "Try it free for %{days} days!"
+    bold: "Bold (Ctrl + B)"
+    italic: "Italic (Ctrl + I)"
+    highlight: "Highlight (Ctrl + U)"
+    left_align: "Align left (Ctrl + Shift + L)"
+    center_align: "Align in the center (Ctrl + Shift + E)"
+    right_align: "Align right (Ctrl + Shift + R)"
+    justify_align: "Justify (Ctrl + Shift + J)"
+    strike: "Strikethrough"
+    big_title: "Big title"
+    medium_title: "Medium title"
+    small_title: "Small title"
+    undo: "Undo (Ctrl + Z)"
+    redo: "Redo (Ctrl + Y)"
+    fill_after: "Fill after (Ctrl + m)"
+    variables: "Variables"
+
+    address: "Address"
+    fiscal_information: "Fiscal information"
+    reset_account: "Reset account"
+    add_item: "Add item"
+    bank_account_ids: "Bank accounts"
+    contact_ids: "Contacts"
+    statuses: "Statuses"
+    generate_invoice: "Generate invoice"
+    edit_invoice: "Edit invoice"
+    access_invoice: "Access invoice"
+    save_as_draft: "Save as draft"
+    place: "Save and place"
+    pay: "Save as paid"
+    sent_at: "Sent at: %{date}"
+    create_as_draft: "Create draft"
+    save_draft: "Save draft"
+    preferences: "Preferences"
+    webhooks: "Webhooks"
+    close: "Close"
+    document_1: "Tax ID: %{value}"
+    postcode: "Postal code:"
+    access: "Talk to us"
+    preview_and_send: "Preview and send"
+    download_pdf: "Download PDF"
+    tax: "Tax amount"
+    discount: "Discount amount"
+    invoice_preview: "Invoice preview"
+    not_available: "Not available"
+    open_invoice: "Save"
+    edit_transaction: "Edit transaction"
+    received: "Received"
+    to_receive: "To receive"
+    document_1_natural: "Tax ID: %{value}"
+    document_1_undefined: "Tax ID: %{value}"
+    deleted_user: "Deleted user"
+    are_you_sure: "Are you sure?"
+    settings: "Settings"
+    company_details: "Company details"
+    tax_config: "Tax configuration"
+    company_address: "Company address"
+    company_data: "Company data"
+    nfse_config: "Nfse configurations"
+    download_cert: "Download certificate"
+    upgrade: "Upgrade"
+    save_configurations: "Save configurations"
+    tax_information: "Tax informations"
+    municipal_tax_information: "Municipal taxation"
+    national_tax_information: "National taxation"
+    duplicated: "Duplicated"
+    search_your_city: "Search your city..."
+    search_city: "Search city..."
+    autocomplete_search_text: "The search must have 3 characters..."
+    autocomplete_search_placeholder: "Search..."
+    autocomplete_search_message: "Searching..."
+    plan_pro: "Pro Plan"
+    configure: "Configure"
+    enabled: "Enabled"
+    disabled: "Disabled"
+    previous: "Previous"
+    skip: "Skip"
+    done: "Done"
+    coming_soon: "Coming soon"
+    already_subscribed: "Already subscribed"
+    greeting: "Hi, %{name}"
+    referral_code_message_personal: "The discount of <strong>%{value}%</strong> is only applicable for <strong>Personal</strong> type accounts."
+    referral_code_message_business: "The discount of <strong>%{value}%</strong> is only applicable for <strong>Business</strong> type accounts."
+    referral_code_message_both: "The discount of <strong>%{value}%</strong> is applicable for <strong>Personal</strong> and <strong>Business</strong> type accounts."
+    min_value: "Min"
+    max_value: "Max"
+
+  error: "Error"
+  user_settings:
+    edit:
+      title: "User profile"
+    update:
+      success: "Profile updated successfully"
+    form:
+      update: "Update profile"
+      email_preference: 'Receive expiration notification by email'
+      bank_preference: 'View all bank accounts by default'
+      payment_date_preference: 'Confirm payment date when marking an old item as paid'
+      disable_view_recurrence: 'Disable recurrence view'
+      beta_tester_check: 'I want to be a beta tester'
+      beta_tester_description: "A beta tester is someone who participates in the beta testing phase of a product or software before its official launch. Beta testers helps identify and report issues, bugs, and failures while providing feedbacks on the product's usability and functionality. They play a significant role in enhancing product quality, enabling developers to make adjustments and fixes prior to the public release."
+    update_current_account:
+      success: "Account successfully switched"
+    reset_account:
+      success: "Account reset successfully"
+      fail: "Error resetting account"
+    switch_account:
+      switch_account: "Switch account"
+      current_account: "Current"
+  transactions:
+    due_date_form:
+      title: "Payment date"
+      change_due_date: "Do you want to update the date to today?"
+    new:
+      new_transaction: "New transaction"
+      title: "New transaction"
+    index:
+      empty_state_title: "Your transaction list is empty."
+      empty_state_description: "Click below to add your first transaction."
+    create:
+      success: "Transaction created successfully"
+    update:
+      success: "Transaction updated successfully"
+    destroy:
+      success: "Transaction deleted successfully"
+    toggle:
+      success: "Transaction updated successfully"
+      error: "Error updating transaction"
+    details:
+      title: "Transaction details"
+    filter:
+      week: "This week"
+      today: "Today"
+      yesterday: "Yesterday"
+      paid: "Paid"
+      due_today: "Due today"
+      delayed: "Delayed"
+      revenue: "All to receive"
+      expenses: "All to pay"
+      clean: "Clean"
+      month: "This month"
+      range: "Select the date"
+    totalizer:
+      total: "Total"
+      revenue_paid: "Received"
+      revenue_unpaid: "To Receive"
+      expense_paid: "Paid"
+      expense_unpaid: "To Pay"
+      transfer_paid: "Transferred"
+      transfer_unpaid: "To Transfer"
+    outcome:
+      outcome: "Expected result for the month"
+      title_about_analytics: "Expected result in the month"
+      description_about_analytics: "Here you can see the forecasted balance at the end of the month after all income and expenses."
+    revenues:
+      revenues: "Revenues"
+      paid_revenues: "Received"
+      prev_revenues: "Expected"
+      lack: "Shortage"
+    expenses:
+      expenses: "Expenses"
+      paid_expenses: "Paid"
+      prev_expenses: "Expected"
+      lack: "Shortage"
+    panel_action:
+      delete: "Delete"
+      options: "Options..."
+      move_to: "Move to..."
+      toggle_paid: "Mark as paid"
+    total_sum_transactions:
+      select_transaction: "Selected transaction"
+      select_transactions: "Selected transactions"
+    chart:
+      outcome: "Result"
+    duplicate:
+      success: "Transaction duplicated successfully"
+    move_to:
+      title: "Move to"
+    balance:
+      new_bank_account: "Add account"
+      title_about_current_balance: "Current Balance"
+      description_about_current_balance: "Here you can see the balance that is the result of all the movements you made in the system added to the initial balance."
+      title_about_month_preview: "Month Preview"
+      description_about_month_preview: "Here you can see the forecast of your account balance for the end of the month you are viewing, the sum is the current balance plus revenues, expenses and transfers that exist in the month."
+    goto:
+      goto: "View my transaction in %{month}"
+    goto_bank_account:
+      goto_bank_account: "View my transaction in %{name}"
+    goto_moved_bank_account:
+      goto_bank_account: "View my transaction in %{name}"
+    installments_config:
+      title: "Configure installments"
+    setup_installments:
+      title: "Configure installment"
+    setup_recurrence:
+      title: "Configure recurrence"
+    destroy_dialog:
+      title: "Deletion of installment or recurring item"
+      how_do_you_prefer_delete_it: "This transaction is part of an installment or recurrence. <strong>What do you want to delete?</strong>"
+      only_this_installment: "Only this installment"
+      this_and_next_installments: "This and next installments"
+      prev_and_next_installments: "Previous and next installments"
+      this_and_prev_installments: "This and previous installments"
+    tabs:
+      next_month: "Next month"
+      prev_month: "Previous month"
+      current_month: "Back to current month"
+      ungroup_expenses: "Ungroup expenses"
+      group_expenses: "Group expenses"
+    transaction:
+      paid: Paid
+      not_paid: Not paid
+      detailed_paid: "Paid: %{value}"
+      detailed_amount: "Detailed amount"
+    balance_option:
+      bank_account_default: "Main bank account"
+    update_dialog:
+      title: "Change of installment or recurring item"
+      how_do_you_prefer_delete_it: "This transaction is part of an installment or recurrence. What do you want to do?"
+      only_this_installment: "Only this installment"
+      this_and_next_installments: "This and next installments"
+      prev_and_next_installments: "Previous and next installments"
+      this_and_prev_installments: "This and previous installments"
+    goto_transaction_type:
+      goto: "Go to %{name}"
+    edit:
+      title: "Edit transaction"
+    show:
+      title: "Open transaction"
+    edit_amount_details:
+      title: "Edit amount details"
+    amount_details_form:
+      new_item: "Add item"
+      save: "Save division"
+      amount_mismatch: "The sum of the parts does not correspond to the total amount of the transaction."
+      update_the_transaction_amount: "Update the transaction amount to <strong>%{value}</strong>?"
+    amount_details_totalizer:
+      total_item_amount: "Total item amount"
+      total_sum_of_division: "Sum of division"
+      remaining_sum_amount: "Remaining sum amount"
+    amount_details_footer:
+      remove_all_divisions: "Remove all division"
+    form:
+      this_is_an_item_belonging_to_a_parent_transaction: "This is an item belonging to a parent transaction"
+      go_to_parent_transaction: "%{name} - %{amount}"
+      go_to_detailed_transaction: "Go to detailed transaction"
+      amount_cannot_be_changed_because_it_has_invoices: "Amount cannot be changed because it has an invoice. Change the invoice to update this transaction"
+    calculator:
+      transfer: "Transfer"
+      error: "Error transferring"
+      success: "Transferred"
+    reindex:
+      success: "Transactions reindexed successfully"
+      fail: "Error reindexing transactions"
+    transaction_actions:
+      invoice: "#: %{number}, issued at: %{date}"
+    static_totalizer:
+      pin_totalizer: "Pin totalizer"
+      unpin_totalizer: "Unpin totalizer"
+    filters:
+      payment_status: "Payment Status"
+      cost_center: "Cost Center"
+      category: "Category"
+      date: "Date"
+      transaction_filter_options: "Filters"
+      contact: "Contact"
+      value: "Value"
+  home:
+    index:
+      dashboard: "Dashboard"
+      title: "Home page"
+      expected: "Expected"
+      accomplished: "Accomplished"
+      results: "Results"
+      dre: "Income Statement"
+      voucher_space: "Voucher space"
+      expected_and_accomplished: "Expected / accomplished this month"
+      subtitle: "This is the summary of the current month"
+      bank_accounts: "Bank accounts"
+      bank_accounts_description: "Switch between bank accounts"
+      storage_size: "File storage"
+      storage_size_description: "Storage consumption status"
+      delayed_payments_title: "Pending payments"
+      delayed_payments_description: "Payments that are delayed"
+      last_day_payments_title: "Payments for today"
+      last_day_payments_description: "Payments with due date for today"
+      all_accounts: "All accounts"
+      view_more: "View more"
+      result_preview: "Expected outcome"
+      result_preview_subtitle: "%{month} - %{bank_account}"
+    transactions_audits_modal:
+      title: "Latest updates on transactions"
+    transactions_audits_form:
+      start_date: "Starting date"
+      end_date: "Ending date"
+      users: "Users"
+      audit_type: "Update types"
+      apply_filters: "Apply filters"
+    transactions_audits:
+      title: "Latest updates on transactions"
+      no_data: "No data (transaction already deleted)"
+    last_transactions_audits:
+      title: "Latest updates on transactions"
+      title_about_last_transactions_audits: "Last registered transactions"
+      description_about_last_transactions_audits: "Here, you can see the last movements you registered in Procfy."
+      no_data: "No data (transaction already deleted)"
+
+    home_dre:
+      title: "Income statement"
+      subtitle: "%{month} - %{bank_account}"
+    comparative:
+      title: "Comparative"
+      subtitle: "%{month} - %{bank_account}"
+      title_about_comparative: "Comparison with the previous month"
+      description_about_comparative: "Here you can see how your expenses and revenues have increased or decreased compared to the previous month."
+    expected_accomplished:
+      title: "Expected / accomplished this month"
+      title_about_expected/accomplished: "Expected/Accomplished"
+      description_about_expected/accomplished: "Here you can see how much you have already paid and received this month, and how much remains to be paid and received."
+    cash_flow:
+      title: "Cash flow (last 6 months)"
+      title_about_cash_flow: "Cash Flow History"
+      description_about_cash_flow: "Here you can track the evolution of your revenue, expenses, and balance over the past six months."
+    delayed_payments:
+      no_delayed_payments: "There are no delayed appointments."
+      delayed_payments_title: "Delayed appointments"
+      delayed_payments_description: "You have %{count} appointment(s) delayed"
+      title_about_delayed_payments: "Delayed appointments"
+      description_about_delayed_payments: "Here you can view all transactions with due dates prior to today, that is, with overdue payments."
+    without_category:
+      without_category_transactions: "Uncategorized transactions"
+    dre:
+      title_about_dre: "Income Statement"
+      description_about_dre: "Here you can view a brief overview of the current period's (this month's) financial results."
+      gross_income: "Gross Income"
+      taxes: "Taxes"
+      gross_profit: "Gross Profit"
+      total_variable_expenses: "Total Variable Expenses"
+      operating_profit: "Operating Profit"
+      total_fixed_expenses: "Total Fixed Expenses"
+      personnel_expenses: "Personnel Expenses"
+      net_profit: "Net Profit"
+    receipts:
+      total: "Total"
+      available: "Available"
+    chart:
+      outcome: "Outcome"
+    storage:
+      total: "Total"
+      consumed: "Consumed"
+      total_and_consumed: 'Total: %{total} / Consumed: %{consumed}'
+      storage_size: "File Storage"
+      storage_size_description: "Status of storage consumption"
+      title_about_storage: "Space for files and receipts"
+      description_about_storage: "Here, you can see the total space used and available for the proof files of your transactions."
+    due_today_payments:
+      no_last_day_payments: "No scheduled payments for today"
+      last_day_payments_title: "Payments due today"
+      last_day_payments_description: "You have %{count} payment(s) due today"
+      title_about_due_today_payments: "Payments due today"
+      description_about_due_today_payments: "Here you can view all transactions with the due date set for today."
+    calendar:
+      birthday: "Birthdays"
+      title_about_calendar: "Calendar"
+      description_about_calendar: "Here you can see which days of the month have scheduled transactions, as well as check for overdue transactions. Click on any day to view the scheduled transactions."
+    calendar_transactions:
+      transactions: "Transactions"
+      value: "Value"
+  reports:
+    index:
+      title: "Reports"
+      date_range_error: "The research period cannot be longer than one year in <b> Statement </b> and <b> Expenses/Revenue </b> reports."
+    in_description_graph:
+      title: "Receipts by description"
+      subtitle: "Description"
+      description: "Value"
+      recipe: "(Receipt)"
+    in_per_category_graph:
+      title: "Receipts per category"
+      subtitle: "Category"
+      description: "Value"
+      recipe: "(Receipt)"
+      in_per_category_not_informed: "Category not informed"
+    in_per_cost_center_graph:
+      title: "Receipts per cost center"
+      subtitle: "Cost center"
+      description: "Value"
+      recipe: "(Receipt)"
+      in_per_cost_center_not_informed: "Cost center not informed"
+    in_per_day_graph:
+      title: "Receipts per day"
+      subtitle: "Day"
+      description: "Value"
+      recipe: "(Receipt)"
+    in_per_type_graph:
+      title: "Receipts per type"
+      subtitle: "Type"
+      description: "Value"
+      recipe: "(Receipt)"
+    out_description_graph:
+      title: "Expenses by description"
+      subtitle: "Description"
+      description: "Value"
+      recipe: "(Expense)"
+    out_per_category_graph:
+      title: "Expenses per category"
+      subtitle: "Category"
+      description: "Value"
+      recipe: "(Expense)"
+      out_per_category_not_informed: "Category not informed"
+    out_per_cost_center_graph:
+      title: "Expenses per cost center"
+      subtitle: "Cost center"
+      description: "Value"
+      recipe: "(Expense)"
+      out_per_cost_center_not_informed: "Cost center not informed"
+    out_per_day_graph:
+      title: "Expenses per day"
+      subtitle: "Day"
+      description: "Value"
+      recipe: "(Expense)"
+    out_per_type_graph:
+      title: "Expenses per type"
+      subtitle: "Type"
+      description: "Value"
+      recipe: "(Expense)"
+    paid_to:
+      title: "Paid to..."
+      subtitle: "Beneficiary"
+      description: "Amount"
+      recipe: "(Expense)"
+    paid_to_details:
+      title: "Paid to"
+      subtitle: "Beneficiary"
+      description: "Amount"
+      recipe: "(Expense)"
+    receipted_from:
+      title: "Received from..."
+      subtitle: "Creditor"
+      description: "Amount"
+      recipe: "(Receipt)"
+    receipted_from_details:
+      title: "Received from"
+      subtitle: "Creditor"
+      description: "Amount"
+      recipe: "(Receipt)"
+    dre:
+      title: "Income Statement - %{from} to %{to}"
+      gross_income: "Gross Income"
+      taxes: "Taxes"
+      total_variable_expenses: "Variable Expenses"
+      operating_profit: "Operating Profit"
+      total_fixed_expenses: "Fixed Expenses"
+      payroll: "Payroll"
+      net_profit: "Net Profit"
+      gross_profit: "Gross Profit"
+      no_bank_accounts: "No Bank Accounts"
+      no_cost_centers: "No Cost Centers"
+    financial_history:
+      title: "History"
+      subtitle: "Date"
+      description: "Amount"
+      recipe: ""
+    extract:
+      title: "Statement"
+      value: "Value"
+      balance: "Balance"
+      previous_balance: "Previous Balance"
+      total_revenues: "Total Revenues in the Period"
+      total_expenses: "Total Expenses in the Period"
+      period_balance: "Period Balance"
+      final_balance: "Final Balance"
+      transfer_in: "Source Account"
+    tags:
+      title_expenses: "Expenses by tags"
+      title_revenues: "Revenues by tags"
+      value: "Value"
+      total: "Total"
+      empty_state_tags_message: "Check the provided filters and try again"
+      transfer_in: "Source account"
+      tags_placeholder: "Add one or more tags..."
+      title: "Tags"
+
+    history_per_contacts_per_transaction:
+      without_name: "Without description"
+
+    comparative:
+      title: "Cash Flow"
+      total: "Total"
+      total_expenses: "Total Expenses"
+      total_revenues: "Total Revenues"
+      total_revenues_period: "Total Revenues in Period"
+      total_expenses_period: "Total Expenses in Period"
+      all_transfers_period: "Total Transfers in Period"
+      total_fixed_expenses: "Total Fixed Expenses"
+      total_variable_expenses: "Total Variable Expenses"
+      total_people: "Total People"
+      total_taxes: "Total Taxes"
+      total_transfers_out: "Total Transfers Out"
+      total_transfers_in: "Total Transfers In"
+      balance_period: "Balance in Period"
+      previous_balance: "Previous Balance"
+      final_balance: "Final Balance"
+      transfers_in: "Transfers In"
+      transfers_out: "Transfers Out"
+      revenues: "Revenues"
+      fixed_expenses: "Fixed Expenses"
+      variable_expenses: "Variable Expenses"
+      people: "Payroll"
+      taxes: "Taxes"
+      date: "Date"
+      description: "Description"
+      category: "Category"
+      value: "Value"
+      without_category: "Uncategorized"
+      origin: "Origin"
+      destiny: "Destiny"
+      received_from: "Received From"
+      without_contact: "Not Informed"
+      paid_to: "Paid To"
+      type: "Type"
+    header_reports:
+
+    filter:
+      starting_date: "Starting date"
+      ending_date: "Ending date"
+      select_bank_account: "Bank accounts"
+      select_cost_center: "Cost centers"
+      include: "Include entries"
+      paid: "Paid"
+      not_paid: "Not paid"
+      apply: "Apply"
+      clear: "Clear"
+      due_date: "Payment"
+      competency: "Competency"
+      date_type: "Show by data from"
+      tags: "Tags"
+      tags_placeholder: "Add one or more tags"
+      payment_methods: "Payment methods"
+      select_category: "Categories"
+    side_menu:
+      receipted_from: "Received from..."
+      contact: "Paid to..."
+      tags: "By Tags"
+      title: "Cash Flow"
+      title_about_reports: "Select reports"
+      description_about_reports: "Here you can select the type of report you want to see alongside."
+      dre: "Results"
+      financial_history: "History"
+      extract: "Statement"
+      comparative: "Expenses/Revenue"
+      expenses: "Expenses"
+      income: "Revenue"
+      description: "By Description"
+      period: "By Day"
+      transaction_type: "By Type"
+      history_expenses_per_type: "Histórico"
+      history_per_category: "Histórico"
+      day: "By Day"
+      categories_per_transaction_type: 'Transactions by category'
+      transactions_per_transaction_type_and_category: 'Categories/Type'
+      transactions_per_cost_center: 'Transaction by cost center'
+      transactions_per_category: 'Transactions by category'
+      transactions_per_contact: 'Transactions by contact'
+      category: "By Category"
+      cost_center: "By Cost Center"
+      payment_method: "By Payment Method"
+    totalizer:
+      total: "Total"
+    cost_center:
+      nil: "No cost center provided"
+      title: "%{type} by cost center - %{from} to %{to}"
+      revenue: "Revenue"
+      expense: "Expenses"
+    category:
+      nil: "No category provided"
+      title: "%{type} by category - %{from} to %{to}"
+      revenue: "Revenue"
+      expense: "Expenses"
+    contact:
+      nil: "No contact provided"
+      title: "%{type} by contact - %{from} to %{to}"
+      revenue: "Revenue"
+      expense: "Expenses"
+    description:
+      nil: "No description provided"
+      title: "%{type} by description - %{from} to %{to}"
+      revenue: "Revenue"
+      expense: "Expenses"
+    period:
+      title: "%{type} by period - %{from} to %{to}"
+      revenue: "Revenue"
+      expense: "Expenses"
+      day: "Day"
+      month: "Month"
+    transaction_type:
+      title: "Expenses by type - %{from} to %{to}"
+    transactions_per_category:
+      title: "%{type} by category"
+    transactions_per_tag:
+      title: "%{type} by tag"
+
+    transactions_per_cost_center:
+      title: "%{type} by cost center"
+    transactions_per_contact:
+      title: "%{type} by contact"
+    transactions_per_payment_method:
+      title: "%{type} by payment method"
+    categories_per_transaction_type:
+      title: "Expenses by type"
+    history_expenses_per_type:
+      title: "History per %{type}"
+      revenue: "Revenue"
+      expense: "Expenses"
+    history_per_category:
+      title: "History per %{type}"
+      revenue: "Revenues"
+      expense: "Expenses"
+    header:
+      issued_by: "Issued by:"
+      issued_at: "Issued at:"
+      bank_accounts: "Accounts:"
+      cost_centers: "Cost centers:"
+      categories: "Categories:"
+      payment_methods: "Payment methods:"
+      tags: "Tags:"
+    empty_state_title: "No results found"
+    empty_state_message: "Check the filters provided and try again."
+    select_tags_to_build_the_report: "Select at least one tag to render the report"
+    payment_method:
+      title: "Payment method"
+    print_config:
+      title: "Print configuration"
+      select_print_config: "Select the options you want to display in the report print"
+      show_header: "Header"
+      show_title: "Title"
+      show_created_by: "Created by"
+      show_cost_centers: "Cost centers"
+      show_categories: "Categories"
+      show_payment_methods: "Payment methods"
+      show_tags: "Tags"
+      show_period: "Period"
+      show_graph: "Graph"
+      show_bank_account: "Bank account"
+      show_logo: "Logo"
+
+  accounts:
+    edit:
+      title: "Account settings"
+    new:
+      title: "New account"
+    index:
+      title: "My accounts"
+    create:
+      success: "Account created successfully"
+    update:
+      success: "Account updated successfully"
+      error: "Error updating account, %{errors}"
+    destroy:
+      success: "Account deleted successfully"
+    account:
+      manage_my_subscription: "Manage subscription"
+    confirm_destroy:
+      title: "Delete account"
+      account_delete_title: "Are you sure you want to delete this account?"
+      account_delete_description: "All account data will be deleted, this operation cannot be undone and you will not be able to access this account again."
+      confirm_delete: "to confirm delete, type '<strong>DELETE</strong>' below"
+      confirm_delete_placeholder: "type DELETE here in uppercase"
+      confirm_delete_button: "Delete"
+    reset:
+      title: "Reset account"
+      success: "Account resetted successfully"
+      confirm: "All account data will be deleted, are you sure you want to continue?"
+    reset_account:
+      account_reset_title: "Reset account data"
+      account_reset_description: "This operation is recommended for those who tested our platform with fake data and now wish to start using it from scratch or had some problems with their imports and would like to restart the whole process again."
+      account_reset_description_2: "What will be reset? <strong>Transactions</strong>, <strong>Contacts</strong>, <strong>Categories</strong>, <strong>Cost Centers</strong>, <strong>Bank Accounts</strong> and <strong>Imports</strong>."
+      fail: "Error performing reset"
+    preferences_form:
+      invoices: "Invoices"
+    nfse_config_form:
+      rps: "RPS"
+      configuracao_regime_tributario: "Configurações do regime tributário da empresa"
+      a1_cert_file_config: "A1 certificate config"
+      configuracao_regime_tributario_details: "We will use these informations to communicate with the provider then submit your tax invoice"
+      a1_cert_file_config_details: "We will use this certificate to authenticate your company with the provider, if you provider do not use certificate you can fill the cretentials below"
+      credenciais_prefeitura: "Provider credentials"
+      credenciais_prefeitura_details: ""
+      company_info: "Company data"
+      company_info_details: "Fill the informations below"
+      rps_config: "RPS parameters"
+      enable_nfse: "Enable NFS-e"
+      default_service_parameters: "Default service parameters"
+      default_service_parameters_details: ""
+    company_form:
+      cnaes: "Company activities"
+    cnaes:
+      title: "Company activities"
+      add_secondary_cnae: "Add secondary activity"
+    update_nfse_config:
+      success: "NFS-e configured successfully"
+    edit_nfse_config:
+      title: "NFS-e configuration"
+    update_invoice_config:
+      success: "Invoice configurations updated successfully"
+    edit_invoice_config:
+      title: "Edit invoice configurations"
+    update_logo:
+      success: "Logo updated successfully"
+    edit_logo:
+      title: "Edit logo"
+
+  dre:
+    title:
+      statement: "Income statement"
+  devise:
+    registrations:
+      new:
+        find_your_best_plan: "Find the best plan for you or your company"
+  checkout_portal_sessions:
+    success:
+      success: "Subscription successfully made"
+    new:
+      title: "Select a billing option"
+    form:
+      billing_options: "Billing options"
+      pricing_plans: "Price plans"
+      month_plans: "Monthly plans"
+      year_plans: "Annual plans"
+      subscribe: "Subscribe"
+      selected_account: "Selected company"
+      renew: "Renew subscription"
+  account_invitations_mailer:
+    invite:
+      subject: "%{inviter} invited you to Procfy"
+      header_html: "<strong>%{inviter}</strong> invited you to access Procfy and collaborate with the <strong>%{account}</strong> team."
+      description_html: "You can accept the invitation by clicking the button below."
+      accept_or_decline: "accept or decline"
+      view_invitation: "View invitation"
+      hi_there: "Hello %{name}!"
+      ignore: "If you don't want to accept this invitation, please ignore this email.<br />Your account will not be created until you access the link below and register your account."
+
+  account_invitation:
+    create:
+      success: "Invitation sent successfully"
+  account_invitations:
+    show:
+      invited_you_to_join_html: "<strong>%{inviter}</strong> invited you to join the account <strong>%{account}</strong>."
+      accept: "Accept"
+      decline: "Decline"
+      join: "Join %{account}"
+    accept:
+      success: "Invitation accepted successfully"
+    update:
+      success: "Invitation updated successfully"
+    not_found: "Invitation not found"
+    authenticate: "You need to be logged in to accept the invitation"
+    register: "You need to register your user to accept the invitation"
+    new:
+      title: "New guest"
+    edit:
+      title: "Edit guest"
+    index:
+      new: "New invitation"
+      there_are_not_pending_invites: "There are no pending invitations."
+      title_about_pending_invitations: "Pending Invitations"
+      description_about_pending_invitations: "Here you can see accounts that have been invited to your business but haven't accepted the invitation yet."
+    create:
+      success: "Invitation sent successfully"
+    destroy:
+      success: "Invitation deleted successfully"
+    form:
+      invite: "Send invitation"
+    reject:
+      success: "Invitation rejected successfully"
+  layouts:
+    mailer:
+      copyright_html: "Copyright © Procfy %{year}, all rights reserved."
+      address_line1: "Av Dedi Barrichello Montagner, 250 - Ground floor - Center"
+      address_line2: "85660-000 - Dois Vizinhos - Paraná - Brazil"
+      mailing_address: "Our email address is:"
+      view_in_browser: "View this in your browser"
+      unsubscribe: "Unsubscribe from this list"
+      preferences: "Update subscription preferences"
+  account_users:
+    update:
+      success: "User updated successfully"
+    destroy:
+      success: "User deleted successfully"
+    update_permissions:
+      success: "Permissions updated successfully"
+    edit_permissions:
+      title: "Edit %{name}'s permissions"
+    edit:
+      title: "User details"
+    index:
+      title_about_account_users: "Account Users"
+      description_about_account_users: "Here you can view, update permissions and delete accounts that are part of your business."
+  delayed: "Delayed"
+  due_today: "Due today"
+  on_time: "On time"
+  paid: "Paid"
+  not_paid: "Not paid"
+  attachments:
+    destroy:
+      success: "Attachment deleted successfully"
+    index:
+      title: "Attachments and proofs"
+    create:
+      success: "Attachment(s) created successfully"
+  notifications:
+    destroy:
+      success: "Notification deleted successfully"
+    mark_as_read:
+      success: "Notification marked as read successfully"
+    mark_as_unread:
+      success: "Notification marked as unread successfully"
+    index:
+      delayed_payment_title: "You have <strong>%{count} overdue account<strong>, this account may generate interest and jeopardize its closure."
+      delayed_payments_title: "You have <strong>%{count} overdue bills</strong>, these expenses can generate interest and jeopardize your closing."
+      without_category_title: "You have <strong>%{count} movement</strong> that has not yet been categorized."
+      without_categories_title: "You have <strong>%{count} moves</strong> that haven't been categorized yet."
+      empty_state: "You have no new notifications"
+      my_notifications: "My notifications"
+      dismiss_all: "Mark all as read"
+      alert: "Alerts"
+      notifications: "Notifications"
+    dismiss_all:
+      success: "Notifications updated successfully"
+  hide_amount:
+    eye:
+      hide_values: "Hide Values"
+      show_values: "Show Values"
+
+  delayed_transaction_notification:
+    title: "Transaction with %{days} day(s) delay"
+  open_sidenav: "Open navigation menu"
+  hide_values: "Hide Values"
+  show_values: "Show Values"
+  invisible_captcha:
+    sentence_for_humans: "If you are human, ignore this field"
+    timestamp_error_message: "Sorry, it was too quick! Please resend again"
+  static:
+    privacy:
+      title: "Privacy Policy"
+    terms:
+      title: "Terms of Service"
+  errors:
+    not_found:
+      title: "Page not found"
+      description: "Please check if the URL in the address bar is correct. If the problem persists, please contact us."
+    internal_error:
+      title: "Internal Server Error"
+      description: "Something unexpected happened, please try again later. If the problem persists, please contact us."
+    unprocessable:
+      title: "The change you wanted was rejected."
+      description: "Maybe you tried to update something you don't have permission to do."
+    access_forbidden:
+      title: "Access denied!"
+      description: "You don't have permission to access this system resource, please contact your account administrator to configure your permissions."
+    messages:
+      unsupported_file: "Unsupported file"
+      unexpected_error: "Unexpected error"
+    permission_denied:
+      title: "Permission denied"
+      message: "Permission denied, you do not have access to this resource"
+    invalid_token:
+      message: "Invalid token, certify that you are using the correct token"
+      title: "Invalid token"
+    invalid_enum:
+      message: "Invalid enum"
+      title: "Invalid enum"
+    expired_token:
+      message: "Token expired, please create a new token"
+      title: "Expired token"
+    blank_token:
+      message: "Blank token, please check your request"
+      title: "Blank token"
+  addresses:
+    form:
+      select_state: "Select a state"
+      select_city: "Select a city"
+      select_country: "Select a country"
+
+  users:
+    create_invite:
+      success: "User successfully invited"
+    update_invite:
+      success: "Invitation successfully updated"
+    form:
+      file: "Select the file you want to import"
+    new_bulk_invitation:
+      title: "New bulk invitation"
+    form_bulk_invitation:
+      file: "Select the import file"
+    index:
+      new: "New invitation"
+      new_bulk_invitation: "New bulk invitation"
+    new:
+      title: "New invitation"
+    edit:
+      title: "Edit invited user"
+    bulk_invitation:
+      success: "Bulk invitation successfully sent"
+    destroy:
+      success: "Invitation successfully deleted"
+    user:
+      impersonate: "Log in as %{name}"
+      resend_invitation: "Resend invitation"
+    resend_invitation:
+      success: "Invitation successfully resent"
+
+  components:
+    transactions:
+      expenses:
+        paid_expenses: "Paid"
+        prev_expenses: "Projected"
+        title: "Expenses"
+      revenues:
+        title: "Revenues"
+        paid: "Received"
+        predicted: "Projected"
+      outcome:
+        title: "Projected outcome for the month"
+    document_editor_component:
+
+      input_placeholder: "Fill in later"
+  multisearches:
+    index:
+      title: "General search"
+    empty_state:
+      empty_search_title: "No result found"
+      empty_state_title: "Empty state"
+      empty_state_message: "Begin your search by entering the initials of the keywords you are looking for. The more specific your search, the better our result will be."
+      empty_search_message: "Check the keywords and try again"
+    transaction:
+      transaction_type: "Type"
+  statements:
+    new:
+      title: "New conciliation (import OFX)"
+    edit:
+      title: "Reconciling"
+      are_you_sure_confirm?: "All %{count} CONFIRMED transactions will be reconciled. Do you wish to proceed?"
+    reconciling:
+      title: "Reconciling"
+    create:
+      success: "Statement saved successfully"
+    statement_items:
+      confirm:
+        success: "Transaction confirmed successfully"
+      ignore:
+        success: "Transaction ignored successfully"
+      statement_item:
+        search_other: "Find other transactions"
+        original: "OFX: %{value}"
+        transaction: "Transaction"
+        new_transaction: "New transaction"
+        statement_item_title: "Statement item"
+        suggested_transaction_title: "Suggested transaction"
+        missing_transaction_type: "Missing inform type"
+      form:
+        transaction: "Transaction"
+        new_transaction_title: "New transaction"
+      search:
+        title: "Search transaction"
+      update:
+        success: "Transaction updated successfully"
+      find_transaction:
+        title: "Find transaction"
+        current: "Transaction suggested previously"
+      transaction:
+        shared:
+          current: "Current"
+      select_transaction:
+        success: "Statement item updated successfully"
+      bulk_confirm:
+        success: "All selected transactions were confirmed"
+      bulk_ignore:
+        success: "All selected transactions were ignored"
+    confirmed_count:
+      confirmed_items: "Total confirmed"
+    ignored_count:
+      ignored_items: "Total ignored"
+    pending_count:
+      pending_items: "Total pending"
+    destroy:
+      success: "Reconciliation removed successfully"
+    finish:
+      success: "Reconciliation performed successfully"
+    reconciled_count:
+      title: "Total reconciled"
+    unreconciled_count:
+      title: "Total unreconciled"
+  partially_paid: "Partially paid"
+  payment_plans:
+    new:
+      title: "Payment plan"
+    create:
+      success: "Installment created successfully"
+    edit:
+      title: "Edit installments"
+    update:
+      success: "Payment plan updated successfully!"
+  category_presets:
+    index:
+      title: "Import category presets"
+    import:
+      success: "Categories imported successfully"
+    filter_form:
+      sector_activity: "Select sector activity of your company"
+  referral_codes:
+    destroy:
+      success: "Referral code removed successfully"
+    show:
+      description: "You have been invited by <strong>%{company}</strong> to use our financial management system."
+      description_with_discount: "You have been referred by <strong>%{company}</strong> to explore, try, and use our tool, and even receive a lifelong discount of <strong>%{discount}%</strong> on your subscription."
+      welcome: "Welcome to Procfy"
+      call_to_action: "I want to explore the tool and try it out for free for %{days} days."
+      call_to_action2: "I want to explore the tool."
+
+  acts_as_taggable_on:
+    tags:
+      edit:
+        title: "Edit tag"
+  contract_templates:
+    form:
+      name: "Name"
+      description: "Description"
+      contract_models: "Contract models"
+      insert_variable: "Type '@' to insert a variable in your contract"
+      document_body: "Document body"
+      show_header: "Show header"
+      submit_button: "Save model"
+      reset_default_button: "Reset to default"
+    update:
+      success: "Contract updated with successfully"
+    create:
+      success: "Contract created successfully"
+    variable:
+      title: "System variables"
+      variable: "Variable"
+      result: "Converts to"
+
+
+    suggestion_variables: [
+      "CURRENT_DATE",
+      "MY_NAME",
+      "MY_COMPANY",
+      "MY_COMPANY_DOCUMENT",
+      "MY_COMPANY_STATE",
+      "MY_COMPANY_CITY",
+      "MY_COMPANY_ADDRESS",
+      "MY_COMPANY_ZIPCODE",
+      "CLIENT_NAME",
+      "CLIENT_DOCUMENT",
+      "CLIENT_PHONE",
+      "CLIENT_EMAIL",
+      "CLIENT_DESCRIPTION",
+      "CLIENT_FULL_ADDRESS",
+      "CLIENT_SIMPLE_ADDRESS",
+      "CLIENT_ADDRESS_COMPLEMENT",
+      "CLIENT_ADDRESS_NEIGHBORHOOD",
+      "CLIENT_ADDRESS_ZIPCODE",
+      "CLIENT_ADDRESS_STATE",
+      "CLIENT_ADDRESS_CITY",
+    ]
+  contracts:
+    new: "Generate contract"
+    header:
+      save_on_contact: "Save on contact"
+      title: "Create contract for %{contact_name}"
+  offers:
+    services:
+      create:
+        success: "Service created successfully"
+      update:
+        success: "Service updated successfully"
+      destroy:
+        success: "Service deleted successfully"
+      edit:
+        title: "Editing service"
+      new:
+        title: "New service"
+
+  invoices:
+    create:
+      success: "Invoice created successfully"
+    update:
+      success: "Invoice updated successfully"
+    destroy:
+      success: "Invoice removed successfully"
+    new:
+      title: "New invoice"
+    edit:
+      title: "Editing invoice"
+    index:
+      new_invoice: "Add first invoice"
+      no_invoices: "No invoice"
+      no_invoice_message: "Register your first invoice by clicking the button below."
+    form:
+      related_transaction: "Related transaction"
+      cancel_confirmation: ""
+      pay: ""
+      sync_with_transaction_description: ""
+      cancel: "Cancel invoice"
+      attachments: "Attachments"
+      no_related_transaction: "No related transactions"
+      attachments_description: ""
+      related_transaction_description: ""
+      generate_invoice_confirmation: "An automatic transaction will be generated from this invoice. Do you wish to proceed?"
+      no_related_transaction_description: "The transaction will be generated only when the invoice is generated."
+      reopen: "Reopen invoice"
+      mark_as_paid_confirmation: "Are you sure?"
+      reopen_confirmation: "Are you sure?"
+      mark_as_paid: "Mark as paid"
+    duplicate:
+      success: "Invoice duplicated successfully"
+  invoice_templates:
+    preview:
+      invoice_number: "Number: %{number}"
+      issue_date: "Issued at <strong>%{date}</strong>"
+      due_date: "Due date <strong>%{date}</strong>"
+      recipient: "Invoice to"
+      details: "Details"
+      tax_info: "Service tax (10%)"
+      discount_info: "10% off on the first project."
+      subtotal: "Subtotal"
+      total_before_tax: "Total before tax"
+      total: "Total"
+      quantity: "Qty."
+      unit_price: "Unit price"
+      amount: "Amount"
+      total_price: "Total price"
+      payment_info: "Payment information"
+      payment_info_example: "Payment must be made within 15 days via bank transfer.<br>- transfer information"
+      footer: "Invoice created by Procfy"
+    create:
+      success: "Invoice template created successfully"
+    update:
+      success: "Invoice template updated successfully"
+    destroy:
+      success: "Invoice template removed successfully"
+  paid_overdue: "Paid late"
+  api_tokens:
+    form:
+      permissions: "Permissions"
+    create:
+      success: "Token created successfully"
+      error: "Error creating token"
+      title: "New Api Token"
+    api_token:
+      no_description: "Without description"
+      active: "Active"
+      expired: "Expired"
+      copy: "Copy"
+      never: "Never"
+    permissions:
+      transaction: "Transaction"
+      bank_account: "Bank account"
+      contact: "Contact"
+      category: "Category"
+      cost_center: "Cost center"
+      user: "User"
+      account: "Account"
+      company: "Company"
+    update:
+      success: "Token updated successfully"
+      error: "Error updating token"
+    destroy:
+      success: "Success on delete token"
+    new:
+      title: "New Api Token"
+    edit:
+      title: "Edit Api Token"
+  expires_at_options:
+    never: "Never"
+    one_day: "One day"
+    one_week: "One week"
+    one_month: "One month"
+    six_months: "Six months"
+    one_year: "One year"
+  api:
+    errors:
+      record_null_violation:
+        title: "Null atribute error"
+      invalid_page:
+        title: "Pagination error"
+      record_invalid:
+        title: "Invalid record"
+      record_not_found:
+        title: "Record not found"
+        description: "It was not possible to find the %{model} with the id %{id}"
+      invalid_foreign_key:
+        description: ""
+  rps_config_details: "We use these informations to emit the service invoices"
+  services:
+    form:
+      codigo_tributacao_nacional_description: "Código de tributação nacional do ISSQN: Regra de formação - 6 dígitos numéricos sendo: 2 para Item (LC 116/2003), 2 para Subitem (LC 116/2003) e 2 para Desdobro Nacional."
+      codigo_tributacao_municipal_description: "Código de tributação municipal do ISSQN."
+      cnae_id_description: "Código CNAE (Classificação Nacional de Atividades Econômicas)."
+      tax_information_description: "Consulte os dados abaixo com seu contador, ou valide em uma nota fiscal emitida com este serviço no sistema de sua prefeitura ou do sistema nacional"
+      codigo_nbs_description: "Código NBS (Nomenclatura Brasileira de Serviços, Intangíveis e outras Operações que produzam Variações no Patrimônio) correspondente ao serviço prestado"
+    edit:
+      title: "Edit service"
+    update:
+      success: "Service updated successfully"
+    nfse_config_form:
+      tax_information_description: "Review the information below with your accountant, or confirm it on an invoice issued using this service with your local municipality"
+    destroy:
+      success: "Service removed successfully"
+    create:
+      success: "Service created successfully"
+  being_used: "This document is being used."
+  integration_stores:
+    new:
+      title: "New integration"
+    nuvem_fiscal:
+      update:
+        success: "Integration configured successfully!"
+      city:
+        select_city: "Select a city"
+  step: "Step %{step}"
+  elements:
+    filter:
+      button:
+        text: "Filter"
+      dropdown_component:
+        clean: "Clean"
+        done: "Done"
+        filters: "Filters"
+
+
+
+
+
+
+

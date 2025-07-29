@@ -1,0 +1,17 @@
+.dropdown{ data: { controller: 'dropdown' } }
+  .block
+    = button_tag type: :button, class: 'btn-circle', id: @options.fetch(:id, "dropdown_#{object_id}") , data: { action: "dropdown#toggle keyup@window->dropdown#hideWithKeyboard click@window->dropdown#hide" } do
+      = heroicon @options.fetch(:icon, 'ellipsis-vertical'), options: { class: 'btn-circle__icon' }
+
+  .dropdown__menu.hidden{
+    "data-dropdown-target": "menu",
+    "aria-labelledby": "menu-button",
+    "aria-orientation": "vertical",
+    role: "menu",
+    tabindex: "-1"}
+
+    - if groups.present?
+      - groups.each do |item|
+        = item
+
+    = content

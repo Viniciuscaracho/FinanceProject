@@ -1,0 +1,8 @@
+<% if content.present? %>
+  <%= link_to @url, class: "#{@active ? @options.fetch(:class_on_active, 'tabs__item tabs__item--active') : @options.fetch(:class_on_inactive, 'tabs__item')} #{@options.fetch(:class, '')}".strip, data: @options.fetch(:data, {}) do %>
+    <span><%= @name %></span>
+    <%= content %>
+  <% end %>
+<% else %>
+  <%= link_to @name, @url, class: "#{@active ? @options.fetch(:class_on_active, 'tabs__item tabs__item--active') : @options.fetch(:class_on_inactive, 'tabs__item')} #{@options.fetch(:class, '')}".strip, data: @options.fetch(:data, {}) %>
+<% end %>

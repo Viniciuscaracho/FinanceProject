@@ -1,0 +1,110 @@
+<div class="dropdown" data-controller="dropdown" data-dropdown-placement-value="left">
+  <%= button_tag type: :button, class: 'btn-circle', id: "edit_action", data: { dropdown_target: 'activator', action: "dropdown#toggle keyup@window->dropdown#hideWithKeyboard click@window->dropdown#hide" } do %>
+    <%= heroicon 'ellipsis-vertical', options: { class: 'btn-circle__icon' } %>
+  <% end %>
+
+  <div class="dropdown__menu hidden" data-dropdown-target="menu">
+    <% if Current.user.can?(:create, :receipts) %>
+      <div class="dropdown__group hidden sm:block">
+        <%= link_to new_receipt_path({ transaction: @transaction }), id: "receipt_#{dom_id(@transaction)}", data: { turbo: false }, class: 'dropdown__item' do %>
+          <%= heroicon 'document-text', options: { class: 'icon icon--primary' } %>
+          <span class="whitespace-nowrap">
+          <%= t('receipt.generate_receipt') %>
+        </span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="dropdown__group">
+      <%= link_to details_transaction_path(@transaction, @current_required_params), id: "details_#{dom_id(@transaction)}", data: { turbo_frame: :drawer }, class: 'dropdown__item' do %>
+        <%= heroicon 'pencil', options: { class: 'icon icon--primary' } %>
+        <span class="whitespace-nowrap">
+          <%= t('shared.details') %>
+        </span>
+      <% end %>
+
+      <% unless @transaction.transfer? %>
+        <%= link_to edit_amount_details_transaction_path(@transaction), id: "edit_amount_details_#{dom_id(@transaction)}", data: { turbo_frame: :modal }, class: 'dropdown__item' do %>
+          <%= heroicon 'bars-4', options: { class: 'icon icon--primary' } %>
+          <span class="whitespace-nowrap">
+            <%= t('transactions.edit_amount_details.title') %>
+          </span>
+        <% end %>
+      <% end %>
+
+      <% if Current.user.can?(:read, :files) %>
+        <%= link_to [@transaction, :attachments, @current_required_params], id: "attachments_#{dom_id(@transaction)}", data: { turbo_frame: :drawer }, class: 'dropdown__item' do %>
+          <%= heroicon 'paper-clip', options: { class: 'icon icon--primary' } %>
+          <span class="whitespace-nowrap">
+            <%= t('shared.attachments') %>
+          </span>
+        <% end %>
+      <% end %>
+
+      <% unless @transaction.transfer? %>
+        <%= link_to duplicate_transaction_path(@transaction), method: :patch, params: @current_required_params, id: "duplicate_#{dom_id(@transaction)}", class: 'dropdown__item' do %>
+          <%= heroicon 'document-duplicate', options: { class: 'icon icon--primary' } %>
+          <span>
+            <%= t('shared.duplicate') %>
+          </span>
+        <% end %>
+        <%= link_to move_to_transaction_path(@transaction), method: :get, params: @current_required_params, form: { data: { turbo_frame: :drawer } }, id: "move_to_#{dom_id(@transaction)}", class: 'dropdown__item' do %>
+          <%= heroicon 'arrows-right-left', options: { class: 'icon icon--primary' } %>
+          <span>
+            <%= t('shared.move_to') %>
+          </span>
+        <% end %>
+      <% end %>
+    </div>
+
+    <% unless @transaction.transfer? || @transaction.detailed? %>
+      <% if @transaction.on_cash? %>
+        <div class="dropdown__group">
+          <%= link_to new_payment_plan_path, method: :get, params: @current_required_params.merge({transaction_id: @transaction.id}), form: { data: { turbo_frame: :modal } }, id: "new_payment_plan_#{dom_id(@transaction)}", class: 'dropdown__item' do %>
+            <%= heroicon 'banknotes', options: { class: 'icon icon--primary' } %>
+            <span class="whitespace-nowrap">
+              <%= t('shared.setup_installments') %>
+            </span>
+          <% end %>
+          <%= link_to setup_recurrence_transaction_path(@transaction), method: :get, params: @current_required_params, form: { data: { turbo_frame: :drawer } }, id: "setup_recurrence_#{dom_id(@transaction)}", class: 'dropdown__item' do %>
+            <%= heroicon 'clock', options: { class: 'icon icon--primary' } %>
+            <span class="whitespace-nowrap">
+              <%= t('shared.setup_recurrence') %>
+            </span>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if @transaction.installment? %>
+        <div class="dropdown__group">
+          <%= link_to edit_payment_plan_path(@transaction.payment_plan), method: :get, params: @current_required_params, form: { data: { turbo_frame: :modal } }, id: "edit_#{dom_id(@transaction.payment_plan)}", class: 'dropdown__item' do %>
+            <%= heroicon 'banknotes', options: { class: 'icon icon--primary' } %>
+            <span class="whitespace-nowrap">
+                <%= t('shared.edit_installments') %>
+              </span>
+          <% end if @transaction.payment_plan.present? %>
+        </div>
+      <% end %>
+    <% end %>
+    <div class="dropdown__group">
+      <% if Current.user.can?(:destroy, @transaction) %>
+        <% if @transaction.on_cash? %>
+          <%= link_to @transaction, method: :delete, params: @current_required_params.merge({ option: :only_this_installment }), form: { data: { turbo_confirm: t('shared.are_you_sure?') } }, id: "destroy_#{dom_id(@transaction)}", class: 'dropdown__item' do %>
+            <%= heroicon 'trash', options: { class: 'icon icon--danger' } %>
+            <span>
+              <%= t('shared.remove') %>
+            </span>
+          <% end %>
+        <% else %>
+          <%= link_to destroy_dialog_transaction_path(@transaction), method: :get, params: @current_required_params, id: "destroy_#{dom_id(@transaction)}", form: { data: { turbo_frame: :drawer } }, class: 'dropdown__item' do %>
+            <%= heroicon 'trash', options: { class: 'icon icon--danger' } %>
+            <span>
+              <%= t('shared.destroy_dialog') %>
+            </span>
+          <% end %>
+        <% end %>
+      <% end %>
+    </div>
+    <div id="arrow" data-popper-arrow></div>
+  </div>
+</div>

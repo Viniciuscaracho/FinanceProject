@@ -1,0 +1,13 @@
+{
+  "id": "3a111dfc-ba06-46fd-a36b-b96d3543a201",
+  "status": "erro",
+  "codigo": "01",
+  "motivo": "Motivo teste",
+  "data_hora": "2024-03-03T23:34:37.715Z",
+  "mensagens": [
+    {
+      "codigo": "01",
+      "descricao": "Error message 1"
+    }
+  ]
+}

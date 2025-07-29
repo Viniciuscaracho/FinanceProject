@@ -1,0 +1,16 @@
+.dropdown__menu.hidden.z-20{ data: { dropdown_target: 'menu', controller: 'elements--filter--dropdown-component' } }
+  .h-12.bg-gray-50.items-center.px-4.pt-2.rounded-t-lg
+    .grid.grid-cols-3.items-center
+      - if @clear_link
+        = link_to @clear_link, class: 'btn', data: { action: 'click->elements--filter--dropdown-component#clean', **@options.fetch(:clear_data, {}) } do
+          = t('.clean')
+      - else
+        = button_tag t('.clean'), type: 'button', class: 'btn', data: { action: 'click->elements--filter--dropdown-component#clean' }
+
+
+      .font-medium.text-center.text-sm
+        = t('.filters')
+      = button_tag t('.done'), class: 'btn btn--primary'
+
+  - options.each do |option|
+    = option

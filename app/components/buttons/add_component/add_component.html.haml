@@ -1,0 +1,9 @@
+= button_to @url, class:  "btn-circle btn-circle--primary #{@options.fetch(:class, '')}".strip,
+                  method: @options.fetch(:method, :get),
+                  value:  @options.fetch(:value, 'add'),
+                  params: @options.fetch(:params, { }),
+                  data:   @options.fetch(:data, { turbo_frame: 'drawer',
+                                                  controller: :tooltip,
+                                                  tooltip_content_value: @options.fetch(:title, t('shared.new')),
+                                                  disable_with: @options.fetch(:disable_with, nil)}) do
+  = heroicon @options.fetch(:icon, :plus), options: { class: 'btn-circle__icon' }

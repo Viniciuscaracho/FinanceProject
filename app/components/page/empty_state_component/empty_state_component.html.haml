@@ -1,0 +1,15 @@
+%div{ id: :empty_state, class: @options.fetch(:hidden, false) && 'hidden' }
+  .min-h-full.px-3.py-3.sm:px-6.sm:py-3.md:grid.md:place-items-center.lg:px-8{ class: @options.fetch(:class, '') }
+    .mx-auto.max-w-max
+      .sm:flex.sm:items-center
+        %p.sm:flex-1.flex.justify-center.sm:justify-end.font-bold.tracking-tight.text-indigo-500
+          = inline_svg_tag @options.fetch(:image, 'empty.svg'), class: 'sm:w-64 h-auto w-full'
+        .sm:ml-6.sm:flex-1.mt-6.sm:mt-0
+          .sm:pl-6
+            %h5.font-semibold.text-center.sm:text-left= @title
+            %p.text-sm.text-gray-500.text-center.sm:text-left= @message
+          .mt-6.flex.sm:space-x-6.sm:pl-6
+            - actions.each do |action|
+              = action
+
+

@@ -1,0 +1,18 @@
+.help {
+  @apply h-[650px] flex flex-col space-y-4 lg:items-start lg:justify-start lg:grid lg:grid-cols-4 lg:gap-4 lg:space-y-0;
+
+  &__left {
+    @apply col-span-1 flex flex-col space-y-3 items-start justify-start h-[650px]
+  }
+
+  &__right {
+    @apply lg:col-span-3 flex flex-col xl:items-start xl:justify-start h-full w-full
+  }
+}
+
+
+
+
+
+
+

@@ -1,0 +1,15 @@
+
+.flex.items-center.justify-center.p-3.overflow-x-auto
+  = column_chart @data, adapter: :highcharts,
+                        percentage: @options.fetch(:percentage, false),
+                        colors: @options.fetch(:colors, %w[#14b8a6]),
+                        legend: @options.fetch(:legend, false),
+                        round: @options.fetch(:round, 2),
+                        zeros: @options.fetch(:zeros, true),
+                        thousands: @options.fetch(:thousands, t('number.currency.format.delimiter')),
+                        decimal: @options.fetch(:decimal, t('number.currency.format.separator')),
+                        loading: @options.fetch(:loading, t('shared.processing')),
+                        refresh: @options.fetch(:refresh, false),
+                        prefix: @options.fetch(:thousands, t('number.currency.format.unit')),
+                        dataset: { borderWidth: 0 },
+                        download: { filename: @options.fetch(:filename, 60), background: @options.fetch(:background, "#ffffff") }

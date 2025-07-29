@@ -1,0 +1,14 @@
+.flex.items-center.justify-center.p-3.overflow-x-auto
+  = line_chart @data, adapter: :highcharts,
+                        percentage: @options.fetch(:percentage, false),
+                        min: @options.fetch(:min, nil),
+                        colors: @options.fetch(:colors, %w[#22c55e #FF0000]),
+                        legend: @options.fetch(:legend, false),
+                        round: @options.fetch(:round, 2),
+                        zeros: @options.fetch(:zeros, true),
+                        thousands: @options.fetch(:thousands, t('number.currency.format.delimiter')),
+                        decimal: @options.fetch(:decimal, t('number.currency.format.separator')),
+                        loading: @options.fetch(:loading, t('shared.processing')),
+                        prefix: @options.fetch(:thousands, t('number.currency.format.unit')),
+                        dataset: { borderWidth: 2 },
+                        download: { filename: @options.fetch(:filename, 60), background: @options.fetch(:background, "#ffffff") }

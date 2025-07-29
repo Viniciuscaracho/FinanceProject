@@ -1,0 +1,11 @@
+<div class="tabs">
+  <nav class="tabs__nav">
+    <% if items.present? %>
+      <% items.each do |item| %>
+        <%= item %>
+      <% end %>
+    <% end %>
+
+    <%= content %>
+  </nav>
+</div>

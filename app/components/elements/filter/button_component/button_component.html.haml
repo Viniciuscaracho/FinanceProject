@@ -1,0 +1,7 @@
+%button{ type: 'button', class: "#{@options.fetch(:class, 'btn profile-menu__activator')}", data: { dropdown_target: 'activator', action: 'dropdown#toggle keyup@window->dropdown#hideWithKeyboard click@window->dropdown#hide' } }
+  .flex.items-center.space-x-2
+    = heroicon @icon, options: { class: 'h-4 w-4 stroke-gray-500' }
+    - if @text
+      .font-semibold= @text
+    - if @options.fetch(:count_enabled, true)
+      .w-5.h-5.bg-primary-500.text-white.text-xs.font-semibold.rounded-full.hidden{ class: "#{@options.fetch(:count_class, 'flex items-center justify-center')}", data: { elements__filter_component_target: 'count' }}

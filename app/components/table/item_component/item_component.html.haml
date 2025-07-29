@@ -1,0 +1,15 @@
+- if @options.fetch(:href, false)
+  %tr.clickable.group.print:break-inside-avoid{ id: @options.fetch(:id, object_id),
+                                                data: { controller: 'clickable',
+                                                        clickable_url_value: @options.fetch(:href, ''),
+                                                        clickable_turbo_value: @options.fetch(:turbo, true),
+                                                        clickable_frame_value: @options.fetch(:frame, '_top')
+                                                       }.merge(@options.fetch(:data, {})) }
+    - cols.each do |col|
+      = col
+    = content
+- else
+  %tr.print:break-inside-avoid{ id: @options.fetch(:id, object_id), class: "#{@options.fetch(:class, '')}", data: @options.fetch(:data, {}) }
+    - cols.each do |col|
+      = col
+    = content

@@ -1,0 +1,60 @@
+{
+  "total": 2,
+  "totalPages": 1,
+  "page": 1,
+  "results": [
+    {
+      "id": "c4567e7c-38d9-427c-8999-0ee324ba72d0",
+      "type": "BANK",
+      "subtype": "CHECKING_ACCOUNT",
+      "name": "Conta Corrente",
+      "balance": 39398.28,
+      "currencyCode": "BRL",
+      "itemId": "20da0c58-a2c5-46eb-8fe5-83adfac64039",
+      "number": "0001/12345-0",
+      "createdAt": "2023-12-12T20:51:09.172Z",
+      "updatedAt": "2023-12-12T20:51:09.172Z",
+      "marketingName": "GOLD Conta Corrente",
+      "taxNumber": "416.799.495-00",
+      "owner": "John Doe",
+      "bankData": {
+        "transferNumber": "123/0001/12345-0",
+        "closingBalance": 39398.28,
+        "automaticallyInvestedBalance": 3939.828,
+        "overdraftContractedLimit": null,
+        "overdraftUsedLimit": null,
+        "unarrangedOverdraftAmount": null
+      },
+      "creditData": null
+    },
+    {
+      "id": "6bb00f0f-f374-4edb-a328-f77909df8cff",
+      "type": "CREDIT",
+      "subtype": "CREDIT_CARD",
+      "name": "Mastercard Black",
+      "balance": 324.99,
+      "currencyCode": "BRL",
+      "itemId": "20da0c58-a2c5-46eb-8fe5-83adfac64039",
+      "number": "9437",
+      "createdAt": "2023-12-12T20:51:09.353Z",
+      "updatedAt": "2023-12-12T20:51:09.353Z",
+      "marketingName": "PLUGGY UNICLASS MASTERCARD BLACK",
+      "taxNumber": null,
+      "owner": null,
+      "bankData": null,
+      "creditData": {
+        "level": "BLACK",
+        "brand": "MASTERCARD",
+        "balanceCloseDate": "2023-12-12",
+        "balanceDueDate": "2023-12-17",
+        "availableCreditLimit": 300000,
+        "balanceForeignCurrency": null,
+        "minimumPayment": 64.998,
+        "creditLimit": 300000,
+        "isLimitFlexible": false,
+        "holderType": "MAIN",
+        "status": "ACTIVE"
+      }
+    }
+  ]
+}

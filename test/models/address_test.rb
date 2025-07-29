@@ -1,0 +1,30 @@
+# == Schema Information
+#
+# Table name: addresses
+#
+#  id               :bigint           not null, primary key
+#  address_line1    :string
+#  address_line2    :string
+#  address_number   :string
+#  addressable_type :string           not null
+#  city             :string
+#  country          :string
+#  district         :string
+#  ibge_city_code   :string
+#  postcode         :string
+#  state            :string
+#  created_at       :datetime         not null
+#  updated_at       :datetime         not null
+#  addressable_id   :bigint           not null
+#
+# Indexes
+#
+#  index_addresses_on_addressable  (addressable_type,addressable_id)
+#
+require "test_helper"
+
+class AddressTest < ActiveSupport::TestCase
+  # test "the truth" do
+  #   assert true
+  # end
+end

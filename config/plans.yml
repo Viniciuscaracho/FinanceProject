@@ -1,0 +1,7 @@
+---
+plans:
+  - name: Plano Empresarial (Anual)
+    description: Plano indicado para Micro e Pequenas Empresas
+    amount_cents: 39990
+    amount_currency: BRL
+

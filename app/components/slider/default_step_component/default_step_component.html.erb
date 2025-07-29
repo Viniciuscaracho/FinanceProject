@@ -1,0 +1,7 @@
+<span class="<%= @options.fetch(:title_class, 'flex justify-center mt-1') %>"><%= @title %></span>
+<div class="flex justify-center items-center w-full h-full">
+  <div class="flex flex-col justify-center items-center space-y-2 text-justify">
+    <%= image_tag @image, class: "w-auto #{@options.fetch(:image_class, 'h-24')}" %>
+    <div class="text-base w-64 pb-5 <%= @options.fetch(:description_class, '') %>"><%= @description.html_safe %></div>
+  </div>
+</div>

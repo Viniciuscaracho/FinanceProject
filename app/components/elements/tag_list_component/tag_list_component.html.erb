@@ -1,0 +1,10 @@
+<div class="flex items-center space-x-1.5 text-gray-400 text-sm sm:text-xs truncate pr-3"
+     data-controller="tooltip"
+     data-tooltip-content-value="<%= @taggable.class.human_attribute_name(:tags) %>">
+  <div class="flex-shrink-0">
+    <%= icon 'tag', options: { class: 'h-4 w-4' } %>
+  </div>
+  <div class="whitespace-normal">
+    <%= @taggable.taggings.map(&:tag).sort_by(&:name).map(&:name).join(', ') %>
+  </div>
+</div>

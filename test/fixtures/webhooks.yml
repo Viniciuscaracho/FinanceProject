@@ -1,0 +1,30 @@
+# == Schema Information
+#
+# Table name: webhooks
+#
+#  id            :bigint           not null, primary key
+#  last_response :integer
+#  last_used_at  :datetime
+#  url           :string
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  account_id    :bigint           not null
+#
+# Indexes
+#
+#  index_webhooks_on_account_id  (account_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#
+
+one:
+  url: MyString
+  last_used_at: 2024-02-26 15:13:29
+  account: one
+
+two:
+  url: MyString
+  last_used_at: 2024-02-26 15:13:29
+  account: two

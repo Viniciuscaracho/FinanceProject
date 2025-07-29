@@ -1,0 +1,2767 @@
+---
+pt-BR:
+  true: Sim
+  false: Não
+
+  helpers:
+    select:
+      prompt: Por favor selecione
+    submit:
+      create: Criar %{model}
+      submit: Salvar %{model}
+      update: Atualizar %{model}
+
+  activerecord:
+    errors:
+      models:
+        transaction:
+          transfer_same_bank_account: 'A transferência deve ser realizada entre contas diferentes'
+          bank_account: "Esta conta bancária não existe"
+          attributes:
+            payment_method:
+              invalid: "Métodos de pagamento inválido"
+              nil: "Método de pagamento não pode ser nulo"
+            payment_type:
+              invalid: "Tipo de pagamento inválido"
+              nil: "Tipo de pagamento não pode ser nulo"
+            transaction_type:
+              invalid: "Tipo de transação inválido"
+              nil: "Tipo de transação não pode ser nulo"
+          transfer_to: "Essa conta bancária de destino não existe"
+          cost_center: "Esse centro de custo não existe"
+          category: "Essa categoria não existe"
+          contact: "Esse contato não existe"
+        user:
+          email_is_not_verified: 'não pode ser verificado, favor informar um e-mail válido'
+          email_is_dummy: 'não pode ser um e-mail temporário'
+        account_invitation:
+          email_is_not_verified: 'não pode ser verificado, favor informar um e-mail válido'
+          email_is_dummy: 'não pode ser um e-mail temporário'
+        company:
+          email_is_not_verified: 'não pode ser verificado, favor informar um e-mail válido'
+          email_is_dummy: 'não pode ser um e-mail temporário'
+        bank_account:
+          default: "Impossível apagar ou arquivar uma conta bancária principal"
+        contact:
+          attributes:
+            transaction_type:
+              invalid: "Tipo de transação inválido"
+    models:
+      active_storage/attachment:
+        one: Anexo
+        other: Anexos
+      active_storage/blob:
+        one: Arquivo
+        other: Arquivos
+      active_storage/variant_record:
+        one: Variação
+        other: Variações
+      action_text/rich_text:
+        one: Texto rico
+        other: Textos ricos
+      acts_as_taggable_on/tag:
+        one: Tag / Marcador
+        other: Tags / Marcadores
+      address:
+        one: Endereço
+        other: Endereços
+      bank_account:
+        one: Conta Bancária
+        other: Contas Bancárias
+      category:
+        one: Categoria
+        other: Categorias
+      cost_center:
+        one: Centro de Custo
+        other: Centros de Custo
+      company:
+        one: Empresa
+        other: Empresas
+      contact:
+        one: Contato
+        other: Contatos
+      transaction:
+        one: Transação
+        other: Transações
+      domain:
+        one: Domínio
+        other: Domínios
+      account_user:
+        one: Usuário da conta
+        other: Usuários da conta
+      person:
+        one: Pessoa
+        other: Pessoas
+      account_invitation:
+        one: Convite
+        other: Convites pendentes
+      account:
+        one: Conta
+        other: Contas
+      exchange_rate:
+        one: Fator de conversão
+        other: Fatores de conversão
+      import:
+        one: Importar
+        other: Importações
+      user:
+        one: Usuário
+        other: Usuários
+      help_user:
+        one: Ajuda ao usuário
+        other: Ajuda aos usuários
+      medium_article:
+        one: Ajuda do medium
+        other: Ajudas do medium
+      youtube_video:
+        one: Ajuda em vídeo
+        other: Ajudas em vídeos
+      bank:
+        one: Banco
+        other: Bancos
+      audit:
+        one: Auditoria
+        other: Auditorias
+      zero_paper_item:
+        one: Item de importação
+        other: Itens de importação
+      document_template:
+        one: Modelo de documento
+        other: Documentos
+      receipt_template:
+        one: Modelo de Recibo
+        other: Modelos de Recibo
+      contract_template:
+        one: Modelo de Contrato
+        other: Modelos de Contrato
+      invoice_template:
+        one: Modelo de fatura
+        other: Modelos de fatura
+      export:
+        one: Exportação
+        other: Exportações
+      statement:
+        one: Conciliação (OFX)
+        other: Conciliações (OFX)
+      statement_item:
+        one: Item do extrato
+        other: Items do extrato
+      payment_plan:
+        one: Plano de parcelamento
+        other: Planos de parcelamento
+      announcement:
+        one: Anúncio
+        other: Anúncios
+      notification:
+        one: Notificação
+        other: Notificações
+      referral_code:
+        one: Código de indicação
+        other: Códigos de indicação
+      segment:
+        one: Segmento
+        other: Segmentos
+      business_sector:
+        one: Setor de negócio
+        other: Setores de negócios
+      sector_activity:
+        one: Segmento
+        other: Segmentos
+      category_preset:
+        one: Categoria padrão
+        other: Categorias padrão
+      partner:
+        one: Parceiro
+        other: Parceiros
+      plan:
+        one: Plano
+        other: Planos
+      service:
+        one: Serviço
+        other: Serviços
+      invoice:
+        one: Fatura
+        other: Faturas
+      invoice_line:
+        one: Item da fatura
+        other: Itens da fatura
+      subscription:
+        one: Assinatura
+        other: Assinaturas
+      subscription_invoice:
+        one: Assinatura (Fatura)
+        other: Assinatura (Faturas)
+      subscription_charge:
+        one: Assinatura (Cobrança)
+        other: Assinatura (Cobranças)
+      subscription_webhook:
+        one: Assinatura (Webhook)
+        other: Assinatura (Webhooks)
+      cnae:
+        one: CNAE
+        other: CNAEs
+      secondary_cnae:
+        one: CNAE secundário
+        other: CNAEs secundários
+      enum:
+        one: Enumeração
+        other: Enumerações
+      city:
+        one: Cidade
+        other: Cidades
+      state:
+        one: Estado
+        other: Estados
+      offer:
+        one: Item ofertado
+        other: Itens ofertados
+      company_tax_config:
+        one: Configuração de impostos da empresa
+        other: Configurações de impostos da empresa
+      service_tax_config:
+        one: Configuração de impostos do serviço
+        other: Configurações de impostos do serviço
+      integration_store:
+        one: Integração
+        other: Integrações
+      integration_stores/pluggy:
+        one: Integração Open Finance
+        other: Integrações Open Finance
+      integration_stores/nuvem_fiscal:
+        one: Integração NFS-e
+        other: Integrações NFS-e
+
+    attributes:
+      account:
+        id: Código
+        default_currency: Moeda padrão
+        processor_plan_name: Plano
+        processor_plan_id: Plano
+        balance: Saldo atual
+        account_type: Tipo de conta
+        subscription_status: Situação
+        name: Nome da empresa / pessoa
+        owner: Dono
+        free: Cortesia?
+        trial: Trial?
+        trial_ends_at: Trial termina em
+        account_users_count: Qtde. de membros
+        account_invitations_count: Qtde. de convites
+        bank_accounts_count: Qtde. de contas bancárias
+        contacts_count: Qtde. de contatos
+        categories_count: Qtde. de categorias
+        cost_centers_count: Qtde. de centros de custos
+        transactions_count: Qtde. de transações
+        account_users: Membros
+        users: Usuários vinculados
+        bank_accounts: Contas bancárias
+        imports: Importações
+        connected_users: Usuários conectados na conta
+        created_at: Criado em
+        updated_at: Atualizado em
+        referral_code: Código de indicação
+        related_to: Relacionado a
+        relation_type: Tipo de relação
+        related_accounts: Contas relacionadas
+        invoice_number_starts_at: Número inicial da primeira fatura
+        invoice_due_days: Dias para vencimento (padrão)
+        invoice_tax_percentage: Imposto padrão (%)
+        invoice_tax_already_applied: Imposto já aplicado ao valor dos serviços prestados?
+        subscription: Assinatura
+      account_user:
+        id: Código
+        name: Nome
+        account: Conta
+        user: Usuário
+        role: Papel
+        created_at: Criado em
+        updated_at: Atualizado em
+      account_invitation:
+        id: Código
+        account: Conta
+        name: Nome
+        email: E-mail
+        role: Papel
+        created_at: Criado em
+        updated_at: Enviado em
+      address:
+        id: Código
+        addressable: Entidade
+        postcode: CEP
+        address_line1: Endereço
+        address_line2: Complemento
+        address_number: Número
+        district: Bairro
+        city: Cidade
+        ibge_city_code: Cidade
+        state: Estado
+        country: País
+        created_at: Criado em
+        updated_at: Atualizado em
+      bank_account:
+        id: Código
+        agency: "Agência e número"
+        account: Conta
+        name: Nome
+        account_type: Tipo de conta
+        account_agency: Agencia da conta
+        account_number: Número da conta
+        balance_cents: Saldo atual
+        balance: Saldo atual
+        initial_balance_cents: Saldo inicial
+        default: Principal?
+        created_at: Criado em
+        updated_at: Atualizado em
+        bank: Banco
+      bank:
+        id: Código
+        name: Nome
+        code: Código do banco
+        description: Descrição
+        ispb: ISPB
+        created_at: Criado em
+        updated_at: Atualizado em
+      category:
+        transaction_type: Tipo
+        id: Código
+        account: Conta
+        name: Nome
+        description: Descrição
+        created_at: Criado em
+        updated_at: Atualizado em
+      cost_center:
+        id: Código
+        account: Conta
+        name: Nome
+        description: Descrição
+        created_at: Criado em
+        updated_at: Atualizado em
+      company:
+        id: Código
+        account: Conta
+        name: Razão social da empresa
+        screen_name: Nome fantasia
+        sector_activity: Segmento
+        sector_activity_id: Segmento
+        document_1: CNPJ
+        document_2: Inscrição estadual
+        document_3: Inscrição municipal
+        name_natural: Nome completo
+        screen_name_natural: Nome social
+        document_1_natural: CPF
+        document_2_natural: RG
+        document_3_natural: CNH
+        email: Email de cobrança
+        phone_number: Telefone fixo/contato
+        cell_phone_number: Telefone celular
+        description: Observações
+        cnae_id: CNAE primário
+        cnae: CNAE primário
+        secondary_cnaes: CNAEs secundários
+        secondary_cnaes_ids: CNAEs secundários
+        created_at: Criado em
+        updated_at: Atualizado em
+      contact:
+        id: Código
+        account: Conta
+        contact_type: Tipo do contato
+        person_type: Tipo de pessoa
+        sector_activity: Segmento
+        sector_activity_id: Segmento
+        name: Nome
+        document_1: CPF/CNPJ
+        document_2: RG/Inscrição estadual
+        email: Email
+        phone_number: Telefone
+        cell_phone_number: Celular
+        birth_date: Data de nascimento
+        description: Observações
+        created_at: Criado em
+        updated_at: Atualizado em
+      transaction:
+        id: Código
+        account: Conta
+        transaction_type: Tipo
+        due_date: Data
+        name: Descrição
+        contact_id: Contato
+        receipted_from: Recebido de
+        paid_to: Pago a
+        category_id: Categoria
+        payment_type: Tipo pagamento
+        paid: Pago?
+        paid_at: Pago em
+        amount: Valor
+        amount_cents: Valor
+        exchanged_amount: Valor confirmado
+        exchanged_amount_cents: Valor confirmado
+        competency_date: Competência
+        document_number: Número do documento
+        cost_center_id: Centro de Custo
+        bank_account_id: Conta de origem
+        payment_method: Modo de pagamento
+        description: Observações
+        attachments: Comprovantes e Anexos
+        transfer_to_id: Conta de destino
+        transfer_to: Conta de destino
+        installment_type: Frequência
+        installment_total: Número de parcelas
+        installment_number: Número da parcela
+        installments: Parcelas/Recorrencias
+        tags: Marcações (tags)
+        created_at: Criado em
+        updated_at: Atualizado em
+        service: Serviço prestado
+        service_id: Serviço prestado
+      import:
+        id: Código
+        account: Conta
+        file_name: Nome do arquivo
+        source: Origem
+        state: Situação
+        progress_number: Transações importadas
+        progress_total: Transações totais
+        file: Arquivo
+        created_at: Criado em
+        updated_at: Importado em
+      export:
+        id: Código
+        account: Conta
+        source: Origem
+        state: Situação
+        file: Arquivo
+        progress: Progresso
+        created_at: Criado em
+        updated_at: Exportado em
+        progress_number: Transações exportadas
+        progress_total: Transações totais
+      audit:
+        id: Código
+        action: Ação
+        associated: Conta
+        auditable: Objeto
+        audited_changes: Alterações
+        comment: Comentário
+        remote_address: Endereço IP (Remoto)
+        request_uuid: Código da requisição
+        username: Nome de usuário
+        version: Versãp
+        created_at: Criado em
+        user_id: Código do usuário
+        user: Usuário
+      document_template:
+        id: Código
+        account: Conta
+        name: Nome
+        description: Descrição
+        transaction_type: Tipo de Transação
+        header: Exibir cabeçalho
+      invoice_template:
+        show_header: Exibir cabeçalho
+        show_issue_date: Exibir data de emissão
+        show_due_date: Exibir data de vencimento
+        show_recipient: Exibir dados de contato do tomador
+        show_detailed_lines: Exibir detalhamento dos itens
+        show_discount_info: Exibir informações de desconto
+        show_tax_info: Exibir informações de impostos
+        show_payment_info: Exibir informações de pagamento
+
+      statement:
+        id: Código
+        type: Tipo
+        state: Status
+        file: Arquivo OFX
+        bank_account: Conta bancária
+        statement_items: Items do extrato
+        created_at: Criado em
+        updated_at: Atualizado em
+      statement_item:
+        transaction_type: Tipo de transação
+      payment_plan:
+        amount_cents: Valor (R$)
+        number_of_installments: Número de parcelas
+        frequency: Frequência
+        transactions: Transações (parcelas)
+      announcement:
+        id: Código
+        kind: Tipo
+        title: Título
+        abstract: Mensagem
+        description: Descrição
+        show_banner: Exibir banner?
+        send_notification: Enviar notificação?
+        notification_sent_at: Notificação enviada em
+        published_at: Publicado em
+        created_at: Criado em
+        updated_at: Atualizado em
+      notification:
+        id: Código
+        recipient: Destinatário
+        type: Tipo
+        params: Parâmetros
+        read_at: Lido em
+        created_at: Criado em
+        updated_at: Atualizado em
+      referral_code:
+        id: Código
+        name: Nome
+        description: Descrição
+        trial_days: Dias de teste
+        create_free_personal_account: Criar conta pessoal (Grátis)?
+        account_type: Tipo de conta
+        account_type_cd: Tipo de conta
+        referrer: Dono
+        code: Código de Indicação
+        benefit_type: Tipo de benefício
+        benefit: Benefício
+        short_referral_url: Link de indicação
+        referees: Indicados
+        created_at: Criado em
+        updated_at: Atualizado em
+      segment:
+        id: Código
+        parent: Segmento pai
+        type: Tipo
+        name: Nome
+        description: Descrição
+        language: Idioma
+        created_at: Criado em
+        updated_at: Atualizado em
+        discarded_at: Arquivado em
+      business_sector:
+        id: Código
+        name: Nome
+        description: Descrição
+        sector_activities: Atividades
+        people: Pessoas
+        language: Idioma
+        created_at: Criado em
+        updated_at: Atualizado em
+        discarded_at: Arquivado em
+      sector_activity:
+        id: Código
+        business_sector: Setor
+        name: Nome
+        description: Descrição
+        people: Pessoas
+        language: Idioma
+        created_at: Criado em
+        updated_at: Atualizado em
+        discarded_at: Arquivado em
+      category_preset:
+        id: Código
+        sector_activity: Segmento
+        transaction_type: Tipo de transação
+        name: Nome
+        description: Descrição
+        language: Idioma
+        created_at: Criado em
+        updated_at: Atualizado em
+        discarded_at: Arquivado em
+      acts_as_taggable_on/tag:
+        id: Código
+        name: Nome
+        created_at: Criado em
+        updated_at: Atualizado em
+        discarded_at: Arquivado em
+
+      service:
+        internal_code: Código interno
+        name: Nome
+        description: Descrição
+        service_type: Tipo de serviço
+        offer_type_cd: Tipo de serviço
+        selling_price_cents: Valor do serviço (R$)
+        created_at: Criado em
+        updated_at: Atualizado em
+        discarded_at: Arquivado em
+
+      invoice:
+        id: Código
+        account: Conta
+        provider_id: Prestador
+        provider: Prestador
+        recipient_id: Cliente
+        recipient: Cliente
+        bank_account_id: Conta bancária
+        bank_account: Conta bancária
+        number: Número
+        issue_date: Data emissão
+        due_date: Data vencimento
+        amount_cents: Valor (R$)
+        amount: Valor (R$)
+        subtotal_cents: Subtotal (R$)
+        subtotal: Subtotal (R$)
+        discount_description: Descrição do desconto
+        discount_cents: Valor de desconto
+        discount: Valor de desconto (R$)
+        total_cents: Total
+        total: Total (R$)
+        total_before_tax_cents: Total antes dos impostos
+        total_before_tax: Total antes dos impostos (R$)
+        tax_cents: Valor de impostos
+        tax: Valor de impostos (R$)
+        tax_description: Descrição dos impostos
+        name: Descrição
+        description: Observações / Informações de pagamento
+        created_at: Criado em
+        updated_at: Atualizado em
+        generate_transaction: Gerar transação
+        sync_with_transaction: Sincronizar com transações
+        tax_percentage: Imposto (%)
+        discount_percentage: Desconto (%)
+        tax_already_applied: Imposto já incluído no valor total dos itens da fatura
+        status: Situação
+        sent: Enviado
+        lines: Itens da fatura
+      lines:
+        quantity: Quantidade
+        unit_price_cents: Valor unitário (R$)
+        unit_price: Valor unitário (R$)
+      invoice_line:
+        id: Código
+        document_id: Fatura
+        offer_id: Serviço
+        quantity: Quantidade
+        unit_price_cents: Valor unitário (R$)
+        unit_price: Valor unitário (R$)
+        total_price_cents: Valor total (R$)
+        total_price: Valor total (R$)
+        description: Descrição
+
+      subscription:
+        id: Código
+        account: Conta
+        name: Nome
+        status: Situação
+        current_period_start: Inicia em
+        current_period_end: Termina em
+        processor_id: Código Stripe
+        processor_plan_id: Código do Plano
+        processor_product_id: Código do Produto
+        created_at: Criado em
+        updated_at: Atualizado em
+      subscription_invoice:
+        id: Código
+        account: Conta
+        subscription: Assinatura
+        status: Situação
+        processor_id: Código Stripe
+        created_at: Criado em
+        updated_at: Atualizado em
+      subscription_charge:
+        id: Código
+        account: Conta
+        subscription: Assinatura
+        subscription_invoice: Fatura
+        status: Situação
+        processor_id: Código Stripe
+        amount: Valor
+        amount_cents: Valor
+        created_at: Criado em
+        updated_at: Atualizado em
+      subscription_webhook:
+        id: Código
+        status: Situação
+        event_type: Evento
+        event: Dados do evento
+        details: Detalhes
+        created_at: Criado em
+        updated_at: Atualizado em
+      api_token:
+        id: Código
+        name: Nome
+        description: Descrição
+        token: Token
+        last_used_at: Último uso
+        expires_at: Expira em
+      enum:
+        id: ID
+        parent: Item pai
+        type: Tipo
+        key: Chave
+        value: Valor
+        description: Descrição
+        metadata: Metadados
+        created_at: Criado em
+        updated_at: Atualizado em
+      cnae:
+        key: Código
+        formatted_key: Código formatado
+        value: Descrição
+        created_at: Criado em
+        updated_at: Atualizado em
+      secondary_cnae:
+        id: Código
+        person: Pessoa
+        cnae: Cnae
+        created_at: Criado em
+        updated_at: Atualizado em
+      city:
+        key: Código
+        state: Estado
+        value: Nome
+        created_at: Criado em
+        updated_at: Atualizado em
+      state:
+        key: Sigla
+        value: Nome
+        created_at: Criado em
+        updated_at: Atualizado em
+      offer:
+        id: Código
+        account: Conta
+        type: Tipo
+        name: Nome
+        description: Descrição
+        internal_code: Código interno
+        unit: Unidade
+        selling_price: Preço de venda
+        selling_price_cents: Preço de venda (R$)
+        cost_price: Preço de compra
+        cost_price_cents: Preço de compra (R$)
+        currency: Moeda
+        enabled: Ativo?
+        metadata: Metadados
+        created_at: Criado em
+        updated_at: Atualizado em
+      company_nfse_config:
+        id: Código
+        company: Empresa
+        enabled: Emissão de NFS-e habilitada?
+        simplified_tax_system: Optante Simples Nacional
+        simplified_tax_system_cd: Optante Simples Nacional
+        tax_calculation_regime: Regime de apuração de tributos
+        tax_calculation_regime_cd: Regime de apuração de tributos
+        special_tax_regime: Regime especial de tributação
+        special_tax_regime_cd: Regime especial de tributação
+        rps_initial_batch_number: Lote do RPS
+        rps_series: Série do RPS
+        rps_initial_number: Número do RPS
+        provider_login: Login da prefeitura
+        provider_senha: Senha da prefeitura
+        provider_token: Token da prefeitura
+        tax_incentive: Incentivo fiscal?
+        environment: Ambiente
+        provider: Provedor
+        a1_cert_file: Certificado Digital (A1)
+        a1_cert_password: Senha do certificado digital (A1)
+        national_tax_code: Código de tributação nacional
+        municipal_tax_code: Código de tributação municipal
+        service_description: Descrição padrão do serviço
+        iss_service_provided_tax: Tributação do ISSQN
+        iss_service_provided_tax_cd: Tributação do ISSQN
+        iss_withholding_type: Retenção do ISSQN
+        iss_withholding_type_cd: Retenção do ISSQN
+        iss_tax_rate: Alíquota do ISS (%)
+        created_at: Criado em
+        updated_at: Atualizado em
+      service_nfse_config:
+        id: Código
+        service: Serviço
+        cnae_code: CNAE do serviço
+        national_tax_code: Código de tributação nacional
+        municipal_tax_code: Código de tributação municipal
+        city_code: Cidade de prestação
+        country_code: País de prestação
+        nbs_code: Código NBS do serviço prestado
+        iss_service_provided_tax: Tributação do ISSQN
+        iss_service_provided_tax_cd: Tributação do ISSQN
+        iss_city_code: Município de incidência do ISSQN
+        iss_country_code: País resultado da prestação do serviço
+        iss_immunity_type: Tipo de imunidade
+        iss_immunity_type_cd: Tipo de imunidade
+        iss_withholding_type: Retenção do ISSQN
+        iss_withholding_type_cd: Retenção do ISSQN
+        iss_tax_rate: Alíquota do ISS (%)
+        pis_tax_rate: Alíquota do PIS (%)
+        cofins_tax_rate: Alíquota do COFINS (%)
+        pis_cofins_withholding_type: Retenção do PIS/COFINS
+        pis_cofins_withholding_type_cd: Retenção do PIS/COFINS
+        cst_code: Situação Tributária do PIS/COFINS (CST)
+        created_at: Criado em
+        updated_at: Atualizado em
+      integration_store:
+        id: Código
+        parent_store: Integração Base
+        account: Conta
+        name: Nome
+        description: Descrição
+      webhook:
+        id: Código
+        account: Conta
+        url: URL
+        last_used_at: Último uso em
+        last_response: Última resposta
+        event_type: Tipo de evento
+        created_at: Criado em
+        updated_at: Atualizado em
+
+  bank_accounts:
+    title_info_card: "Saldo inicial"
+    info_card: "Este campo é utilizado para informar o saldo atual da conta bancária, antes dos lançamentos no Procfy. Caso você já tenha realizado lançamentos no Procfy, informe o valor descontado dos lançamentos realizados, e após isto, verifique se o saldo no Procfy está batendo com o saldo atual da conta bancária."
+    new:
+      title: "Nova conta bancária"
+    index:
+      new: "Nova conta bancária"
+      add: "Adicionar"
+    edit:
+      title: "Editar conta bancária"
+    show:
+      title: "Detalhes da conta bancária"
+    update:
+      success: "Conta bancária atualizada com sucesso"
+    create:
+      success: "Conta bancária cadastrada com sucesso"
+    destroy:
+      success: "Conta bancária deletada com sucesso"
+    default_name: "Conta Principal"
+    bank_account:
+      this_is_default: "Sim"
+      turn_to_default: "Usar como conta principal"
+    turn_default:
+      success: "Conta principal definida com sucesso"
+    toggle_archived:
+      success: "Conta arquivada com sucesso"
+      error: "Não foi possível arquivar a conta"
+    default_wallet_name: "Carteira"
+    default_cash_name: "Caixa"
+    archive:
+      success: "Conta bancária arquivada com sucesso"
+    unarchive:
+      success: "Conta bancária desarquivada com sucesso"
+
+  categories:
+    new:
+      title: "Nova categoria"
+    index:
+      new: "Nova categoria"
+      add: "Adicionar"
+    edit:
+      title: "Editar categoria"
+    show:
+      title: "Detalhes da categoria"
+    update:
+      success: "Categoria atualizada com sucesso"
+    create:
+      success: "Categoria cadastrada com sucesso"
+    destroy:
+      success: "Categoria deletada com sucesso"
+      fail: "Categoria não pode ser excluída"
+    import:
+      title: "Importar categorias pré-definidas"
+    new_import:
+      title: "Nova importação"
+    new_import_from_presets:
+      title: "Importar categorias pré-definidas"
+
+  cost_centers:
+    new:
+      title: "Novo centro de custo"
+    index:
+      new: "Novo centro de custo"
+    edit:
+      title: "Editar centro de custo"
+    show:
+      title: "Detalhes do centro de custo"
+    create:
+      success: "Centro de custo cadastrado com sucesso"
+    update:
+      success: "Centro de custo atualizado com sucesso"
+    destroy:
+      success: "Centro de custo deletado com sucesso"
+
+  contacts:
+    new:
+      title: "Novo contato"
+    index:
+      new: "Novo contato"
+    edit:
+      title: "Editar contato"
+    show:
+      title: "Detalhes do contato"
+    create:
+      success: "Contato cadastrado com sucesso"
+    update:
+      success: "Contato atualizado com sucesso"
+    destroy:
+      success: "Contato deletado com sucesso"
+    graphs:
+      title: "Devedores"
+      debt_me: "Deve para mim"
+      i_debt: "Eu devo"
+      birthdays: "Aniversariantes nesse mês"
+      see_more: "Ver mais"
+    debt_me:
+      title: "Deve para mim"
+      total: "Total"
+    i_debt:
+      title: "Eu devo"
+      total: "Total"
+    birthdays:
+      title: "Aniversariantes nesse mês"
+      total: "Total"
+      annual_income: "Rendimento anual"
+      name: "Nome"
+    form:
+      search: "Pesquisar CNPJ"
+      searching: "Pesquisando..."
+    search_cnpj:
+      success: "Informações atualizadas com sucesso"
+      error: "CNPJ não encontrado ou inválido"
+    details:
+      title: "Contato"
+      contracts: "Contratos"
+    contracts:
+      header:
+        title: "Editar contrato de %{contact_name}"
+        save_on_contact: "Salvar no contato"
+    attachments:
+      index:
+        title: "Anexos"
+        contracts: "Contratos"
+
+  imports:
+    create:
+      success: "Importação iniciada com sucesso"
+      fail_import: "Não foi possível importar este arquivo, nenhuma transação encontrada, tente novamente mais tarde"
+      fail_contact_import: "Não foi possível importar este arquivo, nenhum contato encontrado, tente novamente mais tarde"
+      error: "Arquivo não compativel"
+      wait_pending_import: "Já existe um processo de importação em progresso! Só é possível fazer uma importação por vez."
+    destroy:
+      success: "Importação deletada com sucesso e todas as transações foram revertidas."
+    update:
+      error: "Você nao tem permissão para editar"
+    show:
+      error: "Você nao tem permissão para ver"
+    find:
+      error: "Não foi possível encontrar"
+    import:
+      are_you_sure?: "As transações importadas serão revertidas! Deseja continuar?"
+    form:
+      select_file: "Selecione o arquivo ZeroPaper a ser importado"
+      start_import: "Iniciar importação"
+      select_source: "Selecione a origem do arquivo"
+    new:
+      title: "Nova importação do ZeroPaper"
+    import_suggestions:
+      xlsx_default:
+        title: "Importação padrão"
+        description: "Importação de outros sistemas, utilizando o nosso formato padrão"
+      zero_paper:
+        title: "Zero Paper"
+        description: "Importação de dados utilizando o Excel do Zero Paper"
+      contacts:
+        title: "Contatos"
+        description: "Importação de contatos, utilizando o Excel"
+      ofx:
+        title: "OFX"
+        description: "Importação de dados utilizando o formato de arquivo OFX"
+    new_xlsx_default:
+      title: "Nova importação padrão"
+      description: "Importação de outros sistemas, utilizando o nosso formato padrão"
+      download_template: "Baixar modelo"
+      view_tutorial: 'Ver tutorial de importação'
+      file_name: "modelo_importacao_procfy"
+      select_file: "Selecione o arquivo a ser importado após preencher o modelo"
+      start_import: "Iniciar importação"
+    import_xlsx_explanation:
+      step: "Passo %{step}"
+      intro: "Aprenda a importar dados de outros sistemas utilizando nosso formato Excel. <strong>Vamos começar!</strong>"
+      step_1: "Baixe o formato Excel padrão clicando no botão abaixo."
+      step_2: "Prepare a planilha do sistema anterior que você deseja importar."
+      step_3: "Identifique as colunas corretas para importação."
+      step_4: "Copie as informações da planilha anterior e cole-as na nossa planilha."
+      step_5: "Importe os dados para finalizar o processo."
+    discard:
+      success: "Importação arquivada com sucesso"
+    discarded_imports_modal:
+      title: "Importações arquivadas"
+    undiscard:
+      success: "Importação desarquivada com sucesso"
+    new_xlsx_contacts:
+      file_name: "modelo_importacao_contatos_procfy"
+      title: "Nova importação de contatos"
+      select_file: "Selecione o arquivo a ser importado"
+    import_contacts_explanation:
+      intro: "Aprenda a importar contatos de outros sistemas utilizando nosso formato Excel. <strong>Vamos começar!</strong>"
+      step: "Passo %{step}"
+      step_1: "Baixe o modelo de importação padrão de contatos clicando no botão abaixo."
+      step_2: "Prepare a planilha que você deseja importar."
+      step_3: "Identifique as colunas corretas para importação."
+      step_4: "Preencha as informações na planilha."
+      step_5: "Importe os dados para finalizar o processo."
+
+
+
+  document_templates:
+    index:
+      new: "Novo modelo de documento"
+    tabs:
+      coming_soon: Em breve
+      receipts: Recibos
+      invoices: Faturas
+      contracts: Contratos
+      proposals: Propostas
+      budgets: Orçamentos
+      service_orders: Ordens de Serviços
+    index_actions:
+      new: "Novo template"
+    destroy:
+      success: "Sucesso ao destruir documento"
+    update:
+      success: "Sucesso ao atualizar o documento"
+    create:
+      success: "Sucesso ao criar documento"
+
+  receipt:
+    generate_receipt: "Gerar recibo"
+    two_parts_page: "Duas vias em uma página"
+    models: "Modelos"
+    generate_invoice: "Gerar fatura"
+
+  tags:
+    new:
+      title: "Nova tag"
+
+  receipt_templates:
+    index:
+      title: new
+    create:
+      success: "Sucesso em criar o modelo de recibo"
+    update:
+      success: "Sucesso em atualizar o modelo de recibo"
+
+    new:
+      title: "Novo modelo de documento"
+    form:
+      name: "Nome do modelo"
+      description: "Descrição"
+      transaction_type: "Tipo de Transação"
+      show_header: "Exibir cabeçalho"
+      document_body: "Corpo do meu documento"
+      insert_variable: 'Digite “@“ para inserir variáveis no seu recibo.'
+      submit_button: "Salvar modelo"
+      reset_default_button: "Resetar para o padrão"
+    variable:
+      title: "Variáveis do sistema"
+      variable: "Variável"
+      result: "Converte para"
+      insert_variable: "Iserir Variável"
+    suggestion_variables: [
+      "DATA_ATUAL",
+      "MEU_NOME",
+      "MINHA_EMPRESA",
+      "MINHA_EMPRESA_DOCUMENTO",
+      "MINHA_EMPRESA_ESTADO",
+      "MINHA_EMPRESA_CIDADE",
+      "CODIGO_ITEM",
+      "CONTA_BANCARIA_ITEM",
+      "DATA_ITEM",
+      "VALOR_ITEM",
+      "NUMERO_DOCUMENTO_ITEM",
+      "FORMA_PAGAMENTO_ITEM",
+      "DESCRICAO_ITEM",
+      "DETALHES_ITEM",
+      "CATEGORIA_ITEM",
+      "NOME_CLIENTE",
+      "DOCUMENTO_CLIENTE",
+      "TELEFONE_CLIENTE",
+      "EMAIL_CLIENTE",
+      "DESCRICAO_CLIENTE",
+      "ENDERECO_COMPLETO_CLIENTE",
+      "ENDERECO_SIMPLIFICADO_CLIENTE",
+      "COMP_ENDERECO_CLIENTE",
+      "BAIRRO_ENDERECO_CLIENTE",
+      "CEP_ENDERECO_CLIENTE",
+      "ESTADO_ENDERECO_CLIENTE",
+      "CIDADE_ENDERECO_CLIENTE",
+    ]
+
+  feedbacks:
+    new:
+      feedback: "Dê seu feedback"
+      help_us: "Nos ajude a melhorar o <strong>Procfy</strong>, enviando a sua avaliação e fornecendo suas sugestões"
+      evaluate: "Como avalia nosso sistema?"
+      bad: "Ruim"
+      regular: "Regular"
+      good: "Boa"
+      great: "Ótima"
+      excellent: "Excelente"
+      provide_your_feedback: "Forneça seu feedback ou sugestão"
+      enter_your_opinion: "Digite aqui sua opinião sobre o Procfy. Pode ser um elogio, uma crítica ou uma sugestão"
+      submit: "Enviar"
+    create:
+      success: "Feedback enviado com sucesso"
+      error: "Algo deu errado"
+      empty: "Sem observações"
+
+  help_users:
+    no_result: "Sem resultados"
+    no_videos: "Estamos sem materiais de ajuda no momento"
+    no_suggestions: "Sem sugestões de artigos"
+    no_suggestions_description: "Estamos sem sugestões de artigos no momentos"
+    index:
+      video_lessons_for_beginners: "Videoaulas para iniciantes"
+      help_guides: "Guias de ajuda"
+      other_help_channels: "Outros canais de ajuda"
+      feedback: "Dê seu feedback"
+    videos_modal:
+      video_lessons_for_beginners: "Videoaulas para iniciantes"
+    initial_modal:
+      welcome_procfy: "Seja bem-vindo ao Procfy"
+      welcome_user: "Olá <strong>%{name}</strong>, preparamos um material de ajuda para você começar bem no <strong>Procfy</strong>. Aproveite e boa gestão!"
+      video_lessons_for_beginners: "Videoaulas para iniciantes"
+      help_guides: "Guias de ajuda"
+      see_all: "Ver todos"
+      do_not_display_again: "Não exibir novamente"
+      thanks: "Ok, obrigado!"
+      thanks_mobile: "Ok!"
+      more_informations: 'Caso deixe de exibir este guia, encontrará mais opções no botão de ajuda que se encontra no canto inferior direito da tela, conforme ilustrado abaixo: <div class= "flex justify-center items-center m-2"> <div class=" w-14 h-14 rounded-full bg-pink-500 shadow-md text-white font-bold text-3xl flex justify-center items-center"> ?</div> </div> '
+    search_modal:
+      supporting_materials: 'Materiais de apoio'
+      search: 'Pesquisar'
+      search_here: "Pesquise um conteúdo aqui..."
+      search_here_mobile: "Pesquise aqui..."
+      help_guides: "Guias de ajuda"
+      see_all: "Ver todos"
+
+
+  exports:
+    export: "Exportar"
+    due_date: "Data Pagamento"
+    competency_date: "Data Competencia"
+    value: "Valor"
+    received_paid_at: "Recebido de/Pago a"
+    transfer_in: "Transferência Entrada"
+    transfer_out: "Transferência Saída"
+    tags: Tags (Por Marcação)
+    table:
+      empty_state:
+        title: "Nenhuma exportação encontrada"
+
+
+    header:
+      title: "Faça download das suas movimentações"
+      subtitle: "Selecione as opções e clique no botão <strong>Exportar</strong> para exportar seu arquivo <strong>XLSX</strong>"
+    form:
+      starting_date: "Data inicial"
+      ending_date: "Data final"
+      select_bank_account: "Contas bancárias"
+      select_cost_center: "Centros de custos"
+      include: "Incluir lançamentos"
+      paid: "Pagos"
+      not_paid: "Não pagos"
+    contacts:
+      title: "Contatos"
+      name: "Nome"
+      type: "Tipo"
+    create:
+      success: "Exportação iniciada com sucesso"
+      fail: "Não foi possível exportar este arquivo, tente novamente mais tarde"
+      error: "Arquivo não compativel"
+      wait_pending_export: "Já existe um processo de exportação em progresso! Só é possível fazer uma exportação por vez."
+
+  application:
+    profile_menu_dropdown:
+      sign_out: "Sair"
+      user_settings: "Meu perfil de usuário"
+      account_settings: "Configurações de %{account}"
+      checkout: "Assinar..."
+      billing: "Minhas cobranças"
+      change_plan: "Trocar meu plano"
+      change_payment_method: "Alterar modo de pagamento"
+      rails_admin: "Administração (Rails Admin)"
+      adm_area: "Área restrita (Super Usuário)"
+      my_accounts: "Minhas contas"
+      settings: "Configurações"
+      subscribe: "Assinar plano..."
+      manage_my_subscription: "Gerenciar minha assinatura"
+      my_subscription: "Minha assinatura..."
+      users: "Usuários do sistema"
+      exports: "Exportar dados"
+    sidenav_content:
+      home: "Dashboard"
+      dashboard: "Página inicial"
+      settings: "Organização"
+    help_dropdown:
+      interrogation: "?"
+      help_center: "Central de ajuda"
+    empty_state:
+      empty_result: "Esta lista está vazia"
+      empty_search: "Nenhum resultado encontrado"
+      click_to_create_a_new_one: "Clique no botão abaixo para adicionar o seu primeiro item"
+      click_to_clear_search: "Clique no botão abaixo para limpar a sua pesquisa"
+      no_permission_to_create: "Ainda não há nada aqui"
+      add: "Adicionar"
+      clear_search: "Limpar pesquisa"
+    empty_search:
+      search_not_found: "Nenhum resultado encontrado"
+    footer:
+      about: "Sobre"
+      privacy: "Privacidade"
+      terms: "Termos de uso"
+      help: "Ajuda"
+    mailer_footer:
+      lgpd: "ATENÇÃO: Em consonância com a Lei Geral de Proteção de Dados, todas as informações adquiridas nesta mensagem são de cunho confidencial, destinada exclusivamente ao(s) interessado(s) destinatário(s) ou empresa(s). Nas circunstâncias de um equívoco, em que a presente tenha sido recebida por terceiros não interessados, comunicamos que sua divulgação é proibida por lei, ocorrendo tal fato, peçamos o favor de apagar as informações e notificar o remetente imediatamente. Ainda, instruímos que o uso impróprio será tratado conforme as normas da empresa e a legislação em vigor Lei n. 13.709/2018. Além disso, o titular poderá solicitar qualquer informação relacionada ao seu exercício de direitos dos dados pessoais, como acesso aos dados, retificação ou eliminação, por meio do Encarregado de Proteção de Dados, através do e-mail juridico@codengage.com."
+    trial_notification:
+      current_plan: "Meu plano atual"
+      trial_period: "Seu período de avaliação termina em <strong>%{count_down}</strong> dias."
+      trial_description: "Você pode efetivar a sua assinatura a qualquer momento dentro deste período clicando no botão <strong>Assinar</strong>."
+      trial_expired_title: "Seu período de avaliação expirou"
+      trial_expired_description: "Assine nosso plano para continuar utilizando nossa plataforma."
+      suspended: "Sua conta foi parcialmente bloqueada por motivos administrativos"
+      suspended_description: "Existe algum problema administrativo na sua conta. Entre em contato com o nosso suporte para mais informações"
+      access_billing_portal: "Acessar portal"
+    subscription_notification:
+      past_due_title: "Sua assinatura está com pagamento atrasado!"
+      past_due_description: "Evite bloqueios em sua conta, regularizando sua assinatura através do portal de cobranças."
+      access_billing_portal: "Acessar portal"
+      unpaid_title: "Sua conta foi parcialmente bloqueada por falta de pagamento"
+      unpaid_description: "Evite o cancelamento da sua conta acessando o portal de assinatura e regularizando a(s) fatura(s) em atraso"
+      account_canceled: "Você cancelou sua assinatura <strong>%{type_account}</strong>"
+      account_canceled_description: "Você poderá utilizar o sistema normalmente até <strong>%{date}</strong>. Caso queira desfazer o cancelamento, acesse o gerenciador de assinaturas."
+      account_canceled_expired: "Sua conta foi cancelada!"
+      account_canceled_expired_description: "Faça uma nova assinatura para continuar utilizando nossa plataforma, ou dentro de 3 meses, sua conta será deletada permanentemente."
+      waiting_payment_confirmation: "Aguardando a confirmação do pagamento"
+      waiting_payment_confirmation_description: "Se estiver pagando via boleto, a confirmação pode demorar até 24 horas"
+      payment_failed: "Não foi possível capturar o último pagamento da sua assinatura"
+      payment_failed_description: "Para maiores detalhes acesse o portal de assinatura."
+      incomplete: "Há uma fatura pendente de pagamento"
+      incomplete_description: "Se for boleto e você já efetuou o pagamento, desconsidere esta mensagem, caso contrário, acesse nosso portal de assinatura para mais detalhes."
+      subscription_past_due_and_last_invoice_open: "Há uma fatura pendente de pagamento e ela precisa de sua atenção."
+      subscription_past_due_and_last_invoice_open_description: "Se a fatura já foi regularizada, desconsidere esta mensagem."
+      incomplete_expired: "Sua tentativa de assinatura expirou"
+      incomplete_expired_description: "Realize uma nova assinatura para continuar a utilizar a plataforma, se a assinatura já foi realizada, desconsidere esta mensagem."
+    switch_account:
+      switch_account: "Trocar de conta"
+      current_account: "Atual"
+    pending_invitations:
+      view_invitation: "Você pode aceitar/rejeitar este convite"
+      instructions: "<strong>%{inviter}</strong> convidou você para participar do time <strong>%{account}</strong>."
+    empty_state_file:
+      click_to_upload: "Clique em uma das opções acima para realizar uma nova importação."
+      import_external_file: "Importar arquivo externo"
+      select_file: "Selecionar arquivo"
+
+
+  daily_notification_mailer:
+    send_daily_notification:
+      title: "Relatório diário de %{company} - Procfy"
+      release: "Lançamentos"
+      mail_header:
+        hello: "Olá %{name}!"
+        expiration: 'Temos <span style="padding: 2px 5px; background-color: #6366f1; color: #FFF">%{number_of_expirations}</span> vencimento(s) para hoje.'
+      mail_body:
+        revenues: "A receber:"
+        expenses: "A pagar:"
+        show_transactions: "Ver minhas transações"
+        transaction_without_name: "Sem descrição"
+      mail_footer:
+        alert_mail_configurations: 'Você está recebendo este email por que as configurações de <strong>"Avisos por e-mail"</strong>&nbsp;estão ativas no <strong>Procfy</strong>. Se não quiser mais receber nossos e-mails, acesse o <strong>Procfy</strong> e em <strong>Perfil</strong>, selecione<strong> "Configurações de %{company_name}"</strong>. Veja as opções de configurações, e faça suas escolhas.'
+        proof_policies: '<span style="font-size:11px"><p>A <a href="https://codengage.com/" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">Codengage</a> respeita sua privacidade. Para saber mais, leia nossa <a href="https://procfy.io/policy.html#privacy" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">Política de privacidade.</a> Se você receber um e-mail suspeito, informe para a gente ao encaminhá-lo para <a href="mailto:atendimento@procfy.io" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">atendimento@procfy.io</a>.</p><p>©2023 Codengage Tecnologia. Todos os direitos reservados. CNPJ: 24.477.617/0001-60.<br>Endereço: Av. Prefeito Dedi Barrichelo Montagner, 250, térreo. Dois Vizinhos - Paraná. Cep 85660-000.</p></span>'
+  shared:
+    past:
+      create: "Criou"
+      update: "Atualizou"
+      destroy: "Excluiu"
+      archive: "Arquivou"
+      delete: "Excluiu"
+      deleted: "Excluído"
+      archived: "Arquivado"
+      created: "Criado"
+      updated: "Atualizado"
+      unarchived: "Desarquivado"
+
+    attributes:
+      name:
+        not_informed: "Nome não informado"
+        blank: "Sem nome"
+      bank_account:
+        not_informed: "Conta bancária não informada"
+      email:
+        not_informed: "E-mail não informado"
+      phone:
+        not_informed: "Telefone não informado"
+    at: "às"
+    archive: "Arquivar"
+    not_informed_agency: "Agencia não informada"
+    are_you_sure?: "Você tem certeza?"
+    error: "%{count} prohibited this domain from being saved:"
+    search: "Pesquisar..."
+    all: "Todos"
+    female_all: "Todas"
+    not_informed: "Não informado"
+    default: "Padrão"
+    read: "Ver"
+    create: "Criar"
+    edit: "Editar"
+    remove: "Excluir"
+    date_format: "dd/MM/yyyy"
+    date_pattern: "00/00/0000"
+    upload_a_file: "Clique aqui"
+    or_drag_and_drop: "Clique aqui ou arraste e solte os arquivos que deseja enviar"
+    accepted_formats: "PNG, JPG, XML, PDF, DOC e XLS até 5MB"
+    details: "Editar detalhes"
+    go_to_transaction: "Ir para transação"
+    loading: "Carregando..."
+    duplicate: "Duplicar"
+    move_to: "Mover para ..."
+    yes: "Sim"
+    no: "Não"
+    setup_installments: "Parcelar..."
+    create_installments: "Criar parcelas"
+    setup_recurrence: "Tornar recorrente..."
+    create_transactions: "Criar transações"
+    delete: "Excluir"
+    destroy_dialog: "Excluir..."
+    turn_default: "Tornar padrão"
+    main: "Principal"
+    turn_main: "Tornar principal"
+    download: "Baixar"
+    import: "Importar"
+    new_import: "Nova importação"
+    you_are_not_authorized_to_access_this_page: "<strong>Acesso negado!</strong><br>Você não tem permissão para acessar esta página ou executar esta ação."
+    good_morning: "Bom dia, %{name}."
+    good_afternoon: "Boa tarde, %{name}."
+    good_evening: "Boa tarde, %{name}."
+    good_night: "Boa noite, %{name}."
+    attachments: "Anexos"
+    attach: "Anexar arquivos"
+    send_files: "Enviar arquivos"
+    guest: "Sistema"
+    free_plan: "Cortesia"
+    other: "Outro"
+    others: "Outros"
+    trial: "Em teste"
+    back_to_home: "Voltar para página inicial"
+    copyright: "©%{year} Codengage"
+    financially_simple: "Financeiramente Simples"
+    required: "* obrigatório"
+    edit_permissions: "Editar permissões"
+    show: "Visualizar detalhes"
+    destroy: "Excluir"
+    update: "Atualizar"
+    cancel: "Cancelar"
+    invalid_option: "Opção inválida"
+    currency_placeholder: "R$ -,--"
+    percentage_placeholder: "-,--%"
+    under_construction: "Em construção"
+    processing: "Processando..."
+    none: "Nenhum"
+    select_all_female: "Selecionar todas"
+    unselect_all_female: "Desmarcar todas"
+    selected_options_female: " selecionadas"
+    select_all_male: "Selecionar todos"
+    unselect_all_male: "Desmarcar todos"
+    selected_options_male: " selecionados"
+    total: "Total"
+    not_informed_female: "Não informada"
+    outcome: "Previsão do mês:"
+    app_name: "Procfy - Financeiramente Simples"
+    month_preview: "Previsão do mês: <strong>%{amount}</strong>"
+    new: "Adicionar"
+    percentage: "Porcentagem"
+    period: "Período:"
+    from_to: "%{from} à %{to}"
+    print: "Gerar PDF ou imprimir"
+    export: "Exportar para Excel"
+    add: "Adicionar"
+    empty_state_title: "A lista está vazia"
+    empty_state_message: "Começe adicionando seu primeiro item"
+    empty_search_title: "Resultado não encontrado"
+    empty_search_message: "Limpe sua pesquisa e tente novamente"
+    clear_search: "Limpar pesquisa"
+    untitled: "Sem título"
+    not_authorized: "<strong>Não autorizado!</strong>"
+    import_ofx_extract: "Importar extrato OFX"
+    account_type: "Conta %{type}"
+    personal_photo: "Foto pessoal"
+    bank_account: "Conta bancária"
+    expenses: "Despesas"
+    tags: "Tags/Marcações"
+    modules: "Módulos"
+    search_min_length_message: "Pesquisa deve ter no mínimo 2 caracteres"
+    searching: "Pesquisando..."
+    search_contact_text: "Nenhum contato encontrado. Adicione clicando no botão (+)"
+    search_contact_placeholder: "Pesquisar..."
+    search_category_text: "Nenhuma categoria encontrada. Adicione clicando no botão (+)"
+    search_cost_center_text: "Nenhum centro de custo encontrado. Adicione clicando no botão (+)"
+    search_category_placeholder: "Pesquisar..."
+    search_cost_center_placeholder: "Pesquisar..."
+    general_search: "Pesquisar no geral..."
+    back: "Voltar"
+    next: "Próximo"
+    confirm: "Confirmar"
+    search_other: "Localizar outro lançamento"
+    discard: "Ignorar/descartar"
+    select: "Selecionar"
+    ignore: "Ignorar"
+    actions: "Ações"
+    reset: "Desfazer"
+    fix: "Corrigir"
+    reconcile: "Conciliar"
+    start_date: "Data inicial"
+    end_date: "Data final"
+    no_result_found: "Nenhum resultado encontrado"
+    current: "Atual"
+    alternative: "Alternativa"
+    reconcile_selected: "Conciliar selecionados"
+    ignore_selected: "Ignorar selecionados"
+    finish: "Finalizar"
+    payment_date: "Data pgto."
+    go_to_transactions: "Ir para transações"
+    several: "Vários"
+    partially_paid: "Pago parcialmente"
+    fully_paid: "Pago integralmente"
+    unpaid: "Não pago"
+    create_entry_of: "Adicionar lançamento de %{amount}"
+    or: "ou"
+    status: "Situação"
+    unarchive: "Desarquivar"
+    archived: "Arquivado"
+    installment_amount: "Valor da parcela"
+    save: "Salvar"
+    update_installments: "Atualizar parcelas"
+    clear: "Limpar"
+    apply: "Aplicar"
+    dismiss: "Ok, li e entendi"
+    show_details: "Ver detalhes"
+    referral_link: "Link de indicação"
+    copied: "Copiado!"
+    copy: "Copiar!"
+    copy_referral_link: "Clique para copiar!"
+    edit_installments: "Editar parcelas..."
+    system: "Sistema"
+    expenses_of: "Despesas de"
+    discarded: "Excluído"
+    title: "Procfy sua ferramenta de gestão financeira"
+    description: "Sistema de gestão financeira, fácil de usar e que vai lhe ajudar a gerenciar suas finanças."
+    description2: "Teste grátis por %{days} dias!"
+    bold: "Negrito (Ctrl + B)"
+    italic: "Itálico (Ctrl + I)"
+    highlight: "Sublinhar (Ctrl + U)"
+    left_align: "Alinhar à esquerda (Ctrl + Shift + L)"
+    center_align: "Alinhar no centro (Ctrl + Shift + E)"
+    right_align: "Alinhar à direita (Ctrl + Shift + R)"
+    justify_align: "Justificar (Ctrl + Shift + J)"
+    strike: "Tachar"
+    big_title: "Título grande"
+    medium_title: "Título médio"
+    small_title: "Título pequeno"
+    undo: "Desfazer (Ctrl + Z)"
+    redo: "Refazer (Ctrl + Y)"
+    fill_after: "Preencher depois (Ctrl + m)"
+    variables: "Variáveis"
+    address: "Endereço"
+    fiscal_information: "Informação fiscal"
+    reset_account: "Resetar conta"
+    add_item: "Adicionar item"
+    bank_account_ids: "Contas Bancárias"
+    contact_ids: "Contatos"
+    statuses: "Situações"
+    generate_invoice: "Gerar fatura"
+    edit_invoice: "Editar fatura"
+    access_invoice: "Acessar fatura"
+    save_as_draft: "Salvar como rascunho"
+    place: "Gerar fatura"
+    pay: "Pagar fatura"
+    sent_at: "Enviado em: %{date}"
+    create_as_draft: "Criar rascunho"
+    save_draft: "Salvar como rascunho"
+    preferences: "Preferências"
+    webhooks: "Webhooks"
+    api_tokens: "Tokens da API"
+    close: "Fechar"
+    document_1: "CNPJ: %{value}"
+    postcode: "CEP"
+    access: "Fale conosco"
+    preview_and_send: "Visualizar impressão e enviar"
+    print_preview: "Visualizar impressão"
+    download_pdf: "Baixar PDF"
+    tax: "Valor dos impostos"
+    discount: "Valor de desconto"
+    invoice_preview: "Visualizar fatura"
+    not_available: "Não informado"
+    open_invoice: "Salvar e marcar como em aberto"
+    edit_transaction: "Editar transação"
+    received: "Recebido"
+    to_receive: "A receber"
+    document_1_natural: "CPF: %{value}"
+    document_1_undefined: "CPF/CNPJ: %{value}"
+    deleted_user: "Usuário excluído"
+    are_you_sure: "Você tem certeza?"
+    settings: "Configurações"
+    company_details: "Dados da empresa"
+    tax_config: "Configurações fiscais"
+    company_address: "Endereço da empresa"
+    company_data: "Dados da empresa"
+    nfse_config: "Configurações NFS-e"
+    download_cert: "Baixar certificado"
+    upgrade: "Upgrade"
+    save_configurations: "Salvar configurações"
+    tax_information: "Informações fiscais"
+    municipal_tax_information: "Tributação municipal"
+    national_tax_information: "Tributação federal"
+    duplicated: "Duplicado"
+    search_your_city: "Pesquise a cidade..."
+    search_city: "Pesquisar cidade..."
+    autocomplete_search_text: "A pesquisa deve conter pelo menos 3 caracteres..."
+    autocomplete_search_placeholder: "Pesquisar..."
+    autocomplete_search_message: "Pesquisando..."
+    plan_pro: "Plano Pro"
+    configure: "Configurar"
+    enabled: "Habilitado"
+    disabled: "Desabilitado"
+    previous: "Anterior"
+    skip: "Pular"
+    done: "Concluído"
+    coming_soon: "Em breve"
+    already_subscribed: "A conta já possui uma assinatura"
+    greeting: "Olá, %{name}"
+    referral_code_message_personal: "O desconto de <strong>%{value}%</strong> é aplicável apenas para contas do tipo <strong>Pessoal</strong>."
+    referral_code_message_business: "O desconto de <strong>%{value}%</strong> é aplicável apenas para contas do tipo <strong>Empresarial</strong>."
+    referral_code_message_both: "O desconto de <strong>%{value}%</strong> é aplicável para ambos os tipos de conta."
+    min_value: "Mínimo"
+    max_value: "Máximo"
+
+  error: "Erro"
+  user_settings:
+    edit:
+      title: "Perfil do usuário"
+    update:
+      success: "Perfil atualizado com sucesso"
+    form:
+      update: "Atualizar perfil"
+      email_preference: 'Receber notificação de vencimento por e-mail'
+      bank_preference: 'Visualizar todas as contas bancárias como padrão'
+      payment_date_preference: 'Confirmar a data de pagamento ao marcar um item como pago'
+      disable_view_recurrence: 'Desabilitar visualização da parcela nas recorrências'
+      beta_tester_check: 'Quero ser um beta tester'
+      beta_tester_description: 'Um beta tester é alguém que participa da fase de teste beta de um produto ou software antes do seu lançamento oficial. Os beta testers ajudam a identificar e relatar problemas, bugs, falhas e oferecem feedbacks sobre a usabilidade e funcionalidade do produto. Eles desempenham um papel importante na melhoria da qualidade do produto, permitindo que os desenvolvedores façam ajustes e correções antes do lançamento para o público em geral.'
+    update_current_account:
+      success: "Conta trocada com sucesso"
+    reset_account:
+      success: "Conta resetada com sucesso"
+      fail: "Erro ao realizar o reset"
+    switch_account:
+      switch_account: "Trocar de conta"
+      current_account: "Atual"
+  transactions:
+    due_date_form:
+      title: "Data de pagamento"
+      change_due_date: "Deseja atualizar a data para o dia de hoje?"
+    new:
+      new_transaction: "Nova transação"
+      title: "Nova transação"
+    index:
+      empty_state_title: "Sua lista de transações está vazia."
+      empty_state_description: "Clique abaixo para adicionar a sua primeira transação."
+    create:
+      success: "Transação cadastrada com sucesso"
+    update:
+      success: "Transação atualizada com sucesso"
+    destroy:
+      success: "Transação deletada com sucesso"
+    toggle:
+      success: "Transação atualizada com sucesso"
+      error: "Erro ao atualizar a transação"
+    details:
+      title: "Detalhes da transação"
+    filter:
+      week: "Esta semana"
+      yesterday: "Ontem"
+      today: "Hoje"
+      paid: "Pago"
+      due_today: "A vencer hoje"
+      delayed: "Vencidas (Em atraso)"
+      revenue: "Todas a receber (Não pagas)"
+      expenses: "Todas a pagar (Não pagas)"
+      clean: "Limpar"
+      month: "Este mês"
+      date_range: "00/00/0000 - 00/00/0000"
+      range: "Selecione a data"
+    totalizer:
+      total: "Total"
+      revenue_paid: "Recebido"
+      revenue_unpaid: "A Receber"
+      expense_paid: "Pago"
+      expense_unpaid: "A Pagar"
+      transfer_paid: "Transferido"
+      transfer_unpaid: "A Transferir"
+    outcome:
+      outcome: "Resultado previsto no mês"
+      title_about_analytics: "Resultado previsto no mês"
+      description_about_analytics: "Aqui é possível ver qual é a previsão do resultado no fim do mês após todos os recebimentos e despesas."
+    revenues:
+      revenues: "Recebimentos"
+      paid_revenues: "Recebido"
+      prev_revenues: "Previsto"
+      lack: "Falta"
+    expenses:
+      expenses: "Despesas"
+      paid_expenses: "Pago"
+      prev_expenses: "Previsto"
+      lack: "Falta"
+    panel_action:
+      delete: "Excluir"
+      options: "Opções..."
+      move_to: "Mover para..."
+      toggle_paid: "Marcar como pago"
+    total_sum_transactions:
+      select_transaction: "Transação selecionada"
+      select_transactions: "Transações selecionadas"
+    mark_as_paid:
+      success: "Transações marcadas como pagas com sucesso"
+      error: "Erro ao marcar transações como pagas"
+    chart:
+      outcome: "Resultado"
+    duplicate:
+      success: "Transação duplicada com sucesso"
+    move_to:
+      title: "Mover para"
+    balance:
+      new_bank_account: "Adicionar conta"
+      title_about_current_balance: "Saldo Atual"
+      description_about_current_balance: "Aqui você pode ver o saldo que é resultado de todas as movimentações que você fez no sistema somadas ao saldo inicial."
+      title_about_month_preview: "Previsão do mês"
+      description_about_month_preview: "Aqui você consegue ver a previsão do saldo da sua conta para o final do mês que está visualizando, a soma é do saldo atual mais as receitas, despesas e transferências que existem no mês."
+    goto:
+      goto: "Visualizar a minha transação no mês %{month}"
+    goto_bank_account:
+      goto_bank_account: "Visualizar minha transação em %{name}"
+    goto_moved_bank_account:
+      goto_bank_account: "Visualizar minha transação em %{name}"
+    installments_config:
+      title: "Configurar parcelas"
+    setup_installments:
+      title: "Configurar parcelamento"
+    setup_recurrence:
+      title: "Configurar recorrência"
+    destroy_dialog:
+      title: "Exclusão de item parcelado ou recorrente"
+      how_do_you_prefer_delete_it: "Esta transação é parte de um parcelamento ou recorrência. <strong>O que você deseja excluir?</strong>"
+      only_this_installment: "Somente esta parcela"
+      this_and_next_installments: "Esta parcela e as próximas"
+      prev_and_next_installments: "As parcelas anteriores e as próximas"
+      this_and_prev_installments: "Esta parcela e as anteriores"
+    tabs:
+      next_month: "Próximo mês"
+      prev_month: "Mês anterior"
+      current_month: "Voltar ao mês atual"
+      ungroup_expenses: "Desagrupar despesas"
+      group_expenses: "Agrupar despesas"
+    transaction:
+      paid: Pago
+      not_paid: Não Pago
+      detailed_paid: "Pago: %{value}"
+      detailed_amount: "Valor detalhado"
+    balance_option:
+      bank_account_default: "Conta bancária principal"
+    update_dialog:
+      title: "Alteração de item parcelado ou recorrente"
+      how_do_you_prefer_delete_it: "Esta transação é parte de um parcelamento ou recorrência. O que você deseja fazer?"
+      only_this_installment: "Somente esta parcela"
+      this_and_next_installments: "Esta parcela e as próximas"
+      prev_and_next_installments: "As parcelas anteriores e as próximas"
+      this_and_prev_installments: "Esta parcela e as anteriores"
+    goto_transaction_type:
+      goto: "Visualizar minha transação em <strong>%{name}</strong>"
+    edit:
+      title: "Editar transação"
+    show:
+      title: "Abrir transação"
+    edit_amount_details:
+      title: "Detalhar valor"
+    amount_details_form:
+      new_item: "Adicionar lançamento"
+      save: " Salvar divisão"
+      amount_mismatch: "A soma das partes não bate com o valor total da transação."
+      update_the_transaction_amount: "Atualizar o valor da transação para <strong>%{value}</strong>?"
+    amount_details_totalizer:
+      total_item_amount: "Valor total da transação"
+      total_sum_of_division: "Soma da divisão"
+      remaining_sum_amount: "Valor restante da divisão"
+    amount_details_footer:
+      remove_all_divisions: "Excluir toda a divisão"
+    form:
+      this_is_an_item_belonging_to_a_parent_transaction: "Este é um item relacionado a um detalhamento de um valor maior."
+      go_to_parent_transaction: "Ir para: %{name} - %{amount}"
+      go_to_detailed_transaction: "Ir para detalhamento..."
+      amount_cannot_be_changed_because_it_has_invoices: "Alguns dados não podem ser alterados, porque esta transação possui uma fatura relacionada. Altere o valor total da fatura para atualizar o valor da transação."
+    calculator:
+      transfer: "Transferir"
+      error: "Erro ao transferir"
+      success: "Transferido"
+    reindex:
+      success: "Transações reindexadas com sucesso"
+      fail: "Erro ao reindexar transações"
+    transaction_actions:
+      invoice: "Nº: %{number} | Vence em: %{date}"
+    bulk_update_options:
+      title: "Atualizar transações"
+    bulk_move_to_options:
+      title: "Mover transações"
+      selected_transaction_type: "Tipo das transações"
+    static_totalizer:
+      pin_totalizer: "Fixar totalizador"
+      unpin_totalizer: "Desfixar totalizador"
+    filters:
+      payment_status: "Situação do pagamento"
+      cost_center: "Centro de custo"
+      category: "Categoria"
+      date: "Data"
+      transaction_filter_options: "Filtros"
+      contact: "Contato"
+      value: "Valor"
+  home:
+    index:
+      dashboard: "Páginal inicial"
+      title: "Página inicial"
+      expected: "Previsto"
+      accomplished: "Realizado"
+      results: "Resultados"
+      dre: "DRE"
+      voucher_space: "Espaço de comprovantes"
+      expected_and_accomplished: "Previsto / realizado no mês"
+      subtitle: "Este é o resumo do mês atual"
+      bank_accounts: "Contas bancárias"
+      bank_accounts_description: "Alterne entre contas bancárias"
+      storage_size: "Armazenamento de arquivos"
+      storage_size_description: "Status do consumo de armazenamento"
+      delayed_payments_title: "Pagamentos pendentes"
+      delayed_payments_description: "Pagamentos que estão em atraso"
+      last_day_payments_title: "Pagamentos para hoje"
+      last_day_payments_description: "Pagamentos com vencimento previsto para hoje"
+      all_accounts: "Todas as contas"
+      view_more: "Ver mais"
+      result_preview: "Resultado previsto (DRE)"
+      result_preview_subtitle: "%{month} - %{bank_account}"
+    transactions_audits_modal:
+      title: "Últimas atualizações em transações"
+    transactions_audits_form:
+      start_date: "Data inicial"
+      end_date: "Data final"
+      users: "Usuários"
+      audit_type: "Tipo de atualização"
+      apply_filters: "Aplicar filtros"
+    transactions_audits:
+      title: "Últimas atualizações em transações"
+      no_data: "Sem dados (transação já excluida)"
+    last_transactions_audits:
+      title: "Últimas atualizações em transações"
+      title_about_last_transactions_audits: "Últimas transações cadastradas"
+      description_about_last_transactions_audits: "Aqui, você pode ver as últimas movimentações que você cadastrou no Procfy."
+      no_data: "Sem dados (transação já excluida)"
+
+    home_dre:
+      title: "Resultado previsto (DRE)"
+      subtitle: "%{month} - %{bank_account}"
+    comparative:
+      title: "Comparativo"
+      subtitle: "%{month} - %{bank_account}"
+      title_about_comparative: "Comparativo com o mês passado"
+      description_about_comparative: "Aqui você pode ver o quanto suas despesas e receitas aumentaram ou diminuíram em relação ao mês passado."
+    expected_accomplished:
+      title: "Previsto / realizado no mês"
+      title_about_expected/accomplished: "Previsto/Realizado"
+      description_about_expected/accomplished: "Aqui você pode ver o quanto você já pagou e recebeu neste mês, e o quanto ainda falta a pagar e receber."
+    cash_flow:
+      title: "Fluxo de caixa (últimos 6 meses)"
+      title_about_cash_flow: "Histórico de fluxo de caixa"
+      description_about_cash_flow: "Aqui você pode acompanhar a evolução do seu faturamento, despesas e saldos nos últimos seis meses."
+    delayed_payments:
+      no_delayed_payments: "Não há compromissos em atraso."
+      delayed_payments_title: "Compromissos atrasados"
+      delayed_payments_description: "Você possui %{count} compromisso(s) em atraso"
+      title_about_delayed_payments: "Compromissos atrasados"
+      description_about_delayed_payments: "Aqui você consegue visualizar todas as transações com a data de vencimento anteriores ao dia de hoje, ou seja, com pagamento em atraso."
+    without_category:
+      without_category_transactions: "Transações sem categoria"
+    dre:
+      title_about_dre: "Demonstrativo de Resultados"
+      description_about_dre: "Aqui você pode visualizar um breve demonstrativo dos resultados do exercício atual (este mês)."
+      gross_income: "Receita Bruta"
+      taxes: "Impostos"
+      gross_profit: "LUCRO BRUTO"
+      total_variable_expenses: "Total de Despesas Variáveis"
+      operating_profit: "LUCRO OPERACIONAL"
+      total_fixed_expenses: "Total de Despesas Fixas"
+      personnel_expenses: "Gastos com Pessoal"
+      net_profit: "RESULTADO"
+    receipts:
+      total: "Total"
+      available: "Disponível"
+    chart:
+      outcome: "Resultado"
+    storage:
+      total: "Total"
+      consumed: "Consumido"
+      total_and_consumed: 'Total: %{total} / Consumido: %{consumed}'
+      storage_size: "Armazenamento de arquivos"
+      storage_size_description: "Status do consumo de armazenamento"
+      title_about_storage: "Espaço para arquivos e comprovantes"
+      description_about_storage: "Aqui, você pode ver o total de espaço gasto e disponível para os arquivos de comprovantes de suas movimentações."
+    due_today_payments:
+      no_last_day_payments: "Nenhum compromisso previsto para hoje"
+      last_day_payments_title: "Compromissos para hoje"
+      last_day_payments_description: "Você possui %{count} compromisso(s) para hoje"
+      title_about_due_today_payments: "Compromissos para hoje"
+      description_about_due_today_payments: "Aqui você consegue visualizar todas as transações com a data de vencimento marcadas para hoje."
+    calendar:
+      birthday: "Aniversários"
+      title_about_calendar: "Calendário"
+      description_about_calendar: "Aqui você pode ver em quais dias do mês há movimentações programadas, além de checar movimentações atrasadas. Clique em qualquer dia para ver as movimentações agendadas."
+    calendar_transactions:
+      transactions: "Transações"
+      value: "Valor"
+  reports:
+    index:
+      title: "Relatórios"
+      date_range_error: "O perído de pesquisa não pode ser maior que um ano nos relatórios de <b> Extrato </b> e <b> Despesas/Receitas </b>."
+    in_description_graph:
+      title: "Recebimentos por descrição"
+      subtitle: "Descrição"
+      description: "Valor"
+      recipe: "(Recebimento)"
+    in_per_category_graph:
+      title: "Recebimentos por categoria "
+      subtitle: "Categoria"
+      description: "Valor"
+      recipe: "(Recebimento)"
+      in_per_category_not_informed: "Categoria não informada"
+    in_per_cost_center_graph:
+      title: "Recebimentos por centro de custo "
+      subtitle: "Centro de custo"
+      description: "Valor"
+      recipe: "(Recebimento)"
+      in_per_cost_center_not_informed: "Centro de custo não informado"
+    in_per_tag_graph:
+      title: "Recebimentos por tag "
+      subtitle: "Centro de custo"
+      description: "Valor"
+      recipe: "(Recebimento)"
+      in_per_cost_center_not_informed: "Tag não informada"
+    in_per_day_graph:
+      title: "Recebimentos por dia "
+      subtitle: "Dia"
+      description: "Valor"
+      recipe: "(Recebimento)"
+    in_per_type_graph:
+      title: "Recebimentos por tipo "
+      subtitle: "Tipo"
+      description: "Valor"
+      recipe: "(Recebimento)"
+    out_description_graph:
+      title: "Despesas por descrição "
+      subtitle: "Descrição"
+      description: "Valor"
+      recipe: "(Despesa)"
+    out_per_category_graph:
+      title: "Despesas por categoria "
+      subtitle: "Categoria"
+      description: "Valor"
+      recipe: "(Despesa)"
+      out_per_category_not_informed: "Categoria não informada"
+    out_per_cost_center_graph:
+      title: "Despesas por centro de custo "
+      subtitle: "Centro de custo"
+      description: "Valor"
+      recipe: "(Despesa)"
+      out_per_cost_center_not_informed: "Centro de custo não informado"
+    out_per_tag_graph:
+      title: "Despesas por tag "
+      subtitle: "Tag"
+      description: "Valor"
+      recipe: "(Despesa)"
+      in_per_cost_center_not_informed: "Tag não informada"
+    out_per_day_graph:
+      title: "Despesas por dia "
+      subtitle: "Dia"
+      description: "Valor"
+      recipe: "(Despesa)"
+    out_per_type_graph:
+      title: "Despesas por tipo "
+      subtitle: "Tipo"
+      description: "Valor"
+      recipe: "(Despesa)"
+    paid_to:
+      title: "Pago a..."
+      subtitle: "Favorecido"
+      description: "Valor"
+      recipe: "(Despesa)"
+    paid_to_details:
+      title: "Pago a"
+      subtitle: "Favorecido"
+      description: "Valor"
+      recipe: "(Despesa)"
+    receipted_from:
+      title: "Recebido de..."
+      subtitle: "Credor"
+      description: "Valor"
+      recipe: "(Recebimento)"
+    receipted_from_details:
+      title: "Recebido de"
+      subtitle: "Credor"
+      description: "Valor"
+      recipe: "(Recebimento)"
+    dre:
+      title: "Demonstrativo de resultado - %{from} à %{to}"
+      gross_income: "Receita bruta"
+      taxes: "Impostos"
+      total_variable_expenses: "Despesas Variáveis"
+      operating_profit: "Lucro Operacional"
+      total_fixed_expenses: "Despesa Fixas"
+      payroll: "Gastos com Pessoal"
+      net_profit: "Resultado do exercício"
+      gross_profit: "Lucro bruto"
+      no_bank_accounts: "Sem contas bancarias"
+      no_cost_centers: "Sem centro de custos"
+    financial_history:
+      title: "Histórico"
+      subtitle: "Data"
+      description: "Valor"
+      recipe: ""
+    extract:
+      title: "Extrato"
+      value: "Valor"
+      balance: "Saldo"
+      previous_balance: "Saldo Anterior"
+      total_revenues: "Total de Entradas no Período"
+      total_expenses: "Total de Saídas no Período"
+      period_balance: "Balanço no Período"
+      final_balance: "Saldo Final"
+      transfer_in: "Conta de origem"
+    tags:
+      title_expenses: "Despesas por Marcações (Tags)"
+      title_revenues: "Recebimentos por Marcações (Tags)"
+      value: "Valor"
+      total: "Total"
+      empty_state_tags_message: "Verifique os filtros informados e tente novamente"
+      transfer_in: "Conta de origem"
+      tags_placeholder: "Adicione uma ou mais tags e clique na lupa ao lado..."
+      title: "%{type} por marcações - %{from} à %{to}"
+      revenue: Recebimentos
+      expense: Despesas
+
+    history_per_contacts_per_transaction:
+      without_name: "Sem descrição"
+
+    comparative:
+      title: "Fluxo de Caixa"
+      total: "Total"
+      total_expenses: "Total de Despesas"
+      total_revenues: "Total de Recebimentos"
+      total_revenues_period: "Total de Recebimentos no Período"
+      total_expenses_period: "Total de Despesas no Período"
+      all_transfers_period: "Total de transferências no Período"
+      total_fixed_expenses: "Total de Despesas Fixas"
+      total_variable_expenses: "Total de Despesas Variáveis"
+      total_people: "Total de Pessoas"
+      total_taxes: "Total de Impostos"
+      total_transfers_out: "Total de Transferências de Saída"
+      total_transfers_in: "Total de Transferências de Entrada"
+      balance_period: "Balanço no Período"
+      previous_balance: "Saldo Anterior"
+      final_balance: "Saldo Final"
+      transfers_in: "Transferências de Entrada"
+      transfers_out: "Transferências de Saída"
+      revenues: "Recebimentos"
+      fixed_expenses: "Despesas Fixas"
+      variable_expenses: "Despesas Variáveis"
+      people: "Pessoas"
+      taxes: "Impostos"
+      date: "Data"
+      description: "Descrição"
+      category: "Categoria"
+      value: "Valor"
+      without_category: "Sem categoria"
+      origin: "Origem"
+      destiny: "Destino"
+      received_from: "Recebido de"
+      without_contact: "Não informado"
+      paid_to: "Pago a"
+      type: "Tipo"
+    header_reports:
+
+    filter:
+      starting_date: "Data inicial"
+      ending_date: "Data final"
+      select_bank_account: "Contas bancárias"
+      select_cost_center: "Centros de custo"
+      include: "Incluir lançamentos"
+      paid: "Pagos"
+      not_paid: "Não pagos"
+      apply: "Aplicar"
+      clear: "Limpar"
+      due_date: "Pagamento"
+      competency: "Competência"
+      date_type: "Mostrar por data de"
+      tags: "Tags / Marcações"
+      tags_placeholder: "Adicione uma ou mais tags..."
+      payment_methods: "Modos de pagamento"
+      select_category: "Categorias"
+    side_menu:
+      receipted_from: 'Recebido de...'
+      contact: 'Pago a...'
+      tags: 'Por Marcações (Tags)'
+      title: "Fluxo De Caixa"
+      title_about_reports: "Selecionar relatórios"
+      description_about_reports: "Aqui você pode selecionar o tipo de relatório que deseja ver ao lado."
+      dre: "Resultados (DRE)"
+      financial_history: "Histórico"
+      extract: "Extrato"
+      comparative: "Despesas/Receitas"
+      expenses: "Despesas"
+      income: "Recebimentos"
+      description: "Por Descrição"
+      period: "Por Dia"
+      transaction_type: "Por Tipo"
+      date_range: "Intervalo de Datas"
+      history_expenses_per_type: "Histórico"
+      history_per_category: "Histórico"
+      day: "Por Dia"
+      categories_per_transaction_type: 'Transações por categoria'
+      transactions_per_transaction_type_and_category: 'Categorias/Tipo'
+      transactions_per_cost_center: 'Centro de Custo por transação'
+      transactions_per_tag: 'Transação por tag'
+      transactions_per_category: 'Transações por categoria'
+      transactions_per_contact: 'Transações por contato'
+      category: "Por Categoria"
+      cost_center: "Por Centro De Custo"
+      payment_method: "Por Modo De Pagamento"
+    totalizer:
+      total: "Total"
+    cost_center:
+      nil: "Sem centro de custo informado"
+      title: "%{type} por centro de custo - %{from} à %{to}"
+      revenue: 'Recebimentos'
+      expense: 'Despesas'
+    category:
+      nil: "Sem categoria informada"
+      title: "%{type} por categoria - %{from} à %{to}"
+      revenue: 'Recebimentos'
+      expense: 'Despesas'
+    contact:
+      nil: "Nenhum contacto informado"
+      title: "%{type} por contato - %{from} à %{to}"
+      revenue: 'Recebimentos'
+      expense: 'Despesas'
+    description:
+      nil: "Sem descrição informada"
+      title: "%{type} por descrição - %{from} à %{to}"
+      revenue: Recebimentos
+      expense: Despesas
+    period:
+      title: "%{type} por período - %{from} à %{to}"
+      revenue: Recebimentos
+      expense: Despesas
+      day: "Dia"
+      month: "Mês"
+    transaction_type:
+      title: "Despesas por tipo - %{from} à %{to}"
+    transactions_per_category:
+      title: "%{type} por categoria"
+    transactions_per_tag:
+      title: "%{type} por marcações"
+    transactions_per_cost_center:
+      title: "%{type} por centro de custo"
+    transactions_per_contact:
+      title: "%{type} por contato"
+    transactions_per_payment_method:
+      title: "%{type} por modo de pagamento"
+    categories_per_transaction_type:
+      title: "Despesas por tipo"
+    history_expenses_per_type:
+      title: "Histórico por %{type}"
+      revenue: "Recebimentos"
+      expense: "Despesas"
+    history_per_category:
+      title: "Histórico por %{type}"
+      revenue: "Recebimentos"
+      expense: "Despesas"
+    header:
+      issued_by: "Emitido por:"
+      issued_at: "Emitido em:"
+      bank_accounts: "Contas:"
+      cost_centers: "Centros de custo:"
+      categories: "Categorias:"
+      payment_methods: "Modos de pagamento:"
+      tags: "Tags:"
+    empty_state_title: "Nenhum resultado encontrado"
+    empty_state_message: "Verifique os filtros informados e tente novamente"
+    select_tags_to_build_the_report: "Selecione uma ou mais Tags e clique na Lupa ao lado para gerar o relatório"
+    payment_method:
+      title: "%{type} por modo de pagamento - %{from} à %{to}"
+      revenue: "Recebimentos"
+      expense: "Despesas"
+    print_config:
+      title: "Configurações de impressão"
+      select_print_config: "Marque as opções que deseja exibir na impressão do relatório"
+      show_header: "Cabeçalho"
+      show_title: "Título"
+      show_created_by: "Emitido por"
+      show_cost_centers: "Centros de custo"
+      show_categories: "Categorias"
+      show_payment_methods: "Modos de pagamento"
+      show_tags: "Tags"
+      show_period: "Período"
+      show_graph: "Gráfico"
+      show_bank_account: "Contas bancárias"
+      show_logo: "Logo"
+
+  accounts:
+    edit:
+      title: "Configurações da conta"
+    new:
+      title: "Nova conta"
+    index:
+      title: "Minhas contas"
+    create:
+      success: "Conta criada com sucesso"
+    update:
+      success: "Conta atualizada com sucesso"
+      error: "Erro ao atualizar conta, %{errors}"
+    destroy:
+      success: "Conta excluída com sucesso"
+    account:
+      manage_my_subscription: "Gerenciar assinatura"
+    confirm_destroy:
+      title: "Excluir conta"
+      account_delete_title: "Tem certeza que deseja excluir sua conta?"
+      account_delete_description: "Todos os dados da conta serão deletados, essa alteração não poderá ser desfeita e você perderá acesso a sua conta."
+      confirm_delete: "Para deletar sua conta digite '<strong>DELETAR</strong>' no campo abaixo"
+      confirm_delete_placeholder: "Digite DELETAR em letras maiúsculas"
+      confirm_delete_button: "Deletar"
+    reset_account:
+      account_reset_title: "Resetar dados da conta"
+      account_reset_description: "Esta operação é recomendada para você que testou nossa plataforma com dados fictícios e agora deseja utilizá-la a partir do zero ou teve algum problema em suas importações e gostaria de reiniciar todo o processo novamente."
+      account_reset_description_2: "O que será resetado? <strong>Transações</strong>, <strong>Contatos</strong>, <strong>Categorias</strong>, <strong>Centros de Custo</strong>, <strong>Contas Bancárias</strong> e <strong>Importações</strong>."
+      fail: "Erro ao resetar conta"
+    preferences_form:
+      invoices: "Faturas"
+    reset:
+      success: "Conta resetada com sucesso"
+    nfse_config_form:
+      rps: "Configurações do RPS"
+      prefeitura: "Dados adicionais para comunicação com a prefeitura, caso não utilize certificado digital"
+      configuracao_regime_tributario: "Configurações do regime tributário da empresa"
+      a1_cert_file_config: "Configuração do Certificado Digital"
+      configuracao_regime_tributario_details: "Utilizaremos estas informações para comunicação com a prefeitura, para então, emitir sua NFS-e"
+      a1_cert_file_config_details: "Utilizaremos estas infromações para autenticar sua empresa com o provedor (prefeitura ou sistema nacional)"
+      credenciais_prefeitura: "Credenciais do sistema da prefeitura"
+      credenciais_prefeitura_details: "Utilizaremos estes dados para autenticar no sistema da prefeitura, caso não utilize certificado digital. Todas as informações são criptografadas."
+      company_info: "Confirme os dados da empresa"
+      company_info_details: "Informe ou complemente os dados da empresa para emissão da NFS-e"
+      rps_config: "Parametrização do RPS"
+      enable_nfse: "Habilitar NFS-e"
+      default_service_parameters: "Configuração do serviço padrão"
+      default_service_parameters_details: "Informe os dados do serviço padrão, esta informação ajudará você a ganhar agilidade na geração das Notas Fiscais de Serviço. (estes dados podem ser alterados a qualquer na hora da emissão da NFSe ou será sobreposta pela configuração do serviço na hora da emissão)"
+    company_form:
+      cnaes: "Atividades da empresa"
+    cnaes:
+      title: "Atividades da empresa"
+      add_secondary_cnae: "Adicionar CNAE secundário"
+    update_nfse_config:
+      success: "Configuração de emissão da NFS-e atualizada com sucesso"
+    edit_nfse_config:
+      title: "Configuração para emissão de NFS-e"
+    update_invoice_config:
+      success: "Configurações de fatura atualizado com sucesso"
+    edit_invoice_config:
+      title: "Editar configurações de fatura"
+    update_logo:
+      success: "Logo atualizada com successo"
+    edit_logo:
+      title: "Editar logo"
+
+  account_settings:
+    edit:
+      title: "Configurações da conta"
+    update:
+      success: "Configurações atualizadas com sucesso"
+    reset:
+      title: "Resetar conta"
+      success: "Conta resetada com sucesso"
+      confirm: "Todos os dados da conta serão deletados, você quer continuar?"
+    form:
+      account_reset_title: "Resetar dados da conta"
+      account_reset_description: "Esta operação é recomendada para você que testou nossa plataforma com dados fictícios e agora deseja utilizá-la a partir do zero ou teve algum problema em suas importações e gostaria de reiniciar todo o processo novamente."
+      account_reset_description_2: "O que será resetado? <strong>Transações</strong>, <strong>Contatos</strong>, <strong>Categorias</strong>, <strong>Centros de Custo</strong>, <strong>Contas Bancárias</strong> e <strong>Importações</strong>."
+      fail: "Erro ao resetar conta"
+    preferences_form:
+      invoices: "Faturas"
+
+  dre:
+    title:
+      statement: "Demonstrativo de Resultados"
+  devise:
+    registrations:
+      new:
+        find_your_best_plan: "Encontre o melhor plano para você ou sua empresa"
+  checkout_portal_sessions:
+    success:
+      success: "Assinatura realizada com sucesso"
+    new:
+      title: "Assine o plano que melhor atende suas necessidades"
+    form:
+      billing_options: "Opções de cobrança"
+      pricing_plans: "Planos de preços"
+      month_plans: "Planos Mensais"
+      year_plans: "Planos Anuais"
+      subscribe: "Assinar"
+      selected_account: "Empresa selecionada"
+      renew: "Renovar assinatura"
+  account_invitations_mailer:
+    invite:
+      subject: "%{inviter} convidou você para o Procfy"
+      header_html: "<strong>%{inviter}</strong> convidou você para acessar o Procfy e colaborar com o time <strong>%{account}</strong>."
+      description_html: "Você pode aceitar o convite clicando no botão abaixo."
+      accept_or_decline: "aceitar ou rejeitar"
+      view_invitation: "Visualizar convite"
+      hi_there: "Olá %{name}!"
+      ignore: "Se você não quer aceitar esse convite, por favor ignore esse e-mail.<br />Sua conta não será criada até você acessar o link abaixo e cadastrar sua conta."
+
+  account_invitation:
+    create:
+      success: "Convite enviado com sucesso"
+  account_invitations:
+    show:
+      invited_you_to_join_html: "<strong>%{inviter}</strong> convidou você para juntar-se à conta <strong>%{account}</strong>."
+      accept: "Aceitar"
+      decline: "Rejeitar"
+      join: "Junte-se à %{account}"
+    accept:
+      success: "Convite aceito com sucesso"
+    update:
+      success: "Convite atualizado com sucesso"
+    not_found: "Convite não encontrado"
+    authenticate: "Para aceitar o convite é necessário estar logado"
+    register: "Para aceitar o convite é necessário cadastrar seu usuário"
+    new:
+      title: "Novo convidado"
+    edit:
+      title: "Editar convidado"
+    index:
+      new: "Novo convite"
+      there_are_not_pending_invites: "Não há convites pendentes."
+      title_about_pending_invitations: "Convites Pendentes"
+      description_about_pending_invitations: "Aqui você pode ver as contas que foram convidadas para sua empresa mas ainda não aceitaram o convite."
+    create:
+      success: "Convite enviado com sucesso"
+    destroy:
+      success: "Convite excluído com sucesso"
+    form:
+      invite: "Enviar convite"
+    reject:
+      success: "Convite rejeitado com sucesso"
+  layouts:
+    mailer:
+      copyright_html: "Copyright &copy; Procfy %{year}, todos os direitos reservados."
+      address_line1: "Av Dedi Barrichello Montagner, 250 - Térreo - Centro"
+      address_line2: "85660-000 - Dois Vizinhos - Paraná - Brasil"
+      mailing_address: "Nosso endereço de e-mail é:"
+      view_in_browser: "View this in your browser"
+      unsubscribe: "Unsubscribe from this list"
+      preferences: "Update subscription preferences"
+  account_users:
+    update:
+      success: "Usuário atualizado com sucesso"
+    destroy:
+      success: "Usuário excluído com sucesso"
+    update_permissions:
+      success: "Permissões atualizadas com sucesso"
+    edit_permissions:
+      title: "Editar permissões de %{name}"
+    edit:
+      title: "Detalhes do usuário"
+    index:
+      title_about_account_users: "Usuários da Conta"
+      description_about_account_users: "Aqui você pode ver, atualizar as permissões e deletar as contas que fazem parte da sua empresa."
+  delayed: "Em atraso"
+  due_today: "Vence hoje"
+  on_time: "No prazo"
+  paid: "Pago"
+  not_paid: "Não pago"
+  attachments:
+    destroy:
+      success: "Anexo excluído com sucesso"
+    index:
+      title: "Anexos e comprovantes"
+    create:
+      success: "Anexo(s) criado(s) com sucesso"
+  notifications:
+    destroy:
+      success: "Notificação excluída com sucesso"
+    mark_as_read:
+      success: "Notificação marcada como lida com sucesso"
+    mark_as_unread:
+      success: "Notificação marcada como não lida com sucesso"
+    index:
+      delayed_payment_title: "Você possui <strong>%{count} conta em atraso<strong>, esta conta pode gerar juros e prejudicar o seu fechamento."
+      delayed_payments_title: "Você possui <strong>%{count} contas em atraso</strong>, estas despesas podem gerar juros e prejudicar o seu fechamento."
+      without_category_title: "Você possui <strong>%{count} movimentação</strong> que não foi categorizada ainda."
+      without_categories_title: "Você possui <strong>%{count} movimentações</strong> que não foram categorizadas ainda."
+      empty_state: "Você não possui novas notificações"
+      my_notifications: "Minhas notificações"
+      dismiss_all: "Marcar todas as notificações como lida"
+      alert: "Alertas"
+      notifications: "Notificações"
+    dismiss_all:
+      success: "Notificações atualizadas com sucesso"
+  hide_amount:
+    eye:
+      hide_values: "Ocultar valores"
+      show_values: "Mostrar valores"
+
+  delayed_transaction_notification:
+    title: "Transação com %{days} dia(s) de atraso"
+  open_sidenav: "Abrir menu de navegação"
+  hide_values: "Ocultar valores"
+  show_values: "Mostrar valores"
+  invisible_captcha:
+    sentence_for_humans: "Se você é um humano, ignore este campo"
+    timestamp_error_message: "Desculpe, foi muito rápido! Reenvie novamente"
+  static:
+    privacy:
+      title: "Política de privacidade"
+    terms:
+      title: "Termos de uso do serviço"
+  errors:
+    not_found:
+      title: "Página não encontrada"
+      description: "Verifique se a URL na barra de endereço está correta. Se o problema persistir, entre em contato conosco."
+    internal_error:
+      title: "Erro interno no servidor"
+      description: "Ocorreu algo inesperado, tente novamente mais tarde. Se o problema persistir, entre em contato conosco."
+    unprocessable:
+      title: "A alteração que você quiz fazer foi rejeitada."
+      description: "Talvez você tentou atualizar algo que você não tem permissão para fazê-lo."
+    access_forbidden:
+      title: "Acesso negado!"
+      description: "Você não possui permissão para acessar este recurso do sistema, entre em contato com o administrador da conta para que configure suas permissões."
+    messages:
+      unsupported_file: "Formato de arquivo não suportado, entre em contato com o suporte."
+      unexpected_error: "Erro inesperado, entre em contato com o suporte"
+    permission_denied:
+      title: "Permissão negada"
+      message: "Permissão negada, você não tem acesso à esse recurso"
+    invalid_token:
+      message: "Token inválido, certifique-se que está usando o token correto"
+      title: "Token inválido"
+    invalid_enum:
+      message: "Valor do enum inválido"
+      title: "Enum inválido"
+    expired_token:
+      message: "Token expirado, por favor crie um novo token"
+      title: "Token expirado"
+    blank_token:
+      message: "Token em branco, verifique se o token foi preenchido corretamente"
+      title: "Token em branco"
+  addresses:
+    form:
+      select_state: "Selecione um estado"
+      select_city: "Selecione uma cidade"
+      select_country: "Selecione um país"
+
+  users:
+    create_invite:
+      success: "Usuário convidado com sucesso"
+    update_invite:
+      success: "Convite atualizado com sucesso"
+    form:
+      file: "Selecione o arquivo que deseja importar"
+    new_bulk_invitation:
+      title: "Novo convite em lote"
+    form_bulk_invitation:
+      file: "Selecione o arquivo de importação"
+    index:
+      new: "Novo convite"
+      new_bulk_invitation: "Novo convite (em lote)"
+    new:
+      title: "Novo convite"
+    edit:
+      title: "Editar usuário convidado"
+    bulk_invitation:
+      success: "Convite em lote enviado com sucesso"
+    destroy:
+      success: "Convite excluído com sucesso"
+    user:
+      impersonate: "Logar como %{name}"
+      resend_invitation: "Reenviar convite"
+    resend_invitation:
+      success: "Convite reenviado com sucesso"
+
+  components:
+    transactions:
+      expenses:
+        paid_expenses: "Pago"
+        prev_expenses: "Previsto"
+        title: "Despesas"
+      revenues:
+        title: "Recebimentos"
+        paid: "Recebido"
+        predicted: "Previsto"
+      outcome:
+        title: "Resultado previsto no mês"
+    document_editor_component:
+
+      input_placeholder: "Preencher depois"
+  multisearches:
+    index:
+      title: "Pesquisa geral"
+    empty_state:
+      empty_search_title: "Nehum resultado encontrado"
+      empty_state_title: "Bem vindo(a) à página de pesquisa geral"
+      empty_state_message: "Inicie a sua pesquisa informando as iniciais das palavras-chave que você está buscando. Quanto mais específica for sua pesquisa, melhor será o nosso resultado."
+      empty_search_message: "Verifique as palavras utilizadas nesta pesquisa e tente novamente."
+    transaction:
+      transaction_type: "Tipo"
+  statements:
+    new:
+      title: "Nova conciliação (importar OFX)"
+    edit:
+      title: "Conciliação"
+      are_you_sure_confirm?: "Todos os %{count} lançamentos CONFIRMADOS serão conciliados, deseja continuar?"
+    reconciling:
+      title: "Conciliação"
+    create:
+      success: "Extrato salvo com sucesso"
+    statement_items:
+      confirm:
+        success: "Lançamento confirmado com sucesso"
+      ignore:
+        success: "Lançamento ignorado com sucesso"
+      statement_item:
+        original: "OFX: %{value}"
+        transaction: "Transação"
+        new_transaction: "Nova transação"
+        search_other: "Localizar outra transação"
+        statement_item_title: "Item do extrato"
+        suggested_transaction_title: "Transação sugerida"
+        missing_transaction_type: "Falta informar um tipo"
+      form:
+        transaction: "Transação"
+        new_transaction_title: "Nova transação"
+      search:
+        title: "Localizar transação"
+      update:
+        success: "Lançamento atualizado com sucesso"
+      find_transaction:
+        title: "Localizar transação"
+        current: "Lançamento sugerido anteriormente"
+      transaction:
+        shared:
+          current: "Atual"
+      select_transaction:
+        success: "Lançamento atualizado com sucesso"
+      bulk_confirm:
+        success: "Os lançamentos selecionados foram confirmados com sucesso"
+      bulk_ignore:
+        success: "Todos os lançamentos selecionados foram ignorados"
+    confirmed_count:
+      confirmed_items: "Total confirmados"
+    ignored_count:
+      ignored_items: "Total ignorados"
+    pending_count:
+      pending_items: "Total pendentes"
+    destroy:
+      success: "Conciliação/Importação OFX excluída com sucesso"
+    finish:
+      success: "Conciliação realizada com sucesso"
+    reconciled_count:
+      title: "Total conciliado"
+    unreconciled_count:
+      title: "Total não conciliado/ignorado"
+  partially_paid: "Pago (parcialmente)"
+  payment_plans:
+    new:
+      title: "Plano de parcelamento"
+    create:
+      success: "Parcelamento criado com sucesso"
+    edit:
+      title: "Editar parcelas"
+    update:
+      success: "Parcelamento atualizado com sucesso!"
+  category_presets:
+    index:
+      title: "Importar categorias pré-definidas"
+    import:
+      success: "Categorias importadas com sucesso"
+    filter_form:
+      sector_activity: "Selecione o segmento da sua empresa"
+  referral_codes:
+    destroy:
+      success: "Código de indicação exluído com sucesso"
+    show:
+      description: "Você foi indicado pela <strong>%{company}</strong>, para explorar, experimentar e usar a nossa ferramenta."
+      description_with_discount: "Você foi indicado pela <strong>%{company}</strong>, para explorar, experimentar e usar a nossa ferramenta, e ainda ganhar um desconto vitalício de <strong>%{discount}%</strong> em sua assinatura."
+      welcome: "Bem vindo ao Procfy"
+      call_to_action: "Quero explorar gratuitamente por %{days} dias."
+      call_to_action2: "Quero continuar com o desconto de %{discount}%"
+  acts_as_taggable_on:
+    tags:
+      edit:
+        title: "Editar marcador / tag"
+  contract_templates:
+    form:
+      name: "Nome"
+      description: "Descrição"
+      contract_models: "Modelos de contrato"
+      insert_variable: "Digite “@“ para inserir variáveis no seu contrato"
+      document_body: "Corpo do meu documento"
+      show_header: "Exibir cabeçalho"
+      submit_button: "Salvar modelo"
+      reset_default_button: "Resetar para o padrão"
+    update:
+      success: "Contrato atualizado com sucesso"
+    create:
+      success: "Contrato criado com sucesso"
+    variable:
+      title: "Variáveis do sistema"
+      variable: "Variável"
+      result: "Converte para"
+
+    suggestion_variables: [
+      'DATA_ATUAL',
+      'MES_ATUAL',
+      'MEU_NOME',
+      'MINHA_EMPRESA',
+      'MINHA_EMPRESA_CPF/CNPJ',
+      'MINHA_EMPRESA_NOME_FANTASIA',
+      'MINHA_EMPRESA_RG/INS_ESTADUAL',
+      'MINHA_EMPRESA_INSCRICAO_MUNICIPAL',
+      'MINHA_EMPRESA_TELEFONE',
+      'MINHA_EMPRESA_CELULAR',
+      'MINHA_EMPRESA_ESTADO',
+      'MINHA_EMPRESA_CIDADE',
+      'MINHA_EMPRESA_ENDERECO_COMPLETO',
+      'MINHA_EMPRESA_ENDERECO',
+      'MINHA_EMPRESA_NUMERO_ENDERECO',
+      'MINHA_EMPRESA_COMPLEMENTO_ENDERECO',
+      'MINHA_EMPRESA_BAIRRO',
+      'MINHA_EMPRESA_CEP',
+      'NOME_CLIENTE',
+      'CPF/CNPJ_CLIENTE',
+      'RG/INS_ESTADUAL_CLIENTE',
+      'TELEFONE_CLIENTE',
+      'CELULAR_CLIENTE',
+      'EMAIL_CLIENTE',
+      'DESCRICAO_CLIENTE',
+      'ENDERECO_COMPLETO_CLIENTE',
+      'ENDERECO_SIMPLIFICADO_CLIENTE',
+      'ENDERECO_CLIENTE',
+      'NUMERO_ENDERECO_CLIENTE',
+      'COMPLEMENTO_ENDERECO_CLIENTE',
+      'BAIRRO_ENDERECO_CLIENTE',
+      'CEP_ENDERECO_CLIENTE',
+      'ESTADO_ENDERECO_CLIENTE',
+      'CIDADE_ENDERECO_CLIENTE'
+    ]
+  contracts:
+    new: "Gerar contrato"
+    header:
+      save_on_contact: "Salvar no contato"
+      title: "Criar contrato para %{contact_name}"
+
+  services:
+    create:
+      success: "Serviço cadastrado com sucesso"
+    update:
+      success: "Serviço atualizado com sucesso"
+    destroy:
+      success: "Serviço excluído com sucesso"
+    edit:
+      title: "Editar serviço"
+    new:
+      title: "Novo serviço"
+    form:
+      codigo_tributacao_nacional_description: "Código de tributação nacional do ISSQN: Regra de formação - 6 dígitos numéricos sendo: 2 para Item (LC 116/2003), 2 para Subitem (LC 116/2003) e 2 para Desdobro Nacional."
+      codigo_tributacao_municipal_description: "Código de tributação municipal do ISSQN. (somente números)"
+      cnae_id_description: "Código CNAE (Classificação Nacional de Atividades Econômicas)."
+      tax_information_description: "Consulte os dados abaixo com seu contador, ou valide em uma nota fiscal emitida com este serviço no sistema de sua prefeitura ou do sistema nacional"
+      codigo_nbs_description: "Código NBS (Nomenclatura Brasileira de Serviços, Intangíveis e outras Operações que produzam Variações no Patrimônio) correspondente ao serviço prestado"
+    nfse_config_form:
+      tax_information_description: "Consulte os dados abaixo com seu contador, ou valide em uma nota fiscal emitida com este serviço na sua prefeitura"
+
+  invoices:
+    create:
+      success: "Fatura criada com sucesso"
+    update:
+      success: "Fatura atualizada com sucesso"
+    destroy:
+      success: "Fatura excluída com sucesso"
+    new:
+      title: "Nova fatura"
+    edit:
+      title: "Edição de fatura"
+    index:
+      new_invoice: "Criar minha primeira fatura"
+      no_invoices: "Nenhuma fatura encontrada"
+      no_invoice_message: "Cadastre sua primeira fatura clicando no botão abaixo"
+    form:
+      related_transaction: "Transação relacionada"
+      cancel_confirmation: "<strong>Cancelamento de fatura!</strong><br><br>As transações relacionadas a esta fatura não serão excluídas, apenas desvinculadas.<br><br>Deseja continuar?"
+      pay: "As transações relacionadas serão marcadas como pagas. Deseja continuar?"
+      sync_with_transaction_description: "Se estiver marcada, as transações serão geradas/sincronizadas com as informações desta fatura."
+      cancel: "Cancelar fatura"
+      attachments: "Anexos da fatura"
+      no_related_transaction: "Nenhuma transação vinculada."
+      attachments_description: "Utilize esta funcionalidade para anexar <strong>boleto de cobrança</strong> e/ou <strong>nota fiscal</strong>, ou seja, todos os arquivos anexados nesta aba serão enviados ao cliente juntamente com a fatura."
+      related_transaction_description: "Aqui é informada a transação gerada a partir desta fatura ou a transação o qual a fatura foi gerada a partir dela."
+      generate_invoice_confirmation: "Uma nova transação será gerada automaticamente a partir desta fatura. Deseja continuar?"
+      no_related_transaction_description: "A transação será exibida somente quando a fatura for gerada, ou se a fatura for gerada a partir de uma transação já existente."
+      reopen: "Reabrir fatura"
+      mark_as_paid_confirmation: "A transação relacionada também será marcada como paga, deseja continuar?"
+      reopen_confirmation: "A transação relacionada também será desmarcada como paga, deseja continuar?"
+      mark_as_paid: "Marcar como paga"
+
+    duplicate:
+      success: "Fatura duplicada com sucesso"
+    preview:
+      title: "Visualizar impressão"
+  invoice_templates:
+    preview:
+      invoice_number: "Nº: <strong>%{number}</strong>"
+      issue_date: "Emitido em <strong>%{date}</strong>"
+      due_date: "Vencimento para <strong>%{date}</strong>"
+      recipient: "Cobrança para"
+      details: "Detalhes"
+      tax_info: "Imposto sobre serviço (10%)"
+      discount_info: "10% de desconto na primera compra"
+      subtotal: "Subtotal"
+      total_before_tax: "Total antes dos impostos"
+      total: "Total"
+      quantity: "Qtde."
+      unit_price: "Preço un."
+      amount: "Valor"
+      total_price: "Preço total"
+      payment_info: "Informações de pagamento / observações"
+      payment_info_example: "O pagamento tem de ser feito dentro de 15 dias através de transferência bancária. <br>Banco: Nome do banco, Agencia: 123, Conta corrente: 12355-4"
+      footer: "Fatura gerada por"
+    create:
+      success: "Modelo de fatura criado com sucesso"
+    update:
+      success: "Modelo de fatura atualizado com sucesso"
+    destroy:
+      success: "Modelo de fatura excluído com sucesso"
+  paid_overdue: "Pago com atraso"
+  api_tokens:
+    form:
+      permissions: "Permissões"
+    create:
+      success: "Token criado com sucesso"
+      error: "Erro ao criar token"
+      title: "Novo Token da Api"
+    api_token:
+      no_description: "Sem descrição"
+      active: "Ativa"
+      expired: "Expirado"
+      copy: "Copiar"
+      last_used_at: "Última vez utilizados: %{time}"
+      never: "Nunca"
+    permissions:
+      transaction: "Transação"
+      bank_account: "Conta bancária"
+      contact: "Contato"
+      category: "Categoria"
+      cost_center: "Centro de custo"
+      user: "Usuário"
+      company: "Empresa"
+      account: "Conta"
+    update:
+      success: "Token atualizado com sucesso"
+      error: "Erro ao atualizar token"
+      title: "Editar Token da Api"
+    destroy:
+      success: "Token deletado com sucesso"
+    new:
+      title: "Novo Token da Api"
+    edit:
+      title: "Editar Token da Api"
+
+  expires_at_options:
+    never: "Nunca"
+    one_day: "Um dia"
+    one_week: "Uma semana"
+    one_month: "Um mês"
+    six_months: "Seis meses"
+    one_year: "Um ano"
+  api:
+    errors:
+      record_null_violation:
+        title: "Erro de atributo nulo"
+      invalid_page:
+        title: "Erro de paginação"
+      record_invalid:
+        title: "Registro inválido"
+      record_not_found:
+        title: "Registro não encontrado"
+        description: "Não foi possível encontrar o um(a) %{model} com o id %{id}"
+  rps_config_details: "Utilizamos estas informações para emissão das notas fiscais de serviços."
+  being_used: "Esse documento está sendo utilizado."
+  integration_stores:
+    nuvem_fiscal:
+      welcome:
+        description: "Aqui você pode integrar sua conta para emissão de notas fiscais de serviço.<br>
+        Antes de começarmos, tenha em mãos o certificado digital da empresa (tipo A1), os dados da empresa (cartão CNPJ) e a última nota fiscal emitida.<br><br>
+        Para começar, clique no botão abaixo."
+      company:
+        description: "Informe os dados da empresa como está no cartão CNPJ"
+      nfse_config:
+        rps: "Configurações do RPS"
+        prefeitura: "Dados adicionais para comunicação com a prefeitura, caso não utilize certificado digital"
+        configuracao_regime_tributario: "Configurações do regime tributário da empresa"
+        a1_cert_file_config: "Configuração do Certificado Digital"
+        configuracao_regime_tributario_details: "Utilizaremos estas informações para comunicação com a prefeitura, para então, emitir sua NFS-e"
+        a1_cert_file_config_details: "Utilizaremos estas infromações para autenticar sua empresa com o provedor (prefeitura ou sistema nacional)"
+        credenciais_prefeitura: "Credenciais do sistema da prefeitura"
+        credenciais_prefeitura_details: "Utilizaremos estes dados para autenticar no sistema da prefeitura, caso não utilize certificado digital. Todas as informações são criptografadas."
+        company_info: "Confirme os dados da empresa"
+        company_info_details: "Informe ou complemente os dados da empresa para emissão da NFS-e"
+        rps_config: "Parametrização do RPS"
+        enable_nfse: "Habilitar NFS-e"
+        default_service_parameters: "Configuração do serviço padrão"
+        default_service_parameters_details: "Informe os dados do serviço padrão, esta informação ajudará você a ganhar agilidade na geração das Notas Fiscais de Serviço. (Estes dados poderão ser alterados no momento da emissão da NFSe)"
+      certificate:
+        a1_cert_file_config: "Configuração do Certificado Digital"
+        a1_cert_file_config_details: "Utilizaremos estas infromações para autenticar sua empresa com o provedor (prefeitura ou sistema nacional)"
+      done:
+        success_description: "Sua integração foi realizada com sucesso, agora você pode emitir suas notas fiscais de serviço."
+        fail_description: "Ocorreu um erro ao tentar configurar a integração, por favor, volte e tente novamente."
+      steps:
+        welcome:
+          title: "Introdução"
+          description: "Bem vindo ao assistente de integração com a NFS-e"
+        city:
+          title: "Cidade da empresa"
+          description: "Selecione a cidade da empresa para emissão da NFS-e"
+        company:
+          title: "Dados da empresa"
+          description: "Informe os dados da empresa como está no cartão CNPJ"
+        nfse_config:
+          title: "Configuração da NFS-e"
+          description: "Informe os dados de configuração da NFS-e"
+        certificate:
+          title: "Certificado digital"
+          description: "Informe os dados do certificado digital"
+        done:
+          title: "Finalizado"
+          description: "Sua integração foi configurada com sucesso"
+      update:
+        success: "Integração configurada com sucesso!"
+      city:
+        select_city: "Selecione a cidade da empresa"
+    new:
+      title: "Nova integração"
+  step: "Passo %{step}"
+  elements:
+    filter:
+      button:
+        text: "Filtrar"
+      dropdown_component:
+        done: "Concluído"
+        clean: "Limpar"
+        filters: "Filtros"
+
+

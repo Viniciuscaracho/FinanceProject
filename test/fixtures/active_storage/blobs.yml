@@ -1,0 +1,7 @@
+transaction_blob:
+  key: scxrex8xx73inir3c6216mrmowv0
+  filename: transaction_2022-11-14_16h08m28.xlsx
+  metadata: '{"identified":true,"analyzed":true}'
+  byte_size: <%= File.size(Rails.root.join('test', 'fixtures', 'files', 'transaction_2022-11-14_16h08m28.xlsx')) %>
+  checksum: <%= Digest::MD5.file(Rails.root.join('test', 'fixtures', 'files', 'transaction_2022-11-14_16h08m28.xlsx')).base64digest %>
+  service_name: local

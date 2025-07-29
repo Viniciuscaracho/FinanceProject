@@ -1,0 +1,10 @@
+= render(Table::ItemComponent.new(item: <%= singular_name %>, classes: 'group', link: edit_<%= singular_name %>_path(<%= singular_name %>), options: { data: { turbo_frame: 'drawer' } })) do |item|
+<% for attribute in attributes -%>
+  - item.col(classes: 'c-table__column flex-1') do
+    .paragraph-base= <%= singular_name %>.<%= attribute.name %>
+<% end -%>
+  - item.col(classes: 'c-table__column--actions') do
+    = button_to edit_<%= singular_name %>_path(<%= singular_name %>), method: :get, onclick: 'event.stopPropagation()', data: { turbo_frame: 'drawer' }, class: 'btn-circle btn-circle--primary hidden group-hover:flex' do
+      = heroicon 'pencil', options: { class: 'btn-circle__icon' }
+    = button_to <%= singular_name %>, method: :delete, onclick: 'event.stopPropagation()', form: { data: { turbo_confirm: t('shared.are_you_sure?') } }, class: 'btn-circle btn-circle--danger hidden group-hover:flex' do
+      = heroicon 'trash', options: { class: 'btn-circle__icon' }

@@ -1,0 +1,653 @@
+// Contrast Fix - Melhorias de Contraste e Visualização
+// =====================================================
+
+// Variáveis de cores com melhor contraste
+:root {
+  --contrast-bg-primary: #ffffff;
+  --contrast-bg-secondary: #f1f5f9;
+  --contrast-bg-tertiary: #e2e8f0;
+  --contrast-text-primary: #0f172a;
+  --contrast-text-secondary: #334155;
+  --contrast-text-muted: #64748b;
+  --contrast-border: #cbd5e1;
+  --contrast-border-strong: #94a3b8;
+  --contrast-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --contrast-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+// Melhorias gerais de contraste
+body {
+  color: var(--contrast-text-primary) !important;
+  background-color: var(--contrast-bg-secondary) !important;
+}
+
+// Melhorias para cards e containers
+.card, .dashboard-card, .content-card, .account-card {
+  background-color: var(--contrast-bg-primary) !important;
+  border: 1px solid var(--contrast-border) !important;
+  box-shadow: var(--contrast-shadow) !important;
+}
+
+// Melhorias para texto
+h1, h2, h3, h4, h5, h6 {
+  color: var(--contrast-text-primary) !important;
+  font-weight: 600 !important;
+}
+
+p, span, div {
+  color: var(--contrast-text-secondary) !important;
+}
+
+// Melhorias para formulários
+.form-control, input, select, textarea {
+  background-color: var(--contrast-bg-primary) !important;
+  border: 1px solid var(--contrast-border-strong) !important;
+  color: var(--contrast-text-primary) !important;
+  
+  &:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+  }
+  
+  &::placeholder {
+    color: var(--contrast-text-muted) !important;
+  }
+}
+
+// Melhorias para botões
+.btn {
+  background-color: var(--contrast-bg-primary) !important;
+  border: 1px solid var(--contrast-border-strong) !important;
+  color: var(--contrast-text-primary) !important;
+  
+  &:hover {
+    background-color: var(--contrast-bg-secondary) !important;
+    border-color: var(--contrast-text-secondary) !important;
+  }
+  
+  &--primary {
+    background-color: #6366f1 !important;
+    color: white !important;
+    border-color: #6366f1 !important;
+    
+    &:hover {
+      background-color: #4f46e5 !important;
+      border-color: #4f46e5 !important;
+    }
+  }
+}
+
+// Melhorias para tabelas
+.table-component, .c-table {
+  background-color: var(--contrast-bg-primary) !important;
+  border: 1px solid var(--contrast-border) !important;
+  
+  thead {
+    background-color: var(--contrast-bg-secondary) !important;
+    
+    th, td {
+      color: var(--contrast-text-primary) !important;
+      border-bottom: 1px solid var(--contrast-border-strong) !important;
+    }
+  }
+  
+  tbody {
+    tr {
+      border-bottom: 1px solid var(--contrast-border) !important;
+      
+      &:hover {
+        background-color: var(--contrast-bg-secondary) !important;
+      }
+      
+      td {
+        color: var(--contrast-text-secondary) !important;
+      }
+    }
+  }
+}
+
+// Melhorias para sidebar
+.sidebar {
+  background-color: var(--contrast-bg-primary) !important;
+  border-right: 1px solid var(--contrast-border-strong) !important;
+  
+  .nav-link {
+    color: var(--contrast-text-secondary) !important;
+    
+    &:hover {
+      background-color: var(--contrast-bg-secondary) !important;
+      color: var(--contrast-text-primary) !important;
+    }
+    
+    &--active {
+      background-color: #6366f1 !important;
+      color: white !important;
+    }
+  }
+}
+
+// Melhorias para header
+.header {
+  background-color: var(--contrast-bg-primary) !important;
+  border-bottom: 1px solid var(--contrast-border-strong) !important;
+  
+  .header__title {
+    color: var(--contrast-text-primary) !important;
+  }
+  
+  .header__subtitle {
+    color: var(--contrast-text-secondary) !important;
+  }
+}
+
+// Melhorias para badges
+.badge {
+  background-color: var(--contrast-bg-secondary) !important;
+  color: var(--contrast-text-primary) !important;
+  border: 1px solid var(--contrast-border) !important;
+  
+  &--primary {
+    background-color: #6366f1 !important;
+    color: white !important;
+  }
+  
+  &--success {
+    background-color: #10b981 !important;
+    color: white !important;
+  }
+  
+  &--danger {
+    background-color: #ef4444 !important;
+    color: white !important;
+  }
+  
+  &--warning {
+    background-color: #f59e0b !important;
+    color: white !important;
+  }
+}
+
+// Melhorias para dropdowns
+.dropdown-menu {
+  background-color: var(--contrast-bg-primary) !important;
+  border: 1px solid var(--contrast-border-strong) !important;
+  box-shadow: var(--contrast-shadow-lg) !important;
+  
+  .dropdown-item {
+    color: var(--contrast-text-secondary) !important;
+    
+    &:hover {
+      background-color: var(--contrast-bg-secondary) !important;
+      color: var(--contrast-text-primary) !important;
+    }
+  }
+}
+
+// Melhorias para modais
+.modal-content {
+  background-color: var(--contrast-bg-primary) !important;
+  border: 1px solid var(--contrast-border-strong) !important;
+  box-shadow: var(--contrast-shadow-lg) !important;
+  
+  .modal-header {
+    border-bottom: 1px solid var(--contrast-border) !important;
+  }
+  
+  .modal-footer {
+    border-top: 1px solid var(--contrast-border) !important;
+  }
+}
+
+// Melhorias para alerts/flash messages
+.alert, .flash-message {
+  border: 1px solid var(--contrast-border-strong) !important;
+  
+  &--success {
+    background-color: #f0fdf4 !important;
+    border-color: #bbf7d0 !important;
+    color: #166534 !important;
+  }
+  
+  &--error {
+    background-color: #fef2f2 !important;
+    border-color: #fecaca !important;
+    color: #dc2626 !important;
+  }
+  
+  &--warning {
+    background-color: #fffbeb !important;
+    border-color: #fed7aa !important;
+    color: #d97706 !important;
+  }
+  
+  &--info {
+    background-color: #eff6ff !important;
+    border-color: #bfdbfe !important;
+    color: #1d4ed8 !important;
+  }
+}
+
+// Melhorias para tooltips
+.tooltip {
+  background-color: var(--contrast-text-primary) !important;
+  color: white !important;
+  border: none !important;
+}
+
+// Melhorias para progress bars
+.progress {
+  background-color: var(--contrast-bg-tertiary) !important;
+  
+  .progress-bar {
+    background-color: #6366f1 !important;
+  }
+}
+
+// Melhorias para paginação
+.pagination {
+  .page-link {
+    background-color: var(--contrast-bg-primary) !important;
+    border: 1px solid var(--contrast-border) !important;
+    color: var(--contrast-text-secondary) !important;
+    
+    &:hover {
+      background-color: var(--contrast-bg-secondary) !important;
+      color: var(--contrast-text-primary) !important;
+    }
+  }
+  
+  .page-item.active .page-link {
+    background-color: #6366f1 !important;
+    border-color: #6366f1 !important;
+    color: white !important;
+  }
+}
+
+// Melhorias para listas
+.list-group {
+  .list-group-item {
+    background-color: var(--contrast-bg-primary) !important;
+    border: 1px solid var(--contrast-border) !important;
+    color: var(--contrast-text-secondary) !important;
+    
+    &:hover {
+      background-color: var(--contrast-bg-secondary) !important;
+      color: var(--contrast-text-primary) !important;
+    }
+  }
+}
+
+// Melhorias para navegação
+.nav-tabs {
+  border-bottom: 1px solid var(--contrast-border) !important;
+  
+  .nav-link {
+    background-color: transparent !important;
+    border: 1px solid transparent !important;
+    color: var(--contrast-text-secondary) !important;
+    
+    &:hover {
+      border-color: var(--contrast-border) !important;
+      color: var(--contrast-text-primary) !important;
+    }
+    
+    &.active {
+      background-color: var(--contrast-bg-primary) !important;
+      border-color: var(--contrast-border) var(--contrast-border) transparent !important;
+      color: var(--contrast-text-primary) !important;
+    }
+  }
+}
+
+// Melhorias para accordion
+.accordion {
+  .accordion-item {
+    background-color: var(--contrast-bg-primary) !important;
+    border: 1px solid var(--contrast-border) !important;
+  }
+  
+  .accordion-header {
+    background-color: var(--contrast-bg-secondary) !important;
+  }
+  
+  .accordion-button {
+    background-color: var(--contrast-bg-secondary) !important;
+    color: var(--contrast-text-primary) !important;
+    
+    &:not(.collapsed) {
+      background-color: var(--contrast-bg-primary) !important;
+      color: var(--contrast-text-primary) !important;
+    }
+  }
+}
+
+// Melhorias para tooltips personalizados
+[data-tooltip] {
+  position: relative;
+  
+  &::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--contrast-text-primary) !important;
+    color: white !important;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 1000;
+  }
+  
+  &:hover::after {
+    opacity: 1;
+  }
+}
+
+// Melhorias para scrollbars
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--contrast-bg-secondary) !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--contrast-border-strong) !important;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--contrast-text-muted) !important;
+}
+
+// Melhorias para seleção de texto
+::selection {
+  background-color: #6366f1 !important;
+  color: white !important;
+}
+
+// Melhorias para focus states
+*:focus {
+  outline: 2px solid #6366f1 !important;
+  outline-offset: 2px !important;
+}
+
+// Melhorias para disabled states
+*:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
+// Melhorias para loading states
+.loading {
+  opacity: 0.7 !important;
+  pointer-events: none !important;
+}
+
+// Melhorias para estados vazios
+.empty-state {
+  color: var(--contrast-text-muted) !important;
+  border: 2px dashed var(--contrast-border) !important;
+  background-color: var(--contrast-bg-secondary) !important;
+}
+
+// Melhorias para código inline
+code {
+  background-color: var(--contrast-bg-tertiary) !important;
+  color: var(--contrast-text-primary) !important;
+  padding: 0.125rem 0.25rem !important;
+  border-radius: 0.25rem !important;
+  font-size: 0.875em !important;
+}
+
+// Melhorias para blocos de código
+pre {
+  background-color: var(--contrast-bg-tertiary) !important;
+  border: 1px solid var(--contrast-border) !important;
+  color: var(--contrast-text-primary) !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem !important;
+  overflow-x: auto !important;
+}
+
+// Melhorias para links
+a {
+  color: #6366f1 !important;
+  
+  &:hover {
+    color: #4f46e5 !important;
+    text-decoration: underline !important;
+  }
+}
+
+// Melhorias para ícones
+.icon {
+  color: var(--contrast-text-secondary) !important;
+}
+
+// Melhorias para separadores
+hr {
+  border-color: var(--contrast-border) !important;
+}
+
+// Melhorias para legendas
+legend {
+  color: var(--contrast-text-primary) !important;
+  font-weight: 600 !important;
+}
+
+// Melhorias para labels
+label {
+  color: var(--contrast-text-primary) !important;
+  font-weight: 500 !important;
+}
+
+// Melhorias para small text
+small {
+  color: var(--contrast-text-muted) !important;
+}
+
+// Melhorias para mark/highlight
+mark {
+  background-color: #fef3c7 !important;
+  color: var(--contrast-text-primary) !important;
+}
+
+// Melhorias para blockquote
+blockquote {
+  border-left: 4px solid var(--contrast-border-strong) !important;
+  padding-left: 1rem !important;
+  color: var(--contrast-text-secondary) !important;
+  font-style: italic !important;
+}
+
+// Melhorias para detalhes
+details {
+  summary {
+    color: var(--contrast-text-primary) !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+  }
+}
+
+// Melhorias para meter
+meter {
+  &::-webkit-meter-bar {
+    background-color: var(--contrast-bg-tertiary) !important;
+  }
+  
+  &::-webkit-meter-optimum-value {
+    background-color: #10b981 !important;
+  }
+  
+  &::-webkit-meter-suboptimum-value {
+    background-color: #f59e0b !important;
+  }
+  
+  &::-webkit-meter-even-less-good-value {
+    background-color: #ef4444 !important;
+  }
+}
+
+// Melhorias para progress
+progress {
+  background-color: var(--contrast-bg-tertiary) !important;
+  
+  &::-webkit-progress-bar {
+    background-color: var(--contrast-bg-tertiary) !important;
+  }
+  
+  &::-webkit-progress-value {
+    background-color: #6366f1 !important;
+  }
+  
+  &::-moz-progress-bar {
+    background-color: #6366f1 !important;
+  }
+}
+
+// Melhorias para time
+time {
+  color: var(--contrast-text-muted) !important;
+}
+
+// Melhorias para abbr
+abbr {
+  border-bottom: 1px dotted var(--contrast-border-strong) !important;
+  text-decoration: none !important;
+}
+
+// Melhorias para cite
+cite {
+  color: var(--contrast-text-muted) !important;
+  font-style: italic !important;
+}
+
+// Melhorias para dfn
+dfn {
+  font-style: italic !important;
+  color: var(--contrast-text-primary) !important;
+}
+
+// Melhorias para kbd
+kbd {
+  background-color: var(--contrast-bg-tertiary) !important;
+  border: 1px solid var(--contrast-border) !important;
+  border-radius: 0.25rem !important;
+  color: var(--contrast-text-primary) !important;
+  padding: 0.125rem 0.25rem !important;
+  font-size: 0.875em !important;
+}
+
+// Melhorias para samp
+samp {
+  background-color: var(--contrast-bg-tertiary) !important;
+  color: var(--contrast-text-primary) !important;
+  padding: 0.125rem 0.25rem !important;
+  border-radius: 0.25rem !important;
+  font-family: monospace !important;
+}
+
+// Melhorias para var
+var {
+  color: var(--contrast-text-primary) !important;
+  font-style: italic !important;
+}
+
+// Melhorias para sub e sup
+sub, sup {
+  color: var(--contrast-text-muted) !important;
+}
+
+// Melhorias para ins e del
+ins {
+  background-color: #f0fdf4 !important;
+  color: #166534 !important;
+  text-decoration: none !important;
+}
+
+del {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+  text-decoration: line-through !important;
+}
+
+// Melhorias para markdown (se aplicável)
+.markdown {
+  color: var(--contrast-text-secondary) !important;
+  
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--contrast-text-primary) !important;
+  }
+  
+  code {
+    background-color: var(--contrast-bg-tertiary) !important;
+    color: var(--contrast-text-primary) !important;
+  }
+  
+  blockquote {
+    border-left-color: var(--contrast-border-strong) !important;
+    color: var(--contrast-text-secondary) !important;
+  }
+  
+  table {
+    border-color: var(--contrast-border) !important;
+    
+    th, td {
+      border-color: var(--contrast-border) !important;
+    }
+    
+    th {
+      background-color: var(--contrast-bg-secondary) !important;
+      color: var(--contrast-text-primary) !important;
+    }
+  }
+}
+
+// Melhorias para impressão
+@media print {
+  * {
+    background-color: white !important;
+    color: black !important;
+    border-color: #ccc !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}
+
+// Melhorias para modo de alto contraste (se suportado)
+@media (prefers-contrast: high) {
+  :root {
+    --contrast-bg-primary: #ffffff;
+    --contrast-bg-secondary: #f0f0f0;
+    --contrast-bg-tertiary: #e0e0e0;
+    --contrast-text-primary: #000000;
+    --contrast-text-secondary: #333333;
+    --contrast-text-muted: #666666;
+    --contrast-border: #000000;
+    --contrast-border-strong: #000000;
+  }
+}
+
+// Melhorias para modo escuro (se implementado no futuro)
+@media (prefers-color-scheme: dark) {
+  :root {
+    --contrast-bg-primary: #1f2937;
+    --contrast-bg-secondary: #111827;
+    --contrast-bg-tertiary: #374151;
+    --contrast-text-primary: #f9fafb;
+    --contrast-text-secondary: #d1d5db;
+    --contrast-text-muted: #9ca3af;
+    --contrast-border: #4b5563;
+    --contrast-border-strong: #6b7280;
+  }
+} 

@@ -1,0 +1,782 @@
+// Contrast Levels - Diferentes níveis de contraste
+// ================================================
+
+// Nível Normal (padrão)
+[data-contrast="normal"] {
+  --contrast-bg-primary: #ffffff;
+  --contrast-bg-secondary: #f1f5f9;
+  --contrast-bg-tertiary: #e2e8f0;
+  --contrast-text-primary: #0f172a;
+  --contrast-text-secondary: #334155;
+  --contrast-text-muted: #64748b;
+  --contrast-border: #cbd5e1;
+  --contrast-border-strong: #94a3b8;
+  --contrast-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --contrast-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+// Nível Alto Contraste
+[data-contrast="high"] {
+  --contrast-bg-primary: #ffffff;
+  --contrast-bg-secondary: #f8fafc;
+  --contrast-bg-tertiary: #e2e8f0;
+  --contrast-text-primary: #000000;
+  --contrast-text-secondary: #1e293b;
+  --contrast-text-muted: #475569;
+  --contrast-border: #94a3b8;
+  --contrast-border-strong: #64748b;
+  --contrast-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.15), 0 1px 2px -1px rgb(0 0 0 / 0.15);
+  --contrast-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.15), 0 4px 6px -4px rgb(0 0 0 / 0.15);
+  
+  // Melhorias específicas para alto contraste
+  body {
+    font-weight: 500 !important;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .btn {
+    font-weight: 600 !important;
+    border-width: 2px !important;
+  }
+  
+  .form-control, input, select, textarea {
+    border-width: 2px !important;
+    font-weight: 500 !important;
+  }
+  
+  .table-component, .c-table {
+    border-width: 2px !important;
+    
+    th, td {
+      border-width: 1px !important;
+      font-weight: 500 !important;
+    }
+  }
+  
+  .badge {
+    border-width: 2px !important;
+    font-weight: 600 !important;
+  }
+  
+  .sidebar {
+    border-right-width: 2px !important;
+  }
+  
+  .header {
+    border-bottom-width: 2px !important;
+  }
+}
+
+// Nível Contraste Máximo
+[data-contrast="ultra"] {
+  --contrast-bg-primary: #ffffff;
+  --contrast-bg-secondary: #ffffff;
+  --contrast-bg-tertiary: #f1f5f9;
+  --contrast-text-primary: #000000;
+  --contrast-text-secondary: #000000;
+  --contrast-text-muted: #1e293b;
+  --contrast-border: #000000;
+  --contrast-border-strong: #000000;
+  --contrast-shadow: 0 4px 6px 0 rgb(0 0 0 / 0.3), 0 2px 4px -1px rgb(0 0 0 / 0.3);
+  --contrast-shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 10px 10px -5px rgb(0 0 0 / 0.3);
+  
+  // Melhorias específicas para contraste máximo
+  body {
+    font-weight: 600 !important;
+    background-color: #ffffff !important;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 800 !important;
+    color: #000000 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+  }
+  
+  p, span, div {
+    color: #000000 !important;
+    font-weight: 600 !important;
+  }
+  
+  .btn {
+    font-weight: 700 !important;
+    border-width: 3px !important;
+    color: #000000 !important;
+    background-color: #ffffff !important;
+    
+    &:hover {
+      background-color: #f1f5f9 !important;
+      border-color: #000000 !important;
+    }
+    
+    &--primary {
+      background-color: #000000 !important;
+      color: #ffffff !important;
+      border-color: #000000 !important;
+      
+      &:hover {
+        background-color: #1e293b !important;
+        border-color: #1e293b !important;
+      }
+    }
+  }
+  
+  .form-control, input, select, textarea {
+    border-width: 3px !important;
+    font-weight: 600 !important;
+    color: #000000 !important;
+    background-color: #ffffff !important;
+    
+    &:focus {
+      border-color: #000000 !important;
+      box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    &::placeholder {
+      color: #1e293b !important;
+      font-weight: 600 !important;
+    }
+  }
+  
+  .table-component, .c-table {
+    border-width: 3px !important;
+    background-color: #ffffff !important;
+    
+    thead {
+      background-color: #000000 !important;
+      
+      th, td {
+        color: #ffffff !important;
+        border-bottom-width: 2px !important;
+        font-weight: 700 !important;
+      }
+    }
+    
+    tbody {
+      tr {
+        border-bottom-width: 2px !important;
+        
+        &:hover {
+          background-color: #f1f5f9 !important;
+        }
+        
+        td {
+          color: #000000 !important;
+          font-weight: 600 !important;
+        }
+      }
+    }
+  }
+  
+  .sidebar {
+    background-color: #ffffff !important;
+    border-right-width: 3px !important;
+    border-right-color: #000000 !important;
+    
+    .nav-link {
+      color: #000000 !important;
+      font-weight: 600 !important;
+      border: 2px solid transparent !important;
+      
+      &:hover {
+        background-color: #f1f5f9 !important;
+        border-color: #000000 !important;
+      }
+      
+      &--active {
+        background-color: #000000 !important;
+        color: #ffffff !important;
+        border-color: #000000 !important;
+      }
+    }
+  }
+  
+  .header {
+    background-color: #ffffff !important;
+    border-bottom-width: 3px !important;
+    border-bottom-color: #000000 !important;
+    
+    .header__title {
+      color: #000000 !important;
+      font-weight: 700 !important;
+    }
+    
+    .header__subtitle {
+      color: #000000 !important;
+      font-weight: 600 !important;
+    }
+  }
+  
+  .badge {
+    border-width: 3px !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+    background-color: #ffffff !important;
+    border-color: #000000 !important;
+    
+    &--primary {
+      background-color: #000000 !important;
+      color: #ffffff !important;
+      border-color: #000000 !important;
+    }
+    
+    &--success {
+      background-color: #000000 !important;
+      color: #ffffff !important;
+      border-color: #000000 !important;
+    }
+    
+    &--danger {
+      background-color: #000000 !important;
+      color: #ffffff !important;
+      border-color: #000000 !important;
+    }
+    
+    &--warning {
+      background-color: #000000 !important;
+      color: #ffffff !important;
+      border-color: #000000 !important;
+    }
+  }
+  
+  .dropdown-menu {
+    background-color: #ffffff !important;
+    border-width: 3px !important;
+    border-color: #000000 !important;
+    box-shadow: var(--contrast-shadow-lg) !important;
+    
+    .dropdown-item {
+      color: #000000 !important;
+      font-weight: 600 !important;
+      
+      &:hover {
+        background-color: #f1f5f9 !important;
+        color: #000000 !important;
+      }
+    }
+  }
+  
+  .modal-content {
+    background-color: #ffffff !important;
+    border-width: 3px !important;
+    border-color: #000000 !important;
+    box-shadow: var(--contrast-shadow-lg) !important;
+    
+    .modal-header {
+      border-bottom-width: 2px !important;
+      border-bottom-color: #000000 !important;
+    }
+    
+    .modal-footer {
+      border-top-width: 2px !important;
+      border-top-color: #000000 !important;
+    }
+  }
+  
+  .alert, .flash-message {
+    border-width: 3px !important;
+    font-weight: 600 !important;
+    
+    &--success {
+      background-color: #ffffff !important;
+      border-color: #000000 !important;
+      color: #000000 !important;
+    }
+    
+    &--error {
+      background-color: #ffffff !important;
+      border-color: #000000 !important;
+      color: #000000 !important;
+    }
+    
+    &--warning {
+      background-color: #ffffff !important;
+      border-color: #000000 !important;
+      color: #000000 !important;
+    }
+    
+    &--info {
+      background-color: #ffffff !important;
+      border-color: #000000 !important;
+      color: #000000 !important;
+    }
+  }
+  
+  .tooltip {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border: 3px solid #000000 !important;
+    font-weight: 600 !important;
+  }
+  
+  .progress {
+    background-color: #f1f5f9 !important;
+    border: 2px solid #000000 !important;
+    
+    .progress-bar {
+      background-color: #000000 !important;
+    }
+  }
+  
+  .pagination {
+    .page-link {
+      background-color: #ffffff !important;
+      border-width: 2px !important;
+      border-color: #000000 !important;
+      color: #000000 !important;
+      font-weight: 600 !important;
+      
+      &:hover {
+        background-color: #f1f5f9 !important;
+        color: #000000 !important;
+      }
+    }
+    
+    .page-item.active .page-link {
+      background-color: #000000 !important;
+      border-color: #000000 !important;
+      color: #ffffff !important;
+    }
+  }
+  
+  .list-group {
+    .list-group-item {
+      background-color: #ffffff !important;
+      border-width: 2px !important;
+      border-color: #000000 !important;
+      color: #000000 !important;
+      font-weight: 600 !important;
+      
+      &:hover {
+        background-color: #f1f5f9 !important;
+        color: #000000 !important;
+      }
+    }
+  }
+  
+  .nav-tabs {
+    border-bottom-width: 2px !important;
+    border-bottom-color: #000000 !important;
+    
+    .nav-link {
+      background-color: transparent !important;
+      border-width: 2px !important;
+      border-color: transparent !important;
+      color: #000000 !important;
+      font-weight: 600 !important;
+      
+      &:hover {
+        border-color: #000000 !important;
+        color: #000000 !important;
+      }
+      
+      &.active {
+        background-color: #ffffff !important;
+        border-color: #000000 #000000 transparent !important;
+        color: #000000 !important;
+      }
+    }
+  }
+  
+  .accordion {
+    .accordion-item {
+      background-color: #ffffff !important;
+      border-width: 2px !important;
+      border-color: #000000 !important;
+    }
+    
+    .accordion-header {
+      background-color: #f1f5f9 !important;
+    }
+    
+    .accordion-button {
+      background-color: #f1f5f9 !important;
+      color: #000000 !important;
+      font-weight: 600 !important;
+      
+      &:not(.collapsed) {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+      }
+    }
+  }
+  
+  // Melhorias para scrollbars
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9 !important;
+    border: 2px solid #000000 !important;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #000000 !important;
+    border-radius: 6px;
+    border: 2px solid #000000 !important;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #1e293b !important;
+  }
+  
+  // Melhorias para seleção de texto
+  ::selection {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+  
+  // Melhorias para focus states
+  *:focus {
+    outline: 3px solid #000000 !important;
+    outline-offset: 3px !important;
+  }
+  
+  // Melhorias para disabled states
+  *:disabled {
+    opacity: 0.8 !important;
+    cursor: not-allowed !important;
+  }
+  
+  // Melhorias para loading states
+  .loading {
+    opacity: 0.8 !important;
+    pointer-events: none !important;
+  }
+  
+  // Melhorias para estados vazios
+  .empty-state {
+    color: #000000 !important;
+    border-width: 3px !important;
+    border-color: #000000 !important;
+    background-color: #ffffff !important;
+    font-weight: 600 !important;
+  }
+  
+  // Melhorias para código inline
+  code {
+    background-color: #f1f5f9 !important;
+    color: #000000 !important;
+    padding: 0.25rem 0.5rem !important;
+    border-radius: 0.25rem !important;
+    font-size: 0.875em !important;
+    font-weight: 600 !important;
+    border: 1px solid #000000 !important;
+  }
+  
+  // Melhorias para blocos de código
+  pre {
+    background-color: #f1f5f9 !important;
+    border-width: 2px !important;
+    border-color: #000000 !important;
+    color: #000000 !important;
+    padding: 1rem !important;
+    border-radius: 0.5rem !important;
+    overflow-x: auto !important;
+    font-weight: 600 !important;
+  }
+  
+  // Melhorias para links
+  a {
+    color: #000000 !important;
+    font-weight: 600 !important;
+    text-decoration: underline !important;
+    
+    &:hover {
+      color: #1e293b !important;
+      text-decoration: underline !important;
+    }
+  }
+  
+  // Melhorias para ícones
+  .icon {
+    color: #000000 !important;
+  }
+  
+  // Melhorias para separadores
+  hr {
+    border-width: 2px !important;
+    border-color: #000000 !important;
+  }
+  
+  // Melhorias para legendas
+  legend {
+    color: #000000 !important;
+    font-weight: 700 !important;
+  }
+  
+  // Melhorias para labels
+  label {
+    color: #000000 !important;
+    font-weight: 600 !important;
+  }
+  
+  // Melhorias para small text
+  small {
+    color: #000000 !important;
+    font-weight: 600 !important;
+  }
+  
+  // Melhorias para mark/highlight
+  mark {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+  
+  // Melhorias para blockquote
+  blockquote {
+    border-left-width: 4px !important;
+    border-left-color: #000000 !important;
+    padding-left: 1rem !important;
+    color: #000000 !important;
+    font-style: italic !important;
+    font-weight: 600 !important;
+  }
+  
+  // Melhorias para detalhes
+  details {
+    summary {
+      color: #000000 !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+    }
+  }
+  
+  // Melhorias para meter
+  meter {
+    &::-webkit-meter-bar {
+      background-color: #f1f5f9 !important;
+      border: 2px solid #000000 !important;
+    }
+    
+    &::-webkit-meter-optimum-value {
+      background-color: #000000 !important;
+    }
+    
+    &::-webkit-meter-suboptimum-value {
+      background-color: #000000 !important;
+    }
+    
+    &::-webkit-meter-even-less-good-value {
+      background-color: #000000 !important;
+    }
+  }
+  
+  // Melhorias para progress
+  progress {
+    background-color: #f1f5f9 !important;
+    border: 2px solid #000000 !important;
+    
+    &::-webkit-progress-bar {
+      background-color: #f1f5f9 !important;
+    }
+    
+    &::-webkit-progress-value {
+      background-color: #000000 !important;
+    }
+    
+    &::-moz-progress-bar {
+      background-color: #000000 !important;
+    }
+  }
+  
+  // Melhorias para time
+  time {
+    color: #000000 !important;
+    font-weight: 600 !important;
+  }
+  
+  // Melhorias para abbr
+  abbr {
+    border-bottom-width: 2px !important;
+    border-bottom-color: #000000 !important;
+    text-decoration: none !important;
+  }
+  
+  // Melhorias para cite
+  cite {
+    color: #000000 !important;
+    font-style: italic !important;
+    font-weight: 600 !important;
+  }
+  
+  // Melhorias para dfn
+  dfn {
+    font-style: italic !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+  }
+  
+  // Melhorias para kbd
+  kbd {
+    background-color: #f1f5f9 !important;
+    border-width: 2px !important;
+    border-color: #000000 !important;
+    border-radius: 0.25rem !important;
+    color: #000000 !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.875em !important;
+    font-weight: 600 !important;
+  }
+  
+  // Melhorias para samp
+  samp {
+    background-color: #f1f5f9 !important;
+    color: #000000 !important;
+    padding: 0.25rem 0.5rem !important;
+    border-radius: 0.25rem !important;
+    font-family: monospace !important;
+    font-weight: 600 !important;
+    border: 1px solid #000000 !important;
+  }
+  
+  // Melhorias para var
+  var {
+    color: #000000 !important;
+    font-style: italic !important;
+    font-weight: 600 !important;
+  }
+  
+  // Melhorias para sub e sup
+  sub, sup {
+    color: #000000 !important;
+    font-weight: 600 !important;
+  }
+  
+  // Melhorias para ins e del
+  ins {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+  }
+  
+  del {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    text-decoration: line-through !important;
+    font-weight: 600 !important;
+  }
+  
+  // Melhorias para markdown (se aplicável)
+  .markdown {
+    color: #000000 !important;
+    font-weight: 600 !important;
+    
+    h1, h2, h3, h4, h5, h6 {
+      color: #000000 !important;
+      font-weight: 800 !important;
+    }
+    
+    code {
+      background-color: #f1f5f9 !important;
+      color: #000000 !important;
+      border: 1px solid #000000 !important;
+    }
+    
+    blockquote {
+      border-left-color: #000000 !important;
+      color: #000000 !important;
+    }
+    
+    table {
+      border-color: #000000 !important;
+      
+      th, td {
+        border-color: #000000 !important;
+        font-weight: 600 !important;
+      }
+      
+      th {
+        background-color: #f1f5f9 !important;
+        color: #000000 !important;
+        font-weight: 700 !important;
+      }
+    }
+  }
+}
+
+// Indicador de contraste ativo
+.contrast-indicator {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background-color: #000000;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  z-index: 9999;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  
+  &.hidden {
+    display: none;
+  }
+}
+
+// Botão de alternância de contraste
+.contrast-toggle {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background-color: #6366f1;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 9999;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Menu de opções de contraste
+.contrast-menu {
+  position: fixed;
+  bottom: 4rem;
+  right: 1rem;
+  background-color: white;
+  border: 2px solid #000000;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  z-index: 9998;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  
+  .contrast-option {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-weight: 600;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+    
+    &:hover {
+      background-color: #f1f5f9;
+    }
+    
+    &.active {
+      background-color: #6366f1;
+      color: white;
+    }
+  }
+} 

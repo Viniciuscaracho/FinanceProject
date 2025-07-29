@@ -1,0 +1,9 @@
+- if @text.present? || content.present?
+  .block.relative
+    .absolute.inset-0.flex.items-center
+      .w-full.border-t.border-gray-200
+    .relative.flex.justify-center
+      %span.bg-white.px-3.text-sm.font-bold
+        = @text.presence || content
+- else
+  %hr.my-3

@@ -1,0 +1,15 @@
+.alert {
+  @apply flex rounded-md p-3 bg-gray-50 text-gray-500;
+
+  &__info {
+    @apply bg-blue-100 text-blue-700
+  }
+
+  &__danger {
+    @apply bg-danger-100 text-danger-700
+  }
+
+  &__success {
+    @apply bg-success-100 text-success-700
+  }
+}

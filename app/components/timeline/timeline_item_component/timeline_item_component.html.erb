@@ -1,0 +1,23 @@
+<li class="hover:bg-gray-200 p-2 rounded-b-md rounded-tl-3xl rounded-tr-md pb-6 print:border-t-2 print:rounded-none print:break-inside-avoid" >
+  <div class="relative">
+    <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+    <div class="relative flex space-x-3">
+      <div>
+        <span class="h-8 w-8 rounded-full overflow-hidden bg-gray-400 flex items-center justify-center ring-8 ring-white">
+          <%= avatar %>
+        </span>
+      </div>
+      <div class="flex min-w-0 flex-1 space-x-4 pt-1.5" data-hide-amount-target='amountField'>
+        <div>
+          <%= body %>
+        </div>
+        <div class="whitespace-nowrap absolute right-0 text-gray-500 ">
+          <% if @date.present? %>
+            <time datetime="<%= @date.to_date %>"><%="#{[ @date.day, t("date.abbr_month_names")[@date.month].humanize, t("shared.at"), @date.strftime("%H:%M")].join(" ") } " %></time>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</li>
+

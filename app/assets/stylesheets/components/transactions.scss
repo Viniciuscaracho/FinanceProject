@@ -1,0 +1,92 @@
+.transactions-list {
+  @apply flex flex-col divide-y divide-gray-200 w-full;
+
+  &__new {
+    @apply flex items-center h-12 px-base py-1.5 px-base w-full bg-gray-100
+  }
+
+  &__goto {
+    @apply flex items-center h-full w-full bg-white
+  }
+
+  &__add {
+    @apply font-medium w-full h-8 flex items-center justify-center space-x-2 border-2 border-dashed text-primary-500 hover:text-primary-600 border-primary-500 hover:border-primary-600 bg-white rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+  }
+
+  &__go {
+    @apply font-medium w-full h-8 flex items-center justify-center space-x-2 border-2 text-primary-500 hover:text-primary-600 border-primary-500 hover:border-primary-600 bg-white rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+  }
+
+  &__header, &__item {
+    @apply flex items-center w-full px-1.5;
+  }
+
+  & &__item {
+    @apply hover:bg-gray-50
+  }
+
+  & > turbo-frame:last-of-type > li > &__item,
+  & > turbo-frame:last-of-type > &__item {
+    @apply rounded-b-lg
+  }
+
+  &__header {
+    @apply font-semibold
+  }
+
+  &__column {
+    @apply flex flex-shrink-0 items-center px-1.5 py-1.5 leading-4 whitespace-normal truncate;
+    min-height: 3rem;
+
+    &--check {
+      @apply justify-start;
+      width: 2.5rem
+    }
+    &--duedate {
+      @apply w-20 xl:w-32;
+    }
+    &--name {
+      @apply flex-1 truncate flex flex-col items-start justify-center;
+      min-width: 8rem;
+    }
+    &--contact {
+      @apply w-24 xl:w-40;
+    }
+    &--bank-account {
+      width: 12rem;
+    }
+    &--category {
+      @apply w-24 xl:w-40;
+    }
+    &--amount {
+      @apply flex-col items-start justify-center w-32 xl:w-40;
+    }
+    &--payment-type {
+      @apply w-24 xl:w-40;
+    }
+    &--paid {
+      @apply justify-start w-20 xl:w-24;
+    }
+    &--actions {
+      @apply text-right justify-end;
+      width: 6rem;
+    }
+  } 
+}
+
+.summarizer {
+  @apply sticky bottom-3 mt-3 flex justify-end block bg-white p-3 rounded-md w-80 sm:shadow;
+  margin-left: calc(100% - 39rem);
+  min-height: 5.6rem;
+}
+
+.summarizer-phone {
+  @apply sticky shadow-md border-t border-gray-100 bottom-0 flex justify-end block bg-white mt-3 p-3 w-full;
+  min-height: 88px
+}
+
+.separator-line::after {
+  @apply block absolute inset-x-0 bottom-0 z-10;
+  content: "";
+  border-bottom: 1px solid #D1D5DB;
+}

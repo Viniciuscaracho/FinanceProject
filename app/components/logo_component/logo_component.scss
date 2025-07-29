@@ -1,0 +1,45 @@
+.logo {
+  @apply rounded-md h-10 w-24 p-1 overflow-hidden inline-flex items-center justify-center flex-shrink-0;
+  & img  {
+    @apply object-cover
+  }
+
+  & svg  {
+    @apply object-cover h-5 w-5
+  }
+
+  &--2xl {
+    @apply h-24 w-24;
+    & img {
+      @apply h-24
+    }
+    & svg {
+      @apply h-12 w-12
+    }
+  }
+
+  &--xl {
+    @apply h-16 w-16;
+    & svg {
+      @apply h-8 w-8
+    }
+  }
+
+  &--lg {
+    @apply h-12 w-12;
+    & svg {
+      @apply h-6 w-6
+    }
+  }
+
+  &--sm {
+    @apply h-8 w-8;
+    & svg {
+      @apply h-4 w-4
+    }
+  }
+
+  &--xs {
+    @apply h-6 w-6;
+  }
+}

@@ -1,0 +1,6 @@
+= link_to @href, id: @options.fetch(:id, "menu_item_#{object_id}"), class: "flex items-center space-x-3 text-gray-700 block px-3 py-1.5 hover:bg-gray-100 hover:text-gray-900 #{@options.fetch(:class, '')}", role: "menuitem", tabindex: "-1" do
+  - if @icon.present?
+    .flex-shrink-0
+      = heroicon @icon, options: { class: 'h-5 w-5' }
+  .flex-1
+    = content

@@ -1,0 +1,33 @@
+.header {
+  @apply sticky top-0 bg-white sm:bg-gray-100 px-3 sm:px-0;
+  &__container {
+    @apply flex items-center mx-auto max-w-full h-16;
+  }
+  &__title {
+    @apply truncate text-xl font-semibold flex justify-center leading-6 sm:ml-0;
+  }
+  &__subtitle {
+    @apply truncate text-sm font-normal block text-gray-500;
+  }
+  &__search {
+    @apply flex;
+  }
+  &__body{
+    @apply flex-1;
+  }
+  &__notifications {
+    @apply block ml-1.5
+  }
+  &__eye {
+    @apply block ml-1.5
+  }
+  &__actions {
+    @apply flex items-center space-x-1.5 ml-1.5
+  }
+  &__hamburguer-button {
+    @apply flex h-8 w-8 -ml-1 mr-1.5 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+  &__hamburguer {
+    @apply h-6 w-6;
+  }
+}

@@ -1,0 +1,131 @@
+databases:
+  - name: procfy_database_development
+    databaseName: procfy_development
+    user: procfy
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
+
+services:
+  - type: redis
+    name: procfy_redis_development
+    ipAllowList: [ ] # only allow internal connections
+    maxmemoryPolicy: noeviction # optional (defaults to allkeys-lru)
+
+  - type: web
+    name: procfy_web_development
+    runtime: docker
+    repo: https://github.com/codengage/procfy
+    dockerfilePath: ./Dockerfile.staging
+    dockerContext: .
+    healthCheckPath: /health_check
+    envVars:
+      - key: ADOBE_CLIENT_ID
+        value: 19adf48c5c874dd1b60e2c935daefb26
+      - key: RAILS_ENV
+        value: staging
+      - key: DEFAULT_HOST_NAME
+        value: dev.procfy.io
+      - key: DEFAULT_HOST_PROTOCOL
+        value: https
+      - key: MAILGUN_ENABLED
+        value: "true"
+      - key: RAILS_DB_MIGRATE_ON_STARTUP
+        value: "false"
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: procfy_database_development
+          property: database
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: procfy_database_development
+          property: host
+      - key: DATABASE_HOST_REPLICA
+        fromDatabase:
+          name: procfy_database_development
+          property: host
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: procfy_database_development
+          property: port
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          name: procfy_database_development
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: procfy_database_development
+          property: password
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: procfy_redis_development
+          property: connectionString
+      - key: REDIS_SIDEKIQ_URL
+        fromService:
+          type: redis
+          name: procfy_redis_development
+          property: connectionString
+      - key: RAILS_MAX_THREADS
+        value: "10"
+      - key: RAILS_MIN_THREADS
+        value: "5"
+
+  - type: worker
+    name: procfy_worker_development
+    runtime: docker
+    repo: https://github.com/codengage/procfy
+    dockerfilePath: ./Dockerfile.staging
+    dockerContext: .
+    dockerCommand: "bundle exec sidekiq"
+    envVars:
+      - key: ADOBE_CLIENT_ID
+        value: 19adf48c5c874dd1b60e2c935daefb26
+      - key: RAILS_ENV
+        value: staging
+      - key: DEFAULT_HOST_NAME
+        value: dev.procfy.io
+      - key: DEFAULT_HOST_PROTOCOL
+        value: https
+      - key: MAILGUN_ENABLED
+        value: "true"
+      - key: RAILS_DB_MIGRATE_ON_STARTUP
+        value: "true"
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: procfy_database_development
+          property: database
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: procfy_database_development
+          property: host
+      - key: DATABASE_HOST_REPLICA
+        fromDatabase:
+          name: procfy_database_development
+          property: host
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: procfy_database_development
+          property: port
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          name: procfy_database_development
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: procfy_database_development
+          property: password
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: procfy_redis_development
+          property: connectionString
+      - key: REDIS_SIDEKIQ_URL
+        fromService:
+          type: redis
+          name: procfy_redis_development
+          property: connectionString
+      - key: RAILS_MAX_THREADS
+        value: "10"
+      - key: RAILS_MIN_THREADS
+        value: "5"

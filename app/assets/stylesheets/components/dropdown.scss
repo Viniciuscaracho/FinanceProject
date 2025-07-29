@@ -1,0 +1,101 @@
+.dropdown {
+  @apply block text-left;
+
+  &__menu {
+    @apply absolute block z-30 w-auto max-w-xs sm:max-w-2xl rounded-md bg-white border shadow-lg focus:outline-none divide-y;
+  }
+
+  &__group {
+    @apply py-1.5 w-full
+  }
+
+  &__item {
+    @apply truncate w-full text-left flex items-center justify-start space-x-3 text-gray-700 px-3 py-1.5 hover:bg-gray-100 hover:text-gray-900;
+
+    & * {
+      @apply truncate
+    }
+
+    & svg {
+      @apply h-5 w-5
+    }
+
+    &--disabled {
+      @apply opacity-50 cursor-not-allowed
+    }
+
+    &--active {
+      @apply bg-gray-100 text-gray-900
+    }
+  }
+}
+
+.dropdown-enter {
+  @apply transition ease-out duration-100;
+}
+
+.dropdown-enter-start {
+  @apply transform opacity-0 scale-50;
+}
+.dropdown-enter-end {
+  @apply transform opacity-100 scale-100;
+}
+
+.dropdown-leave {
+  @apply transition ease-in duration-75;
+}
+
+.dropdown-leave-start {
+  @apply transform opacity-100 scale-100;
+}
+
+.dropdown-leave-end {
+  @apply transform opacity-0 scale-50;
+}
+
+#arrow,
+#arrow::before {
+  @apply absolute h-3 w-3;
+}
+
+#arrow {
+  z-index: -1;
+  @apply border-none;
+}
+
+#arrow::before {
+  content: '';
+  @apply box-border bg-white border-r border-t;
+}
+
+.dropdown__menu[data-popper-placement^='top'] > #arrow {
+  @apply -bottom-1.5;
+}
+
+.dropdown__menu[data-popper-placement^='top'] > #arrow:before {
+  transform: rotate(135deg);
+}
+
+.dropdown__menu[data-popper-placement^='bottom'] > #arrow {
+  @apply -top-1.5;
+}
+
+.dropdown__menu[data-popper-placement^='bottom'] > #arrow:before {
+  transform: rotate(315deg);
+}
+
+.dropdown__menu[data-popper-placement^='left'] > #arrow {
+  @apply -right-1.5;
+}
+
+.dropdown__menu[data-popper-placement^='left'] > #arrow:before {
+  transform: rotate(45deg)
+}
+
+.dropdown__menu[data-popper-placement^='right'] > #arrow {
+  @apply -left-1.5;
+}
+
+.dropdown__menu[data-popper-placement^='right'] > #arrow:before {
+  transform: rotate(225deg);
+}

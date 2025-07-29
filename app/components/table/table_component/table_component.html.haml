@@ -1,0 +1,7 @@
+%table.table-component{ class: @options.fetch(:class, ''), data: @options.fetch(:data, {}) }
+  - if header
+    = header
+  - if bodies.any?
+    - bodies.each do |body|
+      = body
+  = content

@@ -1,0 +1,66 @@
+.stacked-list {
+  @apply space-y-3 divide-y-0 p-3 sm:p-0 sm:divide-y sm:divide-gray-200 sm:space-y-0 sm:border sm:rounded-lg sm:overflow-hidden;
+
+  &--borderless {
+    @apply rounded-none border-0
+  }
+
+  &__reports {
+    min-height: 80px;
+  }
+  &__item {
+    @apply flex-1 block bg-white rounded-lg sm:rounded-none;
+  }
+  &__layout {
+    @apply flex items-center px-base p-3 space-x-3;
+  }
+  &__left {
+    @apply flex min-w-0 flex-1 items-center space-x-3;
+  }
+  &__actions {
+    @apply flex flex-shrink-0 items-center space-x-2;
+    min-height: 2.25rem;
+  }
+  &__avatar {
+    @apply flex-shrink-0 flex items-center justify-center;
+  }
+  &__content {
+    @apply min-w-0 flex-1 block;
+  }
+  &__contenti {
+    @apply min-w-0 flex-1 md:grid md:grid-cols-5 md:gap-4;
+  }
+  &__contenth {
+    @apply min-w-0 flex-1 md:grid md:grid-cols-5 md:gap-4;
+  }
+  &__contentmobile {
+    @apply min-w-0 flex-1 md:grid md:grid-cols-1 md:gap-4;
+  }
+  &_status {
+   padding-left: 5rem;
+  }
+  &__details {
+    @apply w-full block space-y-1;
+    .paragraph-base {
+      @apply whitespace-normal
+    }
+  }
+  &__detailsi {
+    @apply flex items-center space-x-2;
+    align-items: center;
+  }
+  &__detailsh {
+    @apply flex items-center space-x-2;
+    align-items: center;
+  }
+  &__hidden-col {
+    @apply hidden md:block space-y-1 text-gray-500;
+  }
+  &__hidden-coldate {
+    @apply hidden md:block space-y-1 text-gray-500;
+  }
+  &__paid2 {
+    padding-left: 0px;
+  }
+}
+

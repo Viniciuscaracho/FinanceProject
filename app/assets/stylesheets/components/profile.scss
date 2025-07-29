@@ -1,0 +1,60 @@
+.profile-menu {
+  @apply relative inline-block text-left mb-3 w-full overflow-visible;
+
+  &__activator {
+    @apply w-full bg-transparent px-base py-base text-left text-gray-700 hover:bg-gray-200 focus:outline-none
+  }
+
+  &__layout {
+    @apply flex w-full items-center justify-between;
+
+  }
+
+  &__info {
+    @apply flex min-w-0 items-center justify-between space-x-3
+
+  }
+
+  &__chevron {
+    @apply h-5 w-5 flex-shrink-0 text-gray-400 group-hover:text-gray-500;
+
+  }
+
+  &__avatar {
+    @apply h-10 w-10 flex-shrink-0 rounded-full bg-gray-300;
+
+  }
+
+  &__detail {
+    @apply flex min-w-0 flex-1 flex-col
+
+  }
+
+  &__name {
+    @apply truncate font-medium
+
+  }
+
+  &__email {
+    @apply truncate text-gray-400
+
+  }
+
+  &__items {
+    @apply ease-in-out min-w-0 duration-100 absolute top-0 left-0 z-50 mx-3 mt-1 origin-top-left divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none
+  }
+
+  &__items-bottom-top {
+    @apply block ease-in-out w-auto min-w-full duration-100 absolute bottom-0 left-0 z-50 mx-3 mb-1 origin-bottom-left divide-y divide-gray-200 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none
+  }
+
+  &__group {
+    @apply py-1;
+
+  }
+
+  &__item {
+    @apply flex relative items-center w-auto space-x-2 w-full font-medium text-left pl-3 pr-4 py-base text-gray-700 hover:bg-gray-100 whitespace-nowrap;
+
+  }
+}

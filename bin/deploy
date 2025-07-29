@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+# Script de Deploy - FinancialProject
+# Este script automatiza o processo de deploy
+
+set -e
+
+echo "🚀 Iniciando deploy do FinancialProject..."
+
+# Verificar se estamos no branch correto (opcional)
+# if [[ $(git branch --show-current) != "main" ]]; then
+#   echo "❌ Erro: Deploy deve ser feito do branch main"
+#   exit 1
+# fi
+
+# Instalar dependências Ruby
+echo "📦 Instalando dependências Ruby..."
+bundle install --deployment
+
+# Instalar dependências Node.js
+echo "📦 Instalando dependências Node.js..."
+yarn install --frozen-lockfile
+
+# Build dos assets
+echo "🔨 Fazendo build dos assets..."
+yarn build:assets
+
+# Executar migrações
+echo "🗄️ Executando migrações..."
+bundle exec rails db:migrate
+
+# Precompilar assets
+echo "📝 Precompilando assets..."
+bundle exec rails assets:precompile
+
+# Verificar se tudo está funcionando
+echo "✅ Verificando se o aplicativo está funcionando..."
+bundle exec rails about
+
+echo "🎉 Deploy concluído com sucesso!"
+echo "💡 Para iniciar o servidor: bundle exec rails server"
+echo "💡 Para ver logs: tail -f log/production.log" 

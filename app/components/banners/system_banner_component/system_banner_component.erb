@@ -1,0 +1,18 @@
+<%= tag.div class: "flex-shrink-0 block w-full mx-auto max-w-full print:hidden" do %>
+  <%= tag.div class: "#{select_color} p-1.5 sm:py-1.5 sm:border sm:rounded-lg" do %>
+    <%= tag.div class: "sm:flex sm:items-center sm:space-x-2 sm:justify-between"  do %>
+      <%= tag.p class: "text-sm leading-4 sm:flex-1 flex items-center justify-center" do %>
+        <span class="block font-semibold sm:whitespace-nowrap"><%= @text.html_safe %></span>
+        <svg viewBox="0 0 2 2" class="hidden sm:block mx-2 h-0.5 w-0.5 fill-current" aria-hidden="true"><circle cx="1" cy="1" r="1" /></svg>
+        <span class="block"><%= @description.html_safe %></span>
+      <% end %>
+      <% if actions.present? %>
+        <% actions.each do |action| %>
+          <div class="sm:flex-shrink-0 mt-3 sm:mt-0 block sm:flex sm:items-center sm:space-x-2 space-y-3 sm:space-y-0">
+            <%= action %>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

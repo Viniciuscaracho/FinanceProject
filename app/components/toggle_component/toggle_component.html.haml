@@ -1,0 +1,13 @@
+= button_to @url,
+            method: @method,
+            value: @enabled,
+            data: { controller: 'toggle', action: 'click->toggle#switch' },
+            params: @params,
+            class: 'toggle',
+            role: 'switch',
+            onclick: 'event.stopPropagation()',
+            id: @id,
+            'aria-checked': @enabled do
+  %span.toggle__bg{ 'aria-hidden': true }
+  %span.toggle__bar{ 'aria-hidden': true, data: { toggle_target: :bar } }
+  %span.toggle__pin{ 'aria-hidden': true, data: { toggle_target: :pin } }

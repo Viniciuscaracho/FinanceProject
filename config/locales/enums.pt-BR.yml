@@ -1,0 +1,238 @@
+---
+pt-BR:
+  enums:
+    person_type:
+      undefined_person: Indefinida
+      natural: Pessoa física
+      legal: Pessoa jurídica
+    contact_type:
+      undefined_contact: Outro
+      customer: Cliente
+      employee: Colaborador
+      supplier: Fornecedor
+      partner: Sócio
+      associate: Associado
+    account_type:
+      current_account: Conta corrente # conta corrente
+      savings_account: Poupança # conta poupança
+      salary_account: Conta salário # conta salário
+      investing_account: Conta Investimento # conta investimento
+      cash_account: Caixa  # caixa
+      wallet: Carteira
+      other: Outros
+      personal: Pessoal
+      business: Empresarial
+    preferred_language:
+      pt-BR: Português (Brasil)
+      en: Inglês
+    payment_type:
+      on_cash: À vista
+      installment: Parcelado
+      recurring: Recorrente
+    payment_method:
+      no_payment_method: Indefinido
+      credit_card: Cartão de crédito
+      debit_card: Cartão de Débito
+      bank_slip: Boleto
+      bank_transfer: Transferência bancária
+      check: Cheque
+      cash: Dinheiro
+      pix: PIX
+      direct_debit: Débito automático
+      promissory: Promissória
+    transaction_type:
+      revenue: Recebimentos
+      fixed_expense: Despesas fixas
+      variable_expense: Despesas variáveis
+      payroll: Pessoas
+      tax: Impostos
+      transfer: Transferências
+      nil: '-'
+      expense: Despesas
+      others: Não tipadas
+    currency:
+      AED: AED - Dirham
+      ARS: ARS - Peso argentino
+      BRL: BRL - Real brasileiro
+      CLP: CLP - Peso chileno
+      CNY: CNY - Yuan chinês
+      USD: USD - Dólar americano
+      EUR: EUR - Euro
+      GBP: GBP - Libra esterlina
+      JPY: JPY - Iene japonês
+    installment_type:
+      daily: Diária
+      weekly: Semanal
+      biweekly: Quinzenal
+      monthly: Mensal
+      bimonthly: Bimestral
+      quarterly: Trimestral
+      semiannual: Semestral
+      annual: Anual
+    subscription_status:
+      incomplete: Pendente
+      incomplete_expired: Expirou
+      trialing: Em avaliação
+      active: Ativo
+      past_due: Atrasado
+      canceled: Cancelado
+      unpaid: Não pago
+    state:
+      in_progress: Em progresso...
+      done: Concluído
+      waiting: Carregando arquivo...
+      failed: Falhou
+    role:
+      admin: Administrador (Pode acessar tudo)
+      custom: Customizado
+    import:
+      source:
+        zero_paper: ZeroPaper
+        xlsx_contacts: Contatos
+        xlsx_default: Modelo padrão (XLSX)
+    statement_item:
+      status:
+        new: Nova
+        suggested: Sugestão
+        confirmed: Conciliar
+        ignored: Ignorar
+        reconciled: Conciliado
+        unreconciled: Não conciliado
+      type:
+        credit: Crédito
+        debit: Débito
+    statement:
+      state:
+        pending: Pendente
+        done: Finalizado
+        canceled: Cancelado
+
+    payment_plan:
+      frequency:
+        daily: Diária
+        weekly: Semanal
+        biweekly: Quinzenal
+        monthly: Mensal
+        bimonthly: Bimestral
+        quarterly: Trimestral
+        semiannual: Semestral
+        annual: Anual
+    announcement:
+      type:
+        new: Novidade
+        fix: Correção
+        improvement: Melhoria
+        update: Atualização
+        warning: Aviso
+        alert: Alerta
+    referral_code:
+      benefit_type:
+        discount: Desconto
+        commission: Comissão
+      account_type:
+        both: Ambos
+        business: Empresarial
+        personal: Pessoal
+    account:
+      relation_type:
+        partner: Parceiro
+        reseller: Revendedor
+        representative: Representante
+        referred: Indicado
+
+    invoice:
+      status:
+        draft: Novo
+        open: Em aberto
+        paid: Pago
+        canceled: Cancelado
+        uncollectible: Incobrável
+
+    subscription:
+      status:
+        incomplete: Pendente
+        incomplete_expired: Expirou
+        trialing: Em avaliação
+        active: Ativo
+        past_due: Atrasado
+        canceled: Cancelado
+        unpaid: Não pago
+    subscription_invoice:
+      status:
+        draft: Rascunho
+        open: Aberto
+        paid: Pago
+        void: Cancelado
+        uncollectible: Incobrável
+    subscription_charge:
+      status:
+        pending: Pendente
+        succeeded: Bem sucedida
+        failed: Falhou
+    subscription_webhook:
+      status:
+        pending: Pendente
+        processed: Processado
+        failed: Falhou
+        skipped: Ignorado
+
+    company_nfse_config:
+      environment:
+        homologacao: Teste
+        producao: Produção
+      provider:
+        padrao: Sistema da Prefeitura
+        nacional: Sistema Nacional NFS-e
+      simplified_tax_system:
+        nao_optante: Não optante
+        mei: Microempreendedor Individual (MEI)
+        me_epp: Microempresa ou Empresa de Pequeno Porte (ME/EPP)
+      tax_calculation_regime:
+        nao_se_aplica: Não se aplica
+        tributos_federais_e_municipais_pelo_sn: Tributos federais e municipais pelo Simples Nacional
+        tributos_federais_pelo_sn_e_issqn_por_fora_do_sn: Tributos federais pelo Simples Nacional e ISSQN por fora do Simples Nacional
+        tributos_federais_e_municipais_por_fora_do_sn: Tributos federais e municipais por fora do Simples Nacional
+      special_tax_regime:
+        nenhum: Nenhum
+        cooperativa: Cooperativa
+        estimativa: Estimativa
+        microempresa_municipal: Microempresa municipal
+        notario: Notário
+        profissional_autonomo: Profissional autônomo
+        socieda_de_profissionais: Sociedade de profissionais
+    service_nfse_config:
+      iss_service_provided_tax:
+        operacao_tributavel: Operação tributável
+        imunidade: Imunidade
+        exportacao_de_servico: Exportação de serviço
+        nao_incidencia: Não incidência
+      iss_immunity_type:
+        imunidade: Imunidade (tipo não informado na nota de origem)
+        patrimonio_renda_servicos_uns_dos_outros: Patrimônio, renda ou serviços, uns dos outros (CF88, Art 150, VI, a)
+        templos: Templos de qualquer culto (CF88, Art 150, VI, b)
+        patrimonio_renda_servicos_partidos_politicos: Patrimônio, renda ou serviços dos partidos políticos, inclusive suas fundações, das entidades sindicais dos trabalhadores, das instituições de educação e de assistência social, sem fins lucrativos, atendidos os requisitos da lei (CF88, Art 150, VI, c)
+        livros_jornais_periodicos: Livros, jornais, periódicos e o papel destinado a sua impressão (CF88, Art 150, VI, d)
+      iss_withholding_type:
+        nao_retido: Não retido
+        retido_pelo_tomador: Retido pelo tomador
+        retido_pelo_intermediario: Retido pelo intermediário
+      cst_code:
+        nenhum: Nenhum
+        operacao_tributavel_com_aliquota_basica: Operação tributável com alíquota básica
+        operacao_tributavel_com_aliquota_diferenciada: Operação tributável com alíquota diferenciada
+        operacao_tributavel_com_aliquota_por_unidade_de_medida_de_produto: Operação tributável com alíquota por unidade de medida de produto
+        operacao_tributavel_monofasica_aliquota_zero: Operação tributável monofásica - Alíquota zero
+        operacao_tributavel_com_substituicao_tributaria: Operação tributável com substituição tributária
+        operacao_tributavel_com_aliquota_zero: Operação tributável com alíquota zero
+        operacao_tributavel_da_contribuicao: Operação tributável da contribuição
+        operacao_sem_incidencia_da_contribuicao: Operação sem incidência da contribuição
+        operacao_com_suspensao_da_contribuicao: Operação com suspensão da contribuição
+      pis_cofins_withholding_type:
+        nao_retido: Não retido
+        retido: Retido
+
+    service:
+      service_type:
+        provided: Prestado
+        consumed: Tomado
+        both: Prestado e Tomado

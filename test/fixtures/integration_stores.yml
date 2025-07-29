@@ -1,0 +1,31 @@
+# == Schema Information
+#
+# Table name: integration_stores
+#
+#  id            :bigint           not null, primary key
+#  description   :text
+#  integrated_at :datetime
+#  name          :string           not null
+#  state         :string
+#  store_type_cd :integer          not null
+#  type          :string
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  account_id    :bigint
+#  parent_id     :bigint
+#
+# Indexes
+#
+#  idx_integrations_stores_uniq            (type,store_type_cd,account_id) UNIQUE
+#  index_integration_stores_on_account_id  (account_id)
+#  index_integration_stores_on_parent_id   (parent_id)
+#  index_integration_stores_on_state       (state)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#
+
+one:
+  name: 'pluggy'
+  store_type_cd: 0

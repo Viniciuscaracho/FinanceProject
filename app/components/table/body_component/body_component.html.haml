@@ -1,0 +1,5 @@
+%tbody{ id: @id, class: @classes }
+  - if items.present?
+    - items.each do |item|
+      = item
+  = content

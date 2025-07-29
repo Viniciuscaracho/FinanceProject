@@ -1,0 +1,21 @@
+{
+  "cpf_cnpj": "24477617000160",
+  "created_at": "2024-02-25T19:12:45.438Z",
+  "updated_at": "2024-02-25T19:12:45.438Z",
+  "inscricao_municipal": "110612",
+  "nome_razao_social": "CODENGAGE SERVICOS TECNOLOGICOS LTDA",
+  "nome_fantasia": "CODENGAGE",
+  "fone": "4699711849",
+  "email": "thiagobonfante@gmail.com",
+  "endereco": {
+    "logradouro": "DEDI BARRICHELLO MONTAGNER",
+    "numero": "250",
+    "bairro": "CENTRO",
+    "codigo_municipio": "4107207",
+    "cidade": "DOIS VIZINHOS",
+    "uf": "PR",
+    "codigo_pais": "1058",
+    "pais": "Brasil",
+    "cep": "85660000"
+  }
+}

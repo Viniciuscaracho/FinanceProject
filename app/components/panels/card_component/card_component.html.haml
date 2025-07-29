@@ -1,0 +1,12 @@
+.card{ id: @options.fetch(:id, "card_#{object_id}"), class: @options.fetch(:class, ''), data: @options.fetch(:data, {}) }
+  - if header?
+    = header
+
+  - if bodies.any?
+    - bodies.each do |body|
+      = body
+
+  - if footer?
+    = header
+
+  = content

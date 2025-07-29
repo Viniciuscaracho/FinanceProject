@@ -1,0 +1,12 @@
+- options = { id: @options.fetch(:id, "submit_#{@form.object&.model_name&.singular || 'form'}"),
+              disabled: @options.fetch(:disabled, false),
+              class: "btn btn--primary #{@options.fetch(:class, '')}",
+              data: @options.fetch(:data, {}) }
+
+- if @value.present?
+  = @form.submit @value, options
+- elsif content.present?
+  = button_tag options.merge(type: :submit) do
+    = content
+- else
+  = @form.submit options

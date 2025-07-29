@@ -1,0 +1,181 @@
+.c-table {
+  @apply block divide-y divide-gray-200 rounded-lg w-auto print:text-black print:w-full;
+
+  &__head, &__body {
+    @apply flex flex-col divide-y
+  }
+
+  &__head {
+    @apply font-semibold overflow-hidden rounded-t-lg print:font-bold
+  }
+
+  &__item {
+    @apply flex flex-row items-center box-border flex-nowrap px-1.5
+  }
+
+  &__body &__item {
+    @apply hover:bg-gray-50;
+
+    &.disable-hover {
+      @apply hover:bg-white
+    }
+  }
+
+  &__head &__item:first-child {
+    @apply rounded-t-lg
+  }
+
+  &__body > turbo-frame:last-of-type > li > &__item,
+  &__body > turbo-frame:last-of-type > &__item {
+    @apply rounded-b-lg
+  }
+
+  &__column {
+    @apply flex items-center px-1.5 py-1.5 print:py-1.5 leading-4 whitespace-normal box-border flex-shrink-0;
+    min-height: 3rem;
+
+    &--check {
+      @apply justify-center flex-shrink-0;
+      width: 3.5rem
+    }
+
+    &--flag {
+      @apply justify-center text-center flex-shrink-0;
+      width: 8rem
+    }
+
+    &--avatar {
+      @apply justify-start flex-shrink-0 w-14;
+    }
+
+    &--description {
+      @apply 2xl:flex 2xl:flex-col 2xl:justify-center 2xl:items-start 2xl:flex-1 2xl:space-y-1 xl:w-64;
+    }
+
+    &--amount, &--type, &--state {
+      @apply w-40;
+    }
+
+    &--date {
+      @apply w-28;
+    }
+
+    &--category {
+      @apply w-48;
+    }
+
+    &--contact {
+      @apply w-48;
+    }
+
+    &--others {
+      @apply truncate flex-shrink-0;
+      width: 10rem;
+    }
+
+    &--document-1 {
+      @apply truncate flex-shrink-0;
+      width: 10rem;
+    }
+
+    &--phone-number {
+      @apply truncate flex-shrink-0;
+      width: 10rem;
+    }
+
+    &--cell_phone-number {
+      @apply truncate flex-shrink-0;
+      width: 10rem;
+    }
+
+    &--email {
+      @apply truncate flex-shrink-0;
+      width: 12rem;
+    }
+
+    &--datetime {
+      @apply whitespace-nowrap;
+      width: 11rem;
+    }
+
+    &--actions {
+      @apply overflow-visible flex items-center justify-end space-x-2;
+      width: 7rem;
+    }
+  }
+}
+
+@media print {
+  @media (orientation: portrait) {
+    .c-table {
+      &__column {
+        min-height: 2rem;
+      }
+    }
+  }
+  @media (orientation: landscape) {
+    .c-table {
+      &__column {
+        min-height: 2rem;
+      }
+    }
+  }
+}
+
+.table-component {
+  @apply table-auto sm:table-fixed w-full max-w-full print:text-black print:w-full divide-y divide-gray-200;
+  
+  & > thead {
+    @apply font-semibold;
+
+    & > tr {
+      & > td {
+        & a:hover {
+          @apply text-primary-600 underline;
+        }
+      }
+    }
+  }
+
+  & > tbody {
+    @apply divide-y;
+
+    & > tr {
+      &.disabled {
+        @apply opacity-50 cursor-not-allowed pointer-events-none line-through;
+      }
+
+      &.clickable:hover > td {
+        @apply bg-gray-100;
+      }
+
+      &.clickable {
+        @apply cursor-pointer;
+      }
+    }
+  }
+
+  & > tbody, & > thead {
+    & > tr {
+      & > td:first-child {
+        @apply pl-3;
+      }
+
+      & > td:last-child {
+        @apply pr-3;
+      }
+    }
+  }
+
+  & td {
+    @apply px-1.5 py-1.5 h-12 leading-4;
+  }
+
+  &__actions {
+    @apply hidden group-hover:flex items-center justify-end space-x-1.5;
+  }
+
+  &__form-buttons {
+    @apply flex items-center justify-end space-x-1.5;
+  }
+}

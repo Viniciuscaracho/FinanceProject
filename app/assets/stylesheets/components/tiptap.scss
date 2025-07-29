@@ -1,0 +1,10 @@
+.tiptap_input{
+
+
+  @apply text-red-500;
+}
+
+.tiptap_input:empty:not(:focus):before {
+  content: attr(data-text);
+  color: #999999;
+}

@@ -1,0 +1,23 @@
+.autocomplete {
+  @apply relative block text-left w-full;
+
+  &__menu {
+    @apply overflow-hidden flex flex-col z-10 w-auto border rounded-md bg-white drop-shadow-md focus:outline-none divide-y mt-1;
+  }
+
+  &__item {
+    @apply text-left flex items-start justify-start space-x-3 text-gray-700 px-3 py-1.5 hover:bg-gray-100 hover:text-gray-900 hover:cursor-pointer;
+
+    & svg {
+      @apply h-5 w-5;
+    }
+
+    &--disabled {
+      @apply opacity-50 cursor-not-allowed
+    }
+
+    &--active {
+      @apply bg-primary-500 text-white
+    }
+  }
+}

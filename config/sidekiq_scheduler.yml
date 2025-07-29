@@ -1,0 +1,16 @@
+auto_update_exchange:
+    cron: '0 0 * * * America/Sao_Paulo'
+    class: UpdateExchangeRatesWorker
+    enabled: true
+daily_emails_notifications:
+    cron: '0 5 * * * America/Sao_Paulo'
+    class: DailyNotificationEmailWorker
+    enabled: false
+reindexing_all_transactions:
+    cron: '0 0 1 * * * America/Sao_Paulo'
+    class: ReindexAllTransactionsJob
+    enabled: false
+fix_company_person_type:
+    cron: '0 3 * * * America/Sao_Paulo'
+    class: FixCompanyPersonTypeWorker
+    enabled: false

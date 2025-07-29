@@ -1,0 +1,13 @@
+<div class="<%= dom_id(@avatable, :logo) %> flex flex-col">
+  <% id = dom_id(@avatable, :logo) %>
+
+  <div class="logo">
+    <% if @avatable.logo.attached? && @avatable.logo.representable? %>
+      <%= image_tag processed_image_url, alt: @avatable.name, id:, class: id %>
+    <% else %>
+      <div id="<%= id %>" class="flex items-center justify-center h-10 w-full bg-gray-300 rounded-md <%= id %>">
+        <%= heroicon @icon, variant: :solid, options: { class: 'h-6 w-6 text-gray-500' } %>
+      </div>
+    <% end %>
+  </div>
+</div>

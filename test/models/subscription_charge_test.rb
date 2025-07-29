@@ -1,0 +1,43 @@
+# == Schema Information
+#
+# Table name: subscription_charges
+#
+#  id                           :bigint           not null, primary key
+#  amount_captured_cents        :bigint           default(0), not null
+#  amount_cents                 :bigint           default(0), not null
+#  amount_refunded_cents        :bigint           default(0), not null
+#  application_fee_amount_cents :bigint           default(0), not null
+#  currency                     :string(3)        default("BRL"), not null
+#  data                         :jsonb            not null
+#  invoice                      :jsonb            not null
+#  metadata                     :jsonb            not null
+#  status                       :string           not null
+#  created_at                   :datetime         not null
+#  updated_at                   :datetime         not null
+#  account_id                   :bigint           not null
+#  processor_id                 :string           not null
+#  subscription_id              :bigint           not null
+#  subscription_invoice_id      :bigint           not null
+#
+# Indexes
+#
+#  index_subscription_charges_on_account_id               (account_id)
+#  index_subscription_charges_on_composed_index           (account_id,subscription_id,subscription_invoice_id,processor_id)
+#  index_subscription_charges_on_processor_id             (processor_id) UNIQUE
+#  index_subscription_charges_on_status                   (status)
+#  index_subscription_charges_on_subscription_id          (subscription_id)
+#  index_subscription_charges_on_subscription_invoice_id  (subscription_invoice_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#  fk_rails_...  (subscription_id => subscriptions.id)
+#  fk_rails_...  (subscription_invoice_id => subscription_invoices.id)
+#
+require "test_helper"
+
+class SubscriptionChargeTest < ActiveSupport::TestCase
+  # test "the truth" do
+  #   assert true
+  # end
+end

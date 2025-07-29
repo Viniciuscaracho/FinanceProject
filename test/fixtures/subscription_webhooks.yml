@@ -1,0 +1,20 @@
+# == Schema Information
+#
+# Table name: subscription_webhooks
+#
+#  id         :bigint           not null, primary key
+#  details    :jsonb            not null
+#  event      :jsonb            not null
+#  event_type :string           not null
+#  status     :string           default("pending"), not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#
+
+one:
+  event_type: MyString
+  event: 
+
+two:
+  event_type: MyString
+  event: 

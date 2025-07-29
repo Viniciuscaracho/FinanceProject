@@ -1,0 +1,17 @@
+%div{class: "#{@options.fetch(:class, '')}"}
+  - if header
+    = header
+  .bg-gray-200.rounded-full.overflow-hidden
+    .w-full.flex.justify-center.items-center.text-white.text-sm.font-medium.leading-none.animate__animated.progress-bar-animation.p-0.5{class: "#{@size} bg-#{@options.fetch(:color, 'bg-primary-500')} #{"rounded-full" if @options.fetch(:rounded, false) }", style: "width: #{number_to_percentage(@percentage.floor, precision: 0)}"}
+      - if @options.fetch(:show_percentage, false)
+        = number_to_percentage(@percentage, precision: 2)
+  .grid.grid-cols-2.mt-3
+    .col-span-1.justify-start
+      - if @titles[:partial]
+        .flex-1.text-gray-500= @titles[:partial]
+
+    .col-span-1
+      - if @titles[:total]
+        .flex.justify-end.text-gray-500= @titles[:total]
+  - if footer
+    = footer

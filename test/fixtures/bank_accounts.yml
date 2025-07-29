@@ -1,0 +1,50 @@
+# == Schema Information
+#
+# Table name: bank_accounts
+#
+#  id                       :bigint           not null, primary key
+#  account_number           :string
+#  account_type_cd          :integer          default(0), not null
+#  agency                   :string
+#  balance_cents            :bigint           default(0), not null
+#  balance_currency         :string(3)        default("BRL"), not null
+#  default                  :boolean          default(FALSE), not null
+#  discarded_at             :datetime
+#  initial_balance_cents    :bigint           default(0), not null
+#  initial_balance_currency :string(3)        default("BRL"), not null
+#  name                     :string           not null
+#  created_at               :datetime         not null
+#  updated_at               :datetime         not null
+#  account_id               :bigint           not null
+#  bank_id                  :bigint
+#  created_by_id            :bigint
+#  updated_by_id            :bigint
+#
+# Indexes
+#
+#  index_bank_accounts_on_account_id           (account_id)
+#  index_bank_accounts_on_account_id_and_id    (account_id,id)
+#  index_bank_accounts_on_account_type_cd      (account_type_cd)
+#  index_bank_accounts_on_bank_id              (bank_id)
+#  index_bank_accounts_on_created_by_id        (created_by_id)
+#  index_bank_accounts_on_discarded_at         (discarded_at)
+#  index_bank_accounts_on_multisearch_columns  (account_id,discarded_at NULLS FIRST)
+#  index_bank_accounts_on_updated_by_id        (updated_by_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#  fk_rails_...  (bank_id => banks.id)
+#  fk_rails_...  (created_by_id => users.id)
+#  fk_rails_...  (updated_by_id => users.id)
+#
+bank_one:
+  account_id: account
+  account: account
+  account_type_cd: 0
+  name: Primary account
+  initial_balance_cents: 0
+  initial_balance_currency: BRL
+  balance_cents: 0
+  balance_currency: BRL
+  default: true

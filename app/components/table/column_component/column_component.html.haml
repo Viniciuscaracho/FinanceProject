@@ -1,0 +1,6 @@
+%td{ class: @options.fetch(:class, nil), data: @options.fetch(:data, {}), colspan: @options.fetch(:colspan, nil) }
+  - if @title.present?
+    .block.font-medium= @title
+  - if @description.present?
+    .block.text-sm.sm:text-xs.text-gray-400= @description
+  = content

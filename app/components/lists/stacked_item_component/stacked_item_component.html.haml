@@ -1,0 +1,28 @@
+- if @options.fetch(:href, 'javascript:;') == 'javascript:;'
+  %li{ id: @options.fetch(:id, object_id), data: @options.fetch(:data, {}), class: "stacked-list__item #{@options.fetch(:class, '')}".strip }
+    .stacked-list__layout
+      .stacked-list__left
+        - if avatar?
+          .stacked-list__avatar
+            = avatar
+        .stacked-list__content
+          .stacked-list__details
+            = description
+      - if actions?
+        .stacked-list__actions
+          = actions
+- else
+  %li{ id: @options.fetch(:id, object_id) }
+    = link_to @options.fetch(:href), data: @options.fetch(:data, {}), class: "stacked-list__item #{@options.fetch(:class, '')}".strip do
+      .stacked-list__layout
+        .stacked-list__left
+          - if avatar?
+            .stacked-list__avatar
+              = avatar
+          .stacked-list__content
+            .stacked-list__details
+              = description
+        - if actions?
+          .stacked-list__actions
+            = actions
+

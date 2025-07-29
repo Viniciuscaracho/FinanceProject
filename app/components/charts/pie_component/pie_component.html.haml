@@ -1,0 +1,15 @@
+.flex.items-center.justify-center.p-3.overflow-visible
+  = pie_chart @data, adapter: :highcharts,
+                     library: { plotOptions: { pie: { dataLabels: { enabled: true, color: '#6b7280', format: '{point.name}<br> {point.percentage:.1f}%', class: 'text-9xl' } } } },
+                     percentage: @options.fetch(:percentage, true),
+                     colors: @options.fetch(:colors, %w[#14b8a6]),
+                     legend: @options.fetch(:legend, true),
+                     donut: @options.fetch(:donut, true),
+                     round: @options.fetch(:round, 2),
+                     zeros: @options.fetch(:zeros, true),
+                     thousands: @options.fetch(:thousands, t('number.currency.format.delimiter')),
+                     decimal: @options.fetch(:decimal, t('number.currency.format.separator')),
+                     loading: @options.fetch(:loading, t('shared.processing')),
+                     refresh: @options.fetch(:refresh, false),
+                     prefix: @options.fetch(:thousands, t('number.currency.format.unit')),
+                     download: { filename: @options.fetch(:filename, 'chart'), background: @options.fetch(:background, "#ffffff") }

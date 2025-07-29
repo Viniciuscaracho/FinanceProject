@@ -1,0 +1,30 @@
+.sidenav__content {
+  @apply flex-1 bg-transparent;
+}
+.sidenav__menu-item {
+  @apply bg-transparent hover:bg-gray-200 flex items-center px-base py-base h-10 sm:h-8 font-medium text-left w-full
+}
+.sidenav__menu-item--active {
+  @apply bg-primary-500 hover:bg-primary-500 text-white hover:text-white flex items-center px-base py-base h-10 sm:h-8 font-medium text-left w-full
+}
+.sidenav__menu-item--graph {
+  @apply bg-white text-indigo-600
+}
+.sidenav__menu-item-icon {
+  @apply mr-3 flex-shrink-0 h-6 w-6 sm:h-5 sm:w-5
+}
+.sidenav__menu-item > .sidenav__menu-item-icon {
+  @apply text-gray-400 group-hover:text-gray-500
+}
+.sidenav__menu-item--active > .sidenav__menu-item-icon {
+  @apply text-white
+}
+.sidenav__menu-item-caret {
+  @apply text-gray-300 ml-3 flex-shrink-0 h-5 w-5 transform group-hover:text-gray-400 transition-colors ease-in-out duration-150
+}
+.sidenav__submenu-item {
+  @apply text-gray-600 bg-transparent hover:bg-gray-200 hover:text-gray-900 flex items-center pl-11 py-base h-10 sm:h-8 font-medium text-left w-full no-underline
+}
+.sidenav__submenu-item--active {
+  @apply bg-white text-indigo-600 flex items-center pl-11 py-base font-medium text-left w-full
+}

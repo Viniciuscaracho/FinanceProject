@@ -1,0 +1,76 @@
+en:
+  policies:
+    read: View
+    create: Create
+    update: Update
+    destroy: Delete
+    manage: Manage
+    download: Download
+    transactions:
+      title: Transactions
+      revenues:
+        title: Revenue tab
+      fixed_expenses:
+        title: Fixed expenses tab
+      variable_expenses:
+        title: Variable expenses tab
+      payrolls:
+        title: Payroll tab
+      taxes:
+        title: Taxes tab
+      transfers:
+        title: Transfers tab
+      receipts:
+        title: Receipts tab
+    files:
+      title: Attachments
+    contacts:
+      title: Contacts
+    graphs:
+      title: View contact graphs
+    categories:
+      title: Categories
+    cost_centers:
+      title: Cost Centers
+    bank_accounts:
+      title: Bank Accounts
+    document_templates:
+      title: Document Templates
+    account_users:
+      title: Account Users
+      account_invitations:
+        title: Invite Other Users
+      permissions:
+        title: Grant Permission to Other Users
+    notifications:
+      title: Notifications
+      email:
+        title: By Email
+    imports:
+      title: Imports
+    account_settings:
+      title: Account Settings
+    companies:
+      title: Company Settings
+    balances:
+      title: Bank and Account Balances
+    outcomes:
+      title: Month Balance 
+    revenues:
+      title: Month Revenues
+    expenses: 
+      title: Month Expenses
+    totalizer:
+      title: Totalizer
+    reports:
+      title: Reports
+    home:
+      title: Home
+    billing:
+      title: Subscription/Billing Portal
+    exports:
+      title: Export Data
+    advanced_search:
+      title: Advanced Search
+    statements:
+      title: Statement (OFX file)

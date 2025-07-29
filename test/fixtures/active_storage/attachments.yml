@@ -1,0 +1,4 @@
+imports_one:
+  name: file
+  record: import_one (Import)
+  blob: transaction_blob

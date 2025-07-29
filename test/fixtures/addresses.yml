@@ -1,0 +1,45 @@
+# == Schema Information
+#
+# Table name: addresses
+#
+#  id               :bigint           not null, primary key
+#  address_line1    :string
+#  address_line2    :string
+#  address_number   :string
+#  addressable_type :string           not null
+#  city             :string
+#  country          :string
+#  district         :string
+#  ibge_city_code   :string
+#  postcode         :string
+#  state            :string
+#  created_at       :datetime         not null
+#  updated_at       :datetime         not null
+#  addressable_id   :bigint           not null
+#
+# Indexes
+#
+#  index_addresses_on_addressable  (addressable_type,addressable_id)
+#
+
+one:
+  addressable: one
+  address_line1: MyString
+  address_line2: MyString
+  district: MyString
+  city: MyString
+  state: MyString
+  country: MyString
+  postcode: MyString
+  addressable_type: MyString
+
+two:
+  addressable: two
+  address_line1: MyString
+  address_line2: MyString
+  district: MyString
+  city: MyString
+  state: MyString
+  country: MyString
+  postcode: MyString
+  addressable_type: MyString

@@ -1,0 +1,10 @@
+{
+  "serial_number": "33672308186105ca",
+  "issuer_name": "C=BR, O=ICP-Brasil, OU=AC SOLUTI v5, CN=AC SOLUTI Multipla v5",
+  "not_valid_before": "2023-08-18T19:14:00Z",
+  "not_valid_after": "2024-08-17T19:14:00Z",
+  "thumbprint": "319473fa8df419a4ac1cceaa3505b53ca7fc79f3",
+  "subject_name": "C=BR, O=ICP-Brasil, S=PR, L=Dois Vizinhos, OU=AC SOLUTI Multipla v5, OU=31375316000191, OU=Videoconferencia, OU=Certificado PJ A1, CN=CODENGAGE SERVICOS TECNOLOGICOS LTDA:24477617000160",
+  "cpf_cnpj": "24477617000160",
+  "nome_razao_social": "CODENGAGE SERVICOS TECNOLOGICOS LTDA"
+}

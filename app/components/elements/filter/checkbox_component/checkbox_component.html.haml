@@ -1,0 +1,4 @@
+.p-2.flex.items-center.space-x-2
+  = @form.check_box @params_name, id: @params_name, checked: @checked, class: 'form-control-checkbox cursor-pointer', data: { action: 'change->elements--filter-component#replaceCount', elements__filter__option_component_target: 'checkbox', elements__filter__dropdown_component_target: 'checkbox', elements__filter_component_target: 'checkbox' }
+  = label_tag @params_name, class: 'form-label-checkbox' do
+    =  @label

@@ -1,0 +1,6 @@
+<div class="flex items-center space-x-3 sm:rounded-md justify-center flex-1 h-full w-full self-stretch bg-gray-200 text-gray-500 p-3 font-medium text-gray-500">
+  <%= heroicon 'arrow-path', options: { class: 'h-5 w-5 animate-spin' } %>
+  <% if @text.present? %>
+    <span><%= @text %></span>
+  <% end %>
+</div>

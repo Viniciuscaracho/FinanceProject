@@ -1,0 +1,33 @@
+<div class="month-nav w-full sm:w-auto">
+  <%= link_to @prev_url, class: 'btn-circle btn-circle--primary sm:flex-shrink-0', data: { turbo_frame: @turbo_frame, controller: :tooltip, tooltip_content_value: I18n.t('transactions.tabs.prev_month')  } do %>
+    <%= heroicon 'chevron-left', options: { class: 'btn-circle__icon' } %>
+  <% end %>
+
+  <%= form_with(url: @current_url,
+                method: :get,
+                html: { class: 'flex-1' },
+                data: { turbo_frame: @turbo_frame,
+                        controller: 'month-navigator',
+                        month_navigator_locale_value: I18n.locale.to_s,
+                        month_navigator_url_value: @current_url,
+                        month_navigator_formatted_date_value: @current_required_params[:month],
+                        month_navigator_bank_account_value: @current_required_params[:bank_account_id],
+                        month_navigator_transaction_type_value: @current_required_params[:transaction_type],
+                        month_navigator_grouped_expenses_value: @current_required_params[:grouped_expenses]}) do |f|%>
+
+    <%= tag.input value: l(@current_required_params[:month], format: :month).titleize,
+                  type: "button",
+                  class: "tabs__item tabs__item--active w-full sm:w-32",
+                  data: { month_navigator_target: 'activator' }
+    %>
+
+    <% @current_required_params.except(:month, :date_filter, :start_date, :end_date).each do |k, v| %>
+      <%= f.hidden_field k, value: v, multiple: v.is_a?(Array) %>
+    <% end %>
+    <%= f.hidden_field :month, value: @current_required_params[:month], data: { month_navigator_target: 'month' } %>
+  <% end %>
+
+  <%= link_to @next_url, class: 'btn-circle btn-circle--primary sm:flex-shrink-0', data: { turbo_frame: @turbo_frame, controller: :tooltip, tooltip_content_value: I18n.t('transactions.tabs.next_month') } do %>
+    <%= heroicon 'chevron-right', options: { class: 'btn-circle__icon' } %>
+  <% end %>
+</div>

@@ -1,0 +1,87 @@
+{
+  "total": 2,
+  "totalPages": 1,
+  "page": 1,
+  "results": [
+    {
+      "id": 620,
+      "name": "Ágora Investimentos",
+      "primaryColor": "296fa7",
+      "institutionUrl": "https://www.agorainvest.com.br/images/OpenFinance/agora.svg",
+      "country": "BR",
+      "type": "INVESTMENT",
+      "credentials": [
+        {
+          "validation": "^\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}$",
+          "validationMessage": "CPF deve ter 11 números.",
+          "label": "CPF",
+          "name": "cpf",
+          "type": "number",
+          "placeholder": "",
+          "optional": false
+        }
+      ],
+      "imageUrl": "https://www.agorainvest.com.br/images/OpenFinance/agora.svg",
+      "hasMFA": false,
+      "oauth": true,
+      "health": {
+        "status": "ONLINE",
+        "stage": null
+      },
+      "products": [
+        "ACCOUNTS",
+        "TRANSACTIONS",
+        "IDENTITY",
+        "CREDIT_CARDS",
+        "PAYMENT_DATA",
+        "LOANS",
+        "INVESTMENTS"
+      ],
+      "createdAt": "2023-10-04T18:07:37.849Z",
+      "isSandbox": false,
+      "isOpenFinance": true,
+      "updatedAt": "2023-12-18T13:35:52.527Z",
+      "supportsPaymentInitiation": false
+    },
+    {
+      "id": 652,
+      "name": "Banco Bmg",
+      "primaryColor": "fa6300",
+      "institutionUrl": "https://www.bancobmg.com.br/data/files/8C/A2/7F/0A/FBA318104A94D208970BE9C2/bmg_open_finance.svg",
+      "country": "BR",
+      "type": "PERSONAL_BANK",
+      "credentials": [
+        {
+          "validation": "^\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}$",
+          "validationMessage": "CPF deve ter 11 números.",
+          "label": "CPF",
+          "name": "cpf",
+          "type": "number",
+          "placeholder": "",
+          "optional": false
+        }
+      ],
+      "imageUrl": "https://www.bancobmg.com.br/data/files/8C/A2/7F/0A/FBA318104A94D208970BE9C2/bmg_open_finance.svg",
+      "hasMFA": false,
+      "oauth": true,
+      "health": {
+        "status": "ONLINE",
+        "stage": null
+      },
+      "products": [
+        "ACCOUNTS",
+        "TRANSACTIONS",
+        "IDENTITY",
+        "CREDIT_CARDS",
+        "PAYMENT_DATA",
+        "LOANS",
+        "INVESTMENTS"
+      ],
+      "createdAt": "2023-09-01T18:05:09.146Z",
+      "isSandbox": false,
+      "isOpenFinance": true,
+      "updatedAt": "2023-12-18T13:35:52.441Z",
+      "supportsPaymentInitiation": true
+    }
+  ]
+}

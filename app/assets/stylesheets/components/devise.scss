@@ -1,0 +1,34 @@
+.devise {
+  &__layout {
+    @apply flex min-h-full;
+  }
+  &__left {
+    @apply flex h-full flex-1 flex-col justify-start py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24;
+  }
+  &__right {
+    @apply relative hidden w-0 flex-1 lg:block bg-primary-800;
+  }
+  &__container {
+    @apply mx-auto w-full max-w-sm lg:w-96;
+  }
+  &__header {
+    @apply flex items-center justify-between;
+  }
+  &__title {
+    @apply font-bold tracking-tight text-gray-700;
+  }
+  &__logo {
+    @apply h-12 w-auto;
+  }
+  &__content {
+    @apply mt-8;
+  }
+  &__form {
+    @apply block space-y-6;
+  }
+  &__links {
+    @apply block mt-6;
+  }
+}
+
+

@@ -1,0 +1,8 @@
+= button_to @url || [:edit, @model],
+            id: @options.fetch(:id, (@model && "edit_#{dom_id(@model)}") || self.object_id),
+            method: @options.fetch(:method, :get),
+            disabled: @options.fetch(:disabled, false),
+            onclick: @options.fetch(:onclick, 'event.stopPropagation()'),
+            data: { turbo_frame: @options.fetch(:turbo_frame, 'drawer') }.merge(@options.fetch(:tooltip, true) ? { controller: :tooltip, tooltip_content_value: @title } : {}),
+            class: "btn-circle btn-circle--primary #{@options.fetch(:class, '')}" do
+  = heroicon @options.fetch(:icon, 'pencil'), options: { class: 'btn-circle__icon' }

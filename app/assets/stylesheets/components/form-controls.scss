@@ -1,0 +1,98 @@
+.form-control {
+  @apply block text-base sm:text-xs xl:text-sm w-full bg-white text-left appearance-none rounded-md border border-gray-300 px-2 py-1 h-10 sm:h-8 placeholder-gray-400 shadow-sm hover:shadow focus:ring-1 focus:border-primary-500 focus:outline-none focus:ring-primary-500;
+  &[disabled] {
+    @apply text-gray-500 bg-gray-50 cursor-not-allowed
+  }
+  &[readonly] {
+    @apply cursor-pointer
+  }
+}
+
+.form-control-multiselect {
+  @apply block text-base sm:text-xs xl:text-sm w-full bg-white text-left appearance-none rounded-md border border-gray-300 px-2 py-1.5 placeholder-gray-400 shadow-sm hover:shadow focus:ring-1 focus:border-primary-500 focus:outline-none focus:ring-primary-500;
+  &:disabled {
+    @apply text-gray-500 bg-gray-50 cursor-not-allowed
+  }
+}
+
+.form-label {
+  @apply block font-medium
+}
+
+.form-group {
+  @apply relative block space-y-1
+}
+
+.form-group-checkbox, .form-group-radio {
+  @apply flex items-center space-x-2 h-10 sm:h-8
+}
+
+.form-control-checkbox {
+  @apply h-5 w-5 rounded-md border-gray-300 text-primary-500 focus:ring-primary-500 shadow-sm hover:shadow;
+  &[disabled] {
+    @apply text-gray-300 cursor-not-allowed
+  }
+}
+
+.form-control-radio {
+  @apply h-5 w-5 border-gray-300 text-primary-500 focus:ring-primary-500 shadow-sm hover:shadow whitespace-nowrap
+}
+
+.form-label-checkbox, .form-label-radio {
+  @apply block font-medium
+}
+
+.form-input-group {
+  @apply relative;
+  &__symbol {
+    @apply pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2
+  }
+  &__select {
+    @apply h-full overflow-hidden rounded-r-md border-transparent bg-transparent py-0 pl-2 pr-6 text-gray-500 text-sm sm:text-xs focus:outline-none focus:ring-0 focus:border-0;
+    max-width: 3.66rem
+  }
+  &__btn {
+    @apply h-full rounded-r-md border border-transparent bg-transparent py-0 px-1.5 text-gray-700 hover:text-primary-500 text-sm sm:text-xs focus:outline-none focus:ring-1 focus:border-primary-500 focus:ring-primary-500
+  }
+  &__right {
+    @apply absolute inset-y-0 right-0 flex items-center
+  }
+  & > input {
+    @apply pr-14 text-left
+  }
+}
+
+.form-input-file {
+  @apply block text-base sm:text-xs w-full bg-white border border-gray-300 rounded-md py-1 px-2 pl-1 h-10 sm:h-8 xl:text-sm file:mb-0 file:h-full file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary-500 file:text-white hover:file:bg-primary-600 shadow-sm hover:shadow focus:ring-1 focus:border-primary-500 focus:outline-none focus:ring-primary-500;
+}
+
+.form-actions {
+  @apply flex flex-col sm:flex-row items-start sm:items-center justify-center sm:justify-start space-y-3 sm:space-y-0 space-x-0 sm:space-x-3;
+  &--justify-end {
+    @apply sm:justify-end;
+  }
+  &--justify-center {
+    @apply sm:justify-center;
+  }
+  &--justify-between {
+    @apply sm:justify-between;
+  }
+}
+
+.field_with_errors {
+  @apply relative;
+  .form-control {
+    @apply border-danger-300 focus:ring-danger-400 focus:border-danger-500;
+  }
+  .form-checkbox {
+    @apply border-danger-500 hover:border-danger-600 text-danger-500;
+  }
+}
+
+.field_error_message {
+  @apply absolute mt-1 text-sm sm:text-xs text-red-600;
+}
+
+textarea.form-control {
+  @apply h-auto min-h-[2.5rem] sm:min-h-[2rem];
+}

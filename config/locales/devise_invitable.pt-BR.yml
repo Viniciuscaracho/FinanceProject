@@ -1,0 +1,31 @@
+---
+pt-BR:
+  activerecord:
+    attributes:
+      user:
+        invitation_created_at: Convite criado em
+        invitation_sent_at: Convite enviado em
+        invitation_accepted_at: Convite aceito em
+  devise:
+    failure:
+      invited: 'Você tem um convite pendente, aceite para finalizar sua conta.'
+    invitations:
+      send_instructions: 'Um email de convite foi enviado para %{email}.'
+      invitation_token_invalid: 'O código do convite não é válido!'
+      updated: 'Sua senha foi atualizada com sucesso. Você está autenticado agora.'
+      no_invitations_remaining: "Sem convites pendentes"
+      invitation_removed: 'Seu convite foi removido.'
+      new:
+        header: "Enviar convite"
+        submit_button: "Enviar um convite"
+      edit:
+        header: "Escolha sua senha"
+        submit_button: "Atualizar minha senha"
+    mailer:
+      invitation_instructions:
+        subject: 'Você foi convidado para ingressar no Procfy'
+        hello: 'Olá %{email}.'
+        someone_invited_you: 'Estamos convidando você para conhecer nosso sistema e ser um dos primeiros a ter esta oportunidade. Para que isto seja possível, é necessário aceitar nosso convite através do link abaixo.'
+        accept: 'Aceitar convite'
+        ignore: "Se você não quiser aceitar esse convite, por favor ignore esse e-mail.<br />Sua conta não será criada até você acessar o link abaixo e escolher sua senha."
+        greeting: "Esperamos que esteja tudo bem com você."

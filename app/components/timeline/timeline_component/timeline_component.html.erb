@@ -1,0 +1,7 @@
+<div class=" <%= @options.fetch(:class, "") %>">
+  <ul role="list">
+    <% if body.present? %>
+      <%= body %>
+    <% end %>
+  </ul>
+</div>

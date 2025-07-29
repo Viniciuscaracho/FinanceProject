@@ -1,0 +1,20 @@
+.banner {
+  @apply flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 gap-x-3 sm:gap-x-6 bg-gray-700 p-3 sm:py-1.5 sm:rounded-b-lg print:hidden;
+  @apply animate__animated animate__slideInDown animate__faster;
+
+  &__right {
+    @apply flex justify-center flex-1 block h-full sm:text-sm leading-6 text-white;
+
+    & a {
+        @apply flex flex-col sm:justify-start sm:flex-row items-start sm:items-center sm:space-x-2 h-full hover:underline;
+    }
+  }
+
+  &__title {
+    @apply font-semibold;
+  }
+
+  &__actions {
+    @apply flex sm:justify-end space-x-3 whitespace-nowrap;
+  }
+}

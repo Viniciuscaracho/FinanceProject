@@ -1,0 +1,21 @@
+<%= turbo_frame_tag :search_form, "data-controller": "turbo-history" do %>
+  <%= form_with(url: @url, method: :get, html: { class: "search-form" }, data: { controller: 'search-form' }.merge(@options.fetch(:data, { turbo_stream: true })) ) do |f| %>
+    <div class="search-form__container flex-1">
+      <div class="hidden sm:flex search-form__icon">
+        <%= heroicon "magnifying-glass" %>
+      </div>
+      <%= f.search_field :q, value: @value, autofocus: @options.fetch(:autofocus, false), placeholder: @options.fetch(:placeholder, t("shared.search")), autocomplete: @options.fetch(:autocomplete, "off"), class: "form-control sm:pl-8", data: { action: 'search->search-form#onResetSearch' } %>
+      <% if @options.fetch(:params, {}).any? %>
+        <% @options[:params].compact.each do |k, v| %>
+          <%= f.hidden_field k, value: v %>
+        <% end %>
+      <% end %>
+    </div>
+    <div class="block sm:hidden flex-shrink-0">
+      <%= button_tag type: 'submit', class: 'btn-circle' do %>
+        <%= heroicon 'magnifying-glass', options: { class: 'btn-circle__icon' } %>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>
+

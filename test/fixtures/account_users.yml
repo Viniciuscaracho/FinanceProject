@@ -1,0 +1,36 @@
+# == Schema Information
+#
+# Table name: account_users
+#
+#  id         :bigint           not null, primary key
+#  policies   :jsonb            not null
+#  role_cd    :integer          default(0), not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  account_id :bigint           not null
+#  user_id    :bigint           not null
+#
+# Indexes
+#
+#  index_account_users_on_account_id              (account_id)
+#  index_account_users_on_account_id_and_user_id  (account_id,user_id) UNIQUE
+#  index_account_users_on_role_cd                 (role_cd)
+#  index_account_users_on_user_id                 (user_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#  fk_rails_...  (user_id => users.id)
+#
+
+account_user:
+  account: account 
+  user: user_one 
+  role_cd: 1
+  policies: ["transactions.revenues.read", "transactions.revenues.create", "transactions.revenues.update", "transactions.revenues.destroy", "transactions.fixed_expenses.read", "transactions.variable_expenses.read", "transactions.variable_expenses.create", "transactions.variable_expenses.update", "transactions.variable_expenses.destroy", "transactions.payrolls.read", "transactions.payrolls.create", "transactions.payrolls.update", "transactions.payrolls.destroy", "transactions.taxes.read", "transactions.taxes.create", "transactions.taxes.update", "transactions.taxes.destroy", "transactions.transfers.read", "transactions.transfers.create", "transactions.transfers.update", "transactions.transfers.destroy", "files.download", "files.create", "files.destroy", "contacts.read", "contacts.create", "contacts.update", "contacts.destroy", "categories.read", "categories.create", "categories.update", "categories.destroy", "cost_centers.read", "cost_centers.create", "cost_centers.update", "cost_centers.destroy", "bank_accounts.read", "bank_accounts.create", "bank_accounts.update", "bank_accounts.destroy", "account_users.read", "account_users.update", "account_users.destroy", "account_invitations.read", "account_invitations.create", "account_invitations.destroy", "permissions.manage", "imports.read", "imports.create", "imports.destroy", "accounts.read", "accounts.update", "companies.read", "companies.update", "balances.read", "reports.read", "home.read", "billing.manage", "settings.read", "settings.update", "notifications.read", "notifications.update", "support.read", "feedbacks.create", "dashboard.read", "analytics.read", "budget.read", "budget.create", "budget.update", "budget.destroy", "invoices.read", "invoices.create", "invoices.update", "invoices.destroy", "estimates.read", "estimates.create", "estimates.update", "estimates.destroy", "proposals.read", "proposals.create", "proposals.update", "proposals.destroy", "projects.read", "projects.create", "projects.update", "projects.destroy", "tasks.read", "tasks.create", "tasks.update", "tasks.destroy", "time_entries.read", "time_entries.create", "time_entries.update", "time_entries.destroy"]
+
+
+# two:
+#   account: one
+#   user: two
+#   role_cd: 1

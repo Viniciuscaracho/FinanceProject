@@ -1,0 +1,106 @@
+{
+  "id": "25dcb0ea-d2e9-4510-aa44-f28e9fbd053b",
+  "connector": {
+    "id": 600,
+    "name": "Sandbox Open Finance",
+    "primaryColor": "48be9d",
+    "institutionUrl": "https://cdn.raidiam.io/directory-ui/brand/obbrazil/0.2.0.112/favicon.svg",
+    "country": "BR",
+    "type": "PERSONAL_BANK",
+    "credentials": [
+      {
+        "validation": "^\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}$",
+        "validationMessage": "CPF deve ter 11 números.",
+        "label": "CPF",
+        "name": "cpf",
+        "type": "number",
+        "placeholder": "",
+        "optional": false
+      }
+    ],
+    "imageUrl": "https://cdn.pluggy.ai/assets/connector-icons/sandbox.svg",
+    "hasMFA": false,
+    "oauth": true,
+    "health": {
+      "status": "ONLINE",
+      "stage": null
+    },
+    "products": [
+      "ACCOUNTS",
+      "TRANSACTIONS",
+      "IDENTITY",
+      "CREDIT_CARDS",
+      "PAYMENT_DATA",
+      "LOANS",
+      "INVESTMENTS"
+    ],
+    "createdAt": "2023-09-01T18:05:09.145Z",
+    "isSandbox": true,
+    "isOpenFinance": true,
+    "updatedAt": "2023-12-18T13:35:52.292Z",
+    "supportsPaymentInitiation": true
+  },
+  "createdAt": "2023-12-20T17:24:25.607Z",
+  "updatedAt": "2023-12-20T17:30:51.979Z",
+  "status": "UPDATED",
+  "executionStatus": "PARTIAL_SUCCESS",
+  "lastUpdatedAt": "2023-12-20T17:30:51.471Z",
+  "webhookUrl": "https://webhook.site/000a0136-a1e9-47b2-b6fa-88113b19c1d3",
+  "error": null,
+  "clientUserId": "1",
+  "consecutiveFailedLoginAttempts": 0,
+  "statusDetail": {
+    "loans": {
+      "warnings": [],
+      "isUpdated": true,
+      "lastUpdatedAt": "2023-12-20T17:30:51.471Z"
+    },
+    "accounts": {
+      "warnings": [],
+      "isUpdated": true,
+      "lastUpdatedAt": "2023-12-20T17:30:51.471Z"
+    },
+    "identity": {
+      "warnings": [],
+      "isUpdated": true,
+      "lastUpdatedAt": "2023-12-20T17:30:51.471Z"
+    },
+    "portfolio": null,
+    "creditCards": {
+      "warnings": [],
+      "isUpdated": true,
+      "lastUpdatedAt": "2023-12-20T17:30:51.471Z"
+    },
+    "investments": {
+      "warnings": [],
+      "isUpdated": false,
+      "lastUpdatedAt": null
+    },
+    "paymentData": null,
+    "transactions": {
+      "warnings": [],
+      "isUpdated": true,
+      "lastUpdatedAt": "2023-12-20T17:30:51.471Z"
+    },
+    "incomeReports": null,
+    "opportunities": null,
+    "investmentTransactions": null
+  },
+  "parameter": null,
+  "userAction": null,
+  "nextAutoSyncAt": null,
+  "products": [
+    "ACCOUNTS",
+    "CREDIT_CARDS",
+    "TRANSACTIONS",
+    "INVESTMENTS",
+    "IDENTITY",
+    "INVESTMENTS_TRANSACTIONS",
+    "PAYMENT_DATA",
+    "BROKERAGE_NOTE",
+    "OPPORTUNITIES",
+    "PORTFOLIO",
+    "INCOME_REPORTS",
+    "LOANS"
+  ]
+}

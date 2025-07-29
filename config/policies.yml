@@ -1,0 +1,131 @@
+---
+policies:
+  transactions:
+    revenues:
+      read: transactions.revenues.read
+      create: transactions.revenues.create
+      update: transactions.revenues.update
+      destroy: transactions.revenues.destroy
+    fixed_expenses:
+      read: transactions.fixed_expenses.read
+      create: transactions.fixed_expenses.create
+      update: transactions.fixed_expenses.update
+      destroy: transactions.fixed_expenses.destroy
+    variable_expenses:
+      read: transactions.variable_expenses.read
+      create: transactions.variable_expenses.create
+      update: transactions.variable_expenses.update
+      destroy: transactions.variable_expenses.destroy
+    payrolls:
+      read: transactions.payrolls.read
+      create: transactions.payrolls.create
+      update: transactions.payrolls.update
+      destroy: transactions.payrolls.destroy
+    taxes:
+      read: transactions.taxes.read
+      create: transactions.taxes.create
+      update: transactions.taxes.update
+      destroy: transactions.taxes.destroy
+    transfers:
+      read: transactions.transfers.read
+      create: transactions.transfers.create
+      update: transactions.transfers.update
+      destroy: transactions.transfers.destroy
+    receipts:
+      create: transactions.receipts.create
+
+  notifications:
+    email:
+      read: notifications.email.read
+  home:
+    read: home.read
+  reports:
+    read: reports.read
+  contacts:
+    read: contacts.read
+    create: contacts.create
+    update: contacts.update
+    destroy: contacts.destroy
+    graphs:
+      read: graphs.read
+  categories:
+    read: categories.read
+    create: categories.create
+    update: categories.update
+    destroy: categories.destroy
+  cost_centers:
+    read: cost_centers.read
+    create: cost_centers.create
+    update: cost_centers.update
+    destroy: cost_centers.destroy
+  bank_accounts:
+    read: bank_accounts.read
+    create: bank_accounts.create
+    update: bank_accounts.update
+    destroy: bank_accounts.destroy
+  document_templates:
+    read: document_templates.read
+    create: document_templates.create
+    update: document_templates.update
+    destroy: document_templates.destroy
+
+  account_users:
+    read: account_users.read
+    update: account_users.update
+    destroy: account_users.destroy
+    account_invitations:
+      read: account_invitations.read
+      create: account_invitations.create
+      destroy: account_invitations.destroy
+    permissions:
+      manage: permissions.manage
+  imports:
+    read: imports.read
+    create: imports.create
+    destroy: imports.destroy
+  exports:
+    read: exports.read
+    create: exports.create
+  account_settings:
+    manage: accounts.manage
+  balances:
+    read: balances.read
+  outcomes:
+    read: outcomes.read
+  revenues:
+    read: revenues.read
+  expenses: 
+    read: expenses.read
+  totalizer:
+    read: totalizer.read
+  billing:
+    manage: billing.manage
+  files:
+    read: files.read
+    create: files.create
+    download: files.download
+    destroy: files.destroy
+  advanced_search:
+    read: advanced_search.read
+  statements:
+    read: statements.read
+    create: statements.create
+    update: statements.update
+    destroy: statements.destroy
+  invoices:
+    read: invoices.read
+    create: invoices.create
+    update: invoices.update
+    destroy: invoices.destroy
+  tax_invoices:
+    read: tax_invoices.read
+    create: tax_invoices.create
+    update: tax_invoices.update
+    destroy: tax_invoices.destroy
+  services:
+    read: services.read
+    create: services.create
+    update: services.update
+    destroy: services.destroy
+  company_nfse_configs:
+    update: company_nfse_configs.update

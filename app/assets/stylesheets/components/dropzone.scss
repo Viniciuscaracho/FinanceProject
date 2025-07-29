@@ -1,0 +1,93 @@
+.dropzone, .dropzone * {
+  box-sizing: border-box
+}
+
+.dropzone {
+  @apply relative mt-1 flex flex-col items-center justify-center rounded-md border-2 border-dashed border-gray-200 bg-gray-50 divide-y overflow-hidden;
+
+  &.dz-clickable {
+    @apply cursor-pointer hover:border-solid
+  }
+  &__message {
+    @apply space-y-1 text-center p-4;
+  }
+  &__svg {
+    @apply mx-auto h-10 w-10 text-gray-400
+  }
+  &__info {
+    @apply flex text-sm text-gray-600
+  }
+  &__label {
+    @apply relative cursor-pointer rounded-md bg-white font-medium text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:text-indigo-500
+  }
+  &__formats {
+    @apply text-xs text-gray-500;
+  }
+}
+
+.dropzone .dz-preview {
+  @apply flex items-center space-x-2 w-full px-base py-base bg-white
+}
+
+.dropzone .dz-image {
+  @apply row-span-3 inline-block h-10 w-10 overflow-hidden rounded-full bg-gray-100 flex-shrink-0;
+
+  img {
+    @apply h-10 w-10
+  }
+}
+
+.dropzone .dz-details {
+  @apply block flex-1 w-40
+}
+
+.dropzone .dz-details .dz-size  {
+  @apply block text-sm font-medium truncate max-w-full;
+}
+
+.dropzone .dz-details .dz-filename  {
+  @apply block text-xs text-gray-500 truncate;
+}
+
+.dropzone .dz-preview .dz-progress {
+  @apply block w-20 h-5 rounded-md bg-gray-100 overflow-hidden
+}
+
+.dropzone .dz-preview.dz-error .dz-progress {
+  @apply hidden
+}
+
+.dropzone .dz-preview .dz-progress .dz-upload {
+  @apply block w-0 h-full bg-success-400
+}
+
+.dropzone .dz-preview .dz-error-message {
+  @apply hidden text-danger-500 text-xs truncate
+}
+
+.dropzone .dz-preview.dz-error .dz-error-message,
+.dropzone .dz-preview.dz-error .dz-error-mark {
+  @apply block
+}
+
+.dropzone .dz-preview.dz-success .dz-success-mark {
+  @apply block;
+}
+
+.dropzone .dz-preview .dz-error-mark,
+.dropzone .dz-preview .dz-success-mark {
+  @apply block h-5 w-5 hidden;
+}
+
+.dropzone .dz-preview .dz-error-mark {
+  & svg {
+    @apply text-danger-400 h-5 w-5
+  }
+}
+
+.dropzone .dz-preview .dz-success-mark {
+  & svg {
+    @apply text-success-400 h-5 w-5
+  }
+}
+

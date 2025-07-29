@@ -1,0 +1,6 @@
+docker: docker-compose up
+web: PIDFILE=tmp/pids/web.pid bin/rails server -p 3000 -b '0.0.0.0'
+api: PIDFILE=tmp/pids/api.pid API_ONLY=true bin/rails server -p 3001 -b '0.0.0.0'
+worker: SIDEKIQ_SERVER=true bundle exec sidekiq
+js: yarn build --watch
+# stripe: stripe listen --forward-to localhost:3000/webhooks/stripe

@@ -1,0 +1,9 @@
+.input_contract[contentEditable=true] {
+  &:empty:before {
+    content: attr(data-text);
+    cursor: text;
+  }
+
+
+  @apply cursor-text outline-none
+}

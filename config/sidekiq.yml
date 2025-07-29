@@ -1,0 +1,20 @@
+---
+:concurrency: <%= (ENV.fetch("WEB_CONCURRENCY") { 4 }.to_i * ENV.fetch("RAILS_MAX_THREADS") { 10 }.to_i) %>
+production:
+  :concurrency: <%= (ENV.fetch("WEB_CONCURRENCY") { 4 }.to_i * ENV.fetch("RAILS_MAX_THREADS") { 10 }.to_i) %>
+:queues:
+  - event_handlers
+  - reindexing
+  - critical
+  - default
+  - low
+  - mailers
+  - active_storage_analysis
+  - active_storage_purge
+  - imports
+  - scheduler
+  - exports
+  - retries
+  - integrations
+  - webhooks
+  - webhook_retries

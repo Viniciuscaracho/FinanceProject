@@ -1,0 +1,131 @@
+---
+en:
+  enums:
+    person_type:
+      undefined_person: Undefined
+      natural: Natural person
+      legal: Legal person
+    contact_type:
+      undefined_contact: Other
+      customer: Customer
+      employee: Employee
+      supplier: Supplier
+    account_type:
+      current_account: Current account      # conta corrente
+      savings_account: Save account         # conta poupança
+      salary_account: Salary account        # conta salário
+      investing_account: Investiment        # conta investimento
+      cash_account: Company cash            # caixa
+      wallet: Wallet                        # carteira
+      other: Other
+      personal: Personal
+      business: Business
+    preferred_language:
+      pt-BR: Portuguese (Brazil)
+      en: English
+    payment_type:
+      on_cash: Once
+      installment: Installment
+      recurring: Recurrent
+    payment_method:
+      no_payment_method: Undefined
+      credit_card: Credit card
+      debit_card: Debit card
+      bank_slip: Bank slip
+      bank_transfer: Transfer
+      check: Check
+      cash: Cash
+      pix: PIX
+      direct_debit: Direct debit
+      promissory: Promissory
+    transaction_type:
+      revenue: Revenues
+      fixed_expense: Fixes expenses
+      variable_expense: Variable expenses
+      payroll: Payrolls
+      tax: Taxes
+      transfer: Transfers
+      nil: '-'
+      expense: Expenses
+      others: Não tipadas
+    currency:
+      AED: AED - Dirham
+      ARS: ARS - Argentine peso
+      BRL: BRL - Brazilian real
+      CLP: CLP - Chilean peso
+      CNY: CNY - Chinese Yuan Renminbi
+      USD: USD - American Dolar
+      EUR: EUR - Euro
+      GBP: GBP - Pound sterling
+      JPY: JPY - Japanese Yen
+    installment_type:
+      daily: Daily
+      weekly: Weekly
+      monthly: Monthly
+      bimonthly: Bimonthly
+      quarterly: Quarterly
+      semiannual: Semiannual
+      annual: Annual
+    subscription_status:
+      incomplete: Pending
+      incomplete_expired: Expired
+      trialing: In trial
+      active: Active
+      past_due: Overdue
+      canceled: Canceled
+      unpaid: Unpaid
+    state:
+      in_progress: In progress
+      done: Done
+      waiting: Waiting
+      failed: Failed
+    role:
+      admin: Administrator
+      user: User
+      read_only: Read only
+    import:
+      source:
+        zero_paper: ZeroPaper
+        xlsx_contacts: Contacts
+        xlsx_default: Default model (XLSX)
+    payment_plan:
+      frequency:
+        daily: Daily
+        weekly: Weekly
+        biweekly: Biweekly
+        monthly: Monthly
+        bimonthly: Bimonthly
+        quarterly: Quarterly
+        semiannual: Semiannual
+        annual: Annual
+    referral_code:
+      benefit_type:
+        discount: Discount
+        commission: Commission
+      account_type:
+        both: Both
+        business: Business
+        personal: Personal
+    documents/invoice:
+      status:
+        new: Draft
+        placed: Awaiting for payment
+        paid: Paid
+        failed: Failed
+        canceled: Canceled
+    company_nfse_config:
+      simples_nacional:
+        nao_optante: Não optante
+        mei: Microempreendedor Individual (MEI)
+        me_epp: Microempresa ou Empresa de Pequeno Porte (ME/EPP)
+      regime_apuracao_tributos:
+        tributos_federais_e_municipais_pelo_sn: Tributos federais e municipais pelo Simples Nacional
+        tributos_federais_pelo_sn_e_issqn_por_fora_do_sn: Tributos federais pelo Simples Nacional e ISSQN por fora do Simples Nacional
+        tributos_federais_e_municipais_por_fora_do_sn: Tributos federais e municipais por fora do Simples Nacional
+
+    service:
+      service_type:
+        provided: Provided
+        consumed: Consumed
+        both: Provided / Consumed
+

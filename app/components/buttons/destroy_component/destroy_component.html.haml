@@ -1,0 +1,18 @@
+= button_to @model || @url,
+            id: @options.fetch(:id, (@model && "destroy_#{dom_id(@model)}") || self.object_id),
+            method: @options.fetch(:method, :delete),
+            onclick: @options.fetch(:onclick, 'event.stopPropagation()'),
+            disabled: @options.fetch(:disabled, false),
+            form: { data: { turbo_confirm: @message } },
+            data: {}.merge(@options.fetch(:tooltip, true) ? { controller: :tooltip, tooltip_content_value: @title } : {}),
+            class: "btn-circle btn-circle--danger #{@options.fetch(:class, '')}" do
+  = heroicon @options.fetch(:icon, 'trash'), options: { class: 'btn-circle__icon' }
+
+-# = link_to @model || @url,
+-#             id: @options.fetch(:id, (@model && "destroy_#{dom_id(@model)}") || self.object_id),
+-#             method: @options.fetch(:method, :delete),
+-#             onclick: @options.fetch(:onclick, 'event.stopPropagation()'),
+-#             disabled: @options.fetch(:disabled, false),
+-#             data: { turbo_method: :delete, turbo_confirm: @message }.merge(@options.fetch(:tooltip, true) ? { controller: :tooltip, tooltip_content_value: @title } : {}),
+-#             class: "btn-circle btn-circle--danger #{@options.fetch(:class, '')}" do
+-#   = heroicon @options.fetch(:icon, 'trash'), options: { class: 'btn-circle__icon' }

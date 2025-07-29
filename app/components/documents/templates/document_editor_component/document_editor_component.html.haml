@@ -1,0 +1,127 @@
+= turbo_frame_tag :editor do
+  - if header
+    = header
+
+  #editor.text-slate-800{"data-controller": "tiptap-editor",
+                         "data-tiptap-target": "editor",
+                         "data-tiptap-editor-content-value": @default_content || "",
+                         "data-tiptap-editor-suggestions-value": @suggestions,
+                         "data-tiptap-editor-placeholder-value": I18n.t('components.document_editor_component.input_placeholder')}
+
+    .bg-white.border-gray-300.rounded-t-lg.border.flex.items-center.shadow-md.p-1.5.overflow-auto
+      .px-0.5.flex.flex-row.border-r-2
+        .w-12.h-6.flex.justify-center
+          = button_tag type: "button", class: 'rounded-sm hover:bg-gray-300 px-1 disabled:cursor-not-allowed disabled:opacity-50', data: { action: "click->tiptap-editor#undo", tiptap_editor_target: "undoButton",
+                                                                                                                                           controller: 'tooltip', tooltip_content_value: t('shared.undo'),
+                                                                                                                                           tooltip_placement_value: "top", tooltip_arrow_value: false } do
+            = heroicon "arrow-uturn-left", options: { class: "w-5 h-5 pointer-events-none" }
+
+        .w-12.h-6.flex.justify-center
+          = button_tag type: "button", class: 'rounded-sm hover:bg-gray-300 px-1 disabled:cursor-not-allowed disabled:opacity-50', data: { action: "click->tiptap-editor#redo", tiptap_editor_target: "redoButton",
+                                                                                                                                           controller: 'tooltip', tooltip_content_value: t('shared.redo'),
+                                                                                                                                           tooltip_placement_value: "top", tooltip_arrow_value: false } do
+            = heroicon "arrow-uturn-right", options: { class: "w-5 h-5 pointer-events-none font-bold" }, variant: :solid
+
+
+      .px-1.flex.flex-row
+        -if @alignments.include?("left")
+          .w-12.h-7.px-1.flex.justify-center
+            = button_tag type: "button", class: 'rounded-sm hover:bg-gray-300 px-1', data: { action: "click->tiptap-editor#align_button", alignment: "left",
+                                                                                             tiptap_editor_target: "button", type: 'textAlign',
+                                                                                             controller: 'tooltip', tooltip_content_value: t('shared.left_align'),
+                                                                                             tooltip_placement_value: "top", tooltip_arrow_value: false } do
+
+              = heroicon "bars-3-bottom-left", options: { class: "w-full h-full pointer-events-none" }
+
+        -if @alignments.include?("center")
+          .w-12.h-7.px-1.flex.justify-center
+            = button_tag type: "button", class: 'rounded-sm hover:bg-gray-300 px-1', data: { action: "click->tiptap-editor#align_button", alignment: "center",
+                                                                                             tiptap_editor_target: "button", type: 'textAlign',
+                                                                                             controller: 'tooltip', tooltip_content_value: t('shared.center_align'),
+                                                                                             tooltip_placement_value: "top", tooltip_arrow_value: false } do
+              = heroicon "bars-3", options: { class: "w-full h-full pointer-events-none" }
+
+        -if @alignments.include?("right")
+          .w-12.h-7.px-1.flex.justify-center
+            = button_tag type: "button", class: 'rounded-sm hover:bg-gray-300 px-1', data: { action: "click->tiptap-editor#align_button", alignment: "right",
+                                                                                             tiptap_editor_target: "button", type: 'textAlign',
+                                                                                             controller: 'tooltip', tooltip_content_value: t('shared.right_align'),
+                                                                                             tooltip_placement_value: "top", tooltip_arrow_value: false } do
+              = heroicon "bars-3-bottom-right", options: { class: "w-full h-full pointer-events-none" }
+
+        -if @alignments.include?("justify")
+          .w-12.h-7.px-1.flex.justify-center
+            = button_tag type: "button", class: 'rounded-sm hover:bg-gray-300 px-1', data: { action: "click->tiptap-editor#align_button", alignment: "justify",
+                                                                                             tiptap_editor_target: "button", type: 'textAlign',
+                                                                                             controller: 'tooltip', tooltip_content_value: t('shared.justify_align'),
+                                                                                             tooltip_placement_value: "top", tooltip_arrow_value: false } do
+              .w-7.h-7.flex.justify-center.pointer-events-none
+                %span.text-xl.pointer-events-none j
+
+
+      .px-1.flex.flex-row.border-x-2
+        -if @marks.include?("bold")
+          .px-1
+            = button_tag type: "button", class: "w-full rounded-sm hover:bg-gray-300", data: { action: "click->tiptap-editor#toggle_button", mark: "Bold", tiptap_editor_target: "button",
+                                                                                               type: "bold", controller: 'tooltip', tooltip_content_value: t('shared.bold'),
+                                                                                               tooltip_placement_value: "top", tooltip_arrow_value: false } do
+              .w-7.h-7.flex.justify-center.pointer-events-none
+                %strong.text-xl.pointer-events-none B
+
+        -if @marks.include?("italic")
+          .px-1
+            = button_tag type: "button", class: "w-full rounded-sm hover:bg-gray-300", data: { action: "click->tiptap-editor#toggle_button", mark: "Italic", tiptap_editor_target: "button",
+                                                                                               type: "italic", controller: 'tooltip', tooltip_content_value: t('shared.italic'),
+                                                                                               tooltip_placement_value: "top", tooltip_arrow_value: false } do
+              .w-7.h-7.flex.justify-center.pointer-events-none
+                %i.text-xl.pointer-events-none i
+
+        -if @marks.include?("underline")
+          .px-1
+            = button_tag type: "button", class: "w-full rounded-sm hover:bg-gray-300", data: { action: "click->tiptap-editor#toggle_button", mark: "Underline", tiptap_editor_target: "button",
+                                                                                               type: 'underline', controller: 'tooltip', tooltip_content_value: t('shared.highlight'),
+                                                                                               tooltip_placement_value: "top", tooltip_arrow_value: false } do
+              .w-7.h-7.flex.justify-center.pointer-events-none
+                %u.text-xl.pointer-events-none U
+
+        -if @marks.include?("strike")
+          .px-1
+            = button_tag type: "button", class: "w-full rounded-sm hover:bg-gray-300", data: { action: "click->tiptap-editor#toggle_button", mark: "Strike", tiptap_editor_target: "button",
+                                                                                               type: 'strike', controller: 'tooltip', tooltip_content_value: t('shared.strike'),
+                                                                                               tooltip_placement_value: "top", tooltip_arrow_value: false } do
+              .w-7.h-7.flex.justify-center.pointer-events-none
+                %strike.text-xl.pointer-events-none S
+
+      .px-1.flex.flex-row.border-r-2
+        -if @text_size.include?("h1")
+          .px-1
+            = button_tag type: "button", class: "w-full rounded-sm hover:bg-gray-300", data: { action: "click->tiptap-editor#toggle_heading", level: 1, tiptap_editor_target: "button",
+                                                                                               type: 'heading', controller: 'tooltip', tooltip_content_value: t('shared.big_title', size: 1),
+                                                                                               tooltip_placement_value: "top", tooltip_arrow_value: false } do
+
+              .w-7.h-7.flex.justify-center.items-center.pointer-events-none
+                %h1.text-xl.pointer-events-none A
+
+        -if @text_size.include?("h2")
+          .px-1
+            = button_tag type: "button", class: "w-full rounded-sm hover:bg-gray-300", data: { action: "click->tiptap-editor#toggle_heading", level: 2, tiptap_editor_target: "button",
+                                                                                               type: 'heading', controller: 'tooltip', tooltip_content_value: t('shared.medium_title', size: 2),
+                                                                                               tooltip_placement_value: "top", tooltip_arrow_value: false } do
+              .w-7.h-7.flex.justify-center.items-center.pointer-events-none
+                %h2.text-lg.pointer-events-none A
+
+        -if @text_size.include?("h3")
+          .px-1
+            = button_tag type: "button", class: "w-full rounded-sm hover:bg-gray-300", data: { action: "click->tiptap-editor#toggle_heading", level: 3, tiptap_editor_target: "button",
+                                                                                               type: 'heading', controller: 'tooltip', tooltip_content_value: t('shared.small_title', size: 3),
+                                                                                               tooltip_placement_value: "top", tooltip_arrow_value: false } do
+              .w-7.h-7.flex.justify-center.items-center.pointer-events-none
+                %h2.text-base.pointer-events-none A
+      - if buttons
+        .px-1.flex.flex-row
+          = buttons
+
+
+
+  - if footer
+    = footer

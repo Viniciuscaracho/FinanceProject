@@ -1,0 +1,15 @@
+.card {
+  @apply block w-auto sm:border rounded-lg sm:border-gray-200 bg-white divide-y pb-1.5 print:w-full;
+
+  &__body {
+    @apply p-3 block
+  }
+
+  &__header {
+    @apply px-3 py-2 print:py-1
+  }
+
+  &--shadow {
+    @apply sm:shadow
+  }
+}

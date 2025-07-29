@@ -1,0 +1,88 @@
+---
+pt-BR:
+  policies:
+    read: Permite Ver
+    create: Permite Cadastrar
+    update: Permite Atualizar
+    destroy: Permite Excluir
+    manage: Permite Gerenciar
+    download: Permite Baixar
+    transactions:
+      title: Transações
+      revenues:
+        title: Aba de Recebimentos
+      fixed_expenses:
+        title: Aba de Despesas fixas
+      variable_expenses:
+        title: Aba de Despesas Variáveis
+      payrolls:
+        title: Aba de Pessoas
+      taxes:
+        title: Aba de Impostos
+      transfers:
+        title: Aba de Transferências
+      receipts:
+        title: Aba de Recibos
+    files:
+      title: Anexos
+    contacts:
+      title: Contatos
+      graphs:
+        title: Visualizar os gráficos dos contatos
+    categories:
+      title: Categorias
+    cost_centers:
+      title: Centros de custo
+    bank_accounts:
+      title: Contas bancárias
+    document_templates:
+      title: Template de Documentos
+#      receipts:
+#        title: Recibos
+
+    account_users:
+      title: Usuários da conta
+      account_invitations:
+        title: Convidar outros usuários
+      permissions:
+        title: Conceder permissão para outros usuários
+    notifications:
+      title: Notificações
+      email:
+        title: Por Email
+    imports:
+      title: Importações
+    account_settings:
+      title: Configurações da conta
+    companies:
+      title: Configurações da empresa
+    balances:
+      title: Saldos bancários e da conta
+    outcomes:
+      title: Saldo do mês
+    revenues:
+      title: Recebimentos do mês
+    expenses: 
+      title: Despesas do mês
+    totalizer:
+      title: Totalizador
+    reports:
+      title: Relatórios
+    home:
+      title: Página inicial
+    billing:
+      title: Portal de assinatura/faturas
+    exports:
+      title: Exportar dados
+    advanced_search:
+      title: Pesquisa geral
+    statements:
+      title: Conciliação (arquivo OFX)
+    invoices:
+      title: Faturas
+    tax_invoices:
+      title: Notas fiscais
+    services:
+      title: Serviços
+    company_nfse_configs:
+      title: Configurações de NFS-e
