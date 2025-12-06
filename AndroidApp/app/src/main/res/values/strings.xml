@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Barber Management</string>
+    <string name="webview_description">WebView para carregar o frontend React</string>
+</resources>
+

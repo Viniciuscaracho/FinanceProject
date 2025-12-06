@@ -1,0 +1,335 @@
+/* ============================================
+   RESPONSIVIDADE DESKTOP E SUPORTE A ZOOM
+   ============================================ */
+
+:root {
+  /* Breakpoints para desktop */
+  --breakpoint-small: 768px;    /* Small desktop / Tablet */
+  --breakpoint-medium: 1024px;  /* Medium desktop */
+  --breakpoint-large: 1440px;   /* Large desktop */
+  --breakpoint-xl: 1920px;      /* Extra large (4K, ultrawide) */
+  
+  /* Tamanhos de fonte base que escalam com zoom */
+  --base-font-size: 16px;
+  --zoom-scale-factor: 1;
+}
+
+/* Detectar zoom e ajustar escala base */
+@media (min-width: 768px) {
+  html {
+    /* Base font size que escala bem com zoom do navegador */
+    font-size: clamp(14px, 1vw, 18px);
+  }
+}
+
+/* Small Desktop (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root {
+    --container-padding: 1rem;
+    --sidebar-width-collapsed: 3.5rem;
+    --sidebar-width-expanded: 16rem;
+    --spacing-unit: 0.75rem;
+  }
+  
+  /* Ajustar tamanhos de fonte para telas menores */
+  body {
+    font-size: 0.875rem; /* 14px */
+  }
+  
+  h1 { font-size: clamp(1.75rem, 4vw, 2.25rem); }
+  h2 { font-size: clamp(1.5rem, 3.5vw, 1.875rem); }
+  h3 { font-size: clamp(1.25rem, 3vw, 1.5rem); }
+}
+
+/* Medium Desktop (1024px - 1439px) */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  :root {
+    --container-padding: 1.5rem;
+    --sidebar-width-collapsed: 3.5rem;
+    --sidebar-width-expanded: 18rem;
+    --spacing-unit: 1rem;
+  }
+  
+  body {
+    font-size: 0.9375rem; /* 15px */
+  }
+  
+  h1 { font-size: clamp(2rem, 3.5vw, 2.5rem); }
+  h2 { font-size: clamp(1.75rem, 3vw, 2rem); }
+  h3 { font-size: clamp(1.5rem, 2.5vw, 1.75rem); }
+}
+
+/* Large Desktop (1440px - 1919px) */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  :root {
+    --container-padding: 2rem;
+    --sidebar-width-collapsed: 4rem;
+    --sidebar-width-expanded: 20rem;
+    --spacing-unit: 1.25rem;
+  }
+  
+  body {
+    font-size: 1rem; /* 16px */
+  }
+  
+  h1 { font-size: clamp(2.25rem, 3vw, 3rem); }
+  h2 { font-size: clamp(2rem, 2.5vw, 2.5rem); }
+  h3 { font-size: clamp(1.75rem, 2vw, 2rem); }
+}
+
+/* Extra Large Desktop (1920px+) */
+@media (min-width: 1920px) {
+  :root {
+    --container-padding: 2.5rem;
+    --sidebar-width-collapsed: 4.5rem;
+    --sidebar-width-expanded: 22rem;
+    --spacing-unit: 1.5rem;
+  }
+  
+  body {
+    font-size: 1.0625rem; /* 17px */
+  }
+  
+  h1 { font-size: clamp(2.5rem, 2.5vw, 3.5rem); }
+  h2 { font-size: clamp(2.25rem, 2vw, 3rem); }
+  h3 { font-size: clamp(2rem, 1.5vw, 2.5rem); }
+  
+  /* Limitar largura máxima do conteúdo para legibilidade */
+  .max-content-width {
+    max-width: 1920px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* ============================================
+   SUPORTE A ZOOM DO NAVEGADOR
+   ============================================ */
+
+/* Zoom 50% (0.5x) */
+@media screen and (max-width: 383px) {
+  html {
+    font-size: 14px;
+  }
+  
+  .zoom-adaptive {
+    transform: scale(0.9);
+    transform-origin: top left;
+  }
+}
+
+/* Zoom 67% (0.67x) */
+@media screen and (min-width: 384px) and (max-width: 511px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+/* Zoom 75% (0.75x) */
+@media screen and (min-width: 512px) and (max-width: 639px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+/* Zoom 90% (0.9x) */
+@media screen and (min-width: 640px) and (max-width: 767px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+/* Zoom 110% (1.1x) */
+@media screen and (min-width: 1280px) and (max-width: 1399px) {
+  html {
+    font-size: 17px;
+  }
+}
+
+/* Zoom 125% (1.25x) */
+@media screen and (min-width: 1400px) and (max-width: 1599px) {
+  html {
+    font-size: 18px;
+  }
+}
+
+/* Zoom 150% (1.5x) */
+@media screen and (min-width: 1600px) and (max-width: 1919px) {
+  html {
+    font-size: 20px;
+  }
+}
+
+/* Zoom 200% (2x) */
+@media screen and (min-width: 1920px) {
+  html {
+    font-size: 24px;
+  }
+}
+
+/* ============================================
+   COMPONENTES RESPONSIVOS
+   ============================================ */
+
+/* Containers que se adaptam ao tamanho da tela */
+.responsive-container {
+  width: 100%;
+  max-width: 100%;
+  padding-left: var(--container-padding);
+  padding-right: var(--container-padding);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Grids responsivos */
+.responsive-grid {
+  display: grid;
+  gap: var(--spacing-unit);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+
+@media (min-width: 768px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 350px), 1fr));
+  }
+}
+
+@media (min-width: 1440px) {
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr));
+  }
+}
+
+/* Cards que escalam bem */
+.responsive-card {
+  width: 100%;
+  max-width: 100%;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  font-size: clamp(0.875rem, 1.5vw, 1rem);
+}
+
+/* Tabelas responsivas */
+.responsive-table {
+  width: 100%;
+  font-size: clamp(0.75rem, 1.2vw, 0.875rem);
+}
+
+.responsive-table th,
+.responsive-table td {
+  padding: clamp(0.5rem, 1vw, 0.75rem);
+  white-space: nowrap;
+}
+
+/* Texto que se adapta ao zoom */
+.responsive-text {
+  font-size: clamp(0.875rem, 1.5vw, 1rem);
+  line-height: 1.5;
+}
+
+.responsive-text-sm {
+  font-size: clamp(0.75rem, 1.2vw, 0.875rem);
+}
+
+.responsive-text-lg {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+}
+
+.responsive-text-xl {
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+}
+
+/* Botões que mantêm tamanho mínimo */
+.responsive-button {
+  min-height: clamp(36px, 5vw, 44px);
+  min-width: clamp(80px, 10vw, 120px);
+  padding: clamp(0.5rem, 1vw, 0.75rem) clamp(1rem, 2vw, 1.5rem);
+  font-size: clamp(0.875rem, 1.5vw, 1rem);
+}
+
+/* Inputs responsivos */
+.responsive-input {
+  font-size: clamp(0.875rem, 1.5vw, 1rem);
+  padding: clamp(0.5rem, 1vw, 0.75rem) clamp(0.75rem, 1.5vw, 1rem);
+  min-height: clamp(36px, 5vw, 44px);
+}
+
+/* Espaçamento responsivo */
+.responsive-spacing-sm {
+  gap: clamp(0.5rem, 1vw, 0.75rem);
+  padding: clamp(0.5rem, 1vw, 0.75rem);
+}
+
+.responsive-spacing-md {
+  gap: clamp(0.75rem, 1.5vw, 1rem);
+  padding: clamp(0.75rem, 1.5vw, 1rem);
+}
+
+.responsive-spacing-lg {
+  gap: clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+/* Sidebar responsiva */
+.responsive-sidebar {
+  width: var(--sidebar-width-expanded);
+  transition: width 0.3s ease;
+}
+
+.responsive-sidebar.collapsed {
+  width: var(--sidebar-width-collapsed);
+}
+
+/* ============================================
+   AJUSTES PARA ALTA DENSIDADE (HiDPI)
+   ============================================ */
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Melhor renderização em telas de alta densidade */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ============================================
+   UTILITÁRIOS DE ZOOM
+   ============================================ */
+
+/* Forçar tamanhos mínimos mesmo com zoom alto */
+.zoom-safe-min {
+  min-width: max-content;
+  min-height: max-content;
+}
+
+/* Elementos que devem manter proporção com zoom */
+.zoom-preserve {
+  transform-origin: center center;
+}
+
+/* Prevenir quebra de layout com zoom extremo */
+@media (max-width: 400px) {
+  .zoom-adaptive-layout {
+    flex-direction: column !important;
+  }
+  
+  .zoom-adaptive-layout > * {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Ajustar overflow com zoom */
+@media (min-width: 768px) {
+  .zoom-overflow-safe {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+

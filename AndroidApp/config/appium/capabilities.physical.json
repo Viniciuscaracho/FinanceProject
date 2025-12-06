@@ -1,0 +1,36 @@
+{
+  "platformName": "Android",
+  "appium:platformVersion": "13",
+  "appium:deviceName": "SM-A042M",
+  "appium:udid": "R9QW102M9CX",
+  "appium:appPackage": "com.barbermanagement.app.debug",
+  "appium:appActivity": "com.barbermanagement.app.MainActivity",
+  "appium:automationName": "UiAutomator2",
+  "appium:noReset": true,
+  "appium:fullReset": false,
+  "appium:autoGrantPermissions": true,
+  "appium:newCommandTimeout": 300,
+  "appium:androidInstallTimeout": 90000,
+  "appium:uiautomator2ServerLaunchTimeout": 90000,
+  "appium:uiautomator2ServerInstallTimeout": 90000,
+  "appium:skipServerInstallation": false,
+  "appium:skipUnlock": true,
+  "appium:waitForIdleTimeout": 0,
+  "appium:webviewDebugging": true,
+  "appium:ensureWebviewsHavePages": true,
+  "appium:nativeWebScreenshot": true,
+  "appium:chromedriverAutoDownload": true,
+  "appium:chromedriverUseSystemExecutable": false,
+  "appium:chromedriverExecutable": "/tmp/chromedriver_142",
+  "appium:chromedriverExecutableDir": "",
+  "appium:chromedriverChromeMappingFile": "",
+  "appium:chromedriverDisableBuildCheck": true,
+  "appium:autoWebview": false,
+  "appium:autoWebviewTimeout": 2000,
+  "appium:chromeOptions": {
+    "androidPackage": "com.android.chrome",
+    "androidActivity": "com.google.android.apps.chrome.Main",
+    "w3c": true
+  }
+}
+

@@ -1,0 +1,21 @@
+{
+  "platformName": "iOS",
+  "appium:platformVersion": "17.0",
+  "appium:deviceName": "iPhone 15",
+  "appium:automationName": "XCUITest",
+  "appium:bundleId": "com.barbermanagement.app",
+  "appium:udid": "",
+  "appium:noReset": true,
+  "appium:fullReset": false,
+  "appium:autoAcceptAlerts": true,
+  "appium:newCommandTimeout": 300,
+  "appium:wdaLaunchTimeout": 90000,
+  "appium:wdaConnectionTimeout": 90000
+}
+
+
+
+
+
+
+

@@ -17,8 +17,9 @@ threads min_threads_count, max_threads_count
 # worker_timeout 3600
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
-#
-port ENV.fetch('PORT', 3000)
+# Bind to all interfaces (0.0.0.0) to allow access from network devices
+# This is necessary for mobile devices and emulators to access the API
+bind ENV.fetch('BIND', 'tcp://0.0.0.0:3000')
 
 # Specifies the `environment` that Puma will run in.
 #

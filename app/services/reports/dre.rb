@@ -6,6 +6,7 @@ module Reports
       params = context.params
 
       query = context.account.transactions.filter_by(**params)
+      # Otimização: usar group e sum direto no banco (já otimizado)
       data = query.group(:transaction_type_cd).sum(:exchanged_amount_cents).to_h
       data = data.map { |k, v| [k, k.zero? ? v : -v] }.to_h
 

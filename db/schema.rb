@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
+ActiveRecord::Schema[7.0].define(version: 2025_12_05_123151) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -39,9 +39,11 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "policies", default: [], null: false
+    t.jsonb "schedule", default: {}
     t.index ["account_id", "user_id"], name: "index_account_users_on_account_id_and_user_id", unique: true
     t.index ["account_id"], name: "index_account_users_on_account_id"
     t.index ["role_cd"], name: "index_account_users_on_role_cd"
+    t.index ["schedule"], name: "index_account_users_on_schedule", using: :gin
     t.index ["user_id"], name: "index_account_users_on_user_id"
   end
 
@@ -175,6 +177,61 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
     t.index ["account_id"], name: "index_api_tokens_on_account_id"
     t.index ["token"], name: "index_api_tokens_on_token", unique: true
     t.index ["user_id"], name: "index_api_tokens_on_user_id"
+  end
+
+  create_table "appointment_commissions", force: :cascade do |t|
+    t.bigint "appointment_id", null: false
+    t.bigint "account_user_id", null: false
+    t.integer "commission_type", null: false
+    t.decimal "commission_value", precision: 8, scale: 2, null: false
+    t.integer "commission_amount_cents", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_user_id"], name: "index_appointment_commissions_on_account_user_id"
+    t.index ["appointment_id"], name: "index_appointment_commissions_on_appointment_id"
+  end
+
+  create_table "appointment_links", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "token", null: false
+    t.string "name"
+    t.text "description"
+    t.boolean "active", default: true, null: false
+    t.bigint "service_id"
+    t.bigint "account_user_id"
+    t.jsonb "settings", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_appointment_links_on_account_id"
+    t.index ["account_user_id"], name: "index_appointment_links_on_account_user_id"
+    t.index ["active"], name: "index_appointment_links_on_active"
+    t.index ["service_id"], name: "index_appointment_links_on_service_id"
+    t.index ["token"], name: "index_appointment_links_on_token", unique: true
+  end
+
+  create_table "appointments", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "account_user_id", null: false
+    t.bigint "service_id", null: false
+    t.datetime "start_time"
+    t.datetime "end_time"
+    t.integer "price_cents", null: false
+    t.string "price_currency", default: "BRL"
+    t.integer "status", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "whatsapp_number"
+    t.string "stripe_payment_link_id"
+    t.integer "payment_status"
+    t.bigint "contact_id"
+    t.string "stripe_payment_intent_id"
+    t.index ["account_id"], name: "index_appointments_on_account_id"
+    t.index ["account_user_id"], name: "index_appointments_on_account_user_id"
+    t.index ["contact_id"], name: "index_appointments_on_contact_id"
+    t.index ["payment_status"], name: "index_appointments_on_payment_status"
+    t.index ["service_id"], name: "index_appointments_on_service_id"
+    t.index ["stripe_payment_link_id"], name: "index_appointments_on_stripe_payment_link_id"
+    t.index ["whatsapp_number"], name: "index_appointments_on_whatsapp_number"
   end
 
   create_table "audits", force: :cascade do |t|
@@ -556,6 +613,18 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
     t.index ["frequency_cd"], name: "index_payment_plans_on_frequency_cd"
   end
 
+  create_table "payouts", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "account_user_id", null: false
+    t.integer "total_amount_cents", null: false
+    t.string "currency", default: "BRL"
+    t.datetime "paid_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_payouts_on_account_id"
+    t.index ["account_user_id"], name: "index_payouts_on_account_user_id"
+  end
+
   create_table "people", force: :cascade do |t|
     t.bigint "account_id"
     t.string "type", null: false
@@ -610,6 +679,17 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
     t.index ["date"], name: "index_pg_search_documents_on_date"
     t.index ["searchable_type", "searchable_id"], name: "index_pg_search_documents_on_searchable"
     t.index ["tsv_body"], name: "index_pg_search_documents_on_tsv_body", using: :gin
+  end
+
+  create_table "professional_commissions", force: :cascade do |t|
+    t.bigint "account_user_id", null: false
+    t.bigint "service_id", null: false
+    t.integer "commission_type", default: 0
+    t.decimal "commission_value", precision: 8, scale: 2, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_user_id"], name: "index_professional_commissions_on_account_user_id"
+    t.index ["service_id"], name: "index_professional_commissions_on_service_id"
   end
 
   create_table "receipt_templates", force: :cascade do |t|
@@ -711,6 +791,18 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["service_id"], name: "index_service_nfse_configs_on_service_id"
+  end
+
+  create_table "services", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", null: false
+    t.integer "price_cents", null: false
+    t.string "price_currency", default: "BRL", null: false
+    t.integer "default_commission_type", default: 0
+    t.decimal "default_commission_value", precision: 8, scale: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_services_on_account_id"
   end
 
   create_table "settings", id: :serial, force: :cascade do |t|
@@ -913,6 +1005,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
     t.bigint "payment_plan_id"
     t.bigint "service_id"
     t.decimal "amount"
+    t.bigint "appointment_id"
     t.index ["account_id", "category_id"], name: "index_transactions_on_account_id_and_category_id"
     t.index ["account_id", "contact_id"], name: "index_transactions_on_account_id_and_contact_id"
     t.index ["account_id", "cost_center_id"], name: "index_transactions_on_account_id_and_cost_center_id"
@@ -923,6 +1016,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
     t.index ["account_id", "paid"], name: "index_transactions_on_paid"
     t.index ["account_id", "transaction_type_cd"], name: "index_transactions_on_account_id_and_transaction_type_cd"
     t.index ["account_id"], name: "index_transactions_on_account_id"
+    t.index ["appointment_id"], name: "index_transactions_on_appointment_id"
     t.index ["bank_account_id"], name: "index_transactions_on_bank_account_id"
     t.index ["category_id"], name: "index_transactions_on_category_id"
     t.index ["contact_id"], name: "index_transactions_on_contact_id"
@@ -984,7 +1078,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
     t.string "contact_me_by"
     t.string "phone_number"
     t.string "postcode"
-    t.datetime "last_announcement_read_at", default: "2025-07-28 15:39:24", null: false, comment: "Date of last read announcement"
+    t.datetime "last_announcement_read_at", default: "2025-12-04 16:58:50", null: false, comment: "Date of last read announcement"
     t.boolean "visible_amount", default: true, null: false, comment: "Whether the user can see the amount of the referral code"
     t.boolean "preference_receive_email", default: true
     t.boolean "preference_all_bank_accounts", default: false
@@ -1054,6 +1148,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "api_tokens", "accounts"
   add_foreign_key "api_tokens", "users"
+  add_foreign_key "appointment_commissions", "account_users"
+  add_foreign_key "appointment_commissions", "appointments"
+  add_foreign_key "appointment_links", "account_users"
+  add_foreign_key "appointment_links", "accounts"
+  add_foreign_key "appointment_links", "offers", column: "service_id"
+  add_foreign_key "appointments", "account_users"
+  add_foreign_key "appointments", "accounts"
+  add_foreign_key "appointments", "offers", column: "service_id"
+  add_foreign_key "appointments", "people", column: "contact_id"
   add_foreign_key "bank_accounts", "accounts"
   add_foreign_key "bank_accounts", "banks"
   add_foreign_key "bank_accounts", "users", column: "created_by_id"
@@ -1078,12 +1181,16 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
   add_foreign_key "invoices", "people", column: "recipient_id"
   add_foreign_key "offers", "accounts"
   add_foreign_key "payment_plans", "accounts"
+  add_foreign_key "payouts", "account_users"
+  add_foreign_key "payouts", "accounts"
   add_foreign_key "people", "accounts"
   add_foreign_key "people", "enums", column: "cnae_id"
   add_foreign_key "people", "segments", column: "sector_activity_id"
   add_foreign_key "people", "users", column: "created_by_id"
   add_foreign_key "people", "users", column: "updated_by_id"
   add_foreign_key "pg_search_documents", "accounts"
+  add_foreign_key "professional_commissions", "account_users"
+  add_foreign_key "professional_commissions", "services"
   add_foreign_key "relationship_stores", "accounts"
   add_foreign_key "relationship_stores", "integration_stores"
   add_foreign_key "relationship_stores", "users", column: "synced_by_id"
@@ -1091,6 +1198,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
   add_foreign_key "secondary_cnaes", "people"
   add_foreign_key "segments", "segments", column: "parent_id"
   add_foreign_key "service_nfse_configs", "offers", column: "service_id"
+  add_foreign_key "services", "accounts"
   add_foreign_key "statement_items", "bank_accounts", column: "bank_account_source_id"
   add_foreign_key "statement_items", "bank_accounts", column: "bank_account_target_id"
   add_foreign_key "statement_items", "domains", column: "category_id"
@@ -1107,6 +1215,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_07_28_171813) do
   add_foreign_key "subscriptions", "accounts"
   add_foreign_key "taggings", "tags"
   add_foreign_key "transactions", "accounts"
+  add_foreign_key "transactions", "appointments"
   add_foreign_key "transactions", "bank_accounts"
   add_foreign_key "transactions", "bank_accounts", column: "transfer_to_id"
   add_foreign_key "transactions", "domains", column: "category_id"

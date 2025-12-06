@@ -49,6 +49,6 @@ class ImportTest < ActiveSupport::TestCase
   # test "should find an import by ID" do
   #   import = Import.find(@import.id)
   #   assert_equal "User", import.account.users.name
-  #   assert_equal "one@procfy.io", import.account.users.first.email
+  #   assert_equal "one@barbermanagement.io", import.account.users.first.email
   # end
 end

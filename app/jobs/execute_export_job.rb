@@ -29,7 +29,7 @@ class ExecuteExportJob < ApplicationJob
   end
 
   def backup_xlsx_filename
-    base = "Backup-Procfy-#{I18n.l(Time.zone.now)}"
+    base = "Backup-BarberManagement-#{I18n.l(Time.zone.now)}"
     "#{base}.xlsx"
   end
 end

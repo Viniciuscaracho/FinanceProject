@@ -1,21 +1,21 @@
 databases:
-  - name: procfy_database_development
-    databaseName: procfy_development
-    user: procfy
+  - name: barber-management_database_development
+    databaseName: barber-management_development
+    user: barber-management
     ipAllowList:
       - source: 0.0.0.0/0
         description: everywhere
 
 services:
   - type: redis
-    name: procfy_redis_development
+    name: barber-management_redis_development
     ipAllowList: [ ] # only allow internal connections
     maxmemoryPolicy: noeviction # optional (defaults to allkeys-lru)
 
   - type: web
-    name: procfy_web_development
+    name: barber-management_web_development
     runtime: docker
-    repo: https://github.com/codengage/procfy
+    repo: https://github.com/codengage/barber-management
     dockerfilePath: ./Dockerfile.staging
     dockerContext: .
     healthCheckPath: /health_check
@@ -25,7 +25,7 @@ services:
       - key: RAILS_ENV
         value: staging
       - key: DEFAULT_HOST_NAME
-        value: dev.procfy.io
+        value: dev.barbermanagement.io
       - key: DEFAULT_HOST_PROTOCOL
         value: https
       - key: MAILGUN_ENABLED
@@ -34,47 +34,78 @@ services:
         value: "false"
       - key: DATABASE_NAME
         fromDatabase:
-          name: procfy_database_development
+          name: barber-management_database_development
           property: database
       - key: DATABASE_HOST
         fromDatabase:
-          name: procfy_database_development
+          name: barber-management_database_development
           property: host
       - key: DATABASE_HOST_REPLICA
         fromDatabase:
-          name: procfy_database_development
+          name: barber-management_database_development
           property: host
       - key: DATABASE_PORT
         fromDatabase:
-          name: procfy_database_development
+          name: barber-management_database_development
           property: port
       - key: DATABASE_USERNAME
         fromDatabase:
-          name: procfy_database_development
+          name: barber-management_database_development
           property: user
       - key: DATABASE_PASSWORD
         fromDatabase:
-          name: procfy_database_development
+          name: barber-management_database_development
           property: password
       - key: REDIS_URL
         fromService:
           type: redis
-          name: procfy_redis_development
+          name: barber-management_redis_development
           property: connectionString
       - key: REDIS_SIDEKIQ_URL
         fromService:
           type: redis
-          name: procfy_redis_development
+          name: barber-management_redis_development
           property: connectionString
       - key: RAILS_MAX_THREADS
         value: "10"
       - key: RAILS_MIN_THREADS
         value: "5"
+      # Supabase Configuration
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      # Supabase Database (se usando Supabase Postgres)
+      - key: SUPABASE_DB_HOST
+        sync: false
+      - key: SUPABASE_DB_PORT
+        value: "5432"
+      - key: SUPABASE_DB_NAME
+        sync: false
+      - key: SUPABASE_DB_USER
+        sync: false
+      - key: SUPABASE_DB_PASSWORD
+        sync: false
+      # Supabase Storage
+      - key: SUPABASE_STORAGE_ACCESS_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_REGION
+        value: "us-east-1"
+      - key: SUPABASE_STORAGE_BUCKET
+        sync: false
+      - key: SUPABASE_STORAGE_ENDPOINT
+        sync: false
 
   - type: worker
-    name: procfy_worker_development
+    name: barber-management_worker_development
     runtime: docker
-    repo: https://github.com/codengage/procfy
+    repo: https://github.com/codengage/barber-management
     dockerfilePath: ./Dockerfile.staging
     dockerContext: .
     dockerCommand: "bundle exec sidekiq"
@@ -84,7 +115,7 @@ services:
       - key: RAILS_ENV
         value: staging
       - key: DEFAULT_HOST_NAME
-        value: dev.procfy.io
+        value: dev.barbermanagement.io
       - key: DEFAULT_HOST_PROTOCOL
         value: https
       - key: MAILGUN_ENABLED
@@ -93,37 +124,37 @@ services:
         value: "true"
       - key: DATABASE_NAME
         fromDatabase:
-          name: procfy_database_development
+          name: barber-management_database_development
           property: database
       - key: DATABASE_HOST
         fromDatabase:
-          name: procfy_database_development
+          name: barber-management_database_development
           property: host
       - key: DATABASE_HOST_REPLICA
         fromDatabase:
-          name: procfy_database_development
+          name: barber-management_database_development
           property: host
       - key: DATABASE_PORT
         fromDatabase:
-          name: procfy_database_development
+          name: barber-management_database_development
           property: port
       - key: DATABASE_USERNAME
         fromDatabase:
-          name: procfy_database_development
+          name: barber-management_database_development
           property: user
       - key: DATABASE_PASSWORD
         fromDatabase:
-          name: procfy_database_development
+          name: barber-management_database_development
           property: password
       - key: REDIS_URL
         fromService:
           type: redis
-          name: procfy_redis_development
+          name: barber-management_redis_development
           property: connectionString
       - key: REDIS_SIDEKIQ_URL
         fromService:
           type: redis
-          name: procfy_redis_development
+          name: barber-management_redis_development
           property: connectionString
       - key: RAILS_MAX_THREADS
         value: "10"

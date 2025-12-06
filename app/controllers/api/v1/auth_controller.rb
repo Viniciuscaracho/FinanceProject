@@ -3,8 +3,8 @@
 module Api
   module V1
     class AuthController < ApplicationController
-      skip_before_action :authenticate_user!, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :test_user, :debug_user, :test_logs, :create_test_user]
-      skip_before_action :set_current_account, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :test_user, :debug_user, :test_logs, :create_test_user]
+      skip_before_action :authenticate_user!, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :test_user, :debug_user, :test_logs, :create_test_user]
+      skip_before_action :set_current_account, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :test_user, :debug_user, :test_logs, :create_test_user]
       before_action :set_user, only: [:me, :logout]
 
       def login
@@ -19,7 +19,26 @@ module Api
         user = User.where(email: params[:email]).first
         puts "Usuário encontrado: #{user&.id} - #{user&.email}"
         
-        if user&.valid_password?(params[:password])
+        unless user
+          puts "Login falhou: usuário não encontrado para email: #{params[:email]}"
+          return render json: { 
+            success: false, 
+            error: 'Email ou senha inválidos' 
+          }, status: :unauthorized
+        end
+        
+        # Verificar se o usuário foi criado via OAuth
+        if user.provider.present?
+          puts "Login falhou: usuário OAuth tentando login tradicional - email: #{params[:email]}, provider: #{user.provider}"
+          return render json: { 
+            success: false, 
+            error: 'Este usuário foi criado via autenticação social. Use o login via ' + user.provider.capitalize + ' ou redefina sua senha.',
+            oauth_user: true,
+            provider: user.provider
+          }, status: :unauthorized
+        end
+        
+        if user.valid_password?(params[:password])
           puts "Senha válida, gerando token para usuário ID: #{user.id}"
           user_response = user_data(user)
           puts "Resposta do user_data: #{user_response.inspect}"
@@ -98,6 +117,48 @@ module Api
         }, status: :internal_server_error
       end
 
+      # Login via Supabase Auth
+      # Recebe o access_token do Supabase e valida, depois cria/atualiza usuário local
+      def supabase_login
+        access_token = params[:access_token] || request.headers['Authorization']&.gsub(/^Bearer /, '')
+        
+        unless access_token.present?
+          render json: { 
+            success: false, 
+            error: 'Token de acesso não fornecido' 
+          }, status: :unauthorized
+          return
+        end
+        
+        # Verificar token e obter usuário do Supabase
+        user = Supabase::Auth.get_user_from_token(access_token)
+        
+        unless user
+          render json: { 
+            success: false, 
+            error: 'Token inválido ou expirado' 
+          }, status: :unauthorized
+          return
+        end
+        
+        # Gerar token de acesso para o sistema local
+        token = Supabase::Auth.generate_access_token(user)
+        
+        render json: {
+          success: true,
+          user: user_data(user),
+          token: token,
+          supabase_token: access_token # Retornar também o token do Supabase se necessário
+        }
+      rescue => e
+        Rails.logger.error "Erro no supabase_login: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
+        render json: { 
+          success: false, 
+          error: 'Erro interno do servidor' 
+        }, status: :internal_server_error
+      end
+
       def google_oauth_url
         # Gerar URL de autorização do Google
         client_id = ENV['GOOGLE_CLIENT_ID'] || 'test_client_id'
@@ -161,8 +222,16 @@ module Api
       end
 
       def logout
-        # Implementar logout se necessário
-        render json: { success: true }
+        # Log do logout para auditoria
+        Rails.logger.info "Logout realizado para usuário: #{@user&.email || 'desconhecido'}"
+        
+        # Com tokens base64 simples, não há necessidade de invalidar no servidor
+        # Em futuras implementações com JWT e blacklist, adicionar invalidação aqui
+        
+        render json: { 
+          success: true, 
+          message: 'Logout realizado com sucesso' 
+        }
       end
 
       def test_user
@@ -175,19 +244,53 @@ module Api
       end
 
       def login_simple
-        user = User.find_by(email: params[:email])
-        
-        if user&.valid_password?(params[:password])
+        begin
+          user = User.find_by(email: params[:email])
+          
+          unless user
+            Rails.logger.warn "Login falhou: usuário não encontrado para email: #{params[:email]}"
+            return render json: { 
+              success: false, 
+              error: 'Email ou senha inválidos' 
+            }, status: :unauthorized
+          end
+          
+          # Verificar se o usuário foi criado via OAuth
+          if user.provider.present?
+            Rails.logger.warn "Login falhou: usuário OAuth tentando login tradicional - email: #{params[:email]}, provider: #{user.provider}"
+            return render json: { 
+              success: false, 
+              error: 'Este usuário foi criado via autenticação social. Use o login via ' + user.provider.capitalize + ' ou redefina sua senha.',
+              oauth_user: true,
+              provider: user.provider
+            }, status: :unauthorized
+          end
+          
+          unless user.valid_password?(params[:password])
+            Rails.logger.warn "Login falhou: senha inválida para email: #{params[:email]}"
+            return render json: { 
+              success: false, 
+              error: 'Email ou senha inválidos' 
+            }, status: :unauthorized
+          end
+          
+          # Gerar dados do usuário e token
+          user_data_result = user_data(user)
+          token = generate_token(user)
+          
           render json: {
             success: true,
-            user: user_data(user),
-            token: generate_token(user)
+            user: user_data_result,
+            token: token
           }
-        else
+        rescue => e
+          Rails.logger.error "Erro no login_simple: #{e.class}: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
           render json: { 
             success: false, 
-            error: 'Email ou senha inválidos' 
-          }, status: :unauthorized
+            error: 'Erro interno do servidor',
+            message: e.message
+          }, status: :internal_server_error
         end
       end
 
@@ -236,13 +339,13 @@ module Api
 
       def create_test_user
         # Verificar se já existe um usuário admin
-        existing_user = User.find_by(email: 'admin@procfy.io')
+        existing_user = User.find_by(email: 'admin@barbermanagement.io')
         
         if existing_user
           render json: { 
             success: true, 
             message: 'Usuário admin já existe',
-            email: 'admin@procfy.io',
+            email: 'admin@barbermanagement.io',
             password: 'password123'
           }
           return
@@ -257,11 +360,11 @@ module Api
 
         # Criar usuário admin
         user = User.create!(
-          email: 'admin@procfy.io',
+          email: 'admin@barbermanagement.io',
           password: 'password123',
           password_confirmation: 'password123',
           first_name: 'Admin',
-          last_name: 'Procfy'
+          last_name: 'BarberManagement'
         )
 
         # Associar usuário à conta
@@ -270,7 +373,7 @@ module Api
         render json: { 
           success: true, 
           message: 'Usuário admin criado com sucesso',
-          email: 'admin@procfy.io',
+          email: 'admin@barbermanagement.io',
           password: 'password123'
         }
       rescue => e
@@ -289,14 +392,78 @@ module Api
 
       def user_data(user)
         Rails.logger.info "user_data chamado com user ID: #{user.id}"
-        {
-          id: user.id,
-          email: user.email,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          name: user.name,
-          preferred_language: user.preferred_language
-        }
+        
+        begin
+          # Definir Current.user
+          Current.user = user unless Current.user == user
+          
+          # Tentar obter a conta do usuário
+          account = nil
+          begin
+            account = Current.account || user.account || user.accounts.first
+            Current.account = account if account && Current.account != account
+          rescue => e
+            Rails.logger.warn "Erro ao obter conta do usuário: #{e.message}"
+            # Continuar sem conta se houver erro
+          end
+          
+          # Verificar se o usuário é admin da conta ou dono
+          is_account_admin = false
+          is_account_owner = false
+          if account
+            begin
+              account_user = user.current_account_user
+              is_account_admin = account_user&.admin? || false
+              is_account_owner = user.current_account_owner? || false
+            rescue => e
+              Rails.logger.warn "Erro ao verificar permissões do usuário: #{e.message}"
+            end
+          end
+          
+          account_data = nil
+          if account
+            begin
+              account_data = {
+                id: account.id,
+                prefix_id: account.prefix_id,
+                name: account.name,
+                admin: account.admin == true, # Conta do dono do sistema (BarberManagement)
+                account_type: account.account_type
+              }
+            rescue => e
+              Rails.logger.warn "Erro ao serializar dados da conta: #{e.message}"
+            end
+          end
+          
+          {
+            id: user.id,
+            email: user.email,
+            first_name: user.first_name || '',
+            last_name: user.last_name || '',
+            name: user.name || '',
+            preferred_language: user.preferred_language,
+            admin: user.admin? || false, # Admin do sistema
+            account_admin: is_account_admin, # Admin da conta empresarial
+            account_owner: is_account_owner, # Dono da conta
+            account: account_data
+          }
+        rescue => e
+          Rails.logger.error "Erro em user_data: #{e.class}: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          # Retornar dados mínimos em caso de erro
+          {
+            id: user.id,
+            email: user.email,
+            first_name: user.first_name || '',
+            last_name: user.last_name || '',
+            name: user.name || '',
+            preferred_language: user.preferred_language,
+            admin: false,
+            account_admin: false,
+            account_owner: false,
+            account: nil
+          }
+        end
       end
 
       def generate_token(user)

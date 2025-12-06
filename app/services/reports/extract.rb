@@ -8,6 +8,8 @@ module Reports
 
       bank_account_ids = params.fetch(:bank_account_ids, []).reject(&:blank?)
       bank_account_ids = context.account.bank_account_ids if bank_account_ids.empty?
+      # Garantir que todos os IDs estejam no mesmo formato (string) para comparações
+      bank_account_ids = bank_account_ids.map(&:to_s)
 
       cost_center_ids = params.fetch(:cost_center_ids, []).reject(&:blank?)
       category_ids = params.fetch(:category_ids, []).reject(&:blank?)
@@ -26,37 +28,52 @@ module Reports
 
       @balance = initial_balance
 
-      transactions = account.transactions.includes(:contact, :category, :bank_account, :transfer_to).filter_by(**params)
+      # Otimização: usar select específico e limitar campos carregados
+      transactions = account.transactions
+                            .select('transactions.*')
+                            .includes(:contact, :category, :bank_account, :transfer_to)
+                            .filter_by(**params)
+                            .limit(10000) # Limite de segurança para evitar timeout
 
+      # Normalizar parâmetro paid para garantir que seja sempre um array de booleans
+      paid_filter = if params[:paid].is_a?(Array)
+                     params[:paid].map { |p| p.to_s == 'true' || p == true }
+                   elsif params[:paid].present?
+                     [params[:paid].to_s == 'true' || params[:paid] == true]
+                   else
+                     [true, false]
+                   end
+      
       # fazendo os filtros para as transferencias de entrada
-      transfers_in = if params[:bank_account_ids].blank? || params[:bank_account_ids]&.count == 1
-                       account.transactions.transfers.by_paid(paid: params[:paid]).by_date_type(
+      bank_account_ids_for_transfers = params[:bank_account_ids].present? ? params[:bank_account_ids] : []
+      transfers_in = if bank_account_ids_for_transfers.blank? || bank_account_ids_for_transfers.count == 1
+                       account.transactions.transfers.by_paid(paid: paid_filter).by_date_type(
                          start_date: params[:start_date],
                          end_date: params[:end_date],
-                         date_type: params[:date_type]
+                         date_type: params[:date_type] || :due_date
                        )
                      else
-                       account.transactions.transfers.by_paid(paid: params[:paid]).by_date_type(
+                       account.transactions.transfers.by_paid(paid: paid_filter).by_date_type(
                          start_date: params[:start_date],
                          end_date: params[:end_date],
-                         date_type: params[:date_type]
-                       ).where(transfer_to_id: params[:bank_account_ids])
+                         date_type: params[:date_type] || :due_date
+                       ).where(transfer_to_id: bank_account_ids_for_transfers)
                      end
-      if params[:cost_center_ids].reject(&:blank?).any?
+      if params[:cost_center_ids].present? && params[:cost_center_ids].reject(&:blank?).any?
         transfers_in = transfers_in.by_cost_center(cost_center_id: params[:cost_center_ids].map do |i|
           i == '-1' ? nil : i
         end)
       end
 
-      if params[:category_ids].reject(&:blank?).any?
+      if params[:category_ids].present? && params[:category_ids].reject(&:blank?).any?
         transfers_in = transfers_in.where(category_id: params[:category_ids])
       end
 
-      if params[:tag_list].reject(&:blank?).any?
+      if params[:tag_list].present? && params[:tag_list].reject(&:blank?).any?
         transfers_in = transfers_in.tagged_with(params[:tag_list], any: true)
       end
 
-      if params[:payment_methods].reject(&:blank?).any?
+      if params[:payment_methods].present? && params[:payment_methods].reject(&:blank?).any?
         transfers_in = transfers_in.where(payment_method_cd: params[:payment_methods].map { |i| Transaction.payment_methods[i] })
       end
 
@@ -65,8 +82,25 @@ module Reports
       # a mesma coisa para o car de entrada. Para que assim, quando selecionar apenas a conta que possui a transferencia
       # de entrada, só criar o card de entrada, para o saida é a mesma coisa
 
+      # Otimização: usar find_each para grandes volumes e limitar resultados
       items = []
-      transactions.or(transfers_in).order(params[:date_type], :transaction_type_cd).each do |transaction|
+      date_type = params[:date_type] || :due_date
+      
+      # Combinar queries de transações e transferências
+      combined_query = if transfers_in.any?
+                        transactions.or(transfers_in)
+                      else
+                        transactions
+                      end
+      
+      combined_query = combined_query.order(date_type, :transaction_type_cd)
+      
+      # Paginação para grandes volumes
+      page = params.fetch(:page, 1).to_i
+      per_page = [params.fetch(:per_page, 100).to_i, 500].min # Máximo 500 por página
+      offset = (page - 1) * per_page
+      
+      combined_query.offset(offset).limit(per_page).find_each(batch_size: 100) do |transaction|
         case transaction.transaction_type
         when :transfer
           if bank_account_ids.include?(transaction.bank_account&.id&.to_s)
@@ -80,8 +114,8 @@ module Reports
         end
       end
 
-      total_revenues = transactions.revenues.sum(:exchanged_amount_cents) + transfers_in.sum(:exchanged_amount_cents)
-      total_expenses = transactions.expenses.sum(:exchanged_amount_cents) + transactions.transfers.sum(:exchanged_amount_cents)
+      total_revenues = (transactions.revenues.sum(:exchanged_amount_cents) || 0) + (transfers_in.sum(:exchanged_amount_cents) || 0)
+      total_expenses = (transactions.expenses.sum(:exchanged_amount_cents) || 0) + (transactions.transfers.sum(:exchanged_amount_cents) || 0)
 
       total = {
         previous_balance: initial_balance,

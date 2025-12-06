@@ -12,7 +12,7 @@ module Api
           .per(params[:per_page] || 20)
 
         render json: {
-          contacts: @contacts.as_json,
+          contacts: @contacts.map { |contact| contact_json(contact) },
           meta: {
             current_page: @contacts.current_page,
             total_pages: @contacts.total_pages,
@@ -22,14 +22,14 @@ module Api
       end
 
       def show
-        render json: { contact: @contact.as_json }
+        render json: { contact: contact_json(@contact) }
       end
 
       def create
         @contact = Current.account.contacts.build(contact_params)
 
         if @contact.save
-          render json: { contact: @contact.as_json }, status: :created
+          render json: { contact: contact_json(@contact) }, status: :created
         else
           render json: { errors: @contact.errors.full_messages }, status: :unprocessable_entity
         end
@@ -37,7 +37,7 @@ module Api
 
       def update
         if @contact.update(contact_params)
-          render json: { contact: @contact.as_json }
+          render json: { contact: contact_json(@contact) }
         else
           render json: { errors: @contact.errors.full_messages }, status: :unprocessable_entity
         end
@@ -54,9 +54,19 @@ module Api
         @contact = Current.account.contacts.find(params[:id])
       end
 
+      def contact_json(contact)
+        contact.as_json.merge(
+          name: contact.name,
+          phone: contact.phone_number,
+          document: contact.document_1,
+          notes: contact.description,
+          contact_type: contact.contact_type.to_s
+        )
+      end
+
       def contact_params
         # Mapear campos do frontend para campos do modelo
-        permitted_params = params.require(:contact).permit(:name, :email, :phone, :document, :notes)
+        permitted_params = params.require(:contact).permit(:name, :email, :phone, :document, :notes, :contact_type)
         
         # Converter campos para os nomes corretos do modelo
         contact_attributes = {}
@@ -65,6 +75,18 @@ module Api
         contact_attributes[:phone_number] = permitted_params[:phone] if permitted_params[:phone].present?
         contact_attributes[:document_1] = permitted_params[:document] if permitted_params[:document].present?
         contact_attributes[:description] = permitted_params[:notes] if permitted_params[:notes].present?
+        
+        # Mapear contact_type do frontend para o enum do modelo
+        if permitted_params[:contact_type].present?
+          type_mapping = {
+            'customer' => :customer,
+            'employee' => :employee,
+            'supplier' => :supplier,
+            'partner' => :partner,
+            'associate' => :associate
+          }
+          contact_attributes[:contact_type] = type_mapping[permitted_params[:contact_type]] if type_mapping[permitted_params[:contact_type]]
+        end
         
         contact_attributes
       end

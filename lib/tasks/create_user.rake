@@ -6,7 +6,7 @@ namespace :users do
     puts "Creating confirmed user..."
     
     # Dados do usuário
-    email = ENV['USER_EMAIL'] || 'admin@procfy.io'
+    email = ENV['USER_EMAIL'] || 'admin@barbermanagement.io'
     password = ENV['USER_PASSWORD'] || 'password123'
     first_name = ENV['USER_FIRST_NAME'] || 'Admin'
     last_name = ENV['USER_LAST_NAME'] || 'User'

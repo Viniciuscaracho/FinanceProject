@@ -11,8 +11,11 @@ module Reports
       query = revenue? ? query.revenues : query.expenses
 
       query = query.filter_by(**params)
-      total = Money.from_cents(query.sum(:exchanged_amount_cents))
+      # Otimização: usar sum direto no banco
+      total = Money.from_cents(query.sum(:exchanged_amount_cents) || 0)
       items = query.categories_with_amount_to_hash
+      # Garantir que items é um hash
+      items = items.to_h if items.respond_to?(:to_h)
       items = items.sort_by { |_key, value| order == :asc ? value : -value }.to_h if order.present?
 
       chart_data = sanitize_chart_data(chart_data: sanitize_items(items:, order: ))

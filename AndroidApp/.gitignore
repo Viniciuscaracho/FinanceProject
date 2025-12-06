@@ -1,0 +1,30 @@
+# Build outputs
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+build/
+bin/
+gen/
+out/
+.gradle/
+
+# Local configuration files
+local.properties
+*.iml
+.idea/
+.vscode/
+
+# Test outputs
+tests/**/reports/
+tests/**/screenshots/
+tests/**/venv/
+tests/**/__pycache__/
+tests/**/*.pyc
+tests/**/.pytest_cache/
+*.log
+
+# Appium
+node_modules/
+appium.log

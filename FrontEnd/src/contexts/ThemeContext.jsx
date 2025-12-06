@@ -23,27 +23,18 @@ export const ThemeProvider = ({ children }) => {
     const root = document.documentElement;
     
     if (isDarkMode) {
-      // Aplicar modo escuro com controles mais específicos
-      root.style.setProperty('--dark-mode', 'true');
-      root.style.setProperty('--dark-brightness', '0.9');
-      root.style.setProperty('--dark-contrast', '1.1');
-      root.style.setProperty('--dark-saturate', '0.8');
-      
-      // Adicionar classe para controle específico
-      root.classList.add('dark-mode');
+      // Aplicar modo escuro - usar classe 'dark' do Tailwind
+      root.classList.add('dark');
       root.classList.remove('light-mode');
+      root.setAttribute('data-theme', 'dark');
     } else {
       // Aplicar modo claro
-      root.style.setProperty('--dark-mode', 'false');
-      root.style.setProperty('--dark-brightness', '1');
-      root.style.setProperty('--dark-contrast', '1');
-      root.style.setProperty('--dark-saturate', '1');
-      
-      // Adicionar classe para controle específico
+      root.classList.remove('dark');
       root.classList.add('light-mode');
-      root.classList.remove('dark-mode');
+      root.setAttribute('data-theme', 'light');
     }
     
+    // Salvar preferência
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 

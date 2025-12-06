@@ -77,7 +77,7 @@ module Integrations
     end
 
     def account_params
-      # item_id represents the bank connection between procfy account and pluggy
+      # item_id represents the bank connection between barber management account and pluggy
       # this should be store at account_store level
       case @endpoint_key
       when :accounts, :item

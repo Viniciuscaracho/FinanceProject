@@ -121,7 +121,7 @@ pt-BR:
         invitation_message: "%{inviter} convidou você para juntar-se à %{account}"
         title: "Crie sua conta agora mesmo"
         title2: "Crie sua conta %{account_type} agora mesmo"
-        description: "Crie sua conta no Procfy e ganhe 30 dias grátis para testar o sistema"
+        description: "Crie sua conta no BarberManagement e ganhe 30 dias grátis para testar o sistema"
       signed_up: Bem vindo! Você realizou seu registro com sucesso.
       signed_up_but_inactive: Você se inscreveu com sucesso, porém nós não podemos autenticá-lo porque sua conta ainda não foi ativada.
       signed_up_but_locked: Você se inscreveu com sucesso. Porém nós não podemos autenticá-lo porque sua conta está bloqueada.
@@ -134,8 +134,8 @@ pt-BR:
       new:
         sign_in: Login
         enter: "Entrar"
-        title: "Acesse o Procfy"
-        description: "Se você já é um usuário Procfy, utilize seu email e senha para logar no sistema."
+        title: "Acesse o BarberManagement"
+        description: "Se você já é um usuário BarberManagement, utilize seu email e senha para logar no sistema."
       signed_in: Login efetuado com sucesso.
       signed_out: Logout efetuado com sucesso.
     shared:

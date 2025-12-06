@@ -115,6 +115,8 @@ class Account < ApplicationRecord
   has_many :categories,          dependent: :delete_all
   has_many :cost_centers,        dependent: :delete_all
   has_many :transactions,        dependent: :delete_all
+  has_many :appointments,        dependent: :delete_all
+  has_many :appointment_links,   dependent: :delete_all
   has_many :imports,             dependent: :delete_all
   has_many :exports,             dependent: :delete_all
   has_many :document_templates,  dependent: :delete_all
@@ -192,7 +194,7 @@ class Account < ApplicationRecord
   end
 
   # Public class methods
-  def self.procfy_account
+  def self.barber_management_account
     find_by(admin: true)
   end
 
@@ -210,8 +212,13 @@ class Account < ApplicationRecord
     bank_account
   end
 
-  def procfy?
-    admin?
+  # Verifica se esta conta é do dono do sistema (BarberManagement)
+  # NÃO confundir com AccountUser.role = admin (que é admin dentro de uma conta de cliente)
+  # 
+  # Esta verificação usa o campo boolean 'admin' da tabela accounts
+  # que identifica a conta do sistema vs contas de clientes
+  def barber_management?
+    admin == true
   end
 
   def consumed_storage_size_in_bytes

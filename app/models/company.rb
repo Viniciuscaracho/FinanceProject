@@ -83,7 +83,7 @@ class Company < Person
   delegate :business?, to: :account, allow_nil: true
 
   # Callbacks
-  after_create_commit :create_customer_to_processor
+  after_create_commit :create_customer_to_processor, if:-> { account.present? }
   after_update_commit :update_customer_to_processor
   after_update_commit  do
     publish :company_updated, record: self

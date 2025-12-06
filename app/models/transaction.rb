@@ -30,6 +30,7 @@
 #  created_at                :datetime         not null
 #  updated_at                :datetime         not null
 #  account_id                :bigint           not null
+#  appointment_id            :bigint
 #  bank_account_id           :bigint
 #  category_id               :bigint
 #  contact_id                :bigint
@@ -52,6 +53,7 @@
 #  index_transactions_on_account_id_and_due_date             (account_id,due_date DESC)
 #  index_transactions_on_account_id_and_id                   (account_id,id DESC)
 #  index_transactions_on_account_id_and_transaction_type_cd  (account_id,transaction_type_cd)
+#  index_transactions_on_appointment_id                      (appointment_id)
 #  index_transactions_on_bank_acccount_balance               (paid DESC,kind_cd,transaction_type_cd,account_id,bank_account_id)
 #  index_transactions_on_bank_account_id                     (bank_account_id)
 #  index_transactions_on_category_id                         (category_id)
@@ -82,6 +84,7 @@
 # Foreign Keys
 #
 #  fk_rails_...  (account_id => accounts.id)
+#  fk_rails_...  (appointment_id => appointments.id)
 #  fk_rails_...  (bank_account_id => bank_accounts.id)
 #  fk_rails_...  (category_id => domains.id)
 #  fk_rails_...  (contact_id => people.id)
@@ -143,6 +146,7 @@ class Transaction < ApplicationRecord
   belongs_to :service,      -> { with_discarded }, optional: true, inverse_of: :transactions
   belongs_to :import,       -> { with_discarded }, optional: true, inverse_of: :transactions
   belongs_to :payment_plan, optional: true
+  belongs_to :appointment,  optional: true
 
   # Has Many Associations
   has_many :statement_items, inverse_of: :related_transaction, foreign_key: :related_transaction_id, dependent: :delete_all
@@ -274,6 +278,7 @@ class Transaction < ApplicationRecord
   before_validation :set_exchanged_amount, if: :amount_changed?
   before_save :set_default_name, if: -> { name.blank? && service.present? }
   after_save :update_children, if: :detailed?
+  after_commit :update_bank_account_balance, if: -> { saved_change_to_paid? || saved_change_to_amount_cents? || saved_change_to_bank_account_id? || saved_change_to_transfer_to_id? }
 
   after_update_commit do
     publish 'transaction_updated', record: self
@@ -285,6 +290,8 @@ class Transaction < ApplicationRecord
   after_create_commit do
     publish 'transaction_created', record: self
     publish 'transaction_paid', record: self if paid?
+    # Atualizar saldo da conta bancária após criar transação
+    update_bank_account_balance if paid?
   end
 
   after_destroy_commit do
@@ -428,6 +435,22 @@ class Transaction < ApplicationRecord
   def set_default_name
     self.name = service.name
     self.description = service.description if description.blank?
+  end
+
+  def update_bank_account_balance
+    return unless bank_account.present?
+    
+    # Atualizar saldo apenas se a transação estiver paga
+    # O saldo é recalculado baseado em todas as transações pagas
+    bank_account.update_balance! if paid?
+    
+    # Se for transferência, também atualizar a conta de destino
+    if transfer? && transfer_to.present?
+      transfer_to.update_balance! if paid?
+    end
+  rescue => e
+    Rails.logger.error "Erro ao atualizar saldo da conta bancária: #{e.message}"
+    # Não falhar a transação se houver erro ao atualizar saldo
   end
 
   def payment_method_name

@@ -7,6 +7,7 @@
 #  id         :bigint           not null, primary key
 #  policies   :jsonb            not null
 #  role_cd    :integer          default(0), not null
+#  schedule   :jsonb
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #  account_id :bigint           not null
@@ -17,6 +18,7 @@
 #  index_account_users_on_account_id              (account_id)
 #  index_account_users_on_account_id_and_user_id  (account_id,user_id) UNIQUE
 #  index_account_users_on_role_cd                 (role_cd)
+#  index_account_users_on_schedule                (schedule) USING gin
 #  index_account_users_on_user_id                 (user_id)
 #
 # Foreign Keys

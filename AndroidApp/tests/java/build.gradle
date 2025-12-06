@@ -1,0 +1,63 @@
+// Build file para testes Java com Appium
+// Este arquivo pode ser incluído no build.gradle principal ou usado separadamente
+
+plugins {
+    id 'java'
+    id 'java-library'
+}
+
+repositories {
+    mavenCentral()
+    google()
+}
+
+dependencies {
+    // Appium Java Client
+    implementation 'io.appium:java-client:9.0.0'
+    
+    // Selenium WebDriver
+    implementation 'org.seleniumhq.selenium:selenium-java:4.15.0'
+    
+    // JUnit 5 (Jupiter)
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.1'
+    
+    // TestNG (alternativa ao JUnit)
+    testImplementation 'org.testng:testng:7.8.0'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'org.slf4j:slf4j-simple:2.0.9'
+    implementation 'org.apache.logging.log4j:log4j-core:2.21.1'
+    implementation 'org.apache.logging.log4j:log4j-api:2.21.1'
+    
+    // JSON processing
+    implementation 'com.google.code.gson:gson:2.10.1'
+    
+    // Assertions melhoradas
+    testImplementation 'org.assertj:assertj-core:3.24.2'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+}
+
+// Configuração para executar testes
+tasks.withType(Test) {
+    systemProperty 'appium.server.url', System.getProperty('appium.server.url', 'http://127.0.0.1:4723')
+    // Detectar deviceName automaticamente ou usar variável de ambiente
+    String deviceName = System.getProperty('appium.device.name', '')
+    if (deviceName.isEmpty()) {
+        deviceName = System.getenv('APPIUM_DEVICE_NAME') ?: 'emulator-5554'
+    }
+    systemProperty 'appium.device.name', deviceName
+}
+
+
+
+

@@ -1,24 +1,24 @@
 version: '3.2'
 services:
-  procfy-mail:
+  barber-management-mail:
     image: 'sj26/mailcatcher'
     ports:
       - "1080:1080"
       - "1025:1025"
 
-  procfy-redis:
+  barber-management-redis:
     image: redis:alpine
     ports:
       - "6379:6379"
 
-  procfy-db:
+  barber-management-db:
     image: postgres:14-alpine
     environment:
       - POSTGRES_PASSWORD=postgres
     ports:
       - "9999:5432"
     volumes:
-      - "procfy-db-data:/var/lib/postgresql/data"
+      - "barber-management-db-data:/var/lib/postgresql/data"
 
 volumes:
-  procfy-db-data:
+  barber-management-db-data:

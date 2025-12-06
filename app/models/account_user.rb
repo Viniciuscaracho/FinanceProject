@@ -7,6 +7,7 @@
 #  id         :bigint           not null, primary key
 #  policies   :jsonb            not null
 #  role_cd    :integer          default(0), not null
+#  schedule   :jsonb
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #  account_id :bigint           not null
@@ -17,6 +18,7 @@
 #  index_account_users_on_account_id              (account_id)
 #  index_account_users_on_account_id_and_user_id  (account_id,user_id) UNIQUE
 #  index_account_users_on_role_cd                 (role_cd)
+#  index_account_users_on_schedule                (schedule) USING gin
 #  index_account_users_on_user_id                 (user_id)
 #
 # Foreign Keys
@@ -109,6 +111,7 @@ class AccountUser < ApplicationRecord
   belongs_to :account, counter_cache: true
   belongs_to :user
   has_many :notifications, as: :recipient, dependent: :delete_all
+  has_many :appointments, dependent: :destroy
 
   after_destroy :change_to_personal_account
   after_destroy_commit :remove_or_keep_free_access
@@ -116,8 +119,87 @@ class AccountUser < ApplicationRecord
   before_validation :set_default_role
   before_save :set_default_policies
 
+  # Horários de trabalho padrão (9h às 18h, segunda a sexta)
+  DEFAULT_SCHEDULE = {
+    monday: { enabled: true, start_hour: 9, end_hour: 18 },
+    tuesday: { enabled: true, start_hour: 9, end_hour: 18 },
+    wednesday: { enabled: true, start_hour: 9, end_hour: 18 },
+    thursday: { enabled: true, start_hour: 9, end_hour: 18 },
+    friday: { enabled: true, start_hour: 9, end_hour: 18 },
+    saturday: { enabled: false, start_hour: 9, end_hour: 18 },
+    sunday: { enabled: false, start_hour: 9, end_hour: 18 }
+  }.freeze
+
   def others
     account.account_users.where.not(id:)
+  end
+
+  # Retorna o horário de trabalho para um dia específico
+  def working_hours_for_day(day_name)
+    day_sym = day_name.to_s.downcase.to_sym
+    schedule_hash = schedule.presence || DEFAULT_SCHEDULE
+    
+    # Converter chaves de string para símbolo se necessário (JSONB pode retornar strings)
+    schedule_hash = schedule_hash.deep_symbolize_keys if schedule_hash.is_a?(Hash)
+    
+    day_config = schedule_hash[day_sym] || {}
+    
+    # Lidar com hash que pode ter chaves como string ou símbolo
+    enabled_value = day_config[:enabled] || day_config['enabled']
+    start_hour_value = day_config[:start_hour] || day_config['start_hour']
+    end_hour_value = day_config[:end_hour] || day_config['end_hour']
+    
+    {
+      enabled: enabled_value != false && enabled_value != 'false',
+      start_hour: start_hour_value || 9,
+      end_hour: end_hour_value || 18
+    }
+  end
+
+  # Verifica se um horário está dentro do horário de trabalho do profissional
+  def available_at?(datetime)
+    return false unless datetime
+
+    day_name = datetime.strftime('%A').downcase.to_sym
+    hours = working_hours_for_day(day_name)
+    
+    return false unless hours[:enabled]
+
+    hour = datetime.hour
+    minute = datetime.min
+    time_in_minutes = hour * 60 + minute
+    
+    start_minutes = hours[:start_hour] * 60
+    end_minutes = hours[:end_hour] * 60
+
+    time_in_minutes >= start_minutes && time_in_minutes < end_minutes
+  end
+
+  # Retorna horários de início e fim para uma data específica
+  def working_hours_for_date(date)
+    day_name = date.strftime('%A').downcase.to_sym
+    hours = working_hours_for_day(day_name)
+    
+    return nil unless hours[:enabled]
+
+    {
+      start_time: date.beginning_of_day + hours[:start_hour].hours,
+      end_time: date.beginning_of_day + hours[:end_hour].hours
+    }
+  end
+
+  # Atualiza o horário de trabalho para um dia específico
+  def update_schedule_day(day_name, enabled:, start_hour:, end_hour:)
+    day_sym = day_name.to_s.downcase.to_sym
+    schedule_hash = schedule.presence || DEFAULT_SCHEDULE.deep_dup
+    
+    schedule_hash[day_sym] = {
+      enabled: enabled,
+      start_hour: start_hour,
+      end_hour: end_hour
+    }
+    
+    update_column(:schedule, schedule_hash)
   end
 
   def owner?

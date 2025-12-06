@@ -48,7 +48,7 @@ Rails.application.configure do
   # Mount Action Cable outside main process or domain.
   # config.action_cable.mount_path = nil
   # config.action_cable.url = "wss://example.com/cable"
-  config.action_cable.allowed_request_origins = ['procfy.io', /.*\.procfy\.io/]
+  config.action_cable.allowed_request_origins = ['barbermanagement.io', /.*\.barbermanagement\.io/]
   config.action_cable.disable_request_forgery_protection = false
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
@@ -61,16 +61,25 @@ Rails.application.configure do
   # Prepend all log lines with the following tags.
   config.log_tags = [:request_id]
 
-  # Use a different cache store in production.
-  # config.cache_store = :mem_cache_store
+  # Use Redis cache store in staging with namespace isolation
+  redis_url = ENV.fetch('REDIS_URL', 'redis://localhost:6379/0')
+  config.cache_store = :redis_cache_store, {
+    url: redis_url,
+    namespace: "barber_management_staging_cache",
+    expires_in: 1.hour,
+    reconnect_attempts: 3,
+    error_handler: ->(method:, returning:, exception:) {
+      Rails.logger.error "Cache error: #{method} failed with #{exception.class}: #{exception.message}"
+    }
+  }
 
   # Use a real queuing backend for Active Job (and separate queues per environment).
   # config.active_job.queue_adapter     = :resque
-  # config.active_job.queue_name_prefix = "procfy_production"
+  # config.active_job.queue_name_prefix = "barber_management_production"
 
   config.action_mailer.perform_caching = false
-  # config.action_mailer.default_url_options = { host: ENV.fetch('DEFAULT_HOST_NAME', 'app.procfy.io') }
-  # config.action_mailer.asset_host = "https://#{ENV.fetch('DEFAULT_HOST_NAME', 'app.procfy.io')}"
+  # config.action_mailer.default_url_options = { host: ENV.fetch('DEFAULT_HOST_NAME', 'app.barbermanagement.io') }
+  # config.action_mailer.asset_host = "https://#{ENV.fetch('DEFAULT_HOST_NAME', 'app.barbermanagement.io')}"
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
@@ -97,8 +106,8 @@ Rails.application.configure do
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
   # config.hosts += [
-  #   'procfy.io',
-  #   /.*\.procfy\.io/,
+  #   'barbermanagement.io',
+  #   /.*\.barbermanagement\.io/,
   #
   #   # Stripe WH ip addresses
   #   '3.18.12.63',

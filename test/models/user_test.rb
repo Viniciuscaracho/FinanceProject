@@ -78,13 +78,13 @@ class UserTest < ActiveSupport::TestCase
   # test "should create an user" do
   #   user = User.new(
   #     name: "User Three",
-  #     email: "three@procfy.io",
+    #     email: "three@barbermanagement.io",
   #     password: "123456",
   #     password_confirmation: "123456",
   #     admin: true,
   #   )
   #   assert_equal "User Three", user.name
-  #   assert_equal "three@procfy.io", user.email
+    #   assert_equal "three@barbermanagement.io", user.email
   #   assert user.admin?
   #   user.name = "User One"
   # end
@@ -103,7 +103,7 @@ class UserTest < ActiveSupport::TestCase
   # test "should find an user by ID" do
   #   user = User.find(@user.id)
   #   assert_equal "User One", user.name
-  #   assert_equal "one@procfy.io", user.email
+    #   assert_equal "one@barbermanagement.io", user.email
   #   assert user.admin?
   # end
 end

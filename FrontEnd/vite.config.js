@@ -14,12 +14,15 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true, // Falha se a porta estiver ocupada
+    host: true, // Permite acesso da rede (necessário para emulador)
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
       }
+      // Não fazer proxy de /agendar - o React serve diretamente
+      // POST /agendar/:token/book será feito com URL completa do backend
     }
   }
 })

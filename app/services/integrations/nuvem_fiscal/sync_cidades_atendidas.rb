@@ -7,7 +7,7 @@ module Integrations
       def call
         result = Integrations::NuvemFiscal::Client.call(
           endpoint_key: :listar_cidades_atendidas,
-          account_id: Account.procfy_account.id,
+          account_id: Account.barber_management_account.id,
           payload: {},
           params: {}
         )

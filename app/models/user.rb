@@ -83,7 +83,8 @@ class User < ApplicationRecord
 
   as_enum :preferred_language, [:en, :'pt-BR'], map: :string, source: :preferred_language
 
-  validates :first_name, :last_name, presence: true, length: { minimum: 3, maximum: 100 }
+  validates :first_name, presence: true, length: { minimum: 3, maximum: 100 }
+  validates :last_name, length: { minimum: 3, maximum: 100 }, allow_blank: true
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
 
   # acts_as_tenant :account, optional: true

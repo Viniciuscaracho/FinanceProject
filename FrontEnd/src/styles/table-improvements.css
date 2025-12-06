@@ -1,0 +1,105 @@
+/* ============================================
+   MELHORIAS DE TABELA PARA DESKTOP
+   ============================================ */
+
+/* Container da tabela sem scroll horizontal */
+[data-slot="table-container"] {
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+/* Tabela responsiva que se adapta à largura disponível */
+[data-slot="table"] {
+  width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+/* Headers fixos (opcional, pode causar problemas em alguns casos) */
+/* [data-slot="table-header"] {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+} */
+
+/* Células que podem quebrar texto - aplicado por padrão na coluna de descrição */
+[data-slot="table-cell"] {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Garantir que texto longo quebra corretamente */
+[data-slot="table-cell"] * {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+/* Forçar quebra de linha no header de descrição */
+[data-slot="table-head"].\!whitespace-normal {
+  white-space: normal !important;
+}
+
+/* Garantir que células quebram texto corretamente */
+[data-slot="table"] {
+  table-layout: auto;
+}
+
+/* Permitir que a coluna de descrição ocupe espaço disponível */
+[data-slot="table"] td:nth-child(2),
+[data-slot="table"] th:nth-child(2) {
+  width: auto;
+  min-width: 200px;
+  max-width: none;
+}
+
+/* Células que não devem quebrar */
+[data-slot="table-cell"].text-nowrap {
+  white-space: nowrap;
+}
+
+/* Ajustes para diferentes tamanhos de tela */
+@media (min-width: 768px) {
+  [data-slot="table"] {
+    font-size: 0.875rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-slot="table"] {
+    font-size: 0.9375rem;
+  }
+  
+  [data-slot="table-cell"] {
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  [data-slot="table"] {
+    font-size: 1rem;
+  }
+}
+
+/* Ajustes para zoom */
+@media (min-width: 1920px) {
+  [data-slot="table"] {
+    font-size: 1.0625rem;
+  }
+}
+
+/* Prevenir overflow horizontal no container principal */
+.table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+/* Garantir que tabelas se adaptem à largura disponível */
+[data-slot="table"] {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+

@@ -1,0 +1,35 @@
+{
+  "name": "BarberManagement - Controle Financeiro",
+  "short_name": "BarberManagement",
+  "description": "Sistema de gestão financeira para barbearias",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["finance", "business", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Nova Transação",
+      "short_name": "Nova Transação",
+      "description": "Adicionar uma nova transação",
+      "url": "/transactions?action=new"
+    },
+    {
+      "name": "Novo Agendamento",
+      "short_name": "Novo Agendamento",
+      "description": "Criar um novo agendamento",
+      "url": "/appointments?action=new"
+    }
+  ]
+}
+

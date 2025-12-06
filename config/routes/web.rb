@@ -22,6 +22,7 @@ namespace :api do
     post 'auth/login', to: 'auth#login'
     post 'auth/login_simple', to: 'auth#login_simple'
     post 'auth/firebase_login', to: 'auth#firebase_login'
+    post 'auth/supabase_login', to: 'auth#supabase_login'
     get 'auth/me', to: 'auth#me'
     post 'auth/logout', to: 'auth#logout'
     get 'auth/test_user', to: 'auth#test_user'
@@ -40,6 +41,11 @@ get '/access_forbidden', to: 'errors#access_forbidden'
 # OAuth callback route for React frontend
 get '/oauth/callback', to: 'application#oauth_callback'
 
+# Public appointment booking routes (no authentication required)
+get '/agendar/:token', to: 'public/appointment_booking#show', as: :public_appointment_booking
+post '/agendar/:token/book', to: 'public/appointment_booking#create', as: :public_appointment_booking_create
+get '/agendamento/sucesso', to: 'public/appointment_booking#success', as: :appointment_booking_success
+
 unauthenticated :user do
   get '/users', to: redirect('/users/sign_up')
 end
@@ -55,7 +61,7 @@ authenticated :user, ->(u) { Rails.env.development? || u.admin? } do
   resources :contracts
   get '/users/sign_out', to: redirect('/')
 
-  # Endpoints for users (just Procfy admin)
+  # Endpoints for users (just BarberManagement admin)
   resources :users, only: %i[index new edit destroy update] do
     collection do
       get :new_bulk_invitation

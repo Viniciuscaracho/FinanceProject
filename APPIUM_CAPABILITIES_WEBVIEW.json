@@ -1,0 +1,13 @@
+{
+  "platformName": "Android",
+  "browserName": "Chrome",
+  "appium:platformVersion": "13",
+  "appium:deviceName": "SM-A042M",
+  "appium:udid": "R9QW102M9CX",
+  "appium:automationName": "UiAutomator2",
+  "appium:chromedriverExecutable": "",
+  "appium:noReset": true,
+  "appium:autoGrantPermissions": true,
+  "appium:newCommandTimeout": 300
+}
+

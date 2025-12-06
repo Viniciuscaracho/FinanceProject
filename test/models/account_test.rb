@@ -93,12 +93,12 @@ class AccountTest < ActiveSupport::TestCase
 
   test 'Account instance methods should behave as expected' do
     assert_instance_of BankAccount, @account.default_bank_account
-    assert @account.procfy?
+    assert @account.barber_management?
   end
 
   test 'Account class methods should behave as expected' do
-    Account.stubs(:procfy_account) do
-      assert_instance_of Account, Account.procfy_account
+    Account.stubs(:barber_management_account) do
+      assert_instance_of Account, Account.barber_management_account
     end
   end
 

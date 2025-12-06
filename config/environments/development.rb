@@ -72,8 +72,10 @@ Rails.application.configure do
   # Suppress logger output for asset requests.
   config.assets.quiet = false
 
-  # Config logger
+  # Config logger - escrever tanto no console quanto no arquivo
+  log_file = Rails.root.join('log', 'development.log')
   logger = ActiveSupport::Logger.new($stdout)
+  logger.extend(ActiveSupport::Logger.broadcast(ActiveSupport::Logger.new(log_file)))
   logger.formatter = config.log_formatter
   config.logger = logger
 

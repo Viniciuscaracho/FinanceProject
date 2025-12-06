@@ -1,0 +1,16 @@
+{
+  "platformName": "Android",
+  "platformVersion": "11.0",
+  "deviceName": "Android Emulator",
+  "appPackage": "com.barbermanagement.app.debug",
+  "appActivity": "com.barbermanagement.app.MainActivity",
+  "automationName": "UiAutomator2",
+  "noReset": true,
+  "fullReset": false,
+  "autoGrantPermissions": true,
+  "newCommandTimeout": 300,
+  "androidInstallTimeout": 90000,
+  "uiautomator2ServerLaunchTimeout": 90000,
+  "uiautomator2ServerInstallTimeout": 90000
+}
+

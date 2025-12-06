@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Search, Bell, Menu, User, Settings, LogOut, ChevronDown, Wallet, X, TrendingUp, Moon, Sun } from 'lucide-react'
+import { Search, Bell, Menu, User, Settings, LogOut, ChevronDown, Wallet, X, TrendingUp, Moon, Sun, Home, RefreshCw, Building2 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -13,13 +14,30 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '../../contexts/AuthContext'
+import { useBankAccount } from '../../contexts/BankAccountContext'
+import { cn } from '@/lib/utils'
 
-export function Header({ onMobileMenuClick }) {
+export function Header({ onMobileMenuClick, isMobile = false }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchExpanded, setIsSearchExpanded] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const { user, logout } = useAuth()
   const { isDarkMode, toggleTheme } = useTheme()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const isHomePage = location.pathname === '/'
+  
+  // Bank account context
+  const { 
+    selectedAccount, 
+    bankAccounts, 
+    selectAccount, 
+    balance, 
+    balanceLoading, 
+    lastUpdated,
+    refreshBalance,
+    isLoading: loadingAccounts
+  } = useBankAccount()
 
   // Detect scroll for dynamic header styling
   useEffect(() => {
@@ -45,217 +63,282 @@ export function Header({ onMobileMenuClick }) {
     setIsSearchExpanded(false)
   }
 
+  const handleLogout = async () => {
+    // Fazer logout
+    await logout()
+    
+    // Limpar storage local e de sessão
+    window.localStorage.clear()
+    window.sessionStorage.clear()
+    
+    // Redirecionar para login usando replace para limpar o histórico
+    // O replace: true garante que não há como voltar para a página anterior
+    navigate('/login', { replace: true })
+    
+    // Forçar scroll para o topo para garantir que a página de login seja visível
+    window.scrollTo(0, 0)
+  }
+
   return (
-    <header className={`sticky top-0 z-50 transition-all duration-300 ${
-      scrolled 
-        ? 'bg-white/98 backdrop-blur-md shadow-lg border-b border-gray-200/50' 
-        : 'bg-white/95 backdrop-blur-sm border-b border-gray-200'
-    }`}>
-      <div className="px-2 sm:px-3 lg:px-4 py-2 lg:py-3">
-        <div className="flex items-center justify-between w-full">
-          {/* Left side - Mobile menu + Search */}
-          <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
-            {/* Mobile menu button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden p-2 hover:bg-gray-100 hover:scale-105 transition-all duration-200 rounded-xl"
-              onClick={onMobileMenuClick}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-
-            {/* Search - Fully responsive */}
-            <div className={`relative transition-all duration-300 ${
-              isSearchExpanded 
-                ? 'flex-1 max-w-full' 
-                : 'flex-1 max-w-sm lg:max-w-md'
-            }`}>
-              <Search className={`absolute left-2 lg:left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 lg:h-4 lg:w-4 transition-colors duration-200 ${
-                isSearchExpanded ? 'text-blue-500' : 'text-gray-400'
-              }`} />
-              <Input
-                type="text"
-                placeholder="Pesquisar transações, contatos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={handleSearchFocus}
-                onBlur={handleSearchBlur}
-                className={`pl-7 lg:pl-10 pr-8 lg:pr-10 w-full transition-all duration-300 rounded-lg lg:rounded-xl text-xs lg:text-sm ${
-                  isSearchExpanded
-                    ? 'bg-blue-50 border-blue-300 focus:border-blue-500 shadow-md'
-                    : 'bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500'
-                }`}
-              />
-              {searchQuery && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearSearch}
-                  className="absolute right-1 lg:right-2 top-1/2 transform -translate-y-1/2 p-0.5 lg:p-1 h-5 w-5 lg:h-6 lg:w-6 hover:bg-gray-200 rounded-full transition-all duration-200"
-                >
-                  <X className="h-2.5 w-2.5 lg:h-3 lg:w-3" />
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Right side - Notifications + Account + User */}
-          <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
-            {/* Notifications */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="relative p-1.5 lg:p-2 hover:bg-gray-100 hover:scale-105 transition-all duration-200 rounded-lg lg:rounded-xl preserve-colors"
-            >
-              <Bell className="h-4 w-4 lg:h-5 lg:w-5 preserve-colors" />
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-1 -right-1 h-4 w-4 lg:h-5 lg:w-5 p-0 flex items-center justify-center text-xs animate-pulse rounded-full preserve-colors"
-              >
-                3
-              </Badge>
-            </Button>
-
-            {/* Theme Toggle */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={toggleTheme}
-              className="p-1.5 lg:p-2 hover:bg-gray-100 hover:scale-105 transition-all duration-300 rounded-lg lg:rounded-xl relative overflow-hidden theme-toggle-ripple preserve-colors"
-              title={isDarkMode ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
-            >
-              <div className="relative w-5 h-5 lg:w-6 lg:h-6">
-                <Sun 
-                  className={`absolute inset-0 h-4 w-4 lg:h-5 lg:w-5 transition-all duration-300 preserve-colors ${
-                    isDarkMode 
-                      ? 'text-yellow-400 opacity-100 rotate-0 scale-100' 
-                      : 'text-gray-400 opacity-0 -rotate-90 scale-75'
-                  }`} 
-                />
-                <Moon 
-                  className={`absolute inset-0 h-4 w-4 lg:h-5 lg:w-5 transition-all duration-300 preserve-colors ${
-                    isDarkMode 
-                      ? 'text-gray-400 opacity-0 rotate-90 scale-75' 
-                      : 'text-gray-600 opacity-100 rotate-0 scale-100'
-                  }`} 
-                />
-              </div>
-            </Button>
-
-            {/* Account selector - Responsive visibility */}
-            <div className="hidden xl:flex items-center space-x-2 lg:space-x-3 bg-gradient-to-r from-emerald-50 via-blue-50 to-purple-50 rounded-lg lg:rounded-xl px-3 lg:px-4 py-2 lg:py-2.5 border border-emerald-200/50 hover:shadow-md transition-all duration-300 group">
-              <div className="w-7 h-7 lg:w-9 lg:h-9 bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 rounded-lg lg:rounded-xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200 preserve-colors">
-                <Wallet className="h-3 w-3 lg:h-4 lg:w-4 text-white preserve-colors" />
-              </div>
-              <div className="text-xs lg:text-sm">
-                <p className="font-semibold text-gray-900">Conta Principal</p>
-                <p className="text-gray-600 text-xs">Saldo atual</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm lg:text-lg font-bold text-emerald-600">R$ 0,00</p>
-                <div className="flex items-center space-x-1">
-                  <TrendingUp className="h-2.5 w-2.5 lg:h-3 lg:w-3 text-green-500" />
-                  <p className="text-xs text-gray-500">Atualizado agora</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Compact account info for large screens */}
-            <div className="hidden lg:flex xl:hidden items-center bg-gradient-to-r from-emerald-50 to-blue-50 rounded-lg lg:rounded-xl px-2 lg:px-3 py-1.5 lg:py-2 border border-emerald-200/50">
-              <div className="w-6 h-6 lg:w-8 lg:h-8 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-lg flex items-center justify-center preserve-colors">
-                <Wallet className="h-3 w-3 lg:h-4 lg:w-4 text-white preserve-colors" />
-              </div>
-              <div className="ml-2 text-right">
-                <p className="text-xs lg:text-sm font-bold text-emerald-600">R$ 0,00</p>
-                <p className="text-xs text-gray-500">Principal</p>
-              </div>
-            </div>
-
-            {/* User menu */}
+    <header className={cn(
+      "sticky top-0 z-40 transition-all duration-140",
+      "w-full max-w-full overflow-x-hidden",
+      "bg-surface border-b border-border",
+      scrolled && "border-b-2"
+    )}>
+      <div className="w-full bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-6 py-3 flex items-center justify-between transition-colors duration-200">
+        {/* Left side - Wallet */}
+        <div className="flex items-center gap-4">
+          {!loadingAccounts && bankAccounts.length > 0 ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex items-center space-x-1 lg:space-x-2 p-1.5 lg:p-2 hover:bg-gray-100 hover:scale-105 transition-all duration-200 rounded-lg lg:rounded-xl preserve-colors"
-                >
-                  <div className="w-7 h-7 lg:w-9 lg:h-9 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg lg:rounded-xl flex items-center justify-center shadow-sm preserve-colors">
-                    <span className="text-white font-bold text-xs lg:text-sm preserve-colors">
-                      {user?.name?.charAt(0) || 'U'}
-                    </span>
+                <div className="flex items-center gap-3 px-4 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/20 shadow-sm cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">
+                  <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white">
+                    <Wallet className="w-5 h-5" />
                   </div>
-                  <div className="hidden sm:block text-left">
-                    <p className="text-xs lg:text-sm font-semibold text-gray-900">
-                      {user?.name || 'Usuário'}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {user?.email || 'user@example.com'}
+
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-white">{selectedAccount?.name || 'Wallet'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      Saldo atual
+                      {lastUpdated && (
+                        <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3" />
+                          Atualizado agora
+                        </span>
+                      )}
                     </p>
                   </div>
-                  <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4 text-gray-400 hidden sm:block" />
-                </Button>
+
+                  <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400 ml-4">
+                    {balanceLoading ? (
+                      <RefreshCw className="h-4 w-4 animate-spin inline" />
+                    ) : (
+                      `R$ ${balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    )}
+                  </p>
+                  <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500 ml-2" />
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
-                align="end" 
-                className="w-72 shadow-xl border-0 bg-white/98 backdrop-blur-md rounded-2xl overflow-hidden"
+                align="start" 
+                className="w-80 sm:w-96 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg shadow-xl"
                 sideOffset={8}
+                noScroll={true}
               >
                 <DropdownMenuLabel className="p-0">
-                  <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50">
-                    <div className="w-14 h-14 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                      <span className="text-white font-bold text-xl">
-                        {user?.name?.charAt(0) || 'U'}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-base font-bold text-gray-900 truncate">
-                        {user?.name || 'Usuário'}
-                      </p>
-                      <p className="text-sm text-gray-600 truncate">
-                        {user?.email || 'user@example.com'}
-                      </p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 hover:bg-blue-200">
-                          Premium
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          Admin
-                        </Badge>
+                  <div className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-900/20 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 bg-emerald-600 dark:bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Wallet className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Selecionar Conta</p>
+                        <p className="text-xs text-gray-700 dark:text-gray-300">Escolha uma conta bancária</p>
                       </div>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        refreshBalance()
+                      }}
+                      className="h-8 w-8 p-0 flex-shrink-0 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                      title="Atualizar saldo"
+                    >
+                      <RefreshCw className={`h-4 w-4 text-gray-600 dark:text-gray-400 ${balanceLoading ? 'animate-spin' : ''}`} />
+                    </Button>
                   </div>
                 </DropdownMenuLabel>
                 <div className="p-2">
-                  <DropdownMenuItem className="hover:bg-blue-50 transition-colors rounded-xl p-3 cursor-pointer">
-                    <User className="mr-3 h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="font-semibold text-gray-900">Meu Perfil</p>
-                      <p className="text-xs text-gray-500">Configurações da conta</p>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="hover:bg-gray-50 transition-colors rounded-xl p-3 cursor-pointer">
-                    <Settings className="mr-3 h-5 w-5 text-gray-600" />
-                    <div>
-                      <p className="font-semibold text-gray-900">Configurações</p>
-                      <p className="text-xs text-gray-500">Preferências do sistema</p>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="my-2" />
-                  <DropdownMenuItem 
-                    className="text-red-600 hover:bg-red-50 transition-colors rounded-xl p-3 cursor-pointer"
-                    onClick={logout}
-                  >
-                    <LogOut className="mr-3 h-5 w-5" />
-                    <div>
-                      <p className="font-semibold">Sair</p>
-                      <p className="text-xs text-red-400">Encerrar sessão</p>
-                    </div>
-                  </DropdownMenuItem>
+                  {bankAccounts.map((account) => (
+                    <DropdownMenuItem
+                      key={account.id}
+                      className={cn(
+                        "hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors rounded-md p-3 cursor-pointer mb-1",
+                        selectedAccount?.id === account.id && "bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700"
+                      )}
+                      onClick={() => selectAccount(account.id)}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                          <div className={cn(
+                            "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
+                            selectedAccount?.id === account.id
+                              ? "bg-emerald-600 dark:bg-emerald-500"
+                              : "bg-gray-200 dark:bg-gray-700"
+                          )}>
+                            <Wallet className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{account.name}</p>
+                            {account.bank_name && (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{account.bank_name}</p>
+                            )}
+                          </div>
+                        </div>
+                        {selectedAccount?.id === account.id && (
+                          <div className="w-2 h-2 bg-emerald-600 dark:bg-emerald-400 rounded-full flex-shrink-0 ml-2" />
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3 px-4 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/20 shadow-sm">
+              <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white">
+                <Wallet className="w-5 h-5" />
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-white">Wallet</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                  Saldo atual
+                  {lastUpdated && (
+                    <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" />
+                      Atualizado agora
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400 ml-4">
+                {balanceLoading ? (
+                  <RefreshCw className="h-4 w-4 animate-spin inline" />
+                ) : (
+                  `R$ ${balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                )}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Right side - Theme Toggle & User */}
+        <div className="flex items-center gap-3">
+          {/* Theme Toggle Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleTheme}
+            className="h-9 w-9 p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            title={isDarkMode ? 'Alternar para modo claro' : 'Alternar para modo escuro'}
+          >
+            {isDarkMode ? (
+              <Sun className="h-5 w-5 text-yellow-500" />
+            ) : (
+              <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            )}
+          </Button>
+
+          {/* User Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity px-2 py-1 rounded-lg">
+                <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white font-semibold">
+                  {user?.name?.charAt(0) || 'A'}
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-white">{user?.name || 'Admin Exemplo'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || 'admin@exemplo.com'}</p>
+                </div>
+
+                <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="end" 
+              data-testid="profile-modal"
+              className="w-80 sm:w-96 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg shadow-xl"
+              sideOffset={8}
+              noScroll={true}
+            >
+              <DropdownMenuLabel className="p-0">
+                <div className="flex items-center space-x-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
+                  <div className="w-14 h-14 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-xl">
+                      {user?.name?.charAt(0) || 'U'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base font-bold text-gray-900 dark:text-white truncate">
+                      {user?.name || 'Usuário'}
+                    </p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                      {user?.email || 'user@example.com'}
+                    </p>
+                    <div className="flex items-center space-x-2 mt-2 flex-wrap">
+                      <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+                        Premium
+                      </Badge>
+                      <Badge variant="outline" className="text-xs border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
+                        Admin
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </DropdownMenuLabel>
+              <div className="p-2">
+                <DropdownMenuItem 
+                  data-testid="profile-menu-item"
+                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors rounded-md p-3 cursor-pointer mb-1 w-full"
+                  onClick={() => {
+                    navigate('/profile')
+                  }}
+                >
+                  <User className="mr-3 h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0 overflow-visible">
+                    <p className="font-semibold text-gray-900 dark:text-white truncate">Meu Perfil</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Configurações pessoais</p>
+                  </div>
+                </DropdownMenuItem>
+                {(user?.account_admin || user?.account_owner) && (
+                  <DropdownMenuItem 
+                    data-testid="company-settings-menu-item"
+                    className="hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors rounded-md p-3 cursor-pointer mb-1 w-full"
+                    onClick={() => {
+                      navigate('/company-settings')
+                    }}
+                  >
+                    <Building2 className="mr-3 h-5 w-5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                    <div className="flex-1 min-w-0 overflow-visible">
+                      <p className="font-semibold text-gray-900 dark:text-white truncate">Configurações da Empresa</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Apenas para administradores</p>
+                    </div>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem 
+                  data-testid="settings-menu-item"
+                  className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-md p-3 cursor-pointer mb-1 w-full"
+                  onClick={() => {
+                    navigate('/settings')
+                  }}
+                >
+                  <Settings className="mr-3 h-5 w-5 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0 overflow-visible">
+                    <p className="font-semibold text-gray-900 dark:text-white truncate">Preferências</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Configurações do sistema</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-2 bg-gray-200 dark:bg-gray-700" />
+                <DropdownMenuItem 
+                  data-testid="logout-menu-item"
+                  className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-md p-3 cursor-pointer w-full"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0 overflow-visible">
+                    <p className="font-semibold truncate">Sair</p>
+                    <p className="text-xs text-red-500 dark:text-red-400 truncate">Encerrar sessão</p>
+                  </div>
+                </DropdownMenuItem>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

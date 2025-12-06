@@ -99,12 +99,12 @@ class ExportsController < ApplicationController
   private
 
   def backup_xlsx_filename
-    base = "Backup-Procfy-#{I18n.l(Time.zone.now)}"
+    base = "Backup-BarberManagement-#{I18n.l(Time.zone.now)}"
     "#{base}.xlsx"
   end
 
   def contact_xlsx_filename
-    base = "#{I18n.t('exports.contacts.title')}-Procfy-#{I18n.l(Time.zone.now)}"
+    base = "#{I18n.t('exports.contacts.title')}-BarberManagement-#{I18n.l(Time.zone.now)}"
     "#{base}.xlsx"
   end
 

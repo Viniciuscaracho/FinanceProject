@@ -799,7 +799,7 @@ pt-BR:
 
   bank_accounts:
     title_info_card: "Saldo inicial"
-    info_card: "Este campo é utilizado para informar o saldo atual da conta bancária, antes dos lançamentos no Procfy. Caso você já tenha realizado lançamentos no Procfy, informe o valor descontado dos lançamentos realizados, e após isto, verifique se o saldo no Procfy está batendo com o saldo atual da conta bancária."
+    info_card: "Este campo é utilizado para informar o saldo atual da conta bancária, antes dos lançamentos no BarberManagement. Caso você já tenha realizado lançamentos no BarberManagement, informe o valor descontado dos lançamentos realizados, e após isto, verifique se o saldo no BarberManagement está batendo com o saldo atual da conta bancária."
     new:
       title: "Nova conta bancária"
     index:
@@ -962,7 +962,7 @@ pt-BR:
       description: "Importação de outros sistemas, utilizando o nosso formato padrão"
       download_template: "Baixar modelo"
       view_tutorial: 'Ver tutorial de importação'
-      file_name: "modelo_importacao_procfy"
+      file_name: "modelo_importacao_barber_management"
       select_file: "Selecione o arquivo a ser importado após preencher o modelo"
       start_import: "Iniciar importação"
     import_xlsx_explanation:
@@ -980,7 +980,7 @@ pt-BR:
     undiscard:
       success: "Importação desarquivada com sucesso"
     new_xlsx_contacts:
-      file_name: "modelo_importacao_contatos_procfy"
+      file_name: "modelo_importacao_contatos_barber_management"
       title: "Nova importação de contatos"
       select_file: "Selecione o arquivo a ser importado"
     import_contacts_explanation:
@@ -1081,7 +1081,7 @@ pt-BR:
   feedbacks:
     new:
       feedback: "Dê seu feedback"
-      help_us: "Nos ajude a melhorar o <strong>Procfy</strong>, enviando a sua avaliação e fornecendo suas sugestões"
+      help_us: "Nos ajude a melhorar o <strong>BarberManagement</strong>, enviando a sua avaliação e fornecendo suas sugestões"
       evaluate: "Como avalia nosso sistema?"
       bad: "Ruim"
       regular: "Regular"
@@ -1089,7 +1089,7 @@ pt-BR:
       great: "Ótima"
       excellent: "Excelente"
       provide_your_feedback: "Forneça seu feedback ou sugestão"
-      enter_your_opinion: "Digite aqui sua opinião sobre o Procfy. Pode ser um elogio, uma crítica ou uma sugestão"
+      enter_your_opinion: "Digite aqui sua opinião sobre o BarberManagement. Pode ser um elogio, uma crítica ou uma sugestão"
       submit: "Enviar"
     create:
       success: "Feedback enviado com sucesso"
@@ -1109,8 +1109,8 @@ pt-BR:
     videos_modal:
       video_lessons_for_beginners: "Videoaulas para iniciantes"
     initial_modal:
-      welcome_procfy: "Seja bem-vindo ao Procfy"
-      welcome_user: "Olá <strong>%{name}</strong>, preparamos um material de ajuda para você começar bem no <strong>Procfy</strong>. Aproveite e boa gestão!"
+      welcome_procfy: "Seja bem-vindo ao BarberManagement"
+      welcome_user: "Olá <strong>%{name}</strong>, preparamos um material de ajuda para você começar bem no <strong>BarberManagement</strong>. Aproveite e boa gestão!"
       video_lessons_for_beginners: "Videoaulas para iniciantes"
       help_guides: "Guias de ajuda"
       see_all: "Ver todos"
@@ -1247,7 +1247,7 @@ pt-BR:
 
   daily_notification_mailer:
     send_daily_notification:
-      title: "Relatório diário de %{company} - Procfy"
+      title: "Relatório diário de %{company} - BarberManagement"
       release: "Lançamentos"
       mail_header:
         hello: "Olá %{name}!"
@@ -1258,8 +1258,8 @@ pt-BR:
         show_transactions: "Ver minhas transações"
         transaction_without_name: "Sem descrição"
       mail_footer:
-        alert_mail_configurations: 'Você está recebendo este email por que as configurações de <strong>"Avisos por e-mail"</strong>&nbsp;estão ativas no <strong>Procfy</strong>. Se não quiser mais receber nossos e-mails, acesse o <strong>Procfy</strong> e em <strong>Perfil</strong>, selecione<strong> "Configurações de %{company_name}"</strong>. Veja as opções de configurações, e faça suas escolhas.'
-        proof_policies: '<span style="font-size:11px"><p>A <a href="https://codengage.com/" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">Codengage</a> respeita sua privacidade. Para saber mais, leia nossa <a href="https://procfy.io/policy.html#privacy" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">Política de privacidade.</a> Se você receber um e-mail suspeito, informe para a gente ao encaminhá-lo para <a href="mailto:atendimento@procfy.io" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">atendimento@procfy.io</a>.</p><p>©2023 Codengage Tecnologia. Todos os direitos reservados. CNPJ: 24.477.617/0001-60.<br>Endereço: Av. Prefeito Dedi Barrichelo Montagner, 250, térreo. Dois Vizinhos - Paraná. Cep 85660-000.</p></span>'
+        alert_mail_configurations: 'Você está recebendo este email por que as configurações de <strong>"Avisos por e-mail"</strong>&nbsp;estão ativas no <strong>BarberManagement</strong>. Se não quiser mais receber nossos e-mails, acesse o <strong>BarberManagement</strong> e em <strong>Perfil</strong>, selecione<strong> "Configurações de %{company_name}"</strong>. Veja as opções de configurações, e faça suas escolhas.'
+        proof_policies: '<span style="font-size:11px"><p>A <a href="https://codengage.com/" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">Codengage</a> respeita sua privacidade. Para saber mais, leia nossa <a href="https://barbermanagement.io/policy.html#privacy" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">Política de privacidade.</a> Se você receber um e-mail suspeito, informe para a gente ao encaminhá-lo para <a href="mailto:atendimento@barbermanagement.io" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">atendimento@barbermanagement.io</a>.</p><p>©2023 Codengage Tecnologia. Todos os direitos reservados. CNPJ: 24.477.617/0001-60.<br>Endereço: Av. Prefeito Dedi Barrichelo Montagner, 250, térreo. Dois Vizinhos - Paraná. Cep 85660-000.</p></span>'
   shared:
     past:
       create: "Criou"
@@ -1358,7 +1358,7 @@ pt-BR:
     total: "Total"
     not_informed_female: "Não informada"
     outcome: "Previsão do mês:"
-    app_name: "Procfy - Financeiramente Simples"
+    app_name: "BarberManagement - Financeiramente Simples"
     month_preview: "Previsão do mês: <strong>%{amount}</strong>"
     new: "Adicionar"
     percentage: "Porcentagem"
@@ -1435,7 +1435,7 @@ pt-BR:
     system: "Sistema"
     expenses_of: "Despesas de"
     discarded: "Excluído"
-    title: "Procfy sua ferramenta de gestão financeira"
+    title: "BarberManagement sua ferramenta de gestão financeira"
     description: "Sistema de gestão financeira, fácil de usar e que vai lhe ajudar a gerenciar suas finanças."
     description2: "Teste grátis por %{days} dias!"
     bold: "Negrito (Ctrl + B)"
@@ -1751,7 +1751,7 @@ pt-BR:
     last_transactions_audits:
       title: "Últimas atualizações em transações"
       title_about_last_transactions_audits: "Últimas transações cadastradas"
-      description_about_last_transactions_audits: "Aqui, você pode ver as últimas movimentações que você cadastrou no Procfy."
+      description_about_last_transactions_audits: "Aqui, você pode ver as últimas movimentações que você cadastrou no BarberManagement."
       no_data: "Sem dados (transação já excluida)"
 
     home_dre:
@@ -2214,8 +2214,8 @@ pt-BR:
       renew: "Renovar assinatura"
   account_invitations_mailer:
     invite:
-      subject: "%{inviter} convidou você para o Procfy"
-      header_html: "<strong>%{inviter}</strong> convidou você para acessar o Procfy e colaborar com o time <strong>%{account}</strong>."
+      subject: "%{inviter} convidou você para o BarberManagement"
+      header_html: "<strong>%{inviter}</strong> convidou você para acessar o BarberManagement e colaborar com o time <strong>%{account}</strong>."
       description_html: "Você pode aceitar o convite clicando no botão abaixo."
       accept_or_decline: "aceitar ou rejeitar"
       view_invitation: "Visualizar convite"
@@ -2257,7 +2257,7 @@ pt-BR:
       success: "Convite rejeitado com sucesso"
   layouts:
     mailer:
-      copyright_html: "Copyright &copy; Procfy %{year}, todos os direitos reservados."
+      copyright_html: "Copyright &copy; BarberManagement %{year}, todos os direitos reservados."
       address_line1: "Av Dedi Barrichello Montagner, 250 - Térreo - Centro"
       address_line2: "85660-000 - Dois Vizinhos - Paraná - Brasil"
       mailing_address: "Nosso endereço de e-mail é:"
@@ -2496,7 +2496,7 @@ pt-BR:
     show:
       description: "Você foi indicado pela <strong>%{company}</strong>, para explorar, experimentar e usar a nossa ferramenta."
       description_with_discount: "Você foi indicado pela <strong>%{company}</strong>, para explorar, experimentar e usar a nossa ferramenta, e ainda ganhar um desconto vitalício de <strong>%{discount}%</strong> em sua assinatura."
-      welcome: "Bem vindo ao Procfy"
+      welcome: "Bem vindo ao BarberManagement"
       call_to_action: "Quero explorar gratuitamente por %{days} dias."
       call_to_action2: "Quero continuar com o desconto de %{discount}%"
   acts_as_taggable_on:

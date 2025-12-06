@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -10,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog'
 import {
   Select,
@@ -32,24 +35,40 @@ import {
   Phone,
   Building,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import { apiService } from '../lib/api'
+import { StatCard, FluidSection } from '@/components/design'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { SkeletonCard, SkeletonList } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 
 const contactTypes = [
-  { label: 'Todos', value: 'all', count: 0 },
-  { label: 'Associado', value: 'associado', count: 0 },
-  { label: 'Cliente', value: 'cliente', count: 0 },
-  { label: 'Colaborador', value: 'colaborador', count: 0 },
-  { label: 'Fornecedor', value: 'fornecedor', count: 0 },
-  { label: 'Sócio', value: 'socio', count: 0 },
-  { label: 'Outro', value: 'outro', count: 0 },
+  { label: 'Todos', value: 'all' },
+  { label: 'Cliente', value: 'customer' },
+  { label: 'Colaborador', value: 'employee' },
+  { label: 'Fornecedor', value: 'supplier' },
+  { label: 'Sócio', value: 'partner' },
+  { label: 'Associado', value: 'associate' },
+]
+
+const contactTypeOptions = [
+  { label: 'Cliente', value: 'customer' },
+  { label: 'Colaborador', value: 'employee' },
+  { label: 'Fornecedor', value: 'supplier' },
+  { label: 'Sócio', value: 'partner' },
+  { label: 'Associado', value: 'associate' },
 ]
 
 export function Contacts() {
+  const isMobile = useIsMobile()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedType, setSelectedType] = useState('all')
   const [isNewContactOpen, setIsNewContactOpen] = useState(false)
+  const [isEditContactOpen, setIsEditContactOpen] = useState(false)
+  const [editingContact, setEditingContact] = useState(null)
   const [contacts, setContacts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -57,13 +76,14 @@ export function Contacts() {
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
 
-  // Form state for new contact
+  // Form state for new/edit contact
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     document: '',
-    notes: ''
+    notes: '',
+    contact_type: 'customer'
   })
 
   useEffect(() => {
@@ -88,28 +108,75 @@ export function Contacts() {
     }
   }
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      document: '',
+      notes: '',
+      contact_type: 'customer'
+    })
+    setEditingContact(null)
+  }
+
   const handleCreateContact = async () => {
+    if (!formData.name.trim()) {
+      setError('Nome é obrigatório')
+      return
+    }
+
     try {
       setLoading(true)
       setError(null)
 
       await apiService.createContact(formData)
       
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        document: '',
-        notes: ''
-      })
-      
+      resetForm()
       setIsNewContactOpen(false)
-      loadContacts() // Reload contacts
+      loadContacts()
       
     } catch (error) {
       console.error('Error creating contact:', error)
-      setError('Erro ao criar contato')
+      setError(error.message || 'Erro ao criar contato')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEditContact = (contact) => {
+    // Mapear campos do backend para o formulário
+    setFormData({
+      name: contact.name || contact.first_name || '',
+      email: contact.email || '',
+      phone: contact.phone_number || contact.phone || '',
+      document: contact.document_1 || contact.document || '',
+      notes: contact.description || contact.notes || '',
+      contact_type: contact.contact_type || 'customer'
+    })
+    setEditingContact(contact)
+    setIsEditContactOpen(true)
+  }
+
+  const handleUpdateContact = async () => {
+    if (!formData.name.trim()) {
+      setError('Nome é obrigatório')
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      await apiService.updateContact(editingContact.id, formData)
+      
+      resetForm()
+      setIsEditContactOpen(false)
+      loadContacts()
+      
+    } catch (error) {
+      console.error('Error updating contact:', error)
+      setError(error.message || 'Erro ao atualizar contato')
     } finally {
       setLoading(false)
     }
@@ -123,29 +190,35 @@ export function Contacts() {
       setError(null)
 
       await apiService.deleteContact(id)
-      loadContacts() // Reload contacts
+      loadContacts()
       
     } catch (error) {
       console.error('Error deleting contact:', error)
-      setError('Erro ao excluir contato')
+      setError(error.message || 'Erro ao excluir contato')
     } finally {
       setLoading(false)
     }
   }
 
   const filteredContacts = contacts.filter(contact => {
-    const matchesSearch = contact.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         contact.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = selectedType === 'all' || contact.type?.toLowerCase() === selectedType
+    const name = contact.name || contact.first_name || ''
+    const email = contact.email || ''
+    const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         email.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    // Mapear tipos do backend para os valores do filtro
+    const contactTypeMap = {
+      'customer': 'customer',
+      'employee': 'employee',
+      'supplier': 'supplier',
+      'partner': 'partner',
+      'associate': 'associate',
+    }
+    const contactType = contactTypeMap[contact.contact_type] || contact.contact_type
+    
+    const matchesType = selectedType === 'all' || contactType === selectedType
     return matchesSearch && matchesType
   })
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value || 0)
-  }
 
   const formatDate = (dateString) => {
     if (!dateString) return '-'
@@ -157,37 +230,62 @@ export function Contacts() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contatos</h1>
-          <p className="text-gray-600 mt-1">Gerencie seus clientes, fornecedores e parceiros</p>
-        </div>
+  const getContactTypeLabel = (type) => {
+    const typeMap = {
+      'customer': 'Cliente',
+      'employee': 'Colaborador',
+      'supplier': 'Fornecedor',
+      'partner': 'Sócio',
+      'associate': 'Associado',
+    }
+    return typeMap[type] || 'Contato'
+  }
 
-        <Dialog open={isNewContactOpen} onOpenChange={setIsNewContactOpen}>
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage)
+    }
+  }
+
+  return (
+    <div className="relative min-h-screen bg-surface">
+      <div className="relative z-10 w-full max-w-full min-w-0 px-6 py-8 md:px-12 md:py-12 space-y-8 md:space-y-12">
+        {/* Header - Bold Typography */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-3 responsive-text-xl text-text-primary">
+              Contatos
+            </h1>
+            <p className="text-lg text-text-secondary">
+              Gerencie seus clientes, fornecedores e parceiros
+            </p>
+          </div>
+
+        <Dialog open={isNewContactOpen} onOpenChange={(open) => {
+          setIsNewContactOpen(open)
+          if (!open) resetForm()
+        }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Contato
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle>Novo Contato</DialogTitle>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 py-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Nome</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3 col-span-2">
+                <Label>Nome *</Label>
                 <Input 
                   placeholder="Nome completo" 
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
+              <div className="space-y-3">
+                <Label>Email</Label>
                 <Input 
                   type="email" 
                   placeholder="email@exemplo.com"
@@ -195,26 +293,44 @@ export function Contacts() {
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Telefone</label>
+              <div className="space-y-3">
+                <Label>Telefone</Label>
                 <Input 
                   placeholder="(11) 99999-9999"
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Documento</label>
+              <div className="space-y-3">
+                <Label>Documento</Label>
                 <Input 
                   placeholder="CPF ou CNPJ"
                   value={formData.document}
                   onChange={(e) => setFormData({...formData, document: e.target.value})}
                 />
               </div>
-              <div className="space-y-2 col-span-2">
-                <label className="text-sm font-medium">Observações</label>
-                <textarea 
-                  className="w-full p-2 border rounded-md resize-none" 
+              <div className="space-y-3">
+                <Label>Tipo de Contato</Label>
+                <Select 
+                  value={formData.contact_type} 
+                  onValueChange={(value) => setFormData({...formData, contact_type: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contactTypeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-3 col-span-2">
+                <Label>Observações</Label>
+                <Textarea 
+                  className="resize-none" 
                   rows={3}
                   placeholder="Observações adicionais..."
                   value={formData.notes}
@@ -222,221 +338,363 @@ export function Contacts() {
                 />
               </div>
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsNewContactOpen(false)}>
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => {
+                setIsNewContactOpen(false)
+                resetForm()
+              }}>
                 Cancelar
               </Button>
               <Button onClick={handleCreateContact} disabled={loading}>
                 {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                 Salvar
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       {/* Loading State */}
-      {loading && (
+      {loading && contacts.length === 0 && (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-500" />
-            <p className="text-gray-600">Carregando contatos...</p>
+            <p className="text-text-secondary">Carregando contatos...</p>
           </div>
         </div>
       )}
 
       {/* Error Message */}
       {error && (
-        <div className="flex items-center space-x-2 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div className="flex items-center space-x-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
           <AlertCircle className="h-5 w-5 text-red-500" />
-          <p className="text-red-700">{error}</p>
+          <p className="text-red-700 dark:text-red-400">{error}</p>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setError(null)}
+            className="ml-auto"
+          >
+            ✕
+          </Button>
         </div>
       )}
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Contatos</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {totalCount}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Contatos cadastrados
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Contatos Ativos</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {contacts.length}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Contatos carregados
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Página Atual</CardTitle>
-            <Calendar className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {currentPage}
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              de {totalPages} páginas
-            </p>
-          </CardContent>
-        </Card>
+      {/* Summary Cards - Modern Style */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <StatCard
+          title="Total de Contatos"
+          value={totalCount}
+          icon={Users}
+          gradient="from-blue-400 to-cyan-500"
+          subtitle="Contatos cadastrados"
+        />
+        <StatCard
+          title="Contatos Ativos"
+          value={contacts.length}
+          icon={TrendingUp}
+          gradient="from-green-400 to-emerald-500"
+          subtitle="Contatos carregados"
+        />
+        <StatCard
+          title="Página Atual"
+          value={`${currentPage}/${totalPages}`}
+          icon={Calendar}
+          gradient="from-[#6B8FA3] to-[#5B7A9E]"
+          subtitle="Navegação"
+        />
       </div>
 
-      {/* Filter Tabs */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div className="flex flex-wrap gap-2">
-              {contactTypes.map((type) => (
-                <Button
-                  key={type.value}
-                  variant={selectedType === type.value ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedType(type.value)}
-                  className="flex items-center space-x-2"
-                >
-                  <span>{type.label}</span>
-                  {type.count > 0 && (
-                    <Badge variant="secondary" className="ml-1">
-                      {type.count}
-                    </Badge>
-                  )}
-                </Button>
-              ))}
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Pesquisar contatos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtrar
+      {/* Filter Tabs - Modern Style */}
+      <FluidSection
+        title="Filtros e Busca"
+        subtitle="Encontre os contatos que você precisa"
+        gradient="from-[#5B7A9E] to-[#6B8FA3]"
+      >
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+          <div className="flex flex-wrap gap-2">
+            {contactTypes.map((type) => (
+              <Button
+                key={type.value}
+                variant={selectedType === type.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setSelectedType(type.value)
+                  setCurrentPage(1) // Reset to first page when filtering
+                }}
+                variant={selectedType === type.value ? "default" : "secondary"}
+              >
+                <span>{type.label}</span>
               </Button>
+            ))}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-secondary pointer-events-none" />
+              <Input
+                placeholder="Pesquisar contatos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-11 w-full md:w-64"
+              />
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Contacts Grid */}
-      {!loading && !error && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredContacts.map((contact) => (
-            <Card key={contact.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <Avatar>
-                      <AvatarImage src="" />
-                      <AvatarFallback className="bg-blue-100 text-blue-600">
-                        {getInitials(contact.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{contact.name}</h3>
-                      <Badge variant="outline" className="mt-1">
-                        {contact.type || 'Contato'}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="flex space-x-1">
-                    <Button variant="ghost" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleDeleteContact(contact.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-sm text-gray-600">
-                  {contact.document && (
-                    <div className="flex items-center space-x-2">
-                      <Building className="h-4 w-4" />
-                      <span>{contact.document}</span>
-                    </div>
-                  )}
-                  {contact.email && (
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4" />
-                      <span>{contact.email}</span>
-                    </div>
-                  )}
-                  {contact.phone && (
-                    <div className="flex items-center space-x-2">
-                      <Phone className="h-4 w-4" />
-                      <span>{contact.phone}</span>
-                    </div>
-                  )}
-                  {contact.notes && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-500">{contact.notes}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-4 text-xs text-gray-500">
-                  Criado em {formatDate(contact.created_at)}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
+      </FluidSection>
+
+      {/* Contacts Grid - Modern Style */}
+      {!loading && !error && filteredContacts.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {filteredContacts.map((contact) => {
+              const contactName = contact.name || contact.first_name || 'Sem nome'
+              const contactEmail = contact.email || ''
+              const contactPhone = contact.phone_number || contact.phone || ''
+              const contactDocument = contact.document_1 || contact.document || ''
+              const contactNotes = contact.description || contact.notes || ''
+              const contactType = contact.contact_type || 'customer'
+              
+              return (
+                <div 
+                  key={contact.id} 
+                  className="group/item relative"
+                >
+                  <div className="relative bg-surface-elevated rounded-[var(--radius-lg)] p-6 border border-border shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-all duration-140">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <Avatar>
+                          <AvatarImage src="" />
+                          <AvatarFallback className="bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+                            {getInitials(contactName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold text-text-primary">{contactName}</h3>
+                          <Badge variant="outline" className="mt-1">
+                            {getContactTypeLabel(contactType)}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="flex space-x-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditContact(contact)}
+                          title="Editar contato"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteContact(contact.id)}
+                          title="Excluir contato"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-sm text-text-secondary">
+                      {contactDocument && (
+                        <div className="flex items-center space-x-2">
+                          <Building className="h-4 w-4" />
+                          <span>{contactDocument}</span>
+                        </div>
+                      )}
+                      {contactEmail && (
+                        <div className="flex items-center space-x-2">
+                          <Mail className="h-4 w-4" />
+                          <span>{contactEmail}</span>
+                        </div>
+                      )}
+                      {contactPhone && (
+                        <div className="flex items-center space-x-2">
+                          <Phone className="h-4 w-4" />
+                          <span>{contactPhone}</span>
+                        </div>
+                      )}
+                      {contactNotes && (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-text-secondary">{contactNotes}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-4 text-xs text-text-secondary">
+                      Criado em {formatDate(contact.created_at)}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1 || loading}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Anterior
+              </Button>
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum
+                  if (totalPages <= 5) {
+                    pageNum = i + 1
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i
+                  } else {
+                    pageNum = currentPage - 2 + i
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(pageNum)}
+                      disabled={loading}
+                    >
+                      {pageNum}
+                    </Button>
+                  )
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages || loading}
+              >
+                Próxima
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
+        </>
       )}
 
-      {filteredContacts.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Nenhum contato encontrado
-            </h3>
-            <p className="text-gray-500 mb-4">
-              {searchQuery || selectedType !== 'all' 
-                ? 'Tente ajustar os filtros de busca'
-                : 'Comece adicionando seu primeiro contato'
-              }
-            </p>
+      {/* Edit Contact Dialog */}
+      <Dialog open={isEditContactOpen} onOpenChange={(open) => {
+        setIsEditContactOpen(open)
+        if (!open) resetForm()
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Contato</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2 col-span-2">
+              <label className="text-sm font-medium">Nome *</label>
+              <Input 
+                placeholder="Nome completo" 
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email</label>
+              <Input 
+                type="email" 
+                placeholder="email@exemplo.com"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Telefone</label>
+              <Input 
+                placeholder="(11) 99999-9999"
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Documento</label>
+              <Input 
+                placeholder="CPF ou CNPJ"
+                value={formData.document}
+                onChange={(e) => setFormData({...formData, document: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tipo de Contato</label>
+              <Select 
+                value={formData.contact_type} 
+                onValueChange={(value) => setFormData({...formData, contact_type: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {contactTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 col-span-2">
+              <label className="text-sm font-medium">Observações</label>
+              <textarea 
+                className="resize-none" 
+                rows={3}
+                placeholder="Observações adicionais..."
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => {
+              setIsEditContactOpen(false)
+              resetForm()
+            }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateContact} disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Empty State - Modern Style */}
+      {!loading && !error && filteredContacts.length === 0 && (
+        <FluidSection
+          title="Nenhum contato encontrado"
+          subtitle={searchQuery || selectedType !== 'all' 
+            ? 'Tente ajustar os filtros de busca'
+            : 'Comece adicionando seu primeiro contato'
+          }
+          gradient="from-gray-400 to-gray-500"
+        >
+          <div className="text-center py-8">
+            <Users className="h-16 w-16 text-text-secondary mx-auto mb-4" />
             {!searchQuery && selectedType === 'all' && (
-              <Button onClick={() => setIsNewContactOpen(true)}>
+              <Button 
+                onClick={() => setIsNewContactOpen(true)}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Adicionar Contato
               </Button>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </FluidSection>
       )}
+      </div>
     </div>
   )
 }
-

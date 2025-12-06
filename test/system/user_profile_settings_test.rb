@@ -11,13 +11,13 @@ class TransactionsTest < ApplicationSystemTestCase
   # test 'visiting profile settings' do
   #   visit imports_url
   #   click_on users(:user_one).first_name
-  #   click_on 'Configurações de Procfy'
+  #   click_on 'Configurações de BarberManagement'
   # end
   #
   # test 'editing profile infos' do
   #   visit imports_url
   #   click_on users(:user_one).first_name
-  #   click_on 'Configurações de Procfy'
+  #   click_on 'Configurações de BarberManagement'
   #   fill_in id: 'account_company_attributes_name', with: 'Lorem ipsum'
   #   fill_in id: 'account_company_attributes_document_1', with: 'Lorem ipsum'
   #   fill_in id: 'account_company_attributes_email', with: 'loremipsum@gmail.com'
@@ -28,7 +28,7 @@ class TransactionsTest < ApplicationSystemTestCase
   # test 'editing observations' do
   #   visit imports_url
   #   click_on users(:user_one).first_name
-  #   click_on 'Configurações de Procfy'
+  #   click_on 'Configurações de BarberManagement'
   #   fill_in id: 'account_company_attributes_description', with: 'Lorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsumLorem ipsum'
   #   click_on 'Atualizar Conta'
   # end
@@ -36,7 +36,7 @@ class TransactionsTest < ApplicationSystemTestCase
   # test 'changing profile picture' do
   #   visit imports_url
   #   click_on users(:user_one).first_name
-  #   click_on 'Configurações de Procfy'
+  #   click_on 'Configurações de BarberManagement'
   #   attach_file "account_company_attributes_avatar", file_fixture("profile.jpg")
   #   sleep 0.2
   #   click_on 'Atualizar Conta'

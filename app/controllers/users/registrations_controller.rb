@@ -94,22 +94,22 @@ module Users
     # The path used after sign up.
     def after_sign_up_path_for(resource)
       # delete referral code from cookies if exists
-      cookies.delete(:__procfy_referral_code) if exists_referral_code?
+      cookies.delete(:__barber_management_referral_code) if exists_referral_code?
       super(resource)
     end
 
     def after_inactive_sign_up_path_for(_resource)
       # delete referral code from cookies if exists
-      cookies.delete(:__procfy_referral_code) if exists_referral_code?
+      cookies.delete(:__barber_management_referral_code) if exists_referral_code?
       new_user_session_path(after_inactive_sign_up: 'true')
     end
 
     def exists_referral_code?
-      cookies.signed[:__procfy_referral_code].present?
+      cookies.signed[:__barber_management_referral_code].present?
     end
 
     def referral_code
-      cookies.signed[:__procfy_referral_code]
+      cookies.signed[:__barber_management_referral_code]
     end
 
     def find_referral_code

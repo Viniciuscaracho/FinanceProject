@@ -8,9 +8,9 @@ test:
 staging:
   adapter: redis
   url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" } %>
-  channel_prefix: procfy_staging
+  channel_prefix: barber_management_staging
 
 production:
   adapter: redis
   url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" } %>
-  channel_prefix: procfy_production
+  channel_prefix: barber_management_production

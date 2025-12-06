@@ -9,7 +9,17 @@ module BankAccounts
     end
 
     def update_balance!
-      without_auditing { update(balance_cents: recalculate_balance_cents) }
+      new_balance = recalculate_balance_cents
+      Rails.logger.info "📊 [BankAccount#update_balance!] Conta ID=#{id} (#{name}): recalculando saldo"
+      Rails.logger.info "📊 [BankAccount#update_balance!] initial_balance_cents=#{initial_balance_cents}, new_balance_cents=#{new_balance}, old_balance_cents=#{balance_cents}"
+      
+      without_auditing { update(balance_cents: new_balance) }
+      
+      Rails.logger.info "✅ [BankAccount#update_balance!] Conta ID=#{id} atualizada com sucesso"
+    rescue => e
+      Rails.logger.error "❌ [BankAccount#update_balance!] ERRO ao atualizar conta ID=#{id}: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      raise
     end
 
     def month_balance_preview(current_month:)
@@ -39,7 +49,12 @@ module BankAccounts
     end
 
     def recalculate_balance_cents
-      initial_balance_cents + sum_transactions(paid: true)
+      transactions_sum = sum_transactions(paid: true)
+      calculated = initial_balance_cents + transactions_sum
+      
+      Rails.logger.debug "📊 [BankAccount#recalculate_balance_cents] Conta ID=#{id}: initial=#{initial_balance_cents}, transactions_sum=#{transactions_sum}, calculated=#{calculated}"
+      
+      calculated
     end
 
     def sum_base_query
@@ -49,13 +64,21 @@ module BankAccounts
     def sum_credits(paid: nil, current_month: nil, date: nil, cost_center_ids: nil)
       query = sum_base_query.credits_by_bank_account(self)
       query = sum_base_filter(query:, paid:, current_month:, date:, cost_center_ids:)
-      query.sum(:exchanged_amount_cents)
+      credits_sum = query.sum(:exchanged_amount_cents) || 0
+      
+      Rails.logger.debug "📈 [BankAccount#sum_credits] Conta ID=#{id}: paid=#{paid}, credits_sum=#{credits_sum}, count=#{query.count}"
+      
+      credits_sum
     end
 
     def sum_debits(paid: nil, current_month: nil, date: nil, cost_center_ids: nil)
       query = sum_base_query.debits_by_bank_account(self)
       query = sum_base_filter(query:, paid:, current_month:, date:, cost_center_ids:)
-      query.sum(:exchanged_amount_cents)
+      debits_sum = query.sum(:exchanged_amount_cents) || 0
+      
+      Rails.logger.debug "📉 [BankAccount#sum_debits] Conta ID=#{id}: paid=#{paid}, debits_sum=#{debits_sum}, count=#{query.count}"
+      
+      debits_sum
     end
 
     def sum_base_filter(query:, paid: nil, current_month: nil, date: nil, cost_center_ids: nil)

@@ -5,7 +5,7 @@ namespace :debug do
   task fix_policies_directly: :environment do
     puts "Debugging and fixing policies directly..."
     
-    user = User.find_by(email: 'admin@procfy.io')
+    user = User.find_by(email: 'admin@barbermanagement.io')
     
     if user.nil?
       puts "❌ User not found!"
@@ -50,7 +50,7 @@ namespace :debug do
   task test_login: :environment do
     puts "Testing user login..."
     
-    user = User.find_by(email: 'admin@procfy.io')
+    user = User.find_by(email: 'admin@barbermanagement.io')
     
     if user.nil?
       puts "❌ User not found!"

@@ -6,7 +6,7 @@ namespace :auth do
     puts "Testing authentication..."
     
     # Buscar o usuário criado
-    user = User.find_by(email: 'admin@procfy.io')
+    user = User.find_by(email: 'admin@barbermanagement.io')
     
     if user.nil?
       puts "❌ User not found!"
@@ -165,5 +165,134 @@ namespace :auth do
     puts "Password: #{password}"
     puts "User ID: #{user.id}"
     puts "Account ID: #{account.id}"
+  end
+
+  desc 'Diagnose password issues for a user'
+  task diagnose_password: :environment do
+    email = ENV['EMAIL'] || 'admin@exemplo.com'
+    password = ENV['PASSWORD'] || 'password'
+    
+    puts "=== DIAGNÓSTICO DE SENHA ==="
+    puts "Email: #{email}"
+    puts "Senha testada: #{password}"
+    puts ""
+    
+    user = User.find_by(email: email)
+    
+    if user.nil?
+      puts "❌ Usuário não encontrado!"
+      puts ""
+      puts "Usuários disponíveis:"
+      User.all.each do |u|
+        puts "  - #{u.email} (ID: #{u.id}, Provider: #{u.provider || 'none'})"
+      end
+      return
+    end
+    
+    puts "✅ Usuário encontrado:"
+    puts "  ID: #{user.id}"
+    puts "  Email: #{user.email}"
+    puts "  Nome: #{user.first_name} #{user.last_name}"
+    puts "  Provider: #{user.provider || 'none (login tradicional)'}"
+    puts "  UID: #{user.uid || 'none'}"
+    puts "  Confirmed: #{user.confirmed_at.present? ? 'Sim' : 'Não'}"
+    puts "  Encrypted Password presente: #{user.encrypted_password.present? ? 'Sim' : 'Não'}"
+    puts ""
+    
+    # Testar senha
+    if user.valid_password?(password)
+      puts "✅ Senha válida!"
+    else
+      puts "❌ Senha inválida!"
+      puts ""
+      
+      if user.provider.present?
+        puts "⚠️  ATENÇÃO: Este usuário foi criado via OAuth (#{user.provider})"
+        puts "   Usuários OAuth recebem senhas aleatórias que não são conhecidas."
+        puts "   Para usar login tradicional, você precisa resetar a senha."
+        puts ""
+        puts "   Para resetar a senha, execute:"
+        puts "   rails auth:reset_password EMAIL=#{email} PASSWORD=nova_senha"
+      else
+        puts "   Possíveis causas:"
+        puts "   1. Senha incorreta"
+        puts "   2. Senha não foi definida corretamente"
+        puts "   3. Problema com criptografia do Devise"
+        puts ""
+        puts "   Para resetar a senha, execute:"
+        puts "   rails auth:reset_password EMAIL=#{email} PASSWORD=nova_senha"
+      end
+    end
+  end
+
+  desc 'Reset password for a user'
+  task reset_password: :environment do
+    email = ENV['EMAIL']
+    password = ENV['PASSWORD']
+    
+    unless email && password
+      puts "❌ Erro: Você precisa fornecer EMAIL e PASSWORD"
+      puts ""
+      puts "Uso: rails auth:reset_password EMAIL=email@exemplo.com PASSWORD=nova_senha"
+      return
+    end
+    
+    puts "=== RESETAR SENHA ==="
+    puts "Email: #{email}"
+    puts ""
+    
+    user = User.find_by(email: email)
+    
+    if user.nil?
+      puts "❌ Usuário não encontrado!"
+      return
+    end
+    
+    puts "Usuário encontrado: #{user.first_name} #{user.last_name}"
+    puts "Provider: #{user.provider || 'none'}"
+    puts ""
+    
+    # Resetar senha
+    user.password = password
+    user.password_confirmation = password
+    
+    if user.save
+      puts "✅ Senha resetada com sucesso!"
+      puts ""
+      puts "Agora você pode fazer login com:"
+      puts "  Email: #{email}"
+      puts "  Senha: #{password}"
+      
+      # Testar a senha
+      user.reload
+      if user.valid_password?(password)
+        puts ""
+        puts "✅ Senha validada com sucesso!"
+      else
+        puts ""
+        puts "⚠️  Aviso: A senha foi salva, mas a validação falhou. Pode haver um problema."
+      end
+    else
+      puts "❌ Erro ao resetar senha:"
+      puts user.errors.full_messages.join("\n")
+    end
+  end
+
+  desc 'List all users with their authentication info'
+  task list_users: :environment do
+    puts "=== LISTA DE USUÁRIOS ==="
+    puts ""
+    
+    User.all.each do |user|
+      puts "ID: #{user.id}"
+      puts "  Email: #{user.email}"
+      puts "  Nome: #{user.first_name} #{user.last_name}"
+      puts "  Provider: #{user.provider || 'none (login tradicional)'}"
+      puts "  UID: #{user.uid || 'none'}"
+      puts "  Confirmed: #{user.confirmed_at.present? ? 'Sim' : 'Não'}"
+      puts "  Tem senha: #{user.encrypted_password.present? ? 'Sim' : 'Não'}"
+      puts "  Account: #{user.account&.name || 'Nenhuma'}"
+      puts "-" * 50
+    end
   end
 end 

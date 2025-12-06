@@ -16,7 +16,7 @@ class UpdateIntegrationStores < ActiveRecord::Migration[7.0]
     if nuvem_fiscal.present?
       nuvem_fiscal.update!(
         type: 'IntegrationStores::NuvemFiscal',
-        description: 'Integre com a prefeitura de sua cidade e emita NFS-e diretamente do Procfy.'
+        description: 'Integre com a prefeitura de sua cidade e emita NFS-e diretamente do BarberManagement.'
       )
     end
   end

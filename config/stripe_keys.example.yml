@@ -1,0 +1,18 @@
+# Exemplo de configuração do Stripe
+# NÃO COMMITAR ESTE ARQUIVO COM AS CHAVES REAIS!
+
+# Para usar, copie este arquivo e adicione as chaves reais
+# OU configure diretamente nas credentials do Rails
+
+barber_management:
+  stripe:
+    api_key: sk_test_SUA_CHAVE_SECRETA_AQUI
+    webhook_secret: whsec_SEU_WEBHOOK_SECRET_AQUI
+
+stripe:
+  private_key: sk_test_SUA_CHAVE_SECRETA_AQUI
+  webhook_secret: whsec_SEU_WEBHOOK_SECRET_AQUI
+
+# Chave pública (para uso no frontend se necessário)
+stripe_public_key: pk_test_SUA_CHAVE_PUBLICA_AQUI
+

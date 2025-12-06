@@ -98,7 +98,7 @@ class SubscriptionInvoice < ApplicationRecord
   end
 
   def prestador
-    Account.procfy_account.company
+    Account.barber_management_account.company
   end
 
   def tomador
@@ -118,7 +118,7 @@ class SubscriptionInvoice < ApplicationRecord
   end
 
   def descricao_servico
-    "PROCFY - #{account.processor_plan_name} - Ref #{I18n.l(Time.zone.now, format: :month).titleize}"
+    "BarberManagement - #{account.processor_plan_name} - Ref #{I18n.l(Time.zone.now, format: :month).titleize}"
   end
 
   def tributacao_issqn

@@ -6,7 +6,7 @@ namespace :policies do
     puts "Fixing user policies..."
     
     # Buscar o usuário admin
-    user = User.find_by(email: 'admin@procfy.io')
+    user = User.find_by(email: 'admin@barbermanagement.io')
     
     if user.nil?
       puts "❌ Admin user not found!"
@@ -57,7 +57,7 @@ namespace :policies do
   task show_permissions: :environment do
     puts "Showing user permissions..."
     
-    user = User.find_by(email: 'admin@procfy.io')
+    user = User.find_by(email: 'admin@barbermanagement.io')
     
     if user.nil?
       puts "❌ Admin user not found!"

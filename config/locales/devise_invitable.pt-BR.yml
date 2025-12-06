@@ -23,7 +23,7 @@ pt-BR:
         submit_button: "Atualizar minha senha"
     mailer:
       invitation_instructions:
-        subject: 'Você foi convidado para ingressar no Procfy'
+        subject: 'Você foi convidado para ingressar no BarberManagement'
         hello: 'Olá %{email}.'
         someone_invited_you: 'Estamos convidando você para conhecer nosso sistema e ser um dos primeiros a ter esta oportunidade. Para que isto seja possível, é necessário aceitar nosso convite através do link abaixo.'
         accept: 'Aceitar convite'

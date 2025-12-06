@@ -12,7 +12,8 @@ module Reports
       query = revenue? ? query.revenues : query.expenses
 
       query = query.filter_by(**params)
-      total = Money.from_cents(query.sum(:exchanged_amount_cents))
+      # Otimização: usar sum direto no banco
+      total = Money.from_cents(query.sum(:exchanged_amount_cents) || 0)
 
       items = query.group_by_period(
         period,

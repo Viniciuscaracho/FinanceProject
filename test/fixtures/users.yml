@@ -72,7 +72,7 @@
 # below each fixture, per the syntax in the comments below
 #
 user_one:
-  email: one@procfy.io
+  email: one@barbermanagement.io
   first_name: User
   last_name: One
   account: account
@@ -81,7 +81,7 @@ user_one:
   admin: true
 #
 user_two:
-  email: two@procfy.io
+  email: two@barbermanagement.io
   first_name: User
   last_name: Two
   account: account
@@ -90,7 +90,7 @@ user_two:
   admin: true
 #
 admin:
-  email: admin@procfy.io
+  email: admin@barbermanagement.io
   first_name: Admin
   last_name: User
   account: account

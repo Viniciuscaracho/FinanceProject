@@ -6,9 +6,22 @@ module Reports
     def call
       params = context.params
 
-      transactions = context.account.transactions.filter_by(**params)
+      # Otimização: usar select específico e limitar campos
+      transactions = context.account.transactions
+                            .select('transactions.*')
+                            .filter_by(**params)
 
-      return unless transactions.any?
+      unless transactions.any?
+        # Retornar estrutura vazia se não houver transações
+        chart_data = [
+          { name: I18n.t('transactions.revenues.revenues', default: 'Receitas'), data: {} },
+          { name: I18n.t('transactions.expenses.expenses', default: 'Despesas'), data: {} }
+        ]
+        items = {}
+        total = { revenue: Money.from_cents(0), expense: Money.from_cents(0) }
+        context.result = [chart_data, items, total]
+        return
+      end
 
       period = params[:start_date].to_date..params[:end_date].to_date
 

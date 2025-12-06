@@ -479,7 +479,7 @@ en:
 
   bank_accounts:
     title_info_card: "Initial Balance"
-    info_card: "This field is used to inform the current balance of the bank account, before posting to Procfy. If you have already made entries in Procfy, enter the discounted value of the entries made, and after that, check whether the balance in Procfy matches the current balance in your bank account."
+    info_card: "This field is used to inform the current balance of the bank account, before posting to BarberManagement. If you have already made entries in BarberManagement, enter the discounted value of the entries made, and after that, check whether the balance in BarberManagement matches the current balance in your bank account."
     new:
       title: "New bank account"
     index:
@@ -642,7 +642,7 @@ en:
       description: "Import data from other systems using our default Excel format"
       download_template: "Download template"
       view_tutorial: 'View import tutorial'
-      file_name: "import_model_procfy"
+      file_name: "import_model_barber_management"
       select_file: "Select the file to be imported"
       start_import: "Start import"
     import_xlsx_explanation:
@@ -660,7 +660,7 @@ en:
     undiscard:
       success: "Import unarchive successfully"
     new_xlsx_contacts:
-      file_name: "import_contacts_model_procfy"
+      file_name: "import_contacts_model_barber_management"
       title: "Import contacts"
       select_file: "Select the file to import"
     import_contacts_explanation:
@@ -760,7 +760,7 @@ en:
   feedbacks:
     new:
       feedback: "Send your feedback"
-      help_us: "Help us improve <strong>Procfy</strong> by sending your review and providing your suggestions"
+      help_us: "Help us improve <strong>BarberManagement</strong> by sending your review and providing your suggestions"
       evaluate: "How do you evaluate our system?"
       bad: "Bad"
       regular: "Regular"
@@ -768,7 +768,7 @@ en:
       great: "Great"
       excellent: "Excellent"
       provide_your_feedback: "Provide your feedback or suggestion"
-      enter_your_opinion: "Enter your opinion about Procfy here. It can be a compliment, a criticism or a suggestion"
+      enter_your_opinion: "Enter your opinion about BarberManagement here. It can be a compliment, a criticism or a suggestion"
       submit: "Send"
     create:
       success: "Feedback sent successfully"
@@ -787,8 +787,8 @@ en:
     videos_modal:
       video_lessons_for_beginners: "Video lessons for beginners"
     initial_modal:
-      welcome_procfy: "Welcome to Procfy"
-      welcome_user: "Hello <strong>%{name}</strong>, we've prepared some help material for you to start well on <strong>Procfy</strong>. Enjoy and good management!"
+      welcome_procfy: "Welcome to BarberManagement"
+      welcome_user: "Hello <strong>%{name}</strong>, we've prepared some help material for you to start well on <strong>BarberManagement</strong>. Enjoy and good management!"
       video_lessons_for_beginners: "Video lessons for beginners"
       help_guides: "Help guides"
       see_all: "See all"
@@ -928,7 +928,7 @@ en:
 
   daily_notification_mailer:
     send_daily_notification:
-      title: "Daily Report for %{company} - Procfy"
+      title: "Daily Report for %{company} - BarberManagement"
       release: "Releases"
       mail_header:
         hello: "Hello %{name}!"
@@ -939,8 +939,8 @@ en:
         show_transactions: "View my transactions"
         transaction_without_name: "No description"
       mail_footer:
-        alert_mail_configurations: 'You are receiving this email because the <strong>"Email notifications"</strong> settings are enabled in <strong>Procfy</strong>. If you no longer wish to receive our emails, access <strong>Procfy</strong> and go to <strong>Profile</strong>, select <strong>"%{company_name} Settings"</strong>. Check the settings options and make your choices.'
-        proof_policies: '<span style="font-size:11px"><p>Codengage respects your privacy. To learn more, read our <a href="https://procfy.io/policy.html#privacy" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">Privacy Policy.</a> If you receive a suspicious email, report it to us by forwarding it to <a href="mailto:atendimento@procfy.io" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">atendimento@procfy.io</a>.</p><p>©2023 Codengage Tecnologia. All rights reserved. CNPJ: 24.477.617/0001-60.<br>Address: Av. Prefeito Dedi Barrichelo Montagner, 250, térreo. Dois Vizinhos - Paraná. Zip code: 85660-000.</p></span>'
+        alert_mail_configurations: 'You are receiving this email because the <strong>"Email notifications"</strong> settings are enabled in <strong>BarberManagement</strong>. If you no longer wish to receive our emails, access <strong>BarberManagement</strong> and go to <strong>Profile</strong>, select <strong>"%{company_name} Settings"</strong>. Check the settings options and make your choices.'
+        proof_policies: '<span style="font-size:11px"><p>Codengage respects your privacy. To learn more, read our <a href="https://barbermanagement.io/policy.html#privacy" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">Privacy Policy.</a> If you receive a suspicious email, report it to us by forwarding it to <a href="mailto:atendimento@barbermanagement.io" style="color:#202020;font-weight:normal;text-decoration:underline" target="_blank">atendimento@barbermanagement.io</a>.</p><p>©2023 Codengage Tecnologia. All rights reserved. CNPJ: 24.477.617/0001-60.<br>Address: Av. Prefeito Dedi Barrichelo Montagner, 250, térreo. Dois Vizinhos - Paraná. Zip code: 85660-000.</p></span>'
 
 
   shared:
@@ -1041,7 +1041,7 @@ en:
     total: "Total"
     not_informed_female: "Not informed"
     outcome: "Month preview:"
-    app_name: "Procfy - Financially Simple"
+    app_name: "BarberManagement - Financially Simple"
     month_preview: "Month preview: <strong>%{amount}</strong>"
     new: "Add"
     percentage: "Percentage"
@@ -1118,7 +1118,7 @@ en:
     system: "System"
     expenses_of: "Expenses of"
     discarded: "Deleted"
-    title: "Procfy your financial management tool"
+    title: "BarberManagement your financial management tool"
     description: "User-friendly financial management system that will help you manage your finances"
     description2: "Try it free for %{days} days!"
     bold: "Bold (Ctrl + B)"
@@ -1424,7 +1424,7 @@ en:
     last_transactions_audits:
       title: "Latest updates on transactions"
       title_about_last_transactions_audits: "Last registered transactions"
-      description_about_last_transactions_audits: "Here, you can see the last movements you registered in Procfy."
+      description_about_last_transactions_audits: "Here, you can see the last movements you registered in BarberManagement."
       no_data: "No data (transaction already deleted)"
 
     home_dre:
@@ -1854,8 +1854,8 @@ en:
       renew: "Renew subscription"
   account_invitations_mailer:
     invite:
-      subject: "%{inviter} invited you to Procfy"
-      header_html: "<strong>%{inviter}</strong> invited you to access Procfy and collaborate with the <strong>%{account}</strong> team."
+      subject: "%{inviter} invited you to BarberManagement"
+      header_html: "<strong>%{inviter}</strong> invited you to access BarberManagement and collaborate with the <strong>%{account}</strong> team."
       description_html: "You can accept the invitation by clicking the button below."
       accept_or_decline: "accept or decline"
       view_invitation: "View invitation"
@@ -1897,7 +1897,7 @@ en:
       success: "Invitation rejected successfully"
   layouts:
     mailer:
-      copyright_html: "Copyright © Procfy %{year}, all rights reserved."
+      copyright_html: "Copyright © BarberManagement %{year}, all rights reserved."
       address_line1: "Av Dedi Barrichello Montagner, 250 - Ground floor - Center"
       address_line2: "85660-000 - Dois Vizinhos - Paraná - Brazil"
       mailing_address: "Our email address is:"
@@ -2136,7 +2136,7 @@ en:
     show:
       description: "You have been invited by <strong>%{company}</strong> to use our financial management system."
       description_with_discount: "You have been referred by <strong>%{company}</strong> to explore, try, and use our tool, and even receive a lifelong discount of <strong>%{discount}%</strong> on your subscription."
-      welcome: "Welcome to Procfy"
+      welcome: "Welcome to BarberManagement"
       call_to_action: "I want to explore the tool and try it out for free for %{days} days."
       call_to_action2: "I want to explore the tool."
 
@@ -2255,7 +2255,7 @@ en:
       total_price: "Total price"
       payment_info: "Payment information"
       payment_info_example: "Payment must be made within 15 days via bank transfer.<br>- transfer information"
-      footer: "Invoice created by Procfy"
+      footer: "Invoice created by BarberManagement"
     create:
       success: "Invoice template created successfully"
     update:

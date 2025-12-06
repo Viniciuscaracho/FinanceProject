@@ -1,0 +1,91 @@
+/* ============================================
+   UTILITÁRIOS PARA SUPORTE A ZOOM
+   ============================================ */
+
+/* Unidades que escalam bem com zoom do navegador */
+.zoom-safe {
+  /* Usar unidades relativas que escalam com zoom */
+  font-size: 1rem;
+  padding: 0.75rem;
+  margin: 0.5rem;
+}
+
+/* Elementos que devem manter tamanho mínimo mesmo com zoom alto */
+.zoom-min-safe {
+  min-width: max-content;
+  min-height: max-content;
+}
+
+/* Ajustar tamanhos de fonte baseados em zoom */
+@media screen {
+  /* Zoom normal (100%) */
+  html {
+    font-size: 16px;
+  }
+  
+  /* Zoom reduzido - ajustar para manter legibilidade */
+  @media (max-width: 1280px) {
+    html {
+      font-size: clamp(14px, 1.5vw, 16px);
+    }
+  }
+  
+  /* Zoom aumentado - ajustar proporcionalmente */
+  @media (min-width: 1920px) {
+    html {
+      font-size: clamp(16px, 1.2vw, 20px);
+    }
+  }
+}
+
+/* Containers que se adaptam ao zoom */
+.zoom-container {
+  width: 100%;
+  max-width: 100vw;
+  padding: clamp(1rem, 2vw, 2rem);
+  box-sizing: border-box;
+}
+
+/* Texto que se adapta ao zoom mantendo legibilidade */
+.zoom-text {
+  font-size: clamp(0.875rem, 1.5vw + 0.5rem, 1.125rem);
+  line-height: 1.6;
+}
+
+.zoom-text-sm {
+  font-size: clamp(0.75rem, 1.2vw + 0.5rem, 0.875rem);
+}
+
+.zoom-text-lg {
+  font-size: clamp(1rem, 2vw + 0.5rem, 1.25rem);
+}
+
+/* Prevenir quebra de layout com zoom extremo */
+.zoom-layout-safe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.5rem, 1vw, 1rem);
+}
+
+/* Tabelas que se adaptam ao zoom */
+.zoom-table {
+  font-size: clamp(0.75rem, 1vw + 0.5rem, 0.875rem);
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Cards responsivos ao zoom */
+.zoom-card {
+  padding: clamp(1rem, 2vw, 1.5rem);
+  margin: clamp(0.5rem, 1vw, 1rem);
+  border-radius: clamp(0.5rem, 1vw, 0.75rem);
+}
+
+/* Botões que mantêm usabilidade com zoom */
+.zoom-button {
+  padding: clamp(0.5rem, 1vw, 0.75rem) clamp(1rem, 2vw, 1.5rem);
+  font-size: clamp(0.875rem, 1.5vw + 0.5rem, 1rem);
+  min-height: clamp(36px, 5vh, 44px);
+  min-width: clamp(80px, 10vw, 120px);
+}
+

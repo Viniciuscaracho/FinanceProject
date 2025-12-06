@@ -437,7 +437,7 @@ module ActiveSupport
           'last_name' => nil,
           'document_1' => '24477617000160',
           'document_3' => '110612',
-          'email' => 'integracoes@procfy.io',
+          'email' => 'integracoes@barbermanagement.io',
           'phone_number' => '4699711849',
           'contact_type_cd' => 0,
           'screen_name' => 'CODENGAGE SERVICOS TECNOLOGICOS LTDA',
@@ -501,7 +501,7 @@ module ActiveSupport
       )
     end
 
-    def create_procfy_account
+    def create_barber_management_account
       user = kwargs.fetch(:user) do
         User.new(
           first_name: kwargs.fetch(:first_name, Faker::Name.name),

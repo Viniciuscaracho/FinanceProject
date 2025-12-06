@@ -29,7 +29,7 @@ require "test_helper"
 
 class SubscriptionInvoiceTest < ActiveSupport::TestCase
   setup do
-    _, _procfy_account = register_user(admin: true)
+    _, _barber_management_account = register_user(admin: true)
     _, @account = register_user
     @subscription = @account.subscriptions.create!(
       processor_id: 'sub_1OrPpXGwf430BbLJaRRceGiG',
