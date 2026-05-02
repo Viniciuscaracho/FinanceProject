@@ -10,9 +10,10 @@ module Api
         end
 
         # Dados do dashboard
-        balance = Current.account.transactions.sum(:amount_cents) / 100.0 rescue 0.0
-        income = Current.account.transactions.where('amount_cents > 0').sum(:amount_cents) / 100.0 rescue 0.0
-        expenses = Current.account.transactions.where('amount_cents < 0').sum(:amount_cents).abs / 100.0 rescue 0.0
+        txs = Current.account.transactions.ignore_transfers
+        income   = (txs.revenues.sum(:amount_cents) / 100.0 rescue 0.0)
+        expenses = (txs.expenses.sum(:amount_cents) / 100.0 rescue 0.0)
+        balance  = income - expenses
         
         # Calcular recent_transactions com tratamento de erro
         recent_transactions = begin
@@ -101,10 +102,11 @@ module Api
           return render json: { error: 'Account not found' }, status: :forbidden
         end
 
-        balance = Current.account.transactions.sum(:amount_cents) / 100.0 rescue 0.0
-        income = Current.account.transactions.where('amount_cents > 0').sum(:amount_cents) / 100.0 rescue 0.0
-        expenses = Current.account.transactions.where('amount_cents < 0').sum(:amount_cents).abs / 100.0 rescue 0.0
-        
+        txs      = Current.account.transactions.ignore_transfers
+        income   = (txs.revenues.sum(:amount_cents) / 100.0 rescue 0.0)
+        expenses = (txs.expenses.sum(:amount_cents) / 100.0 rescue 0.0)
+        balance  = income - expenses
+
         render json: {
           balance: balance,
           income: income,
@@ -195,11 +197,12 @@ module Api
       private
 
       def calculate_savings_rate
-        income = Current.account.transactions.where('amount_cents > 0').sum(:amount_cents) / 100.0 rescue 0.0
-        expenses = Current.account.transactions.where('amount_cents < 0').sum(:amount_cents).abs / 100.0 rescue 0.0
-        
+        txs      = Current.account.transactions.ignore_transfers
+        income   = (txs.revenues.sum(:amount_cents) / 100.0 rescue 0.0)
+        expenses = (txs.expenses.sum(:amount_cents) / 100.0 rescue 0.0)
+
         return 0 if income.zero?
-        
+
         ((income - expenses) / income * 100).round(2)
       rescue => e
         Rails.logger.error "Error calculating savings_rate: #{e.message}"
@@ -207,13 +210,15 @@ module Api
       end
 
       def calculate_monthly_growth
-        # Comparação com mês anterior
-        current_month = Current.account.transactions.where(created_at: Time.current.beginning_of_month..Time.current.end_of_month).sum(:amount_cents) / 100.0 rescue 0.0
-        last_month = Current.account.transactions.where(created_at: 1.month.ago.beginning_of_month..1.month.ago.end_of_month).sum(:amount_cents) / 100.0 rescue 0.0
-        
-        return 0 if last_month.zero?
-        
-        ((current_month - last_month) / last_month * 100).round(2)
+        period      = Time.current.beginning_of_month..Time.current.end_of_month
+        last_period = 1.month.ago.beginning_of_month..1.month.ago.end_of_month
+
+        current_income = (Current.account.transactions.revenues.where(due_date: period).sum(:amount_cents) / 100.0 rescue 0.0)
+        last_income    = (Current.account.transactions.revenues.where(due_date: last_period).sum(:amount_cents) / 100.0 rescue 0.0)
+
+        return 0 if last_income.zero?
+
+        ((current_income - last_income) / last_income * 100).round(2)
       rescue => e
         Rails.logger.error "Error calculating monthly_growth: #{e.message}"
         0

@@ -92,16 +92,41 @@ module WhatsApp
     end
 
     def send_whatsapp_message(account, whatsapp_number, message)
-      # Aqui você integraria com a API do WhatsApp (Twilio, WhatsApp Business API, etc.)
-      # Por enquanto, vamos apenas logar
-      Rails.logger.info "📱 WhatsApp Message to #{whatsapp_number}:"
-      Rails.logger.info message
+      # Verificar se Evolution API está configurada para esta conta
+      if WhatsApp::EvolutionApiClient.configured?(account: account)
+        result = WhatsApp::EvolutionApiClient.send_message(
+          account: account,
+          phone: whatsapp_number,
+          message: message
+        )
+        
+        if result[:success]
+          Rails.logger.info "✅ WhatsApp message sent to #{whatsapp_number} (Account: #{account.id})"
+          true
+        else
+          Rails.logger.error "❌ Failed to send WhatsApp message (Account: #{account.id}): #{result[:error]}"
+          # Fallback: criar link do WhatsApp Web se a API falhar
+          create_fallback_link(whatsapp_number, message)
+          false
+        end
+      else
+        # Se não estiver configurada para esta conta, criar link do WhatsApp Web como fallback
+        Rails.logger.warn "⚠️ Evolution API não configurada para Account #{account.id}. Usando link do WhatsApp Web como fallback."
+        create_fallback_link(whatsapp_number, message)
+        true
+      end
+    end
+
+    def create_fallback_link(whatsapp_number, message)
+      # Normalizar número
+      normalized_phone = whatsapp_number.to_s.gsub(/\D/, '')
+      normalized_phone = "55#{normalized_phone}" unless normalized_phone.start_with?('55')
       
-      # Em produção, você faria algo como:
-      # WhatsAppApiService.send_message(to: whatsapp_number, message: message)
+      encoded_message = ERB::Util.url_encode(message)
+      whatsapp_link = "https://wa.me/#{normalized_phone}?text=#{encoded_message}"
       
-      # Simular envio bem-sucedido
-      true
+      Rails.logger.info "📱 WhatsApp Web Link: #{whatsapp_link}"
+      whatsapp_link
     end
   end
 end

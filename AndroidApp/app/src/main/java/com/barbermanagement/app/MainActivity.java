@@ -15,7 +15,7 @@ public class MainActivity extends AppCompatActivity {
     
     // URL do frontend - detecta automaticamente se é emulador ou dispositivo físico
     private static final String FRONTEND_URL_EMULATOR = "http://10.0.2.2:5173";
-    private static final String FRONTEND_URL_PHYSICAL = "http://192.168.201.56:5173"; // IP da máquina na rede local
+    private static final String FRONTEND_URL_PHYSICAL = "http://192.168.0.21:5173"; // IP da máquina na rede local
     
     /**
      * Detecta se está rodando em emulador ou dispositivo físico

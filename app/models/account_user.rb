@@ -4,14 +4,15 @@
 #
 # Table name: account_users
 #
-#  id         :bigint           not null, primary key
-#  policies   :jsonb            not null
-#  role_cd    :integer          default(0), not null
-#  schedule   :jsonb
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  account_id :bigint           not null
-#  user_id    :bigint           not null
+#  id                    :bigint           not null, primary key
+#  commission_percentage :decimal(8, 2)    default(50.0), not null
+#  policies              :jsonb            not null
+#  role_cd               :integer          default(0), not null
+#  schedule              :jsonb
+#  created_at            :datetime         not null
+#  updated_at            :datetime         not null
+#  account_id            :bigint           not null
+#  user_id               :bigint           not null
 #
 # Indexes
 #
@@ -112,6 +113,10 @@ class AccountUser < ApplicationRecord
   belongs_to :user
   has_many :notifications, as: :recipient, dependent: :delete_all
   has_many :appointments, dependent: :destroy
+  has_many :professional_commissions, dependent: :destroy
+  has_many :appointment_commissions, dependent: :destroy
+
+  validates :commission_percentage, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }, allow_nil: true
 
   after_destroy :change_to_personal_account
   after_destroy_commit :remove_or_keep_free_access

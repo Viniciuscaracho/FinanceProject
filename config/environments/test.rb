@@ -63,5 +63,9 @@ Rails.application.configure do
 
   # Annotate rendered view with file names.
   # config.action_view.annotate_rendered_view_with_filenames = true
-  config.active_record.encryption.key_derivation_salt = 'a7f21c84949eca555ac36ae577b08e69aab8bfb6ae2d47432033b97cd244e490cca315368e7fc745c007af28b2125ad263642d91ad2899852fb81cc2298466db'
+  
+  # Configure ActiveRecord Encryption for tests
+  config.active_record.encryption.primary_key = Rails.application.credentials.dig(:encryption_primary_key) || 'test_primary_key_' + SecureRandom.hex(32)
+  config.active_record.encryption.deterministic_key = Rails.application.credentials.dig(:encryption_deterministic_key) || 'test_deterministic_key_' + SecureRandom.hex(32)
+  config.active_record.encryption.key_derivation_salt = Rails.application.credentials.dig(:encryption_key_derivation_salt) || 'a7f21c84949eca555ac36ae577b08e69aab8bfb6ae2d47432033b97cd244e490cca315368e7fc745c007af28b2125ad263642d91ad2899852fb81cc2298466db'
 end

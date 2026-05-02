@@ -4,25 +4,27 @@
 #
 # Table name: appointment_links
 #
-#  id              :bigint           not null, primary key
-#  active          :boolean          default(TRUE), not null
-#  description     :text
-#  name            :string
-#  settings        :jsonb
-#  token           :string           not null
-#  created_at      :datetime         not null
-#  updated_at      :datetime         not null
-#  account_id      :bigint           not null
-#  account_user_id :bigint
-#  service_id      :bigint
+#  id                 :bigint           not null, primary key
+#  active             :boolean          default(TRUE), not null
+#  description        :text
+#  enable_google_meet :boolean          default(FALSE)
+#  name               :string
+#  settings           :jsonb
+#  token              :string           not null
+#  created_at         :datetime         not null
+#  updated_at         :datetime         not null
+#  account_id         :bigint           not null
+#  account_user_id    :bigint
+#  service_id         :bigint
 #
 # Indexes
 #
-#  index_appointment_links_on_account_id       (account_id)
-#  index_appointment_links_on_account_user_id  (account_user_id)
-#  index_appointment_links_on_active           (active)
-#  index_appointment_links_on_service_id       (service_id)
-#  index_appointment_links_on_token            (token) UNIQUE
+#  index_appointment_links_on_account_id        (account_id)
+#  index_appointment_links_on_account_user_id   (account_user_id)
+#  index_appointment_links_on_active            (active)
+#  index_appointment_links_on_service_id        (service_id)
+#  index_appointment_links_on_token             (token) UNIQUE
+#  index_appointment_links_on_token_and_active  (token,active) WHERE (active = true)
 #
 # Foreign Keys
 #

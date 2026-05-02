@@ -89,21 +89,37 @@ module Api
 
       def identify_account(message_data)
         # Estratégias para identificar o account:
-        # 1. Por número do WhatsApp (se configurado)
+        # 1. Por account_id na URL (mais seguro)
         # 2. Por token na URL
-        # 3. Por header de autenticação
+        # 3. Por número do WhatsApp da instância (se configurado)
         
-        # Por token na URL (para testes)
+        # Por account_id na URL (recomendado)
+        if params[:account_id].present?
+          account = Account.find_by(id: params[:account_id])
+          return account if account
+        end
+
+        # Por token na URL (para testes/backup)
         if params[:account_token].present?
           account = Account.find_by(id: params[:account_token])
           return account if account
         end
 
-        # Por número do WhatsApp (se houver configuração)
+        # Por número do WhatsApp da instância (se Evolution API enviar)
+        # Isso requer que a Evolution API envie informações sobre qual instância recebeu
+        if params[:instance_name].present?
+          account = Account.joins(:whatsapp_config)
+                          .where(whatsapp_configs: { 
+                            evolution_instance_name: params[:instance_name],
+                            enabled: true 
+                          })
+                          .first
+          return account if account
+        end
+
+        # Por número do WhatsApp (fallback - buscar em account_users)
         whatsapp_number = message_data[:from]&.gsub(/\D/, '')
         if whatsapp_number.present?
-          # Buscar account que tem este número configurado
-          # (você pode criar uma tabela account_whatsapp_configs)
           account = Account.joins(:account_users)
                           .where('account_users.whatsapp_number = ?', whatsapp_number)
                           .first

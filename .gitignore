@@ -72,3 +72,15 @@ secrets.yml
 *.key
 *.crt
 
+# Ignore test results
+/tests/test-results/
+/tests/playwright-report/
+/tests/playwright/.cache/
+/tests/screenshots/
+/tests/videos/
+/tests/load/*.json
+!/tests/load/package.json
+/tests/performance/test-results/
+/tests/performance/playwright-report/
+/tests/performance/lighthouse-reports/
+

@@ -76,6 +76,9 @@ module BarberManagement
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+    
+    # Adicionar middleware ao autoload
+    config.autoload_paths << Rails.root.join("app/middleware")
 
     # Only loads a smaller set of middleware suitable for API only apps.
     # Middleware like session, flash, cookies can be added back manually.
@@ -93,5 +96,9 @@ module BarberManagement
 
     # Disable Flipper middleware completely
     # config.middleware.delete(Flipper::Middleware::Memoizer) if defined?(Flipper::Middleware::Memoizer)
+    
+    # Adicionar middleware para garantir que erros da API sempre retornem JSON
+    require_relative '../app/middleware/json_error_handler'
+    config.middleware.use JsonErrorHandler
   end
 end

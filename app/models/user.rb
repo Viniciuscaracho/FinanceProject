@@ -166,9 +166,18 @@ class User < ApplicationRecord
   end
 
   def current_account
-    return account if account.present?
+    effective_account
+  end
 
-    my_personal_account
+  def effective_account
+    preferred_account = accounts.find_by(id: account_id)
+    business_accounts = accounts.business
+
+    if preferred_account.present?
+      return preferred_account if preferred_account.business? || business_accounts.none?
+    end
+
+    business_accounts.first || accounts.first || account
   end
 
   def pending_invitations?

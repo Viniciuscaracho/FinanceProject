@@ -633,6 +633,47 @@ RailsAdmin.config do |config|
     end
   end
 
+  config.model 'WhatsappConfig' do
+    list do
+      field :id
+      field :account
+      field :enabled
+      field :evolution_api_url
+      field :evolution_instance_name
+      field :created_at
+      field :updated_at
+    end
+
+    edit do
+      field :account
+      field :enabled
+      field :evolution_api_url do
+        help 'URL base da Evolution API (ex: http://localhost:8080)'
+      end
+      field :evolution_api_key do
+        help 'Chave de autenticação da Evolution API'
+      end
+      field :evolution_instance_name do
+        help 'Nome da instância do WhatsApp (padrão: default)'
+      end
+    end
+
+    show do
+      field :id
+      field :account
+      field :enabled
+      field :evolution_api_url
+      field :evolution_api_key do
+        formatted_value do
+          value.present? ? '••••••••' : '(não configurado)'
+        end
+      end
+      field :evolution_instance_name
+      field :created_at
+      field :updated_at
+    end
+  end
+
   config.model 'Announcement' do
     list do
       field :id

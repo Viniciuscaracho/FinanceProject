@@ -2,16 +2,21 @@
 #
 # Table name: document_templates
 #
-#  id                  :bigint           not null, primary key
-#  content             :text
-#  default             :boolean          default(FALSE)
-#  description         :text
-#  name                :string           not null
-#  transaction_type_cd :integer
-#  type                :string
-#  created_at          :datetime         not null
-#  updated_at          :datetime         not null
-#  account_id          :bigint           not null
+#  id                                                                                  :bigint           not null, primary key
+#  content                                                                             :text
+#  default                                                                             :boolean          default(FALSE)
+#  description                                                                         :text
+#  enable_sessions                                                                     :boolean          default(FALSE), not null
+#  name                                                                                :string           not null
+#  professional_type(Tipo de profissional (psicólogo, professor, nutricionista, etc.)) :string
+#  session_count                                                                       :integer
+#  session_number                                                                      :integer
+#  session_type                                                                        :string
+#  transaction_type_cd                                                                 :integer
+#  type                                                                                :string
+#  created_at                                                                          :datetime         not null
+#  updated_at                                                                          :datetime         not null
+#  account_id                                                                          :bigint           not null
 #
 # Indexes
 #

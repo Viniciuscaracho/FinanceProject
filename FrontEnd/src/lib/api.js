@@ -126,13 +126,67 @@ class ApiService {
       });
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        let errorData = {};
+        let errorText = '';
+
+        try {
+          // Tentar ler o texto da resposta primeiro
+          errorText = await response.text();
+          console.error('📄 Raw error response text:', errorText);
+          
+          // Tentar parsear como JSON
+          if (errorText && errorText.trim().startsWith('{')) {
+            try {
+              errorData = JSON.parse(errorText);
+              console.error('✅ Parsed error JSON:', errorData);
+            } catch (jsonError) {
+              console.error('❌ Failed to parse as JSON:', jsonError);
+              errorData = { message: errorText || `HTTP error! status: ${response.status}` };
+            }
+          } else {
+            // Se não for JSON, usar o texto como mensagem
+            errorData = { message: errorText || `HTTP error! status: ${response.status}` };
+          }
+        } catch (parseError) {
+          console.error('❌ Error reading error response:', parseError);
+          errorData = { 
+            message: `HTTP error! status: ${response.status}`,
+            rawError: parseError.message
+          };
+        }
         
-        // Extract Rails validation errors
-        let errorMessage = errorData.message || errorData.error;
+        // Extract Rails validation errors - priorizar mensagens do backend
+        let errorMessage = null;
+        
+        // Log do errorData completo para debug
+        console.error('🔍 errorData completo:', errorData);
+        console.error('🔍 errorText:', errorText);
+        
+        // Priorizar mensagem de erro do backend se disponível
+        if (errorData.error && typeof errorData.error === 'string') {
+          errorMessage = errorData.error;
+        } else if (errorData.message && typeof errorData.message === 'string') {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = String(errorData.error);
+        } else if (errorData.message) {
+          errorMessage = String(errorData.message);
+        }
+        
+        // Se ainda não tiver mensagem, tentar extrair do texto bruto
+        if (!errorMessage && errorText) {
+          // Tentar extrair mensagem de erro de HTML se for o caso
+          const htmlMatch = errorText.match(/<title>(.*?)<\/title>/i) || errorText.match(/<h1>(.*?)<\/h1>/i);
+          if (htmlMatch) {
+            errorMessage = htmlMatch[1];
+          } else if (errorText.length < 500) {
+            // Se o texto for curto, usar como mensagem
+            errorMessage = errorText;
+          }
+        }
         
         // Handle Rails validation errors format: { errors: [...] } or { errors: { field: [...] } }
-        if (errorData.errors) {
+        if (!errorMessage && errorData.errors) {
           if (Array.isArray(errorData.errors)) {
             // Format: { errors: ["Error 1", "Error 2"] }
             errorMessage = errorData.errors.join(', ');
@@ -155,15 +209,24 @@ class ApiService {
         
         // Fallback to generic error message
         if (!errorMessage) {
-          errorMessage = `HTTP error! status: ${response.status}`;
+          errorMessage = `HTTP error! status: ${response.status}. Verifique os logs do servidor para mais detalhes.`;
         }
         
+        // Log detalhado do erro
         console.error('❌ API Error:', {
           status: response.status,
+          statusText: response.statusText,
+          url: url,
           error: errorMessage,
-          data: errorData,
-          fullError: errorData
+          data: errorData
         });
+        console.error('❌ API Error Details:', JSON.stringify({
+          status: response.status,
+          statusText: response.statusText,
+          url: url,
+          error: errorMessage,
+          data: errorData
+        }, null, 2));
         
         // Criar erro com mais informações
         const error = new Error(errorMessage);
@@ -172,16 +235,53 @@ class ApiService {
         throw error;
       }
 
-      const data = await response.json();
+      // Lidar com respostas sem corpo (ex.: 204 No Content)
+      if (response.status === 204 || response.status === 205) {
+        console.log('✅ API Success (no content):', { endpoint, status: response.status });
+        return null;
+      }
+
+      const responseText = await response.text();
+
+      // Se não houver corpo, retornar nulo para evitar erros de parsing
+      if (!responseText || responseText.trim() === '') {
+        console.log('✅ API Success (empty body):', { endpoint, status: response.status });
+        return null;
+      }
+
+      const contentType = response.headers.get('Content-Type') || '';
+      const looksLikeJson = contentType.includes('application/json') || responseText.trim().startsWith('{') || responseText.trim().startsWith('[');
+
+      let data;
+      if (looksLikeJson) {
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('❌ Failed to parse JSON response:', {
+            endpoint,
+            error: parseError.message,
+            responseText
+          });
+          throw new Error('Erro ao processar resposta do servidor');
+        }
+      } else {
+        data = responseText;
+      }
+
       console.log('✅ API Success:', { endpoint, data });
       return data;
     } catch (error) {
-      console.error('❌ API request failed:', {
+      // Log detalhado do erro de rede ou parsing
+      const errorDetails = {
         url: url,
         endpoint: endpoint,
         error: error.message,
+        status: error.status || 'N/A',
+        data: error.data || null,
         stack: error.stack
-      });
+      };
+      console.error('❌ API request failed:', errorDetails);
+      console.error('❌ API request failed (JSON):', JSON.stringify(errorDetails, null, 2));
       throw error;
     }
   }
@@ -258,6 +358,19 @@ class ApiService {
     });
   }
 
+  async register({ name, accountName, email, password }) {
+    const response = await this.request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, account_name: accountName, email, password }),
+    });
+
+    if (response.success && response.token) {
+      this.setToken(response.token);
+    }
+
+    return response;
+  }
+
   // Transactions
   async getTransactions(page = 1, perPage = 20, filters = {}) {
     const params = new URLSearchParams({
@@ -282,10 +395,19 @@ class ApiService {
     return await this.request(`/transactions/${id}`);
   }
 
-  async createTransaction(transactionData) {
+  async createTransaction(data) {
+    // Suportar tanto formato antigo quanto novo
+    const transactionData = data.transaction || data
+    const paymentPlan = data.payment_plan
+    
+    const body = { transaction: transactionData }
+    if (paymentPlan) {
+      body.payment_plan = paymentPlan
+    }
+    
     return await this.request('/transactions', {
       method: 'POST',
-      body: JSON.stringify({ transaction: transactionData }),
+      body: JSON.stringify(body),
     });
   }
 
@@ -299,6 +421,29 @@ class ApiService {
   async deleteTransaction(id) {
     return await this.request(`/transactions/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  async checkRecurrenceExpiry() {
+    return await this.request('/transactions/check_recurrence_expiry');
+  }
+
+  async extendRecurrence(paymentPlanId) {
+    return await this.request('/transactions/extend_recurrence', {
+      method: 'POST',
+      body: JSON.stringify({ payment_plan: { id: paymentPlanId } }),
+    });
+  }
+
+  // Payment Plans - Installments
+  async getPaymentPlanInstallments(paymentPlanId) {
+    return await this.request(`/payment_plans/${paymentPlanId}/installments`);
+  }
+
+  async updatePaymentPlanInstallments(paymentPlanId, installments) {
+    return await this.request(`/payment_plans/${paymentPlanId}/update_installments`, {
+      method: 'PUT',
+      body: JSON.stringify({ installments }),
     });
   }
 
@@ -473,6 +618,119 @@ class ApiService {
   }
 
   // Appointments
+  // Appointment Notes
+  async getAppointmentNotes(appointmentId) {
+    return await this.request(`/appointments/${appointmentId}/appointment_notes`);
+  }
+
+  async getAppointmentNote(appointmentId, noteId) {
+    return await this.request(`/appointments/${appointmentId}/appointment_notes/${noteId}`);
+  }
+
+  async createAppointmentNote(appointmentId, noteData) {
+    return await this.request(`/appointments/${appointmentId}/appointment_notes`, {
+      method: 'POST',
+      body: JSON.stringify({ appointment_note: noteData }),
+    });
+  }
+
+  async updateAppointmentNote(appointmentId, noteId, noteData) {
+    return await this.request(`/appointments/${appointmentId}/appointment_notes/${noteId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ appointment_note: noteData }),
+    });
+  }
+
+  async deleteAppointmentNote(appointmentId, noteId) {
+    return await this.request(`/appointments/${appointmentId}/appointment_notes/${noteId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Patient Tasks
+  async addPatientTask(appointmentId, noteId, taskDescription) {
+    return await this.request(`/appointments/${appointmentId}/appointment_notes/${noteId}/add_task`, {
+      method: 'POST',
+      body: JSON.stringify({ task: { description: taskDescription } }),
+    });
+  }
+
+  async completePatientTask(appointmentId, noteId, taskId) {
+    return await this.request(`/appointments/${appointmentId}/appointment_notes/${noteId}/complete_task`, {
+      method: 'POST',
+      body: JSON.stringify({ task_id: taskId }),
+    });
+  }
+
+  async removePatientTask(appointmentId, noteId, taskId) {
+    return await this.request(`/appointments/${appointmentId}/appointment_notes/${noteId}/remove_task/${taskId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Professional Documents from Appointments
+  async getProfessionalDocumentTemplatesForAppointment(appointmentId) {
+    return await this.request(`/appointments/${appointmentId}/professional_document_templates`);
+  }
+
+  async generateProfessionalDocumentFromAppointment(appointmentId, templateId, options = {}) {
+    return await this.request(`/appointments/${appointmentId}/generate_professional_document`, {
+      method: 'POST',
+      body: JSON.stringify({
+        template_id: templateId,
+        document_content: options.document_content || '',
+        progress: options.progress || '',
+        instructions: options.instructions || '',
+        observations: options.observations || '',
+      }),
+    });
+  }
+
+  // Appointment Attachments
+  async getAppointmentAttachments(appointmentId) {
+    return await this.request(`/appointments/${appointmentId}/attachments`);
+  }
+
+  async uploadAppointmentAttachments(appointmentId, files) {
+    const url = `${this.baseURL}/appointments/${appointmentId}/attachments`;
+    const formData = new FormData();
+    
+    // Adicionar múltiplos arquivos
+    if (files instanceof FileList) {
+      Array.from(files).forEach(file => {
+        formData.append('attachments[]', file);
+      });
+    } else if (Array.isArray(files)) {
+      files.forEach(file => {
+        formData.append('attachments[]', file);
+      });
+    } else {
+      formData.append('attachments[]', files);
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.token || localStorage.getItem('auth_token')}`,
+        // Não definir Content-Type - o browser vai definir automaticamente com boundary para FormData
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw { status: response.status, data: errorData, message: errorData.error || 'Erro ao fazer upload' };
+    }
+
+    return await response.json();
+  }
+
+  async deleteAppointmentAttachment(appointmentId, attachmentId) {
+    return await this.request(`/appointments/${appointmentId}/attachments/${attachmentId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async getAppointments(filters = {}) {
     const params = new URLSearchParams(filters);
     return await this.request(`/appointments?${params}`);
@@ -541,6 +799,29 @@ class ApiService {
     return await this.request(`/appointment_reports/summary?${params}`);
   }
 
+  // Commissions
+  async getCommissions(startDate, endDate, professionalId = null) {
+    const params = new URLSearchParams({
+      start_date: startDate,
+      end_date: endDate,
+    });
+    if (professionalId) {
+      params.append('professional_id', professionalId);
+    }
+    return await this.request(`/commissions?${params}`);
+  }
+
+  async getCommissionsSummary(startDate, endDate, professionalId = null) {
+    const params = new URLSearchParams({
+      start_date: startDate,
+      end_date: endDate,
+    });
+    if (professionalId) {
+      params.append('professional_id', professionalId);
+    }
+    return await this.request(`/commissions/summary?${params}`);
+  }
+
   // Professionals
   async getProfessionals() {
     return await this.request('/professionals');
@@ -574,6 +855,30 @@ class ApiService {
     return await this.request(`/professionals/${id}/update_schedule`, {
       method: 'PATCH',
       body: JSON.stringify({ schedule: scheduleData }),
+    });
+  }
+
+  async getProfessionalCommissionConfigs(id) {
+    return await this.request(`/professionals/${id}/commission_configs`);
+  }
+
+  async createProfessionalCommissionConfig(id, configData) {
+    return await this.request(`/professionals/${id}/commission_configs`, {
+      method: 'POST',
+      body: JSON.stringify({ commission_config: configData }),
+    });
+  }
+
+  async updateProfessionalCommissionConfig(id, configId, configData) {
+    return await this.request(`/professionals/${id}/commission_configs/${configId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ commission_config: configData }),
+    });
+  }
+
+  async deleteProfessionalCommissionConfig(id, configId) {
+    return await this.request(`/professionals/${id}/commission_configs/${configId}`, {
+      method: 'DELETE',
     });
   }
 
@@ -812,6 +1117,60 @@ class ApiService {
   }
 
   // Public Appointment Booking (no authentication required)
+  async getPublicAppointmentFull(token, { timeoutMs = 20000 } = {}) {
+    if (!token) {
+      throw new Error('Token de agendamento não fornecido');
+    }
+
+    const baseUrl = this.baseURL.replace('/api/v1', '');
+    const url = `${baseUrl}/api/v1/public/appointment_data/${token}/full`;
+
+    console.log('📡 Fetching appointment full payload from:', url);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timer);
+
+      console.log('📡 Full response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data) {
+        const errorMessage = (data && (data.error || data.message)) || `HTTP error! status: ${response.status}`;
+        console.error('❌ Full API Error:', { status: response.status, error: errorMessage, data });
+        throw new Error(errorMessage);
+      }
+
+      if (!Array.isArray(data.services) || !Array.isArray(data.professionals) || typeof data.config !== 'object') {
+        console.error('❌ Unexpected full response format:', data);
+        throw new Error('Formato de resposta inesperado da API');
+      }
+
+      return data;
+    } catch (error) {
+      clearTimeout(timer);
+      console.error('❌ Full request failed:', { url, error: error.message, stack: error.stack });
+
+      if (error.name === 'AbortError' || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        throw new Error('Servidor indisponível ou tempo de resposta excedido. Tente novamente.');
+      }
+
+      throw error;
+    }
+  }
+
   async getPublicAppointmentServices(token) {
     if (!token) {
       throw new Error('Token de agendamento não fornecido');
@@ -1005,6 +1364,39 @@ class ApiService {
         throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');
       }
       
+      throw error;
+    }
+  }
+
+  async getPublicAppointmentConfig(token) {
+    if (!token) {
+      throw new Error('Token de agendamento não fornecido');
+    }
+    
+    const baseUrl = this.baseURL.replace('/api/v1', '');
+    const url = `${baseUrl}/api/v1/public/appointment_data/${token}/config`;
+    
+    console.log('📡 Fetching appointment config from:', url);
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || errorData.message || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Appointment config received:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Config request failed:', error);
       throw error;
     }
   }
@@ -1268,6 +1660,147 @@ class ApiService {
       method: 'PATCH',
       body: JSON.stringify({ account: accountData }),
     });
+  }
+
+  // Document Templates - API v1 endpoints
+  async getReceiptTemplates(page = 1, perPage = 20) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: perPage.toString(),
+    });
+    return await this.request(`/receipt_templates?${params}`);
+  }
+
+  async getInvoiceTemplates(page = 1, perPage = 20) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: perPage.toString(),
+    });
+    return await this.request(`/invoice_templates?${params}`);
+  }
+
+  async getContractTemplates(page = 1, perPage = 20) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: perPage.toString(),
+    });
+    return await this.request(`/contract_templates?${params}`);
+  }
+
+  async getReceiptTemplate(id) {
+    return await this.request(`/receipt_templates/${id}`);
+  }
+
+  async getInvoiceTemplate(id) {
+    return await this.request(`/invoice_templates/${id}`);
+  }
+
+  async getContractTemplate(id) {
+    return await this.request(`/contract_templates/${id}`);
+  }
+
+  async getProfessionalDocumentTemplates(page = 1, perPage = 20) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: perPage.toString(),
+    });
+    return await this.request(`/professional_document_templates?${params}`);
+  }
+
+  async getProfessionalDocumentTemplate(id) {
+    return await this.request(`/professional_document_templates/${id}`);
+  }
+
+  async createReceiptTemplate(templateData) {
+    return await this.request('/receipt_templates', {
+      method: 'POST',
+      body: JSON.stringify({ receipt_template: templateData }),
+    });
+  }
+
+  async createInvoiceTemplate(templateData) {
+    return await this.request('/invoice_templates', {
+      method: 'POST',
+      body: JSON.stringify({ invoice_template: templateData }),
+    });
+  }
+
+  async createContractTemplate(templateData) {
+    return await this.request('/contract_templates', {
+      method: 'POST',
+      body: JSON.stringify({ contract_template: templateData }),
+    });
+  }
+
+  async createProfessionalDocumentTemplate(templateData) {
+    return await this.request('/professional_document_templates', {
+      method: 'POST',
+      body: JSON.stringify({ professional_document_template: templateData }),
+    });
+  }
+
+  async updateReceiptTemplate(id, templateData) {
+    return await this.request(`/receipt_templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ receipt_template: templateData }),
+    });
+  }
+
+  async updateInvoiceTemplate(id, templateData) {
+    return await this.request(`/invoice_templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ invoice_template: templateData }),
+    });
+  }
+
+  async updateContractTemplate(id, templateData) {
+    return await this.request(`/contract_templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ contract_template: templateData }),
+    });
+  }
+
+  async updateProfessionalDocumentTemplate(id, templateData) {
+    return await this.request(`/professional_document_templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ professional_document_template: templateData }),
+    });
+  }
+
+  async deleteReceiptTemplate(id) {
+    return await this.request(`/receipt_templates/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async deleteInvoiceTemplate(id) {
+    return await this.request(`/invoice_templates/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async deleteContractTemplate(id) {
+    return await this.request(`/contract_templates/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async deleteProfessionalDocumentTemplate(id) {
+    return await this.request(`/professional_document_templates/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Método genérico para compatibilidade
+  async deleteDocumentTemplate(id, type = 'receipt') {
+    switch (type) {
+      case 'invoice':
+        return await this.deleteInvoiceTemplate(id);
+      case 'contract':
+        return await this.deleteContractTemplate(id);
+      default:
+        return await this.deleteReceiptTemplate(id);
+    }
   }
 }
 

@@ -30,11 +30,14 @@ function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "bg-surface-elevated text-text-primary border border-border shadow-[var(--shadow-md)]",
+          "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
+          "border border-gray-200 dark:border-gray-700",
+          "shadow-lg shadow-black/10 dark:shadow-black/30",
+          "backdrop-blur-sm",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           "data-[side=bottom]:slide-in-from-top-1 data-[side=left]:slide-in-from-right-1 data-[side=right]:slide-in-from-left-1 data-[side=top]:slide-in-from-bottom-1",
-          "z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-[var(--radius-md)] p-4 outline-hidden duration-140",
+          "z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-lg p-4 outline-hidden duration-140",
           className
         )}
         {...props} />

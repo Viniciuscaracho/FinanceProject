@@ -193,3 +193,7 @@ seed_nuvem_fiscal
 # --- SEED DE DADOS DE AGENDAMENTOS ---
 # Carrega dados de profissionais, serviços, contatos e agendamentos
 load Rails.root.join('db', 'seeds', 'appointments_data.rb')
+
+# --- SEED DE DADOS EXPANDIDOS DE AGENDAMENTOS ---
+# Carrega dados expandidos com mais profissionais e agendamentos no mesmo dia
+load Rails.root.join('db', 'seeds', 'appointments_expanded_data.rb')

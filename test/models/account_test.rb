@@ -21,6 +21,10 @@
 #  default_currency                                     :string(3)        default("BRL")
 #  discarded_at                                         :datetime
 #  free                                                 :boolean          default(FALSE), not null
+#  google_access_token                                  :string
+#  google_calendar_connected                            :boolean          default(FALSE), not null
+#  google_refresh_token                                 :string
+#  google_token_expires_at                              :datetime
 #  max_active_users                                     :integer          default(3), not null
 #  max_storage_size_in_bytes                            :bigint           default(5368709120), not null
 #  preferences                                          :jsonb            not null
@@ -34,6 +38,7 @@
 #  created_at                                           :datetime         not null
 #  updated_at                                           :datetime         not null
 #  company_id                                           :bigint           not null
+#  google_calendar_id                                   :string           default("primary")
 #  owner_id                                             :bigint
 #  processor_customer_id                                :string
 #  processor_plan_id                                    :string

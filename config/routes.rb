@@ -6,6 +6,10 @@ Rails.application.routes.draw do
   # Health check endpoint
   get '/health_check' => 'health_check#index'
 
+  # API Documentation (Swagger UI) — disponível apenas fora de produção
+  mount Rswag::Ui::Engine => '/api-docs' unless Rails.env.production?
+  mount Rswag::Api::Engine => '/api-docs' unless Rails.env.production?
+
   draw :cdn
 
   devise_for :users, controllers: {

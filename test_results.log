@@ -1,0 +1,1867 @@
+Run options: --seed 60355
+
+# Running:
+
+E
+
+Error:
+Integrations::NuvemFiscal::AtualizarEmpresaTest#test_should_successfully_update_a_company_in_nuvem_fiscal_and_update_the_current_relationship:
+NameError: uninitialized constant Integrations::NuvemFiscal::AtualizarEmpresaTest::NuvemFiscalModel
+    test/services/integrations/nuvem_fiscal/atualizar_empresa_test.rb:44:in `block in <class:AtualizarEmpresaTest>'
+
+rails test test/services/integrations/nuvem_fiscal/atualizar_empresa_test.rb:37
+
+E
+
+Error:
+Integrations::NuvemFiscal::AtualizarEmpresaTest#test_should_fail_to_update_a_company_in_nuvem_fiscal:
+NameError: uninitialized constant Integrations::NuvemFiscal::AtualizarEmpresaTest::NuvemFiscalModel
+    test/services/integrations/nuvem_fiscal/atualizar_empresa_test.rb:70:in `block in <class:AtualizarEmpresaTest>'
+
+rails test test/services/integrations/nuvem_fiscal/atualizar_empresa_test.rb:66
+
+...........F
+
+Failure:
+Api::V1::CategoriesControllerTest#test_should_not_destroy_category_without_token [test/controllers/api/v1/categories_controller_test.rb:44]:
+Expected response to be a <403: forbidden>, but was a <401: Unauthorized>
+Response body: {"error":"Unauthorized","message":"Token inválido ou expirado"}.
+Expected: 403
+  Actual: 401
+
+rails test test/controllers/api/v1/categories_controller_test.rb:38
+
+F
+
+Failure:
+Api::V1::CategoriesControllerTest#test_should_update_category_with_token [test/controllers/api/v1/categories_controller_test.rb:68]:
+Expected response to be a <2XX: success>, but was a <401: Unauthorized>
+Response body: {"error":"Unauthorized","message":"Token inválido ou expirado"}
+
+rails test test/controllers/api/v1/categories_controller_test.rb:65
+
+F
+
+Failure:
+Api::V1::CategoriesControllerTest#test_should_destroy_category_with_token [test/controllers/api/v1/categories_controller_test.rb:73]:
+"Category.count" didn't change by -1.
+Expected: 1
+  Actual: 2
+
+rails test test/controllers/api/v1/categories_controller_test.rb:71
+
+F
+
+Failure:
+Api::V1::CategoriesControllerTest#test_should_not_get_index_without_token [test/controllers/api/v1/categories_controller_test.rb:16]:
+Expected response to be a <403: forbidden>, but was a <401: Unauthorized>
+Response body: {"error":"Unauthorized","message":"Token inválido ou expirado"}.
+Expected: 403
+  Actual: 401
+
+rails test test/controllers/api/v1/categories_controller_test.rb:14
+
+F
+
+Failure:
+Api::V1::CategoriesControllerTest#test_should_get_show_with_token [test/controllers/api/v1/categories_controller_test.rb:54]:
+Expected response to be a <2XX: success>, but was a <401: Unauthorized>
+Response body: {"error":"Unauthorized","message":"Token inválido ou expirado"}
+
+rails test test/controllers/api/v1/categories_controller_test.rb:52
+
+F
+
+Failure:
+Api::V1::CategoriesControllerTest#test_should_create_category_with_token [test/controllers/api/v1/categories_controller_test.rb:58]:
+"Category.count" didn't change by 1.
+Expected: 2
+  Actual: 1
+
+rails test test/controllers/api/v1/categories_controller_test.rb:57
+
+F
+
+Failure:
+Api::V1::CategoriesControllerTest#test_should_get_index_with_token [test/controllers/api/v1/categories_controller_test.rb:49]:
+Expected response to be a <2XX: success>, but was a <401: Unauthorized>
+Response body: {"error":"Unauthorized","message":"Token inválido ou expirado"}
+
+rails test test/controllers/api/v1/categories_controller_test.rb:47
+
+F
+
+Failure:
+Api::V1::CategoriesControllerTest#test_should_not_update_category_without_token [test/controllers/api/v1/categories_controller_test.rb:35]:
+Expected response to be a <403: forbidden>, but was a <401: Unauthorized>
+Response body: {"error":"Unauthorized","message":"Token inválido ou expirado"}.
+Expected: 403
+  Actual: 401
+
+rails test test/controllers/api/v1/categories_controller_test.rb:32
+
+F
+
+Failure:
+Api::V1::CategoriesControllerTest#test_should_not_create_category_without_token [test/controllers/api/v1/categories_controller_test.rb:29]:
+Expected response to be a <403: forbidden>, but was a <401: Unauthorized>
+Response body: {"error":"Unauthorized","message":"Token inválido ou expirado"}.
+Expected: 403
+  Actual: 401
+
+rails test test/controllers/api/v1/categories_controller_test.rb:24
+
+F
+
+Failure:
+Api::V1::CategoriesControllerTest#test_should_not_get_show_without_token [test/controllers/api/v1/categories_controller_test.rb:21]:
+Expected response to be a <403: forbidden>, but was a <401: Unauthorized>
+Response body: {"error":"Unauthorized","message":"Token inválido ou expirado"}.
+Expected: 403
+  Actual: 401
+
+rails test test/controllers/api/v1/categories_controller_test.rb:19
+
+.F
+
+Failure:
+TransactionFilterableTest#test_should_return_correct_transactions_when_call_filter_by_with_unpaid [test/models/transactions/transaction_filterable_test.rb:49]:
+Expected: 20
+  Actual: 26
+
+rails test test/models/transactions/transaction_filterable_test.rb:45
+
+........E
+
+Error:
+Integrations::NuvemFiscal::CadastrarCertificadoTest#test_should_successfully_create_a_certificate_in_nuvem_fiscal_and_create_the_relationship:
+NameError: uninitialized constant Integrations::NuvemFiscal::CadastrarCertificadoTest::NuvemFiscalModel
+    test/services/integrations/nuvem_fiscal/cadastrar_certificado_test.rb:52:in `block in <class:CadastrarCertificadoTest>'
+
+rails test test/services/integrations/nuvem_fiscal/cadastrar_certificado_test.rb:43
+
+E
+
+Error:
+Integrations::NuvemFiscal::CadastrarCertificadoTest#test_should_fail_to_create_a_certificate_in_nuvem_fiscal:
+NameError: uninitialized constant Integrations::NuvemFiscal::CadastrarCertificadoTest::NuvemFiscalModel
+    test/services/integrations/nuvem_fiscal/cadastrar_certificado_test.rb:83:in `block in <class:CadastrarCertificadoTest>'
+
+rails test test/services/integrations/nuvem_fiscal/cadastrar_certificado_test.rb:76
+
+E
+
+Error:
+TransactionsControllerTest#test_should_bulk_update:
+AbstractController::ActionNotFound: The action 'bulk_update' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:121:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:118
+
+E
+
+Error:
+TransactionsControllerTest#test_should_create_paid_transaction:
+AbstractController::ActionNotFound: The action 'create' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:50:in `block (2 levels) in <class:TransactionsControllerTest>'
+    test/controllers/transactions_controller_test.rb:49:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:48
+
+E
+
+Error:
+TransactionsControllerTest#test_should_permit_correct_parameters_for_create_recurrence:
+AbstractController::ActionNotFound: The action 'create_recurrence' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:176:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:163
+
+.E
+
+Error:
+TransactionsControllerTest#test_should_destroy_amount_details_when_update_amount_details_with_'destroy'_button:
+AbstractController::ActionNotFound: The action 'update_amount_details' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:418:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:410
+
+E
+
+Error:
+TransactionsControllerTest#test_should_create_unpaid_transaction:
+AbstractController::ActionNotFound: The action 'create' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:25:in `block (2 levels) in <class:TransactionsControllerTest>'
+    test/controllers/transactions_controller_test.rb:24:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:23
+
+.E
+
+Error:
+TransactionsControllerTest#test_should_bulk_mark_as_paid:
+AbstractController::ActionNotFound: The action 'bulk_mark_as_paid' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:109:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:106
+
+E
+
+Error:
+TransactionsControllerTest#test_should_setup_recurrence_for_transaction:
+AbstractController::ActionNotFound: The action 'setup_recurrence' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:158:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:157
+
+F
+
+Failure:
+TransactionsControllerTest#test_should_create_installments_from_current_transaction [test/controllers/transactions_controller_test.rb:287]:
+Expected: 666
+  Actual: 0
+
+rails test test/controllers/transactions_controller_test.rb:234
+
+E
+
+Error:
+TransactionsControllerTest#test_should_save_amount_details_when_update_amount_details_with_'save'_button:
+AbstractController::ActionNotFound: The action 'update_amount_details' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:369:in `block (2 levels) in <class:TransactionsControllerTest>'
+    test/controllers/transactions_controller_test.rb:368:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:360
+
+E
+
+Error:
+TransactionsControllerTest#test_should_fetch_paginated_transactions_with_start_date_and_end_date:
+AbstractController::ActionNotFound: The action 'pagination' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:484:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:481
+
+E
+
+Error:
+TransactionsControllerTest#test_should_add_amount_details_item_when_update_amount_details_with_'add'_button:
+AbstractController::ActionNotFound: The action 'update_amount_details' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:316:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:308
+
+E
+
+Error:
+TransactionsControllerTest#test_should_create_recurring_transactions_from_current_transaction:
+AbstractController::ActionNotFound: The action 'create_recurrence' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:197:in `block (2 levels) in <class:TransactionsControllerTest>'
+    test/controllers/transactions_controller_test.rb:196:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:195
+
+E
+
+Error:
+TransactionsControllerTest#test_should_bulk_move_to:
+AbstractController::ActionNotFound: The action 'bulk_move_to' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:95:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:91
+
+.E
+
+Error:
+TransactionsControllerTest#test_should_call_add_amount_details_item_when_update_amount_details_with_'create_entry'_button:
+AbstractController::ActionNotFound: The action 'update_amount_details' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:444:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:433
+
+.E
+
+Error:
+TransactionsControllerTest#test_should_update_transaction:
+AbstractController::ActionNotFound: The action 'update' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:135:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:134
+
+F
+
+Failure:
+TransactionsControllerTest#test_should_fetch_transactions_with_pagination_and_start_date_and_end_date [test/controllers/transactions_controller_test.rb:478]:
+Expected nil to not be nil.
+
+rails test test/controllers/transactions_controller_test.rb:472
+
+E
+
+Error:
+TransactionsControllerTest#test_should_destroy_transaction:
+AbstractController::ActionNotFound: The action 'destroy' could not be found for TransactionsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/transactions_controller_test.rb:302:in `block (2 levels) in <class:TransactionsControllerTest>'
+    test/controllers/transactions_controller_test.rb:301:in `block in <class:TransactionsControllerTest>'
+
+rails test test/controllers/transactions_controller_test.rb:300
+
+E
+
+Error:
+CategoryTest#test_should_deliver_webhook_when_category_is_updated:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:49:in `block in <class:Category>'
+    test/models/category_test.rb:107:in `block (2 levels) in <class:CategoryTest>'
+    test/models/category_test.rb:106:in `block in <class:CategoryTest>'
+
+rails test test/models/category_test.rb:105
+
+E
+
+Error:
+CategoryTest#test_should_deliver_webhook_when_category_is_created:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/models/category_test.rb:101:in `block (2 levels) in <class:CategoryTest>'
+    test/models/category_test.rb:100:in `block in <class:CategoryTest>'
+
+rails test test/models/category_test.rb:99
+
+.E
+
+Error:
+CategoryTest#test_should_create_a_category:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/models/category_test.rb:52:in `block in <class:CategoryTest>'
+
+rails test test/models/category_test.rb:49
+
+.E
+
+Error:
+CategoryTest#test_should_update_a_category:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:49:in `block in <class:Category>'
+    test/models/category_test.rb:65:in `block in <class:CategoryTest>'
+
+rails test test/models/category_test.rb:61
+
+E
+
+Error:
+CategoryTest#test_should_discard_a_category:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:49:in `block in <class:Category>'
+    test/models/category_test.rb:74:in `block in <class:CategoryTest>'
+
+rails test test/models/category_test.rb:73
+
+E
+
+Error:
+CategoryTest#test_should_deliver_webhook_when_category_is_deleted:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:49:in `block in <class:Category>'
+    test/models/category_test.rb:113:in `block (2 levels) in <class:CategoryTest>'
+    test/models/category_test.rb:112:in `block in <class:CategoryTest>'
+
+rails test test/models/category_test.rb:111
+
+...E
+
+Error:
+AccountInvitationsControllerTest#test_should_get_new:
+ActionController::MissingExactTemplate: AccountInvitationsController#new is missing a template for request formats: text/html
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/account_invitations_controller_test.rb:37:in `block in <class:AccountInvitationsControllerTest>'
+
+rails test test/controllers/account_invitations_controller_test.rb:36
+
+...E
+
+Error:
+AccountInvitationsControllerTest#test_should_get_edit_a_account:
+ActionController::MissingExactTemplate: AccountSettingsController#edit is missing a template for request formats: text/html
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/account_settings_controller_test.rb:12:in `block in <class:AccountInvitationsControllerTest>'
+
+rails test test/controllers/account_settings_controller_test.rb:11
+
+.E
+
+Error:
+AccountInvitationsControllerTest#test_should_edit_a_account:
+ActionController::MissingExactTemplate: AccountInvitationsController#edit is missing a template for request formats: text/html
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/account_invitations_controller_test.rb:65:in `block in <class:AccountInvitationsControllerTest>'
+
+rails test test/controllers/account_invitations_controller_test.rb:63
+
+.E
+
+Error:
+AccountInvitationsControllerTest#test_should_get_index:
+ActionController::MissingExactTemplate: AccountInvitationsController#index is missing a template for request formats: text/html
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/account_invitations_controller_test.rb:32:in `block in <class:AccountInvitationsControllerTest>'
+
+rails test test/controllers/account_invitations_controller_test.rb:31
+
+E
+
+Error:
+AccountInvitationsControllerTest#test_should_show_account_invitation_and_redirect_to_root_page:
+ActionController::MissingExactTemplate: AccountInvitationsController#show is missing a template for request formats: text/html
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/account_invitations_controller_test.rb:42:in `block in <class:AccountInvitationsControllerTest>'
+
+rails test test/controllers/account_invitations_controller_test.rb:41
+
+..............E
+
+Error:
+ContactsControllerTest#test_should_destroy_contact:
+AbstractController::ActionNotFound: The action 'destroy' could not be found for ContactsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/contacts_controller_test.rb:47:in `block (2 levels) in <class:ContactsControllerTest>'
+    test/controllers/contacts_controller_test.rb:46:in `block in <class:ContactsControllerTest>'
+
+rails test test/controllers/contacts_controller_test.rb:45
+
+E
+
+Error:
+ContactsControllerTest#test_should_create_contact:
+AbstractController::ActionNotFound: The action 'create' could not be found for ContactsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/contacts_controller_test.rb:24:in `block (2 levels) in <class:ContactsControllerTest>'
+    test/controllers/contacts_controller_test.rb:23:in `block in <class:ContactsControllerTest>'
+
+rails test test/controllers/contacts_controller_test.rb:22
+
+E
+
+Error:
+ContactsControllerTest#test_should_show_contact:
+ActionView::MissingTemplate: Missing template contacts/show, application/show with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/controllers/contacts_controller.rb:14:in `show'
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/contacts_controller_test.rb:31:in `block in <class:ContactsControllerTest>'
+
+rails test test/controllers/contacts_controller_test.rb:30
+
+E
+
+Error:
+ContactsControllerTest#test_should_get_index:
+ActionView::MissingTemplate: Missing template contacts/index, application/index with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/controllers/contacts_controller.rb:8:in `index'
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/contacts_controller_test.rb:13:in `block in <class:ContactsControllerTest>'
+
+rails test test/controllers/contacts_controller_test.rb:12
+
+E
+
+Error:
+ContactsControllerTest#test_should_update_contact:
+AbstractController::ActionNotFound: The action 'update' could not be found for ContactsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/contacts_controller_test.rb:41:in `block in <class:ContactsControllerTest>'
+
+rails test test/controllers/contacts_controller_test.rb:40
+
+E
+
+Error:
+ContactsControllerTest#test_should_get_new:
+ActionView::MissingTemplate: Missing template contacts/new, application/new with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/controllers/contacts_controller.rb:19:in `new'
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/contacts_controller_test.rb:18:in `block in <class:ContactsControllerTest>'
+
+rails test test/controllers/contacts_controller_test.rb:17
+
+E
+
+Error:
+ContactsControllerTest#test_should_get_edit:
+ActionView::MissingTemplate: Missing template contacts/edit, application/edit with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/controllers/contacts_controller.rb:24:in `edit'
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/contacts_controller_test.rb:36:in `block in <class:ContactsControllerTest>'
+
+rails test test/controllers/contacts_controller_test.rb:35
+
+..............F
+
+Failure:
+AppointmentLinkTest#test_should_not_allow_duplicate_tokens [test/models/appointment_link_test.rb:37]:
+Expected ["já está em uso"] to include "has already been taken".
+
+rails test test/models/appointment_link_test.rb:23
+
+..F
+
+Failure:
+AppointmentLinkTest#test_should_require_name [test/models/appointment_link_test.rb:46]:
+Expected ["não pode ficar em branco"] to include "can't be blank".
+
+rails test test/models/appointment_link_test.rb:40
+
+...........E
+
+Error:
+Integrations::NuvemFiscal::CadastrarEmpresaTest#test_should_successfully_create_a_company_in_nuvem_fiscal:
+NameError: uninitialized constant Integrations::NuvemFiscal::CadastrarEmpresaTest::NuvemFiscalModel
+    test/services/integrations/nuvem_fiscal/cadastrar_empresa_test.rb:27:in `block in <class:CadastrarEmpresaTest>'
+
+rails test test/services/integrations/nuvem_fiscal/cadastrar_empresa_test.rb:21
+
+E
+
+Error:
+Integrations::NuvemFiscal::CadastrarEmpresaTest#test_should_fail_to_create_a_company_in_nuvem_fiscal:
+NameError: uninitialized constant Integrations::NuvemFiscal::CadastrarEmpresaTest::NuvemFiscalModel
+    test/services/integrations/nuvem_fiscal/cadastrar_empresa_test.rb:50:in `block in <class:CadastrarEmpresaTest>'
+
+rails test test/services/integrations/nuvem_fiscal/cadastrar_empresa_test.rb:46
+
+........E
+
+Error:
+AccountsControllerTest#test_should_get_index:
+ActionController::MissingExactTemplate: AccountsController#index is missing a template for request formats: text/html
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/accounts_controller_test.rb:10:in `block in <class:AccountsControllerTest>'
+
+rails test test/controllers/accounts_controller_test.rb:9
+
+E
+
+Error:
+AccountsControllerTest#test_should_delete_a_account:
+AbstractController::ActionNotFound: The action 'confirm_destroy' could not be found for AccountsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/accounts_controller_test.rb:97:in `block in <class:AccountsControllerTest>'
+
+rails test test/controllers/accounts_controller_test.rb:96
+
+E
+
+Error:
+AccountsControllerTest#test_should_not_create_account_without_name:
+AbstractController::ActionNotFound: The action 'create' could not be found for AccountsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/accounts_controller_test.rb:52:in `block (2 levels) in <class:AccountsControllerTest>'
+    test/controllers/accounts_controller_test.rb:51:in `block in <class:AccountsControllerTest>'
+
+rails test test/controllers/accounts_controller_test.rb:50
+
+E
+
+Error:
+AccountsControllerTest#test_should_create_a_account:
+AbstractController::ActionNotFound: The action 'create' could not be found for AccountsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/accounts_controller_test.rb:20:in `block in <class:AccountsControllerTest>'
+
+rails test test/controllers/accounts_controller_test.rb:19
+
+E
+
+Error:
+AccountsControllerTest#test_should_reset_a_account:
+AbstractController::ActionNotFound: The action 'reset' could not be found for AccountsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/accounts_controller_test.rb:92:in `block in <class:AccountsControllerTest>'
+
+rails test test/controllers/accounts_controller_test.rb:91
+
+E
+
+Error:
+AccountsControllerTest#test_should_update_a_account:
+AbstractController::ActionNotFound: The action 'update' could not be found for AccountsController
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/accounts_controller_test.rb:75:in `block in <class:AccountsControllerTest>'
+
+rails test test/controllers/accounts_controller_test.rb:73
+
+.E
+
+Error:
+AccountsControllerTest#test_should_get_edit_account:
+ActiveRecord::RecordNotFound: Couldn't find BankAccount with 'id'=1026971814 [WHERE "bank_accounts"."account_id" = $1]
+    app/controllers/accounts_controller.rb:27:in `edit'
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/accounts_controller_test.rb:87:in `block in <class:AccountsControllerTest>'
+
+rails test test/controllers/accounts_controller_test.rb:86
+
+...E
+
+Error:
+Api::V1::AppointmentsControllerTest#test_should_process_refund_when_canceling_paid_appointment:
+NameError: uninitialized constant Api::V1::Appointments::ProcessRefund
+    test/controllers/api/v1/appointments_controller_test.rb:441:in `block in <class:AppointmentsControllerTest>'
+
+rails test test/controllers/api/v1/appointments_controller_test.rb:439
+
+..F
+
+Failure:
+Api::V1::AppointmentsControllerTest#test_should_create_appointment_with_API_key [test/controllers/api/v1/appointments_controller_test.rb:274]:
+"Appointment.count" didn't change by 1.
+Expected: 3
+  Actual: 2
+
+rails test test/controllers/api/v1/appointments_controller_test.rb:260
+
+E
+
+Error:
+Api::V1::AppointmentsControllerTest#test_should_generate_google_meet_link_when_enable_google_meet_is_true:
+NameError: uninitialized constant Api::V1::Appointments::GenerateGoogleMeetLink
+    test/controllers/api/v1/appointments_controller_test.rb:365:in `block in <class:AppointmentsControllerTest>'
+
+rails test test/controllers/api/v1/appointments_controller_test.rb:351
+
+.F
+
+Failure:
+Api::V1::AppointmentsControllerTest#test_should_filter_appointments_by_payment_status [test/controllers/api/v1/appointments_controller_test.rb:102]:
+Expected: 1
+  Actual: 0
+
+rails test test/controllers/api/v1/appointments_controller_test.rb:91
+
+F
+
+Failure:
+Api::V1::AppointmentsControllerTest#test_should_create_recurring_appointments_when_recurrence_pattern_provided [test/controllers/api/v1/appointments_controller_test.rb:336]:
+"Appointment.count" didn't change by 4.
+Expected: 6
+  Actual: 2
+
+rails test test/controllers/api/v1/appointments_controller_test.rb:317
+
+.E
+
+Error:
+Api::V1::AppointmentsControllerTest#test_should_cancel_appointment:
+ActiveRecord::RecordNotFound: Couldn't find Appointment with 'id'=2269
+    test/controllers/api/v1/appointments_controller_test.rb:435:in `block in <class:AppointmentsControllerTest>'
+
+rails test test/controllers/api/v1/appointments_controller_test.rb:426
+
+F
+
+Failure:
+Api::V1::AppointmentsControllerTest#test_should_return_available_slots_for_professional [test/controllers/api/v1/appointments_controller_test.rb:181]:
+Expected response to be a <2XX: success>, but was a <401: Unauthorized>
+Response body: {"error":"Invalid API key"}
+
+rails test test/controllers/api/v1/appointments_controller_test.rb:158
+
+F
+
+Failure:
+Api::V1::AppointmentsControllerTest#test_should_create_contact_automatically_when_creating_appointment_with_whatsapp_number [test/controllers/api/v1/appointments_controller_test.rb:303]:
+"Contact.count" didn't change by 1.
+Expected: 2
+  Actual: 1
+
+rails test test/controllers/api/v1/appointments_controller_test.rb:289
+
+.E
+
+Error:
+Api::V1::AppointmentsControllerTest#test_should_exclude_occupied_slots_from_available_slots:
+RuntimeError: Neutered Exception ActiveRecord::RecordInvalid: A validação falhou: Já existe um agendamento neste horário para este profissional
+    test/controllers/api/v1/appointments_controller_test.rb:226:in `block in <class:AppointmentsControllerTest>'
+
+rails test test/controllers/api/v1/appointments_controller_test.rb:214
+
+F
+
+Failure:
+Api::V1::AppointmentsControllerTest#test_should_filter_appointments_by_status [test/controllers/api/v1/appointments_controller_test.rb:87]:
+Expected: 1
+  Actual: 0
+
+rails test test/controllers/api/v1/appointments_controller_test.rb:76
+
+F
+
+Failure:
+Api::V1::AppointmentsControllerTest#test_should_return_empty_slots_when_professional_does_not_work_on_date [test/controllers/api/v1/appointments_controller_test.rb:209]:
+Expected response to be a <2XX: success>, but was a <401: Unauthorized>
+Response body: {"error":"Invalid API key"}
+
+rails test test/controllers/api/v1/appointments_controller_test.rb:187
+
+.F
+
+Failure:
+Api::V1::AppointmentsControllerTest#test_should_not_allow_invalid_status_transition [test/controllers/api/v1/appointments_controller_test.rb:422]:
+Expected response to be a <422: unprocessable_entity>, but was a <200: OK>.
+Expected: 422
+  Actual: 200
+
+rails test test/controllers/api/v1/appointments_controller_test.rb:413
+
+...............E
+
+Error:
+Integrations::NuvemFiscal::ConfigurarServicoTest#test_should_successfully_configure_a_service_in_nuvem_fiscal_and_create_the_relationship:
+NameError: uninitialized constant Integrations::NuvemFiscal::ConfigurarServicoTest::NuvemFiscalModel
+    test/services/integrations/nuvem_fiscal/configurar_servico_test.rb:48:in `block in <class:ConfigurarServicoTest>'
+
+rails test test/services/integrations/nuvem_fiscal/configurar_servico_test.rb:42
+
+.E
+
+Error:
+TransactionTest#test_should_be_valid_with_valid_attributes:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:139
+
+E
+
+Error:
+TransactionTest#test_should_be_valid:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:24
+
+E
+
+Error:
+TransactionTest#test_should_be_valid_without_a_payment_plan:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:128
+
+E
+
+Error:
+TransactionTest#test_should_not_sum_amount_cents_of_transactions_if_not_installment:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:196
+
+E
+
+Error:
+TransactionTest#test_amount_cents_should_be_less_than_or_equal_to_999999999999:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:44
+
+E
+
+Error:
+TransactionTest#test_exchanged_amount_cents_should_be_greater_than_or_equal_to_0:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:39
+
+E
+
+Error:
+TransactionTest#test_should_be_invalid_without_number_of_installments_if_recurring:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:149
+
+E
+
+Error:
+TransactionTest#test_validate_transaction_type_should_validate_presence_of_transaction_type_cd:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:64
+
+E
+
+Error:
+TransactionTest#test_should_be_invalid_without_frequency_if_installment:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:161
+
+E
+
+Error:
+TransactionTest#test_should_correctly_parse_string_to_cents_for_amount_cents:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:183
+
+E
+
+Error:
+TransactionTest#test_validate_bank_account_should_validate_presence_of_bank_account_id:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:59
+
+E
+
+Error:
+TransactionTest#test_amount_currency_should_be_present:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:30
+
+E
+
+Error:
+TransactionTest#test_due_date_should_be_present:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:30
+
+E
+
+Error:
+TransactionTest#test_should_sum_amount_cents_of_transactions_after_save_if_installment:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:188
+
+E
+
+Error:
+TransactionTest#test_should_belong_to_payment_plan:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:87
+
+E
+
+Error:
+TransactionTest#test_should_deliver_webhook_when_transaction_is_updated:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:75
+
+E
+
+Error:
+TransactionTest#test_exchanged_amount_cents_should_be_present:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:30
+
+E
+
+Error:
+TransactionTest#test_exchanged_amount_cents_should_be_less_than_or_equal_to_999999999999:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:44
+
+E
+
+Error:
+TransactionTest#test_exchanged_amount_currency_should_be_present:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:30
+
+E
+
+Error:
+TransactionTest#test_should_deliver_webhook_when_transaction_is_deleted:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:81
+
+E
+
+Error:
+TransactionTest#test_should_be_invalid_if_number_of_installments_is_less_than_MIN_NUMBER_OF_INSTALLMENTS:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:173
+
+E
+
+Error:
+TransactionTest#test_amount_cents_should_be_present:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:30
+
+E
+
+Error:
+TransactionTest#test_amount_cents_should_be_greater_than_or_equal_to_0:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:39
+
+E
+
+Error:
+TransactionTest#test_transaction_type_cd_should_be_present:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:30
+
+E
+
+Error:
+TransactionTest#test_should_be_valid_with_a_payment_plan:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:112
+
+E
+
+Error:
+TransactionTest#test_should_be_invalid_without_number_of_installments_if_installment:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:167
+
+E
+
+Error:
+TransactionTest#test_bank_account_should_be_present:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:30
+
+E
+
+Error:
+TransactionTest#test_should_be_invalid_without_frequency_if_recurring:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:143
+
+E
+
+Error:
+TransactionTest#test_should_deliver_webhook_when_transaction_is_created:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:69
+
+E
+
+Error:
+TransactionTest#test_validate_transfer_same_bank_account_should_prevent_transfer_to_the_same_bank_account:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:51
+
+E
+
+Error:
+TransactionTest#test_should_be_invalid_without_amount_cents_if_installment:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:155
+
+E
+
+Error:
+TransactionTest#test_should_be_invalid_if_number_of_installments_is_greater_than_MAX_NUMBER_OF_INSTALLMENTS:
+ActionView::MissingTemplate: Missing partial api/v1/categories/_category with {:locale=>[:"pt-BR", :pt, :en], :formats=>[:html, :text, :js, :css, :ics, :csv, :vcf, :vtt, :png, :jpeg, :gif, :bmp, :tiff, :svg, :mpeg, :mp3, :ogg, :m4a, :webm, :mp4, :otf, :ttf, :woff, :woff2, :xml, :rss, :atom, :yaml, :multipart_form, :url_encoded_form, :json, :pdf, :zip, :gzip, :turbo_stream, :xlsx], :variants=>[], :handlers=>[:raw, :erb, :html, :builder, :ruby, :"inky-builder", :"inky-erb", :"inky-html", :"inky-raw", :"inky-ruby", :inky, :jbuilder, :"inky-jbuilder", :axlsx, :"inky-axlsx", :haml, :"inky-haml"]}.
+
+Searched in:
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/view_component-2.83.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/rails_admin-3.3.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/kaminari-core-1.2.2/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise_invitable-2.0.11/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-i18n-1.14.0/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/devise-4.9.4/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actiontext-7.0.8.7/app/views"
+  * "/home/baby/.rbenv/versions/3.2.3/lib/ruby/gems/3.2.0/gems/actionmailbox-7.0.8.7/app/views"
+
+    app/models/application_record.rb:71:in `render_jbuilder_api_v1'
+    app/models/application_record.rb:75:in `to_webhook_data'
+    app/subscribers/webhooks/deliver_job_subscriber.rb:20:in `perform'
+    app/subscribers/application_subscriber.rb:65:in `call'
+    app/helpers/rails_event_store_helper.rb:7:in `publish'
+    app/models/application_record.rb:57:in `publish'
+    app/models/category.rb:53:in `block in <class:Category>'
+    test/test_helper.rb:155:in `create_category'
+    test/test_helper.rb:270:in `create_transaction'
+    test/models/transactions/transaction_test.rb:10:in `block in <class:TransactionTest>'
+
+rails test test/models/transactions/transaction_test.rb:178
+
+..E
+
+Error:
+CategoriesControllerTest#test_should_show_category:
+ActionController::MissingExactTemplate: CategoriesController#show is missing a template for request formats: text/html
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/categories_controller_test.rb:34:in `block in <class:CategoriesControllerTest>'
+
+rails test test/controllers/categories_controller_test.rb:33
+
+E
+
+Error:
+CategoriesControllerTest#test_should_get_index:
+ActionController::MissingExactTemplate: CategoriesController#index is missing a template for request formats: text/html
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/categories_controller_test.rb:13:in `block in <class:CategoriesControllerTest>'
+
+rails test test/controllers/categories_controller_test.rb:12
+
+.E
+
+Error:
+CategoriesControllerTest#test_should_get_new:
+ActionController::MissingExactTemplate: CategoriesController#new is missing a template for request formats: text/html
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/categories_controller_test.rb:19:in `block in <class:CategoriesControllerTest>'
+
+rails test test/controllers/categories_controller_test.rb:18
+
+E
+
+Error:
+CategoriesControllerTest#test_should_get_edit:
+ActionController::MissingExactTemplate: CategoriesController#edit is missing a template for request formats: text/html
+    app/middleware/json_error_handler.rb:10:in `call'
+    test/controllers/categories_controller_test.rb:39:in `block in <class:CategoriesControllerTest>'
+
+rails test test/controllers/categories_controller_test.rb:38
+
+..................rake aborted!
+Interrupt: Interrupt
+/home/baby/.rbenv/versions/3.2.3/bin/bundle:25:in `load'
+/home/baby/.rbenv/versions/3.2.3/bin/bundle:25:in `<main>'
+Tasks: TOP => test
+(See full trace by running task with --trace)
+Interrupted. Exiting...
+
+
+Finished in 102.857976s, 2.3333 runs/s, 4.5014 assertions/s.
+240 runs, 463 assertions, 23 failures, 87 errors, 0 skips
+Coverage report generated for Minitest to /home/baby/Documents/BarberManagement/coverage.
+Line Coverage: 41.99% (8838 / 21047)

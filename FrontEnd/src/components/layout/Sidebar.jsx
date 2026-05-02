@@ -19,10 +19,12 @@ import {
   Clock,
   Link2,
   Crown,
-  Shield
+  Shield,
+  Percent,
+  FileEdit,
+  StickyNote
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useAuth } from '../../contexts/AuthContext'
@@ -30,7 +32,7 @@ import { useAuth } from '../../contexts/AuthContext'
 // Função auxiliar para obter cor do ícone baseado no modo escuro
 const getIconColor = (color, isDarkMode, isActive) => {
   if (isActive) {
-    return isDarkMode ? 'text-blue-400' : 'text-blue-600'
+    return isDarkMode ? 'text-indigo-300' : 'text-white'
   }
   if (isDarkMode) {
     // Mapear cores -600 para versões mais claras no modo escuro
@@ -115,6 +117,20 @@ const menuItems = [
     badge: '7'
   },
   { 
+    icon: FileEdit, 
+    label: 'Modelos de Documentos', 
+    path: '/document-templates', 
+    color: 'text-violet-600',
+    badge: '0'
+  },
+  { 
+    icon: Percent, 
+    label: 'Comissões', 
+    path: '/commissions', 
+    color: 'text-emerald-600',
+    badge: '0'
+  },
+  { 
     icon: Upload, 
     label: 'Importações', 
     path: '/imports', 
@@ -177,21 +193,19 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen
   return (
     <div className={cn(
       "h-full flex flex-col transition-all duration-300 ease-in-out preserve-colors",
-      // Background e bordas com suporte a modo escuro
-      isDarkMode 
-        ? "bg-gray-800 border-r border-gray-700" 
+      isDarkMode
+        ? "bg-gray-800 border-r border-gray-700"
         : "bg-white border-r border-gray-200",
-      // Responsive width: mobile full-width, desktop variable
-      isMobile 
-        ? "w-full max-w-sm" 
-        : isCollapsed 
-          ? "w-14" 
-          : "w-64 lg:w-72"
+      isMobile
+        ? "w-full max-w-sm"
+        : isCollapsed
+          ? "w-14"
+          : "w-48"
     )}>
       {/* Header */}
       <div className={cn(
         "flex items-center justify-between border-b transition-colors duration-200",
-        "p-2 sm:p-3 lg:p-4",
+        "px-3 py-2",
         isDarkMode 
           ? "border-gray-700 bg-gray-800/50" 
           : "border-gray-200 bg-gray-50"
@@ -203,16 +217,15 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen
             </div>
             <div className="min-w-0 flex-1">
               <span className={cn(
-                "font-bold block leading-tight",
-                "text-xs sm:text-sm md:text-base lg:text-lg",
+                "font-bold block leading-tight text-sm",
                 isDarkMode ? "text-gray-100" : "text-gray-900",
-                "whitespace-nowrap"
+                "truncate"
               )}>
                 BarberManagement
               </span>
               <p className={cn(
-                "text-[10px] sm:text-xs leading-tight mt-0.5",
-                isDarkMode ? "text-gray-400" : "text-gray-600",
+                "text-[10px] leading-tight mt-0.5",
+                isDarkMode ? "text-gray-400" : "text-gray-500",
                 "truncate"
               )}>
                 Controle Financeiro
@@ -245,8 +258,8 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen
       {/* Navigation */}
       <nav className={cn(
         "flex-1 overflow-y-auto overflow-x-hidden transition-colors duration-200",
-        // Responsive padding e espaçamento
-        "p-2 sm:p-3 lg:p-4 space-y-1.5 sm:space-y-2"
+        isDarkMode ? "bg-gray-800" : "bg-gray-100",
+        "p-2 space-y-1"
       )}>
         {menuItems.filter((item) => {
           // Filtrar itens admin-only se o usuário não for admin
@@ -262,71 +275,41 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen
             <div
               key={item.path}
               onClick={() => {
-                // Forçar navegação usando navigate para garantir funcionamento no emulador
                 navigate(item.path);
-                // Fechar menu mobile se estiver aberto
                 if (isMobile) {
                   setIsMobileOpen(false);
                 }
               }}
               className={cn(
-                "group flex items-center transition-all duration-200 relative preserve-colors cursor-pointer",
-                // Responsive padding e espaçamento
-                "px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 lg:py-3 rounded-lg",
-                "space-x-2 sm:space-x-3 lg:space-x-4",
-                // Hover e active states com suporte a modo escuro
-                isDarkMode 
+                "group flex items-center transition-colors duration-150 relative preserve-colors cursor-pointer",
+                "px-3 py-2 rounded-md",
+                "space-x-3",
+                isDarkMode
                   ? isActive
-                    ? "bg-blue-900/40 text-blue-400 border-l-4 border-blue-500 hover:bg-blue-900/50 active:bg-blue-900/60"
-                    : "text-gray-300 hover:bg-gray-700/80 active:bg-gray-700 hover:text-gray-100"
+                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                    : "text-gray-300 hover:bg-gray-700 hover:text-gray-100"
                   : isActive
-                    ? "bg-blue-50 text-blue-700 border-l-4 border-blue-600 hover:bg-blue-100 active:bg-blue-100"
-                    : "text-gray-700 hover:bg-gray-100 active:bg-gray-200 hover:text-gray-900",
-                isCollapsed && !isMobile && "justify-center space-x-0 px-2 lg:px-2.5"
+                    ? "bg-indigo-500 text-white hover:bg-indigo-600"
+                    : "text-gray-700 hover:bg-gray-200 hover:text-gray-900",
+                isCollapsed && !isMobile && "justify-center space-x-0 px-2"
               )}
               title={isCollapsed && !isMobile ? item.label : undefined}
               style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
             >
               <Icon className={cn(
-                "flex-shrink-0 transition-all duration-200 preserve-colors",
-                // Responsive icon sizes
-                "h-4 w-4 sm:h-5 sm:w-5",
-                getIconColor(item.color, isDarkMode, isActive),
-                !isActive && "group-hover:opacity-100 opacity-90"
+                "flex-shrink-0 h-4 w-4 preserve-colors",
+                getIconColor(item.color, isDarkMode, isActive)
               )} />
-              
+
               {(!isCollapsed || isMobile) && (
-                <div className="flex items-center justify-between flex-1 min-w-0">
-                  <span className={cn(
-                    "font-medium preserve-colors",
-                    "text-xs sm:text-sm",
-                    isDarkMode 
-                      ? isActive 
-                        ? "text-blue-400" 
-                        : "text-gray-300"
-                      : isActive 
-                        ? "text-blue-700" 
-                        : "text-gray-700"
-                  )}>
-                    {item.label}
-                  </span>
-                  
-                  <Badge 
-                    variant={isActive ? "default" : "secondary"}
-                    className={cn(
-                      "text-[10px] sm:text-xs h-4 sm:h-5 px-1.5 sm:px-2 ml-1.5 sm:ml-2 preserve-colors flex-shrink-0",
-                      isDarkMode
-                        ? isActive
-                          ? "bg-blue-600 text-white border-blue-500"
-                          : "bg-gray-700 text-gray-300 border-gray-600"
-                        : isActive
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-200 text-gray-600"
-                    )}
-                  >
-                    {item.badge}
-                  </Badge>
-                </div>
+                <span className={cn(
+                  "font-medium preserve-colors truncate text-sm",
+                  isDarkMode
+                    ? isActive ? "text-white" : "text-gray-300"
+                    : isActive ? "text-white" : "text-gray-700"
+                )}>
+                  {item.label}
+                </span>
               )}
             </div>
           )
@@ -336,11 +319,11 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen
       {/* Footer */}
       {(!isCollapsed || isMobile) && (
         <div className={cn(
-          "p-2 sm:p-3 lg:p-4 border-t transition-colors duration-200",
+          "p-3 border-t transition-colors duration-200",
           isDarkMode ? "border-gray-700" : "border-gray-200"
         )}>
           <div className={cn(
-            "rounded-lg p-2 sm:p-3 lg:p-4 border transition-colors duration-200",
+            "rounded-lg p-2 border transition-colors duration-200",
             isDarkMode
               ? "bg-blue-900/30 border-blue-800/50"
               : "bg-blue-50 border-blue-100"

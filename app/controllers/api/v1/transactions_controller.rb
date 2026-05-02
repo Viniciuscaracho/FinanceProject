@@ -9,7 +9,7 @@ module Api
       
       def index
         @transactions = Current.account.transactions
-          .includes(:category, :cost_center, :contact)
+          .includes(:category, :cost_center, :contact, :bank_account)
           .order(created_at: :desc)
         
         # Aplicar filtros de busca
@@ -24,7 +24,12 @@ module Api
         end
         
         # Aplicar filtros de data
-        date_column = params[:date_type] == 'competency' ? 'competency_date' : (params[:date_type] == 'payment' ? 'paid_at' : 'due_date')
+        # Para 'payment': usa paid_at quando preenchido, senão cai em due_date (transações não pagas ainda têm vencimento)
+        date_column = case params[:date_type]
+                      when 'competency' then 'competency_date'
+                      when 'payment'    then 'COALESCE(paid_at, due_date)'
+                      else 'due_date'
+                      end
         if params[:start_date].present?
           start_date = Date.parse(params[:start_date]) rescue nil
           @transactions = @transactions.where("#{date_column} >= ?", start_date) if start_date
@@ -72,8 +77,14 @@ module Api
         
         # Aplicar filtro de status pago
         if params[:paid].present?
-          paid_values = Array(params[:paid]).map { |p| p.to_s == 'true' || p == true }
-          @transactions = @transactions.where(paid: paid_values) if paid_values.any?
+          raw = Array(params[:paid])
+          # '__none__' significa que o usuário desmarcou os dois checkboxes → retornar vazio
+          if raw.include?('__none__')
+            @transactions = @transactions.none
+          else
+            paid_values = raw.map { |p| p.to_s == 'true' || p == true }
+            @transactions = @transactions.where(paid: paid_values) if paid_values.any?
+          end
         end
         
         # Aplicar filtro de tags
@@ -109,47 +120,97 @@ module Api
       end
       
       def create
-        @transaction = Current.account.transactions.build(transaction_params)
-        
-        # Garantir que name seja preenchido se não foi enviado
-        @transaction.name = @transaction.description if @transaction.name.blank? && @transaction.description.present?
-        
-        # Garantir que exchanged_amount seja definido se não foi enviado
-        # (o callback set_exchanged_amount deve fazer isso, mas garantimos aqui também)
-        if @transaction.exchanged_amount_cents.zero? && @transaction.amount_cents.present?
-          @transaction.exchanged_amount = @transaction.amount
-        end
-        
-        if @transaction.save
-          Rails.logger.info "💵 [TransactionsController#create] Transação criada: ID=#{@transaction.id}, amount_cents=#{@transaction.amount_cents}, paid=#{@transaction.paid}, bank_account_id=#{@transaction.bank_account_id}"
-          
-          # Atualizar saldo da conta bancária imediatamente se a transação estiver paga
-          if @transaction.paid? && @transaction.bank_account.present?
-            Rails.logger.info "💰 [TransactionsController#create] Atualizando saldo da conta #{@transaction.bank_account_id}"
-            begin
-              old_balance = @transaction.bank_account.balance_cents
-              @transaction.bank_account.update_balance!
-              @transaction.bank_account.reload
-              new_balance = @transaction.bank_account.balance_cents
-              Rails.logger.info "✅ [TransactionsController#create] Saldo atualizado: #{old_balance} -> #{new_balance}"
-            rescue => e
-              Rails.logger.error "❌ [TransactionsController#create] Erro ao atualizar saldo: #{e.message}"
-              Rails.logger.error e.backtrace.join("\n")
+        # Verificar se é parcelamento ou recorrência
+        if payment_plan_params.present?
+          result = Transactions::CreateWithPaymentPlan.call(
+            account: Current.account,
+            name: transaction_params[:name] || transaction_params[:description] || '',
+            description: transaction_params[:description],
+            amount_cents: transaction_params[:amount_cents],
+            amount_currency: transaction_params[:amount_currency] || 'BRL',
+            transaction_type_cd: transaction_params[:transaction_type_cd] || 0,
+            due_date: transaction_params[:due_date],
+            paid_at: transaction_params[:paid_at],
+            category_id: transaction_params[:category_id],
+            cost_center_id: transaction_params[:cost_center_id],
+            contact_id: transaction_params[:contact_id],
+            bank_account_id: transaction_params[:bank_account_id],
+            payment_method_cd: transaction_params[:payment_method_cd] || 0,
+            paid: transaction_params[:paid] || false,
+            competency_date: transaction_params[:competency_date],
+            document_number: transaction_params[:document_number],
+            payment_plan_type: payment_plan_params[:type] || 'installment',
+            amount_type: payment_plan_params[:amount_type] || 'total_amount',
+            number_of_installments: payment_plan_params[:number_of_installments].to_i,
+            frequency: payment_plan_params[:frequency] || 'monthly'
+          )
+
+          if result.success?
+            @transaction = result.transaction
+            
+            # Atualizar saldo da conta bancária se a transação estiver paga
+            if @transaction.paid? && @transaction.bank_account.present?
+              begin
+                @transaction.bank_account.update_balance!
+                @transaction.bank_account.reload
+              rescue => e
+                Rails.logger.error "❌ [TransactionsController#create] Erro ao atualizar saldo: #{e.message}"
+                Rails.logger.error e.backtrace.join("\n")
+              end
             end
+            
+            render json: {
+              transaction: @transaction.as_json(
+                include: [:category, :cost_center, :contact, :payment_plan],
+                methods: [:formatted_amount, :formatted_due_date, :formatted_paid_at, :transaction_type_name]
+              ),
+              installments: result.payment_plan.transactions.order(:installment_number).as_json(
+                include: [:category, :cost_center, :contact],
+                methods: [:formatted_amount, :formatted_due_date, :formatted_paid_at]
+              )
+            }, status: :created
           else
-            Rails.logger.info "⏸️ [TransactionsController#create] Transação não paga ou sem conta bancária, pulando atualização de saldo"
+            render json: { 
+              errors: [result.message],
+              error: result.message
+            }, status: :unprocessable_entity
+          end
+        else
+          # Criação de transação simples (sem parcelamento)
+          @transaction = Current.account.transactions.build(transaction_params)
+          
+          # Garantir que name seja preenchido se não foi enviado
+          @transaction.name = @transaction.description if @transaction.name.blank? && @transaction.description.present?
+          
+          # Garantir que exchanged_amount seja definido se não foi enviado
+          # (o callback set_exchanged_amount deve fazer isso, mas garantimos aqui também)
+          if @transaction.exchanged_amount_cents.zero? && @transaction.amount_cents.present?
+            @transaction.exchanged_amount = @transaction.amount
           end
           
-          render json: @transaction.as_json(
-            include: [:category, :cost_center, :contact],
-            methods: [:formatted_amount, :formatted_due_date, :formatted_paid_at, :transaction_type_name]
-          ), status: :created
-        else
-          Rails.logger.error "Transaction validation errors: #{@transaction.errors.full_messages.inspect}"
-          render json: { 
-            errors: @transaction.errors.full_messages,
-            error: @transaction.errors.full_messages.join(', ')
-          }, status: :unprocessable_entity
+          if @transaction.save
+            # Atualizar saldo da conta bancária imediatamente se a transação estiver paga
+            if @transaction.paid? && @transaction.bank_account.present?
+              begin
+                @transaction.bank_account.update_balance!
+                @transaction.bank_account.reload
+              rescue => e
+                Rails.logger.error "❌ [TransactionsController#create] Erro ao atualizar saldo: #{e.message}"
+                Rails.logger.error e.backtrace.join("\n")
+              end
+            end
+            
+            render json: @transaction.as_json(
+              include: [:category, :cost_center, :contact],
+              methods: [:formatted_amount, :formatted_due_date, :formatted_paid_at, :transaction_type_name]
+            ), status: :created
+          else
+            Rails.logger.error "Transaction validation errors: #{@transaction.errors.full_messages.inspect}"
+            render json: { 
+              errors: @transaction.errors.full_messages,
+              error: @transaction.errors.full_messages.join(', ')
+            }, status: :unprocessable_entity
+          end
         end
       end
       
@@ -164,11 +225,7 @@ module Api
         old_bank_account_id = @transaction.bank_account_id
         old_paid = @transaction.paid
         
-        Rails.logger.info "💵 [TransactionsController#update] Atualizando transação ID=#{@transaction.id}, old_bank_account_id=#{old_bank_account_id}, old_paid=#{old_paid}"
-        
         if @transaction.update(params_hash)
-          Rails.logger.info "💵 [TransactionsController#update] Transação atualizada: new_bank_account_id=#{@transaction.bank_account_id}, new_paid=#{@transaction.paid}, amount_cents=#{@transaction.amount_cents}"
-          
           # Atualizar saldo das contas afetadas imediatamente
           accounts_to_update = []
           accounts_to_update << @transaction.bank_account if @transaction.bank_account.present? && @transaction.paid?
@@ -179,14 +236,10 @@ module Api
             accounts_to_update << BankAccount.find_by(id: old_bank_account_id) if old_bank_account_id.present?
           end
           
-          Rails.logger.info "💰 [TransactionsController#update] Atualizando #{accounts_to_update.compact.uniq.count} conta(s)"
           accounts_to_update.compact.uniq.each do |account|
             begin
-              old_balance = account.balance_cents
               account.update_balance!
               account.reload
-              new_balance = account.balance_cents
-              Rails.logger.info "✅ [TransactionsController#update] Conta #{account.id} atualizada: #{old_balance} -> #{new_balance}"
             rescue => e
               Rails.logger.error "❌ [TransactionsController#update] Erro ao atualizar conta #{account.id}: #{e.message}"
               Rails.logger.error e.backtrace.join("\n")
@@ -209,9 +262,6 @@ module Api
       def destroy
         bank_account_id = @transaction.bank_account_id
         was_paid = @transaction.paid
-        amount_cents = @transaction.amount_cents
-        
-        Rails.logger.info "🗑️ [TransactionsController#destroy] Deletando transação ID=#{@transaction.id}, bank_account_id=#{bank_account_id}, paid=#{was_paid}, amount_cents=#{amount_cents}"
         
         @transaction.destroy
         
@@ -220,17 +270,12 @@ module Api
           bank_account = BankAccount.find_by(id: bank_account_id)
           if bank_account.present?
             begin
-              old_balance = bank_account.balance_cents
               bank_account.update_balance!
               bank_account.reload
-              new_balance = bank_account.balance_cents
-              Rails.logger.info "✅ [TransactionsController#destroy] Conta #{bank_account_id} atualizada: #{old_balance} -> #{new_balance}"
             rescue => e
               Rails.logger.error "❌ [TransactionsController#destroy] Erro ao atualizar conta #{bank_account_id}: #{e.message}"
               Rails.logger.error e.backtrace.join("\n")
             end
-          else
-            Rails.logger.warn "⚠️ [TransactionsController#destroy] Conta bancária #{bank_account_id} não encontrada"
           end
         end
         
@@ -255,13 +300,57 @@ module Api
           status: "OK"
         }
       end
-      
+
+      # Endpoint para verificar recorrências próximas do fim
+      def check_recurrence_expiry
+        result = Transactions::CheckRecurrenceExpiry.call(account: Current.account)
+
+        if result.success?
+          render json: {
+            expiring_recurrences: result.expiring_recurrences.map do |item|
+              {
+                payment_plan_id: item[:payment_plan_id],
+                description: item[:last_transaction].description || item[:last_transaction].name,
+                last_due_date: item[:last_due_date],
+                months_remaining: item[:months_remaining],
+                frequency: item[:payment_plan].frequency,
+                amount_cents: item[:last_transaction].amount_cents
+              }
+            end
+          }
+        else
+          render json: { error: result.message }, status: :unprocessable_entity
+        end
+      end
+
+      # Endpoint para estender uma recorrência
+      def extend_recurrence
+        payment_plan_id = params[:payment_plan_id] || params.dig(:payment_plan, :id)
+        payment_plan = Current.account.payment_plans.find(payment_plan_id)
+
+        result = Transactions::ExtendRecurrence.call(
+          account: Current.account,
+          payment_plan: payment_plan
+        )
+
+        if result.success?
+          render json: {
+            message: result.message,
+            payment_plan: payment_plan.reload.as_json(
+              include: [:transactions]
+            )
+          }
+        else
+          render json: { error: result.message }, status: :unprocessable_entity
+        end
+      end
+
       private
-      
+
       def set_transaction
         @transaction = Current.account.transactions.find(params[:id])
       end
-      
+
       def transaction_params
         params.require(:transaction).permit(
           :description, :amount_cents, :amount_currency, :exchanged_amount_cents, :exchanged_amount_currency,
@@ -270,6 +359,15 @@ module Api
           :installment_number, :installment_total, :installment_type_cd, :document_number
         )
       end
+
+      def payment_plan_params
+        return nil unless params[:payment_plan].present?
+
+        params.require(:payment_plan).permit(
+          :type, :amount_type, :number_of_installments, :frequency
+        )
+      end
+
     end
   end
 end

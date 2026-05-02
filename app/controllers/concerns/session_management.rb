@@ -16,26 +16,32 @@ module SessionManagement
   def validate_session!
     return unless Current.user && Current.account
 
-    session_key = session_key_for(Current.user.id, Current.account.id)
-    session_data = RedisClient.current.get(session_key)
+    begin
+      session_key = session_key_for(Current.user.id, Current.account.id)
+      session_data = RedisClient.current.get(session_key)
 
-    unless session_data
-      Rails.logger.warn "Sessão não encontrada ou expirada para user_id: #{Current.user.id}, account_id: #{Current.account.id}"
-      return false
+      unless session_data
+        Rails.logger.warn "Sessão não encontrada ou expirada para user_id: #{Current.user.id}, account_id: #{Current.account.id}"
+        return false
+      end
+
+      # Verificar se a sessão ainda é válida
+      session_info = JSON.parse(session_data)
+      if session_info['expires_at'] && Time.parse(session_info['expires_at']) < Time.current
+        Rails.logger.warn "Sessão expirada para user_id: #{Current.user.id}"
+        invalidate_session(session_key)
+        return false
+      end
+
+      # Atualizar informações da sessão
+      @session_key = session_key
+      @session_info = session_info
+      true
+    rescue Redis::CannotConnectError, Errno::ECONNREFUSED => e
+      Rails.logger.warn "Redis não disponível, validando sessão sem cache: #{e.message}"
+      # Se Redis não estiver disponível, permitir continuar sem validação de sessão
+      true
     end
-
-    # Verificar se a sessão ainda é válida
-    session_info = JSON.parse(session_data)
-    if session_info['expires_at'] && Time.parse(session_info['expires_at']) < Time.current
-      Rails.logger.warn "Sessão expirada para user_id: #{Current.user.id}"
-      invalidate_session(session_key)
-      return false
-    end
-
-    # Atualizar informações da sessão
-    @session_key = session_key
-    @session_info = session_info
-    true
   end
 
   # Atualiza a sessão após cada requisição bem-sucedida
@@ -43,39 +49,50 @@ module SessionManagement
   def refresh_session
     return unless Current.user && Current.account
 
-    # Se já temos uma chave de sessão, usar ela, senão criar nova
-    session_key = @session_key || session_key_for(Current.user.id, Current.account.id)
-    session_ttl = session_ttl_seconds
-    session_data = {
-      user_id: Current.user.id,
-      account_id: Current.account.id,
-      ip_address: request.remote_ip,
-      user_agent: request.user_agent,
-      last_activity_at: Time.current.iso8601,
-      expires_at: (Time.current + session_ttl.seconds).iso8601
-    }
+    begin
+      # Se já temos uma chave de sessão, usar ela, senão criar nova
+      session_key = @session_key || session_key_for(Current.user.id, Current.account.id)
+      session_ttl = session_ttl_seconds
+      session_data = {
+        user_id: Current.user.id,
+        account_id: Current.account.id,
+        ip_address: request.remote_ip,
+        user_agent: request.user_agent,
+        last_activity_at: Time.current.iso8601,
+        expires_at: (Time.current + session_ttl.seconds).iso8601
+      }
 
-    RedisClient.current.setex(session_key, session_ttl, session_data.to_json)
-    @session_key = session_key
+      RedisClient.current.setex(session_key, session_ttl, session_data.to_json)
+      @session_key = session_key
+    rescue Redis::CannotConnectError, Errno::ECONNREFUSED => e
+      Rails.logger.warn "Redis não disponível, pulando refresh de sessão: #{e.message}"
+      # Se Redis não estiver disponível, continuar sem atualizar sessão
+    end
   end
 
   # Cria uma nova sessão para o usuário e conta
   def create_session(user, account)
-    session_key = session_key_for(user.id, account.id)
-    session_ttl = session_ttl_seconds
+    begin
+      session_key = session_key_for(user.id, account.id)
+      session_ttl = session_ttl_seconds
 
-    session_data = {
-      user_id: user.id,
-      account_id: account.id,
-      ip_address: request.remote_ip,
-      user_agent: request.user_agent,
-      created_at: Time.current.iso8601,
-      last_activity_at: Time.current.iso8601,
-      expires_at: (Time.current + session_ttl.seconds).iso8601
-    }
+      session_data = {
+        user_id: user.id,
+        account_id: account.id,
+        ip_address: request.remote_ip,
+        user_agent: request.user_agent,
+        created_at: Time.current.iso8601,
+        last_activity_at: Time.current.iso8601,
+        expires_at: (Time.current + session_ttl.seconds).iso8601
+      }
 
-    RedisClient.current.setex(session_key, session_ttl, session_data.to_json)
-    session_key
+      RedisClient.current.setex(session_key, session_ttl, session_data.to_json)
+      session_key
+    rescue Redis::CannotConnectError, Errno::ECONNREFUSED => e
+      Rails.logger.warn "Redis não disponível, criando sessão sem cache: #{e.message}"
+      # Retornar uma chave de sessão fake se Redis não estiver disponível
+      session_key_for(user.id, account.id)
+    end
   end
 
   # Invalida uma sessão específica
@@ -83,24 +100,36 @@ module SessionManagement
     key = session_key || session_key_for(Current.user&.id, Current.account&.id)
     return unless key
 
-    RedisClient.current.del(key)
-    Rails.logger.info "Sessão invalidada: #{key}"
+    begin
+      RedisClient.current.del(key)
+      Rails.logger.info "Sessão invalidada: #{key}"
+    rescue Redis::CannotConnectError, Errno::ECONNREFUSED => e
+      Rails.logger.warn "Redis não disponível, pulando invalidação de sessão: #{e.message}"
+    end
   end
 
   # Invalida todas as sessões de um usuário
   def invalidate_all_user_sessions(user_id)
-    pattern = "session:user:#{user_id}:account:*"
-    keys = RedisClient.current.keys(pattern)
-    RedisClient.current.del(*keys) if keys.any?
-    Rails.logger.info "Todas as sessões invalidadas para user_id: #{user_id}"
+    begin
+      pattern = "session:user:#{user_id}:account:*"
+      keys = RedisClient.current.keys(pattern)
+      RedisClient.current.del(*keys) if keys.any?
+      Rails.logger.info "Todas as sessões invalidadas para user_id: #{user_id}"
+    rescue Redis::CannotConnectError, Errno::ECONNREFUSED => e
+      Rails.logger.warn "Redis não disponível, pulando invalidação de sessões: #{e.message}"
+    end
   end
 
   # Invalida todas as sessões de uma conta
   def invalidate_all_account_sessions(account_id)
-    pattern = "session:user:*:account:#{account_id}"
-    keys = RedisClient.current.keys(pattern)
-    RedisClient.current.del(*keys) if keys.any?
-    Rails.logger.info "Todas as sessões invalidadas para account_id: #{account_id}"
+    begin
+      pattern = "session:user:*:account:#{account_id}"
+      keys = RedisClient.current.keys(pattern)
+      RedisClient.current.del(*keys) if keys.any?
+      Rails.logger.info "Todas as sessões invalidadas para account_id: #{account_id}"
+    rescue Redis::CannotConnectError, Errno::ECONNREFUSED => e
+      Rails.logger.warn "Redis não disponível, pulando invalidação de sessões: #{e.message}"
+    end
   end
 
   # Gera a chave da sessão no Redis

@@ -2,6 +2,44 @@
 @import "./styles/responsive-desktop.css";
 @import "./styles/zoom-utilities.css";
 @import "./styles/table-improvements.css";
+@import "./styles/mobile.css";
+
+/* Document Editor Styles */
+.editor-content .ProseMirror {
+  outline: none;
+}
+
+.editor-content .ProseMirror p {
+  min-height: 1rem;
+  font-size: 12px;
+}
+
+.editor-content .ProseMirror h1,
+.editor-content .ProseMirror h2,
+.editor-content .ProseMirror h3 {
+  min-height: 1rem;
+}
+
+/* Document Preview Styles */
+.document-preview h2 {
+  text-align: center;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.document-preview p {
+  min-height: 1rem;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.document-preview h1,
+.document-preview h2,
+.document-preview h3 {
+  min-height: 1rem;
+  margin-bottom: 0.5rem;
+}
 
 /* Mobile-first optimizations */
 :root {
@@ -47,9 +85,28 @@ body {
   text-rendering: optimizeLegibility;
   /* Prevent horizontal scroll */
   overflow-x: hidden;
-  width: 100%;
-  max-width: 100vw;
-  position: relative;
+}
+
+/* Hide scrollbar for horizontal calendar scroll */
+.scroll-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scroll-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Melhorar fluidez do scroll horizontal do calendário */
+.snap-x {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.snap-start {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 /* Touch-friendly buttons and interactive elements */

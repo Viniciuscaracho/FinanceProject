@@ -85,11 +85,13 @@ module Api
       end
 
       def balance
-        # Calcular saldo total baseado nas transações
-        total_balance = Current.account.transactions.sum(:amount_cents) / 100.0
-        
+        # Saldo total = soma dos saldos de todas as contas bancárias
+        # (cada saldo já reflete saldo inicial + transações pagas - despesas pagas)
+        total_balance_cents = Current.account.bank_accounts.sum(:balance_cents)
+
         render json: {
-          balance: total_balance,
+          balance: total_balance_cents / 100.0,
+          balance_cents: total_balance_cents,
           currency: 'BRL',
           last_updated: Time.current
         }

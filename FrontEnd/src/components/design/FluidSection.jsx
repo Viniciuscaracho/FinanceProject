@@ -1,44 +1,39 @@
 import { cn } from '@/lib/utils'
 
-export function FluidSection({ 
-  children, 
+export function FluidSection({
+  children,
   className,
   title,
   subtitle,
   icon: Icon,
-  gradient = 'from-[#5B7A9E] to-[#6B8FA3]',
-  ...props 
+  ...props
 }) {
   return (
     <div className={cn("relative", className)} {...props}>
       <div className={cn(
-        "relative bg-surface-elevated rounded-[var(--radius-sm)]",
-        "border border-border",
-        "p-8 transition-colors duration-100"
+        "bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm",
+        "transition-colors duration-100"
       )}>
         {(title || Icon) && (
-          <div className="flex items-start justify-between mb-8">
-            {title && (
+          <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center space-x-2">
+              {Icon && (
+                <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+              )}
               <div>
-                <h3 className="text-2xl font-semibold text-text-primary mb-2 leading-tight">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 leading-none">
                   {title}
-                </h3>
+                </p>
                 {subtitle && (
-                  <p className="text-sm text-text-secondary leading-relaxed">{subtitle}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>
                 )}
               </div>
-            )}
-            {Icon && (
-              <div className={cn(
-                "w-10 h-10 rounded-[var(--radius-sm)] flex items-center justify-center",
-                "bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"
-              )}>
-                <Icon className="w-5 h-5" />
-              </div>
-            )}
+            </div>
           </div>
         )}
-        {children}
+        <div className="p-3">
+          {children}
+        </div>
       </div>
     </div>
   )

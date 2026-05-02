@@ -27,9 +27,11 @@ export function Wizard({
   }
 
   const handleStepClick = (index) => {
-    // Permitir voltar para steps já completados
-    if (completedSteps.has(index) || index <= currentStep) {
-      setCurrentStep(index)
+    // Permitir navegar para qualquer step (navegação livre)
+    setCurrentStep(index)
+    // Marcar como completo se já passou por ele
+    if (index < currentStep) {
+      setCompletedSteps(prev => new Set([...prev, index]))
     }
   }
 
@@ -44,24 +46,23 @@ export function Wizard({
           {steps.map((step, index) => {
             const isCompleted = completedSteps.has(index)
             const isCurrent = index === currentStep
-            const isAccessible = isCompleted || index <= currentStep
+            // Permitir acesso a qualquer step (navegação livre)
+            const isAccessible = true
 
             return (
               <div key={index} className="flex items-center flex-1 min-w-0">
                 <div className="flex flex-col items-center flex-1 min-w-0">
                   <button
                     onClick={() => handleStepClick(index)}
-                    disabled={!isAccessible}
                     className={cn(
-                      "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-xs sm:text-sm transition-all duration-200 flex-shrink-0",
+                      "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-semibold text-xs sm:text-sm transition-all duration-200 flex-shrink-0 cursor-pointer",
                       isCurrent 
                         ? "bg-blue-600 dark:bg-blue-500 text-white shadow-md scale-105 sm:scale-110"
                         : isCompleted
-                        ? "bg-green-500 text-white"
-                        : isAccessible
-                        ? "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed"
+                        ? "bg-green-500 text-white hover:bg-green-600"
+                        : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 hover:scale-105"
                     )}
+                    title={`Ir para: ${step.title}`}
                   >
                     {isCompleted ? (
                       <Check className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -70,9 +71,11 @@ export function Wizard({
                     )}
                   </button>
                   <p className={cn(
-                    "text-[10px] sm:text-xs mt-1.5 sm:mt-2 text-center truncate w-full px-0.5",
-                    isCurrent ? "font-semibold text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"
-                  )}>
+                    "text-[10px] sm:text-xs mt-1.5 sm:mt-2 text-center truncate w-full px-0.5 cursor-pointer",
+                    isCurrent ? "font-semibold text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  )}
+                  onClick={() => handleStepClick(index)}
+                  >
                     {step.title}
                   </p>
                 </div>

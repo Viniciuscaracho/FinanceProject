@@ -1,14 +1,37 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { apiService } from '../lib/api';
-import { supabase, getCurrentUser, getCurrentSession, isSupabaseAvailable } from '../lib/supabase';
+import { supabase, getCurrentUser, getCurrentSession, isSupabaseAvailable, mfaEnroll, mfaChallenge, mfaVerify, mfaUnenroll, mfaListFactors } from '../lib/supabase';
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+
+  // Evitar quebra da aplicação caso o provider não esteja montado (por exemplo, em rotas públicas
+  // ou renderizações isoladas). Retorna um objeto seguro com valores padrão e funções no-op.
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    return {
+      user: null,
+      loading: false,
+      error: null,
+      isAuthenticated: false,
+      isImpersonating: false,
+      login: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      loginSimple: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      loginWithSupabase: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      signUpWithSupabase: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      register: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      enrollMfa: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      verifyMfa: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      unenrollMfa: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      listMfaFactors: async () => ({ factors: [] }),
+      logout: async () => {},
+      createTestUser: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      impersonate: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      stopImpersonating: async () => ({ success: false, error: 'AuthProvider ausente' })
+    };
   }
+
   return context;
 };
 
@@ -49,19 +72,25 @@ export const AuthProvider = ({ children }) => {
     try {
       // Primeiro, verificar se há sessão do Supabase (apenas se configurado)
       if (isSupabaseAvailable) {
-        const session = await getCurrentSession();
-        if (session?.access_token) {
-          // Tentar fazer login no backend com o token do Supabase
-          try {
-            const response = await apiService.supabaseLogin(session.access_token);
-            if (response.success) {
-              setUser(response.user);
-              setLoading(false);
-              return;
+        try {
+          const session = await getCurrentSession();
+          if (session?.access_token) {
+            // Tentar fazer login no backend com o token do Supabase
+            try {
+              const response = await apiService.supabaseLogin(session.access_token);
+              if (response.success) {
+                setUser(response.user);
+                setLoading(false);
+                return;
+              }
+            } catch (error) {
+              console.error('Erro ao fazer login no backend:', error);
+              // Continuar para verificar token local
             }
-          } catch (error) {
-            console.error('Erro ao fazer login no backend:', error);
           }
+        } catch (error) {
+          console.error('Erro ao verificar sessão Supabase:', error);
+          // Continuar para verificar token local
         }
       }
       
@@ -77,9 +106,9 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (error) {
           console.error('❌ Erro ao verificar autenticação:', error);
-          // Se o token estiver inválido, limpar
-          if (error.status === 401) {
-            console.log('Token inválido, limpando...');
+          // Se o token estiver inválido ou houver erro de conexão, limpar
+          if (error.status === 401 || error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+            console.log('Token inválido ou erro de conexão, limpando...');
             apiService.clearToken();
           }
         }
@@ -88,7 +117,8 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      apiService.clearToken();
+      // Não limpar token em caso de erro genérico, apenas logar
+      setError(error.message || 'Erro ao verificar autenticação');
     } finally {
       setLoading(false);
     }
@@ -210,6 +240,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async ({ name, accountName, email, password }) => {
+    try {
+      setError(null);
+      const response = await apiService.register({ name, accountName, email, password });
+
+      if (response.success) {
+        setUser(response.user);
+        return { success: true };
+      } else {
+        const errorMessage = response.error || 'Erro ao criar conta';
+        setError(errorMessage);
+        return { success: false, error: errorMessage };
+      }
+    } catch (error) {
+      const errorMessage = error.message || error.data?.error || 'Erro ao criar conta';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
   // Sign up via Supabase
   const signUpWithSupabase = async (email, password, metadata = {}) => {
     if (!isSupabaseAvailable) {
@@ -259,6 +309,33 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const enrollMfa = async () => {
+    const { data, error } = await mfaEnroll()
+    if (error) return { success: false, error: error.message }
+    return { success: true, totp: data.totp, factorId: data.id }
+  }
+
+  const verifyMfa = async (factorId, code) => {
+    const { data: challengeData, error: challengeError } = await mfaChallenge(factorId)
+    if (challengeError) return { success: false, error: challengeError.message }
+
+    const { data, error } = await mfaVerify(factorId, challengeData.id, code)
+    if (error) return { success: false, error: error.message }
+    return { success: true, data }
+  }
+
+  const unenrollMfa = async (factorId) => {
+    const { error } = await mfaUnenroll(factorId)
+    if (error) return { success: false, error: error.message }
+    return { success: true }
+  }
+
+  const listMfaFactors = async () => {
+    const { data, error } = await mfaListFactors()
+    if (error) return { factors: [] }
+    return { factors: data?.totp ?? [] }
+  }
+
   const stopImpersonating = async () => {
     try {
       setError(null);
@@ -287,6 +364,11 @@ export const AuthProvider = ({ children }) => {
     loginSimple,
     loginWithSupabase,
     signUpWithSupabase,
+    register,
+    enrollMfa,
+    verifyMfa,
+    unenrollMfa,
+    listMfaFactors,
     logout,
     createTestUser,
     impersonate,

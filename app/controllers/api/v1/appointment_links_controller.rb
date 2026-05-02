@@ -94,16 +94,35 @@ module Api
           :active,
           :service_id,
           :account_user_id,
+          :link_type,
+          :enable_google_meet,
           settings: {}
         ).tap do |permitted|
           # Garantir que settings seja um hash
           if permitted[:settings].present? && permitted[:settings].is_a?(String)
             permitted[:settings] = JSON.parse(permitted[:settings]) rescue {}
           end
+          
+          permitted[:settings] ||= {}
+          
+          # Processar link_type e days_ahead
+          link_type = permitted.delete(:link_type) || params[:appointment_link]&.dig(:link_type)
+          if link_type.present?
+            permitted[:settings]['link_type'] = link_type
+          end
+          
+          # Garantir que days_ahead esteja definido
+          unless permitted[:settings].key?('days_ahead')
+            link_type_for_default = permitted[:settings]['link_type'] || 'normal'
+            permitted[:settings]['days_ahead'] = link_type_for_default == 'premium' ? 30 : 15
+          end
         end
       end
       
       def appointment_link_json(link)
+        settings = link.settings || {}
+        link_type = settings['link_type'] || (settings['days_ahead'].to_i >= 30 ? 'premium' : 'normal')
+        
         {
           id: link.id,
           name: link.name,
@@ -111,6 +130,8 @@ module Api
           active: link.active,
           token: link.token,
           public_url: link.public_url,
+          link_type: link_type,
+          enable_google_meet: link.enable_google_meet || false,
           service: link.service ? {
             id: link.service.id,
             name: link.service.name
@@ -121,7 +142,7 @@ module Api
             name: "#{link.account_user.user.first_name} #{link.account_user.user.last_name}".strip
           } : nil,
           account_user_id: link.account_user_id,
-          settings: link.settings || {},
+          settings: settings,
           created_at: link.created_at.iso8601,
           updated_at: link.updated_at.iso8601
         }

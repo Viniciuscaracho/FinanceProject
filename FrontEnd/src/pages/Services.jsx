@@ -39,9 +39,13 @@ export function Services() {
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [feedback, setFeedback] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingService, setEditingService] = useState(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [serviceToDelete, setServiceToDelete] = useState(null)
+  const [deleteLoadingId, setDeleteLoadingId] = useState(null)
   
   // Form state
   const [formData, setFormData] = useState({
@@ -145,21 +149,35 @@ export function Services() {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Tem certeza que deseja excluir este serviço?')) {
-      return
-    }
+  const handleRequestDelete = (service) => {
+    setFeedback(null)
+    setServiceToDelete(service)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!serviceToDelete) return
 
     try {
-      setLoading(true)
-      await apiService.deleteService(id)
-      loadServices()
+      setDeleteLoadingId(serviceToDelete.id)
+      setError(null)
+      setFeedback(null)
+      await apiService.deleteService(serviceToDelete.id)
+      setServices((prev) => prev.filter((s) => s.id !== serviceToDelete.id))
+      setFeedback({ type: 'success', message: `Serviço "${serviceToDelete.name}" excluído com sucesso.` })
+      setIsDeleteDialogOpen(false)
+      setServiceToDelete(null)
     } catch (err) {
       console.error('Error deleting service:', err)
-      setError('Erro ao excluir serviço')
+      setFeedback({ type: 'error', message: err.message || 'Erro ao excluir serviço' })
     } finally {
-      setLoading(false)
+      setDeleteLoadingId(null)
     }
+  }
+
+  const handleCancelDelete = () => {
+    setIsDeleteDialogOpen(false)
+    setServiceToDelete(null)
   }
 
   const filteredServices = services.filter((service) => {
@@ -223,10 +241,16 @@ export function Services() {
           </div>
         </FluidSection>
 
-      {/* Error Message */}
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
-          {error}
+      {/* Feedback Messages */}
+      {(error || feedback) && (
+        <div
+          className={
+            feedback?.type === 'success'
+              ? 'p-4 bg-green-50 border border-green-200 rounded-lg text-green-800'
+              : 'p-4 bg-red-50 border border-red-200 rounded-lg text-red-800'
+          }
+        >
+          {feedback?.message || error}
         </div>
       )}
 
@@ -257,7 +281,7 @@ export function Services() {
                   >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-base text-gray-900 whitespace-pre-line break-words">
+                          <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100 whitespace-pre-line break-words">
                             {service.name}
                           </h3>
                           <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -308,9 +332,14 @@ export function Services() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(service.id)}
+                          disabled={deleteLoadingId === service.id}
+                          onClick={() => handleRequestDelete(service)}
                         >
-                          <Trash2 className="w-4 h-4 text-red-500" />
+                          {deleteLoadingId === service.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                          ) : (
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          )}
                         </Button>
                       </div>
                   </div>
@@ -375,9 +404,14 @@ export function Services() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDelete(service.id)}
+                              disabled={deleteLoadingId === service.id}
+                              onClick={() => handleRequestDelete(service)}
                             >
-                              <Trash2 className="w-4 h-4 text-red-500" />
+                              {deleteLoadingId === service.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                              ) : (
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              )}
                             </Button>
                           </div>
                         </TableCell>
@@ -478,6 +512,66 @@ export function Services() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <Dialog
+        open={isDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteDialogOpen(open)
+          if (!open) {
+            setServiceToDelete(null)
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir serviço</DialogTitle>
+            <DialogDescription>
+              Essa ação remove o serviço da listagem. Confirme para continuar.
+            </DialogDescription>
+          </DialogHeader>
+
+          {serviceToDelete && (
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-orange-50 text-orange-800 border border-orange-200">
+                <p className="font-semibold">{serviceToDelete.name}</p>
+                {serviceToDelete.description && (
+                  <p className="text-sm mt-1 text-orange-700 line-clamp-3">
+                    {serviceToDelete.description}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between text-sm text-gray-600">
+                <span>Preço de venda</span>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                  {formatCurrency(serviceToDelete.selling_price?.cents / 100 || 0)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelDelete} disabled={deleteLoadingId !== null}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={!serviceToDelete || deleteLoadingId === serviceToDelete?.id}
+            >
+              {deleteLoadingId === serviceToDelete?.id ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Confirmar exclusão'
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       </div>

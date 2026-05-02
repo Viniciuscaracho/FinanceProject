@@ -28,102 +28,137 @@ module Api
         Rails.logger.info "Params: #{params.inspect}"
         Rails.logger.info "Current.account: #{Current.account&.id}"
         
-        case params[:id]
-        when 'income_expense'
-          render_income_expense_report
-        when 'category_analysis'
-          render_category_analysis_report
-        when 'monthly_summary'
-          render_monthly_summary_report
-        when 'cash_flow'
-          render_cash_flow_report
-        when 'appointments_integrated'
-          render_appointments_integrated_report
-        when 'financial_with_appointments'
-          render_financial_with_appointments_report
-        when 'dre'
-          render_dre_report
-        when 'extract'
-          render_extract_report
-        when 'per_category'
-          render_per_category_report
-        when 'per_description'
-          render_per_description_report
-        when 'per_period'
-          render_per_period_report
-        when 'financial_history'
-          render_financial_history_report
-        else
-          render json: { error: 'Relatório não encontrado' }, status: :not_found
+          unless Current.account
+          return render json: { error: 'Conta não encontrada. Faça login novamente.' }, status: :unauthorized
+        end
+        
+        begin
+          case params[:id]
+          when 'income_expense'
+            render_income_expense_report
+          when 'category_analysis'
+            render_category_analysis_report
+          when 'monthly_summary'
+            render_monthly_summary_report
+          when 'cash_flow'
+            render_cash_flow_report
+          when 'appointments_integrated'
+            render_appointments_integrated_report
+          when 'financial_with_appointments'
+            render_financial_with_appointments_report
+          when 'dre'
+            render_dre_report
+          when 'extract'
+            render_extract_report
+          when 'per_category'
+            render_per_category_report
+          when 'per_description'
+            render_per_description_report
+          when 'per_period'
+            render_per_period_report
+          when 'financial_history'
+            render_financial_history_report
+          else
+            render json: { error: 'Relatório não encontrado' }, status: :not_found
+          end
+        rescue => e
+          Rails.logger.error "Error in Reports#show: #{e.class.name}: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { 
+            error: "Erro ao processar relatório: #{e.message}",
+            details: Rails.env.development? ? e.backtrace.first(5) : nil
+          }, status: :internal_server_error
         end
       end
 
       private
 
       def render_income_expense_report
-        # Aplicar filtros de data se fornecidos
-        start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
-        end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
-        date_type = params[:date_type]&.to_sym || :due_date
+        begin
+          # Aplicar filtros de data se fornecidos
+          start_date = if params[:start_date].present?
+            Date.parse(params[:start_date])
+          else
+            Date.today.beginning_of_month
+          end
+          end_date = if params[:end_date].present?
+            Date.parse(params[:end_date])
+          else
+            Date.today.end_of_month
+          end
+          date_type = params[:date_type]&.to_sym || :due_date
+        rescue ArgumentError => e
+          Rails.logger.error "Error parsing dates in income_expense_report: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          return render json: { error: "Data inválida: #{e.message}" }, status: :bad_request
+        end
         
         # Cache independente para este endpoint
         cache_key = "income_expense:#{start_date}:#{end_date}:#{date_type}"
         
-        report_data = fetch_from_cache(
-          cache_key,
-          { expires_in: 15.minutes },
-          endpoint_namespace: 'income_expense'
-        ) do
-          # Usar SQL direto com sanitize_sql_array para evitar qualquer join ou scope implícito
-          date_column = date_type == :due_date ? 'due_date' : 'competency_date'
-          
-          # Construir SQL base
-          sql_base = <<-SQL
-            SELECT 
-              SUM(CASE WHEN amount_cents > 0 THEN amount_cents ELSE 0 END) as income_cents,
-              SUM(CASE WHEN amount_cents < 0 THEN ABS(amount_cents) ELSE 0 END) as expenses_cents
-            FROM transactions
-            WHERE account_id = ?
-              AND #{date_column} >= ?
-              AND #{date_column} <= ?
-              AND kind_cd IN (0, 2)
-          SQL
-          
-          # Adicionar filtro de paid se necessário
-          sql_params = [Current.account.id, start_date, end_date]
-          if params[:paid].present?
-            paid_values = params[:paid].is_a?(Array) ? params[:paid] : [params[:paid]]
-            paid_bools = paid_values.map { |p| p.to_s == 'true' || p == true }
-            sql_base += " AND paid IN (#{paid_bools.map { '?' }.join(', ')})"
-            sql_params += paid_bools
-          end
-          
-          # Sanitizar e executar SQL
-          sanitized_sql = ActiveRecord::Base.sanitize_sql_array([sql_base] + sql_params)
-          result = ActiveRecord::Base.connection.exec_query(sanitized_sql)
-          
-          row = result.first
-          income_cents = row&.dig('income_cents')&.to_i || 0
-          expenses_cents = row&.dig('expenses_cents')&.to_i || 0
-          
-          {
-            income: income_cents,
-            expenses: expenses_cents,
-            net: income_cents - expenses_cents,
-            savings_rate: income_cents > 0 ? ((income_cents - expenses_cents).to_f / income_cents * 100).round(2) : 0
-          }
-        end
+        begin
+          report_data = fetch_from_cache(
+            cache_key,
+            { expires_in: 15.minutes },
+            endpoint_namespace: 'income_expense'
+          ) do
+            # Usar SQL direto com sanitize_sql_array para evitar qualquer join ou scope implícito
+            date_column = date_type == :due_date ? 'due_date' : 'competency_date'
 
-        render json: {
-          report: {
-            type: 'income_expense',
-            data: report_data
+            # Construir SQL base
+            # transaction_type_cd: 0 = receita, 1-4 = despesa, 5 = transferência (ignorada)
+            sql_base = <<-SQL
+              SELECT
+                SUM(CASE WHEN transaction_type_cd = 0 THEN amount_cents ELSE 0 END) as income_cents,
+                SUM(CASE WHEN transaction_type_cd BETWEEN 1 AND 4 THEN amount_cents ELSE 0 END) as expenses_cents
+              FROM transactions
+              WHERE account_id = ?
+                AND #{date_column} >= ?
+                AND #{date_column} <= ?
+                AND kind_cd IN (0, 2)
+                AND transaction_type_cd != 5
+            SQL
+            
+            # Adicionar filtro de paid se necessário
+            sql_params = [Current.account.id, start_date, end_date]
+            if params[:paid].present?
+              paid_values = params[:paid].is_a?(Array) ? params[:paid] : [params[:paid]]
+              paid_bools = paid_values.map { |p| p.to_s == 'true' || p == true }
+              sql_base += " AND paid IN (#{paid_bools.map { '?' }.join(', ')})"
+              sql_params += paid_bools
+            end
+            
+            # Sanitizar e executar SQL
+            sanitized_sql = ActiveRecord::Base.sanitize_sql_array([sql_base] + sql_params)
+            Rails.logger.info "Executing SQL for income_expense: #{sanitized_sql}"
+            result = ActiveRecord::Base.connection.exec_query(sanitized_sql)
+            
+            row = result.first
+            income_cents = row&.dig('income_cents')&.to_i || 0
+            expenses_cents = row&.dig('expenses_cents')&.to_i || 0
+            
+            {
+              income: income_cents,
+              expenses: expenses_cents,
+              net: income_cents - expenses_cents,
+              savings_rate: income_cents > 0 ? ((income_cents - expenses_cents).to_f / income_cents * 100).round(2) : 0
+            }
+          end
+
+          render json: {
+            report: {
+              type: 'income_expense',
+              data: report_data
+            }
           }
-        }
-      rescue => e
-        Rails.logger.error "Error in render_income_expense_report: #{e.message}"
-        Rails.logger.error e.backtrace.join("\n")
-        render json: { error: "Erro ao gerar relatório: #{e.message}" }, status: :internal_server_error
+        rescue => e
+          Rails.logger.error "Error in render_income_expense_report: #{e.class.name}: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { 
+            error: "Erro ao gerar relatório de receitas vs despesas: #{e.message}",
+            details: Rails.env.development? ? e.backtrace.first(5) : nil
+          }, status: :internal_server_error
+        end
       end
 
       def render_category_analysis_report
@@ -143,23 +178,24 @@ module Api
           # Usar SQL direto para evitar problemas de GROUP BY
           date_column = date_type == :due_date ? 'due_date' : 'competency_date'
           
-          # Query para estatísticas por categoria
+          # Query para estatísticas por categoria (transferências excluídas)
           sql_stats = <<-SQL
-            SELECT 
+            SELECT
               domains.name as category_name,
               transactions.category_id,
               SUM(transactions.exchanged_amount_cents) as total_amount
             FROM transactions
-            LEFT JOIN domains ON domains.id = transactions.category_id 
+            LEFT JOIN domains ON domains.id = transactions.category_id
               AND domains.type = ?
               AND domains.account_id = ?
             WHERE transactions.account_id = ?
               AND transactions.#{date_column} >= ?
               AND transactions.#{date_column} <= ?
               AND transactions.kind_cd IN (0, 2)
+              AND transactions.transaction_type_cd != 5
             GROUP BY domains.name, transactions.category_id
           SQL
-          
+
           sanitized_sql = ActiveRecord::Base.sanitize_sql_array([
             sql_stats,
             'Category',
@@ -168,12 +204,12 @@ module Api
             start_date,
             end_date
           ])
-          
+
           result_stats = ActiveRecord::Base.connection.exec_query(sanitized_sql)
-          
+
           # Query para contagem por categoria
           sql_counts = <<-SQL
-            SELECT 
+            SELECT
               transactions.category_id,
               COUNT(*) as transaction_count
             FROM transactions
@@ -181,6 +217,7 @@ module Api
               AND transactions.#{date_column} >= ?
               AND transactions.#{date_column} <= ?
               AND transactions.kind_cd IN (0, 2)
+              AND transactions.transaction_type_cd != 5
             GROUP BY transactions.category_id
           SQL
           
@@ -246,30 +283,34 @@ module Api
         ) do
           # Usar SQL direto para evitar problemas de GROUP BY
           date_column = date_type == :due_date ? 'due_date' : 'competency_date'
-          
+
+          # transaction_type_cd: 0 = receita, 1-4 = despesa, 5 = transferência (ignorada)
           sql = <<-SQL
-            SELECT 
+            SELECT
               COUNT(*) as total_transactions,
-              SUM(CASE WHEN amount_cents > 0 THEN amount_cents ELSE 0 END) as income_cents,
-              SUM(CASE WHEN amount_cents < 0 THEN ABS(amount_cents) ELSE 0 END) as expenses_cents,
-              SUM(amount_cents) as balance_cents
+              SUM(CASE WHEN transaction_type_cd = 0 THEN amount_cents ELSE 0 END) as income_cents,
+              SUM(CASE WHEN transaction_type_cd BETWEEN 1 AND 4 THEN amount_cents ELSE 0 END) as expenses_cents
             FROM transactions
             WHERE account_id = ?
               AND #{date_column} >= ?
               AND #{date_column} <= ?
               AND kind_cd IN (0, 2)
+              AND transaction_type_cd != 5
           SQL
-          
+
           sanitized_sql = ActiveRecord::Base.sanitize_sql_array([sql, Current.account.id, start_date, end_date])
           result = ActiveRecord::Base.connection.exec_query(sanitized_sql)
           row = result.first
 
+          income_cents  = row&.dig('income_cents')&.to_i || 0
+          expenses_cents = row&.dig('expenses_cents')&.to_i || 0
+
           {
             month: start_date.strftime('%B %Y'),
             total_transactions: row&.dig('total_transactions')&.to_i || 0,
-            income: row&.dig('income_cents')&.to_i || 0,
-            expenses: row&.dig('expenses_cents')&.to_i || 0,
-            balance: row&.dig('balance_cents')&.to_i || 0
+            income: income_cents,
+            expenses: expenses_cents,
+            balance: income_cents - expenses_cents
           }
         end
 
@@ -321,35 +362,38 @@ module Api
           
           # Usar SQL direto para evitar problemas de GROUP BY
           date_column = date_type == :due_date ? 'due_date' : 'competency_date'
-          
+
+          # transaction_type_cd: 0 = receita, 1-4 = despesa, 5 = transferência (ignorada)
           sql = <<-SQL
-            SELECT 
+            SELECT
               DATE_TRUNC('month', #{date_column}) as month,
-              SUM(CASE WHEN amount_cents > 0 THEN amount_cents ELSE 0 END) as income_cents,
-              SUM(CASE WHEN amount_cents < 0 THEN ABS(amount_cents) ELSE 0 END) as expenses_cents,
-              SUM(amount_cents) as balance_cents
+              SUM(CASE WHEN transaction_type_cd = 0 THEN amount_cents ELSE 0 END) as income_cents,
+              SUM(CASE WHEN transaction_type_cd BETWEEN 1 AND 4 THEN amount_cents ELSE 0 END) as expenses_cents
             FROM transactions
             WHERE account_id = ?
               AND #{date_column} >= ?
               AND #{date_column} <= ?
               AND kind_cd IN (0, 2)
+              AND transaction_type_cd != 5
             GROUP BY DATE_TRUNC('month', #{date_column})
           SQL
-          
+
           sanitized_sql = ActiveRecord::Base.sanitize_sql_array([sql, Current.account.id, overall_start, overall_end])
           result = ActiveRecord::Base.connection.exec_query(sanitized_sql)
-          
+
           monthly_stats = result.index_by { |row| row['month'].to_date.beginning_of_month }
 
           months.map do |month_info|
             month_key = month_info[:start].beginning_of_month
             stats = monthly_stats[month_key]
-            
+            income_cents   = stats&.dig('income_cents')&.to_i || 0
+            expenses_cents = stats&.dig('expenses_cents')&.to_i || 0
+
             {
               month: month_info[:label],
-              income: stats&.dig('income_cents')&.to_i || 0,
-              expenses: stats&.dig('expenses_cents')&.to_i || 0,
-              balance: stats&.dig('balance_cents')&.to_i || 0
+              income: income_cents,
+              expenses: expenses_cents,
+              balance: income_cents - expenses_cents
             }
           end
         end
@@ -446,8 +490,15 @@ module Api
 
       def render_dre_report
         # Converter parâmetros de string para tipos apropriados
-        start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
-        end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
+        begin
+          start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
+          end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
+        rescue ArgumentError => e
+          Rails.logger.error "Error parsing dates in DRE report: #{e.message}"
+          start_date = Date.today.beginning_of_month
+          end_date = Date.today.end_of_month
+        end
+        
         date_type = params[:date_type]&.to_sym || :due_date
         paid = if params[:paid].is_a?(Array)
                  params[:paid].map { |p| p.to_s == 'true' }
@@ -478,7 +529,9 @@ module Api
           if result.success?
             result.result
           else
-            raise StandardError, result.message || 'Erro ao gerar DRE'
+            error_message = result.message || 'Erro ao gerar DRE'
+            Rails.logger.error "DRE service failed: #{error_message}"
+            raise StandardError, error_message
           end
         end
 
@@ -489,7 +542,12 @@ module Api
           }
         }
       rescue StandardError => e
-        render json: { error: e.message }, status: :internal_server_error
+        Rails.logger.error "Error in render_dre_report: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
+        render json: { 
+          error: e.message,
+          message: "Erro ao gerar relatório DRE. Verifique os logs do servidor para mais detalhes."
+        }, status: :internal_server_error
       end
 
       def render_extract_report

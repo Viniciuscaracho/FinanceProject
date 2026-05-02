@@ -184,6 +184,16 @@ module ActiveSupport
       )
     end
 
+    # Helper para gerar token de autenticação base64 (como usado no auth_controller)
+    def generate_auth_token(user)
+      token_data = {
+        user_id: user.id,
+        email: user.email,
+        exp: 24.hours.from_now.to_i
+      }
+      Base64.strict_encode64(token_data.to_json)
+    end
+
     def create_webhook(account, **kwargs)
       account.create_webhook(
         url: kwargs.fetch(:url, Faker::Internet.url)

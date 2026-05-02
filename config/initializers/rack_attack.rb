@@ -3,7 +3,9 @@
 module Rack
   # Configuração do Rack Attack
   class Attack
-    self.enabled = ActiveModel::Type::Boolean.new.cast(ENV.fetch('RACK_ATTACK_ENABLED', true))
+    # Temporariamente desabilitado para depuração de endpoints públicos
+    default_enabled = Rails.env.production? || Rails.env.staging?
+    self.enabled = ActiveModel::Type::Boolean.new.cast(ENV.fetch('RACK_ATTACK_ENABLED', default_enabled))
 
     # Limita o acesso a 40 requests a cada 3 segundos
     throttle('req/ip', limit: 90, period: 3.seconds) do |req|
@@ -13,6 +15,20 @@ module Rack
     # Limita em 40 requests por 3 segundos aos endpoints de api/*
     throttle('req/api', limit: 40, period: 3.seconds) do |req|
       req.ip if req.path.start_with?('/api')
+    end
+
+    # Limita tentativas de login/register por IP — 10 por minuto
+    throttle('auth/ip', limit: 10, period: 1.minute) do |req|
+      req.ip if req.post? && req.path.match?(%r{/api/v1/auth/(login|register)})
+    end
+
+    # Limita tentativas de login por email — 5 por minuto
+    throttle('auth/email', limit: 5, period: 1.minute) do |req|
+      if req.post? && req.path.match?(%r{/api/v1/auth/(login|register)})
+        body = req.body.read
+        req.body.rewind
+        JSON.parse(body)['email'].to_s.downcase.strip rescue nil
+      end
     end
 
     # Limita em 10 requests por minuto aos endpoints de login e cadastro de usuários para o mesmo e-mail

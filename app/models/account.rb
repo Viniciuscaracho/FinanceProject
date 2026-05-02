@@ -21,6 +21,10 @@
 #  default_currency                                     :string(3)        default("BRL")
 #  discarded_at                                         :datetime
 #  free                                                 :boolean          default(FALSE), not null
+#  google_access_token                                  :string
+#  google_calendar_connected                            :boolean          default(FALSE), not null
+#  google_refresh_token                                 :string
+#  google_token_expires_at                              :datetime
 #  max_active_users                                     :integer          default(3), not null
 #  max_storage_size_in_bytes                            :bigint           default(5368709120), not null
 #  preferences                                          :jsonb            not null
@@ -34,6 +38,7 @@
 #  created_at                                           :datetime         not null
 #  updated_at                                           :datetime         not null
 #  company_id                                           :bigint           not null
+#  google_calendar_id                                   :string           default("primary")
 #  owner_id                                             :bigint
 #  processor_customer_id                                :string
 #  processor_plan_id                                    :string
@@ -89,6 +94,7 @@ class Account < ApplicationRecord
   include Accounts::Preferences
   include Accounts::Pluggy
   include Accounts::FeatureFlag
+  include Accounts::GoogleCalendar
   include Discardable
   include Referrer
 
@@ -117,12 +123,14 @@ class Account < ApplicationRecord
   has_many :transactions,        dependent: :delete_all
   has_many :appointments,        dependent: :delete_all
   has_many :appointment_links,   dependent: :delete_all
+  has_many :appointment_notes,   dependent: :delete_all
   has_many :imports,             dependent: :delete_all
   has_many :exports,             dependent: :delete_all
   has_many :document_templates,  dependent: :delete_all
   has_many :receipt_templates,   dependent: :delete_all
   has_many :invoice_templates,   dependent: :delete_all
   has_many :contract_templates,  dependent: :delete_all
+  has_many :professional_document_templates, dependent: :delete_all
   has_many :companies,           dependent: :delete_all
   has_many :payment_plans,       dependent: :delete_all
   has_many :connected_users,     class_name: 'User', inverse_of: :account, dependent: :nullify
@@ -134,6 +142,7 @@ class Account < ApplicationRecord
   has_many :services,            class_name: 'Service', inverse_of: :account, dependent: :destroy
   has_many :invoices,            class_name: 'Invoice', inverse_of: :account, dependent: :destroy
   has_one :webhook,              class_name: 'Webhook', inverse_of: :account, dependent: :destroy
+  has_one :whatsapp_config,      dependent: :destroy
 
   # integrations
   has_many :integration_stores, dependent: :delete_all

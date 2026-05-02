@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_12_05_123151) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_02_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -40,6 +40,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_05_123151) do
     t.datetime "updated_at", null: false
     t.jsonb "policies", default: [], null: false
     t.jsonb "schedule", default: {}
+    t.decimal "commission_percentage", precision: 8, scale: 2, default: "50.0", null: false
     t.index ["account_id", "user_id"], name: "index_account_users_on_account_id_and_user_id", unique: true
     t.index ["account_id"], name: "index_account_users_on_account_id"
     t.index ["role_cd"], name: "index_account_users_on_role_cd"
@@ -83,6 +84,11 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_05_123151) do
     t.bigint "subscription_id"
     t.boolean "suspended", default: false, null: false
     t.jsonb "preferences", default: {}, null: false
+    t.string "google_access_token"
+    t.string "google_refresh_token"
+    t.datetime "google_token_expires_at"
+    t.string "google_calendar_id", default: "primary"
+    t.boolean "google_calendar_connected", default: false, null: false
     t.index ["company_id"], name: "index_accounts_on_company_id"
     t.index ["discarded_at"], name: "index_accounts_on_discarded_at"
     t.index ["owner_id"], name: "index_accounts_on_owner_id"
@@ -202,11 +208,26 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_05_123151) do
     t.jsonb "settings", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "enable_google_meet", default: false
     t.index ["account_id"], name: "index_appointment_links_on_account_id"
     t.index ["account_user_id"], name: "index_appointment_links_on_account_user_id"
     t.index ["active"], name: "index_appointment_links_on_active"
     t.index ["service_id"], name: "index_appointment_links_on_service_id"
+    t.index ["token", "active"], name: "index_appointment_links_on_token_and_active", where: "(active = true)"
     t.index ["token"], name: "index_appointment_links_on_token", unique: true
+  end
+
+  create_table "appointment_notes", force: :cascade do |t|
+    t.bigint "appointment_id", null: false
+    t.bigint "account_id", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "patient_tasks", default: [], null: false
+    t.index ["account_id", "appointment_id"], name: "index_appointment_notes_on_account_id_and_appointment_id"
+    t.index ["account_id"], name: "index_appointment_notes_on_account_id"
+    t.index ["appointment_id"], name: "index_appointment_notes_on_appointment_id"
+    t.index ["patient_tasks"], name: "index_appointment_notes_on_patient_tasks", using: :gin
   end
 
   create_table "appointments", force: :cascade do |t|
@@ -225,9 +246,19 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_05_123151) do
     t.integer "payment_status"
     t.bigint "contact_id"
     t.string "stripe_payment_intent_id"
+    t.string "google_meet_link"
+    t.jsonb "recurrence_pattern", default: {}
+    t.bigint "parent_appointment_id"
+    t.boolean "whatsapp_reminder_sent", default: false
+    t.datetime "whatsapp_reminder_sent_at"
+    t.string "google_calendar_event_id"
+    t.index ["account_id", "account_user_id", "status", "start_time"], name: "index_appointments_on_account_professional_status_time"
+    t.index ["account_id", "start_time", "status"], name: "index_appointments_on_account_time_status"
     t.index ["account_id"], name: "index_appointments_on_account_id"
     t.index ["account_user_id"], name: "index_appointments_on_account_user_id"
     t.index ["contact_id"], name: "index_appointments_on_contact_id"
+    t.index ["google_calendar_event_id"], name: "index_appointments_on_google_calendar_event_id"
+    t.index ["parent_appointment_id"], name: "index_appointments_on_parent_appointment_id"
     t.index ["payment_status"], name: "index_appointments_on_payment_status"
     t.index ["service_id"], name: "index_appointments_on_service_id"
     t.index ["stripe_payment_link_id"], name: "index_appointments_on_stripe_payment_link_id"
@@ -354,6 +385,11 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_05_123151) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "default", default: false
+    t.boolean "enable_sessions", default: false, null: false
+    t.integer "session_count"
+    t.integer "session_number"
+    t.string "session_type"
+    t.string "professional_type", comment: "Tipo de profissional (psicólogo, professor, nutricionista, etc.)"
     t.index ["account_id"], name: "index_document_templates_on_account_id"
     t.index ["type", "account_id", "id"], name: "index_document_templates_on_type_and_account_id_and_id"
   end
@@ -1009,10 +1045,12 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_05_123151) do
     t.index ["account_id", "category_id"], name: "index_transactions_on_account_id_and_category_id"
     t.index ["account_id", "contact_id"], name: "index_transactions_on_account_id_and_contact_id"
     t.index ["account_id", "cost_center_id"], name: "index_transactions_on_account_id_and_cost_center_id"
+    t.index ["account_id", "due_date"], name: "index_transactions_on_account_due_date"
     t.index ["account_id", "due_date"], name: "index_transactions_on_account_id_and_due_date", order: { due_date: :desc }
     t.index ["account_id", "id"], name: "index_transactions_on_account_id_and_id", order: { id: :desc }
     t.index ["account_id", "kind_cd"], name: "index_transactions_on_kind_cd"
     t.index ["account_id", "paid", "due_date"], name: "index_transactions_on_delayed_transactions_filter"
+    t.index ["account_id", "paid"], name: "index_transactions_on_account_paid"
     t.index ["account_id", "paid"], name: "index_transactions_on_paid"
     t.index ["account_id", "transaction_type_cd"], name: "index_transactions_on_account_id_and_transaction_type_cd"
     t.index ["account_id"], name: "index_transactions_on_account_id"
@@ -1110,6 +1148,17 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_05_123151) do
     t.index ["account_id"], name: "index_webhooks_on_account_id"
   end
 
+  create_table "whatsapp_configs", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "evolution_api_url"
+    t.string "evolution_api_key"
+    t.string "evolution_instance_name", default: "default"
+    t.boolean "enabled", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_whatsapp_configs_on_account_id", unique: true
+  end
+
   create_table "zero_paper_items", force: :cascade do |t|
     t.bigint "import_id", null: false
     t.string "transaction_type"
@@ -1153,8 +1202,11 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_05_123151) do
   add_foreign_key "appointment_links", "account_users"
   add_foreign_key "appointment_links", "accounts"
   add_foreign_key "appointment_links", "offers", column: "service_id"
+  add_foreign_key "appointment_notes", "accounts"
+  add_foreign_key "appointment_notes", "appointments"
   add_foreign_key "appointments", "account_users"
   add_foreign_key "appointments", "accounts"
+  add_foreign_key "appointments", "appointments", column: "parent_appointment_id", on_delete: :nullify
   add_foreign_key "appointments", "offers", column: "service_id"
   add_foreign_key "appointments", "people", column: "contact_id"
   add_foreign_key "bank_accounts", "accounts"
@@ -1230,5 +1282,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_12_05_123151) do
   add_foreign_key "transactions", "users", column: "updated_by_id"
   add_foreign_key "users", "accounts"
   add_foreign_key "webhooks", "accounts"
+  add_foreign_key "whatsapp_configs", "accounts"
   add_foreign_key "zero_paper_items", "imports"
 end

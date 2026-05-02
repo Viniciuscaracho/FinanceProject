@@ -4,43 +4,56 @@
 #
 # Table name: appointments
 #
-#  id                       :bigint           not null, primary key
-#  end_time                 :datetime
-#  payment_status           :integer
-#  price_cents              :integer          not null
-#  price_currency           :string           default("BRL")
-#  start_time               :datetime
-#  status                   :integer          default(0)
-#  whatsapp_number          :string
-#  created_at               :datetime         not null
-#  updated_at               :datetime         not null
-#  account_id               :bigint           not null
-#  account_user_id          :bigint           not null
-#  contact_id               :bigint
-#  service_id               :bigint           not null
-#  stripe_payment_intent_id :string
-#  stripe_payment_link_id   :string
+#  id                        :bigint           not null, primary key
+#  end_time                  :datetime
+#  google_meet_link          :string
+#  payment_status            :integer
+#  price_cents               :integer          not null
+#  price_currency            :string           default("BRL")
+#  recurrence_pattern        :jsonb
+#  start_time                :datetime
+#  status                    :integer          default(0)
+#  whatsapp_number           :string
+#  whatsapp_reminder_sent    :boolean          default(FALSE)
+#  whatsapp_reminder_sent_at :datetime
+#  created_at                :datetime         not null
+#  updated_at                :datetime         not null
+#  account_id                :bigint           not null
+#  account_user_id           :bigint           not null
+#  contact_id                :bigint
+#  google_calendar_event_id  :string
+#  parent_appointment_id     :bigint
+#  service_id                :bigint           not null
+#  stripe_payment_intent_id  :string
+#  stripe_payment_link_id    :string
 #
 # Indexes
 #
-#  index_appointments_on_account_id              (account_id)
-#  index_appointments_on_account_user_id         (account_user_id)
-#  index_appointments_on_contact_id              (contact_id)
-#  index_appointments_on_payment_status          (payment_status)
-#  index_appointments_on_service_id              (service_id)
-#  index_appointments_on_stripe_payment_link_id  (stripe_payment_link_id)
-#  index_appointments_on_whatsapp_number         (whatsapp_number)
+#  index_appointments_on_account_id                        (account_id)
+#  index_appointments_on_account_professional_status_time  (account_id,account_user_id,status,start_time)
+#  index_appointments_on_account_time_status               (account_id,start_time,status)
+#  index_appointments_on_account_user_id                   (account_user_id)
+#  index_appointments_on_contact_id                        (contact_id)
+#  index_appointments_on_google_calendar_event_id          (google_calendar_event_id)
+#  index_appointments_on_parent_appointment_id             (parent_appointment_id)
+#  index_appointments_on_payment_status                    (payment_status)
+#  index_appointments_on_service_id                        (service_id)
+#  index_appointments_on_stripe_payment_link_id            (stripe_payment_link_id)
+#  index_appointments_on_whatsapp_number                   (whatsapp_number)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (account_id => accounts.id)
 #  fk_rails_...  (account_user_id => account_users.id)
 #  fk_rails_...  (contact_id => people.id)
+#  fk_rails_...  (parent_appointment_id => appointments.id) ON DELETE => nullify
 #  fk_rails_...  (service_id => offers.id)
 #
 class Appointment < ApplicationRecord
   # Note: Discardable não está disponível pois a tabela não tem discarded_at
   # include Discardable
+
+  include Attachable
 
   acts_as_tenant :account
 
@@ -69,9 +82,12 @@ class Appointment < ApplicationRecord
   belongs_to :account_user # Profissional (cabeleireiro)
   belongs_to :service
   belongs_to :contact, optional: true # Cliente (se já existir no sistema)
+  belongs_to :parent_appointment, optional: true, class_name: 'Appointment', foreign_key: 'parent_appointment_id'
 
   has_many :appointment_commissions, dependent: :destroy
+  has_many :recurring_appointments, class_name: 'Appointment', foreign_key: 'parent_appointment_id', dependent: :nullify
   has_one :financial_transaction, dependent: :nullify, class_name: 'Transaction', foreign_key: 'appointment_id'
+  has_one :appointment_note, dependent: :destroy
 
   validates :start_time, presence: true
   validates :end_time, presence: true
@@ -80,18 +96,24 @@ class Appointment < ApplicationRecord
   validate :end_time_after_start_time
   validate :no_overlapping_appointments
   validate :within_professional_working_hours
+  validate :valid_status_transition
 
   scope :pending_payment, -> { where(status: APPOINTMENT_STATUS[:pending], payment_status: PAYMENT_STATUS[:pending]) }
   scope :confirmed, -> { where(status: APPOINTMENT_STATUS[:confirmed]) }
   scope :by_professional, ->(account_user_id) { where(account_user_id: account_user_id) }
   scope :by_date_range, ->(start_date, end_date) { where(start_time: start_date..end_date) }
   scope :upcoming, -> { where('start_time > ?', Time.current) }
+  scope :needs_reminder, -> { where(whatsapp_reminder_sent: false).where('start_time > ? AND start_time <= ?', Time.current, 24.hours.from_now) }
+  scope :recurring, -> { where.not(recurrence_pattern: nil).where.not(recurrence_pattern: {}) }
+  scope :parent_appointments, -> { where(parent_appointment_id: nil) }
 
   before_validation :ensure_contact_from_whatsapp, on: :create, if: -> { whatsapp_number.present? && contact_id.blank? }
   before_create :calculate_end_time_if_missing
   after_update :sync_transaction_on_payment_status_change
   after_update :sync_transaction_on_status_change
   after_create :create_audit_transaction_if_unpaid
+  after_create :schedule_google_calendar_sync
+  after_update :schedule_google_calendar_sync_on_change
 
   def confirm_payment!
     update!(
@@ -103,7 +125,32 @@ class Appointment < ApplicationRecord
   end
 
   def cancel!
-    update!(status: :canceled)
+    was_paid = payment_status == :paid || payment_status == PAYMENT_STATUS[:paid]
+    
+    if was_paid
+      update!(
+        status: :canceled,
+        payment_status: :refunded
+      )
+      # Cancelar comissões se existirem
+      appointment_commissions.destroy_all
+      
+      # Processar reembolso via Stripe se aplicável
+      if stripe_payment_intent_id.present?
+        begin
+          refund_result = Appointments::ProcessRefund.call(appointment: self)
+          unless refund_result.success?
+            Rails.logger.warn "Não foi possível processar reembolso para agendamento #{id}: #{refund_result.message}"
+            # Não falhar o cancelamento se o reembolso falhar - apenas logar
+          end
+        rescue => e
+          Rails.logger.error "Erro ao processar reembolso para agendamento #{id}: #{e.message}"
+          # Não falhar o cancelamento se o reembolso falhar - apenas logar
+        end
+      end
+    else
+      update!(status: :canceled)
+    end
   end
 
   def professional
@@ -112,6 +159,108 @@ class Appointment < ApplicationRecord
 
   def client_name
     contact&.name || whatsapp_number
+  end
+
+  # Buscar tarefas pendentes da sessão anterior do mesmo paciente
+  def previous_session_pending_tasks
+    return [] unless contact_id.present?
+
+    # Buscar a última sessão completada do mesmo paciente com o mesmo profissional
+    previous_appointment = account.appointments
+      .where(contact_id: contact_id)
+      .where(account_user_id: account_user_id)
+      .where(status: APPOINTMENT_STATUS[:completed])
+      .where('start_time < ?', start_time)
+      .order(start_time: :desc)
+      .first
+
+    return [] unless previous_appointment&.appointment_note
+
+    previous_appointment.appointment_note.pending_tasks
+  end
+
+  # Buscar todas as tarefas pendentes do paciente (de todas as sessões anteriores)
+  def all_pending_tasks_for_patient
+    return [] unless contact_id.present?
+
+    # Buscar todas as sessões completadas do mesmo paciente com o mesmo profissional
+    previous_appointments = account.appointments
+      .where(contact_id: contact_id)
+      .where(account_user_id: account_user_id)
+      .where(status: APPOINTMENT_STATUS[:completed])
+      .where('start_time < ?', start_time)
+      .order(start_time: :desc)
+      .includes(:appointment_note)
+
+    all_tasks = []
+    previous_appointments.each do |appt|
+      next unless appt.appointment_note
+      pending = appt.appointment_note.pending_tasks
+      pending.each do |task|
+        task['from_session_date'] = appt.start_time.to_date.iso8601
+        task['from_session_id'] = appt.id
+      end
+      all_tasks.concat(pending)
+    end
+
+    all_tasks
+  end
+
+  def recurring?
+    recurrence_pattern.present? && recurrence_pattern.is_a?(Hash) && recurrence_pattern['frequency'].present?
+  end
+
+  def has_google_meet?
+    google_meet_link.present?
+  end
+
+  def generate_google_meet_link
+    return google_meet_link if google_meet_link.present?
+
+    result = Appointments::GenerateGoogleMeetLink.call(appointment: self)
+    result.google_meet_link
+  rescue => e
+    Rails.logger.error "Erro ao gerar link do Google Meet via modelo: #{e.message}"
+    nil
+  end
+
+  def cancel_recurring_series!
+    return unless recurring? && parent_appointment_id.nil?
+
+    # Cancelar todos os agendamentos futuros da série
+    recurring_appointments.where('start_time > ?', Time.current).update_all(status: APPOINTMENT_STATUS[:canceled])
+    cancel!
+  end
+
+  def valid_status_transition
+    return unless status_changed?
+    
+    # Estados finais não podem ser alterados (exceto para cancelado em casos específicos)
+    if status_was == :completed && status != :canceled
+      errors.add(:status, 'Não é possível alterar o status de um agendamento concluído')
+      return
+    end
+    
+    if status_was == :canceled && status != :canceled
+      errors.add(:status, 'Não é possível alterar o status de um agendamento cancelado')
+      return
+    end
+    
+    # Validações de transição específicas
+    case status
+    when :completed
+      unless status_was == :confirmed
+        errors.add(:status, 'Apenas agendamentos confirmados podem ser concluídos')
+      end
+    when :confirmed
+      unless status_was == :pending
+        errors.add(:status, 'Apenas agendamentos pendentes podem ser confirmados')
+      end
+    when :no_show
+      unless status_was == :confirmed
+        errors.add(:status, 'Apenas agendamentos confirmados podem ser marcados como não compareceu')
+      end
+    end
   end
 
   private
@@ -128,7 +277,7 @@ class Appointment < ApplicationRecord
     overlapping = Appointment
                   .where(account_user_id: account_user_id)
                   .where.not(id: id)
-                  .where.not(status: APPOINTMENT_STATUS[:canceled])
+                  .where.not(status: [APPOINTMENT_STATUS[:canceled], APPOINTMENT_STATUS[:no_show]])
                   .where(
                     '(start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?)',
                     end_time, start_time,
@@ -199,18 +348,30 @@ class Appointment < ApplicationRecord
   end
 
   def create_commissions
-    # Buscar porcentagem de comissão configurada para o profissional
-    # Por enquanto, vamos usar uma porcentagem padrão (pode ser configurável depois)
-    commission_percentage = 50.0 # 50% de comissão padrão
+    return if appointment_commissions.exists?
 
-    commission_amount_cents = (price_cents * commission_percentage / 100).round
+    # Verificar override específico por serviço primeiro
+    service_config = service_id.present? ? account_user.professional_commissions.find_by(service_id: service_id) : nil
 
-    appointment_commissions.create!(
-      account_user: account_user,
-      commission_type: 0, # percentage
-      commission_value: commission_percentage,
-      commission_amount_cents: commission_amount_cents
-    )
+    if service_config
+      commission_amount_cents = service_config.amount_cents_for(price_cents)
+      appointment_commissions.create!(
+        account_user: account_user,
+        commission_type: service_config[:commission_type],
+        commission_value: service_config.commission_value,
+        commission_amount_cents: commission_amount_cents
+      )
+    else
+      # Usar porcentagem padrão configurada no profissional (default: 50%)
+      commission_percentage = account_user.commission_percentage || 50.0
+      commission_amount_cents = (price_cents * commission_percentage / 100).round
+      appointment_commissions.create!(
+        account_user: account_user,
+        commission_type: 0, # percentage
+        commission_value: commission_percentage,
+        commission_amount_cents: commission_amount_cents
+      )
+    end
   end
 
   def create_transaction
@@ -315,6 +476,7 @@ class Appointment < ApplicationRecord
     is_canceled = status == :canceled || status == 'canceled' || status == APPOINTMENT_STATUS[:canceled]
     return unless is_canceled
 
+    # Se estava pago, o payment_status já foi atualizado para refunded no método cancel!
     # Se já existe uma transação, atualizar para não paga (cancelada)
     if financial_transaction.present?
       financial_transaction.update!(
@@ -340,7 +502,11 @@ class Appointment < ApplicationRecord
 
   def create_paid_transaction
     bank_account = account.default_bank_account || account.bank_accounts.first
-    return unless bank_account
+    
+    unless bank_account
+      errors.add(:base, 'É necessário ter pelo menos uma conta bancária cadastrada para criar transações')
+      raise ActiveRecord::RecordInvalid.new(self)
+    end
 
     contact_record = contact || create_contact_from_whatsapp
 
@@ -369,9 +535,31 @@ class Appointment < ApplicationRecord
     transaction_record
   end
 
+  def schedule_google_calendar_sync
+    GoogleCalendarSyncJob.perform_later(id)
+  rescue => e
+    Rails.logger.error "Falha ao agendar GoogleCalendarSyncJob para appointment #{id}: #{e.message}"
+  end
+
+  def schedule_google_calendar_sync_on_change
+    relevant_change = saved_change_to_start_time? ||
+                      saved_change_to_end_time?    ||
+                      saved_change_to_status?      ||
+                      saved_change_to_service_id?  ||
+                      saved_change_to_contact_id?
+
+    schedule_google_calendar_sync if relevant_change
+  rescue => e
+    Rails.logger.error "Falha ao agendar GoogleCalendarSyncJob (update) para appointment #{id}: #{e.message}"
+  end
+
   def create_audit_transaction(canceled: false)
     bank_account = account.default_bank_account || account.bank_accounts.first
-    return unless bank_account
+    
+    unless bank_account
+      Rails.logger.warn "Não foi possível criar transação de auditoria para agendamento #{id}: nenhuma conta bancária encontrada"
+      return
+    end
 
     contact_record = contact || create_contact_from_whatsapp
 

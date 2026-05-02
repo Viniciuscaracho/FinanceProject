@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiService } from '../lib/api'
+import { useAuth } from '../contexts/AuthContext'
 
 // Query keys para cache
 export const reportKeys = {
@@ -12,6 +13,8 @@ export const reportKeys = {
 
 // Hook para buscar lista de relatórios disponíveis
 export function useReports() {
+  const { isAuthenticated } = useAuth()
+  
   return useQuery({
     queryKey: reportKeys.lists(),
     queryFn: async () => {
@@ -19,11 +22,14 @@ export function useReports() {
       return response.reports || []
     },
     staleTime: 30 * 60 * 1000, // 30 minutos - lista de relatórios muda raramente
+    enabled: isAuthenticated, // Só executa se o usuário estiver autenticado
   })
 }
 
 // Hook para buscar dados de um relatório específico
 export function useReport(reportId, params = {}, options = {}) {
+  const { isAuthenticated } = useAuth()
+  
   return useQuery({
     queryKey: reportKeys.detail(reportId, params),
     queryFn: async () => {
@@ -84,14 +90,23 @@ export function useReport(reportId, params = {}, options = {}) {
             })
         }
         
+        // Verificar se há erro na resposta
+        if (response.error) {
+          const error = new Error(response.error)
+          error.status = response.status || 500
+          error.data = response
+          throw error
+        }
+        
         // Log para debug
-        console.log('📊 Report Response:', {
-          reportId,
-          response,
-          hasReport: !!response.report,
-          hasData: !!response.report?.data,
-          hasDirectData: !!response.data
-        })
+        if (import.meta.env.DEV) {
+          console.log('📊 Report Response:', {
+            reportId,
+            hasReport: !!response.report,
+            hasData: !!response.report?.data,
+            hasDirectData: !!response.data
+          })
+        }
         
         // Extrair dados do relatório - tentar múltiplas estruturas
         const reportData = response.report?.data || response.data || response
@@ -104,16 +119,29 @@ export function useReport(reportId, params = {}, options = {}) {
         
         return reportData
       } catch (error) {
-        console.error('❌ Error fetching report:', {
+        // Melhorar mensagem de erro
+        const errorMessage = error.message || 'Erro desconhecido ao buscar relatório'
+        const errorStatus = error.status || null
+        
+        // Log detalhado do erro
+        const errorDetails = {
           reportId,
           params,
-          error: error.message,
-          stack: error.stack
-        })
-        throw error
+          error: errorMessage,
+          status: errorStatus,
+          data: error.data
+        };
+        console.error('❌ Error fetching report:', errorDetails);
+        console.error('❌ Error fetching report (JSON):', JSON.stringify(errorDetails, null, 2));
+        
+        // Criar erro com mais informações
+        const enhancedError = new Error(errorMessage)
+        enhancedError.status = errorStatus
+        enhancedError.data = error.data
+        throw enhancedError
       }
     },
-    enabled: !!reportId && !!params.start_date && !!params.end_date,
+    enabled: isAuthenticated && !!reportId && !!params.start_date && !!params.end_date,
     staleTime: 2 * 60 * 1000, // 2 minutos - dados de relatórios podem mudar
     ...options,
   })

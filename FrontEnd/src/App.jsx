@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -6,50 +7,41 @@ import { BankAccountProvider } from './contexts/BankAccountContext'
 import { queryClient } from './lib/queryClient'
 import { Layout } from './components/layout/Layout'
 import { Login } from './components/Login'
-import { Dashboard } from './pages/Dashboard'
-import { Transactions } from './pages/Transactions'
-import { Contacts } from './pages/Contacts'
-import { Appointments } from './pages/Appointments'
-import { FinancialReports } from './pages/FinancialReports'
-import { Professionals } from './pages/Professionals'
-import { Services } from './pages/Services'
-import { WorkingHours } from './pages/WorkingHours'
-import { Imports } from './pages/Imports'
-import { PublicAppointmentBooking } from './pages/PublicAppointmentBooking'
-import { AppointmentLinks } from './pages/AppointmentLinks'
-import { LandingPage } from './pages/LandingPage'
-import { Subscription } from './pages/Subscription'
-import { Admin } from './pages/Admin'
-import { AdminAccountDetails } from './pages/AdminAccountDetails'
-import { Profile } from './pages/Profile'
-import { Settings } from './pages/Settings'
-import { CompanySettings } from './pages/CompanySettings'
 import { Toaster } from './components/ui/sonner'
+import ErrorBoundary from './components/ErrorBoundary'
+import { PageSkeleton } from './components/Skeleton'
+import { LandingPage, PublicAppointmentBooking, protectedRoutes } from './config/routes'
 import './App.css'
 
 function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, error } = useAuth()
 
-  if (loading) {
+  if (loading) return <PageSkeleton />
+
+  if (error && !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-          <p className="text-text-secondary">Carregando...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
+        <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center">
+          <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">Erro de Conexão</h2>
+          <p className="text-gray-700 dark:text-gray-300 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
+          >
+            Tentar Novamente
+          </button>
         </div>
       </div>
-    );
+    )
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />
 
-  return children;
+  return children
 }
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth()
 
   return (
     <Router>
@@ -57,125 +49,22 @@ function AppContent() {
         <Route path="/landing" element={<LandingPage />} />
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/agendar/:token" element={<PublicAppointmentBooking />} />
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Layout>
-              <Dashboard />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/transactions" element={
-          <ProtectedRoute>
-            <Layout>
-              <Transactions />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/contacts" element={
-          <ProtectedRoute>
-            <Layout>
-              <Contacts />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/appointments" element={
-          <ProtectedRoute>
-            <Layout>
-              <Appointments />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/appointment-links" element={
-          <ProtectedRoute>
-            <Layout>
-              <AppointmentLinks />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/professionals" element={
-          <ProtectedRoute>
-            <Layout>
-              <Professionals />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/services" element={
-          <ProtectedRoute>
-            <Layout>
-              <Services />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/working-hours" element={
-          <ProtectedRoute>
-            <Layout>
-              <WorkingHours />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/reports" element={
-          <ProtectedRoute>
-            <Layout>
-              <FinancialReports />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/imports" element={
-          <ProtectedRoute>
-            <Layout>
-              <Imports />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/subscription" element={
-          <ProtectedRoute>
-            <Layout>
-              <Subscription />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/reconciliations" element={
-          <ProtectedRoute>
-            <Layout>
-              <div className="p-8 text-center text-gray-500">Página de Conciliações em desenvolvimento</div>
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/accounts/:id" element={
-          <ProtectedRoute>
-            <Layout>
-              <AdminAccountDetails />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/admin" element={
-          <ProtectedRoute>
-            <Layout>
-              <Admin />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <Layout>
-              <Profile />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <Layout>
-              <Settings />
-            </Layout>
-          </ProtectedRoute>
-        } />
-        <Route path="/company-settings" element={
-          <ProtectedRoute>
-            <Layout>
-              <CompanySettings />
-            </Layout>
-          </ProtectedRoute>
-        } />
+
+        {protectedRoutes.map(({ path, element: Page }) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Suspense fallback={<PageSkeleton />}>
+                    <Page />
+                  </Suspense>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+        ))}
       </Routes>
     </Router>
   )
@@ -183,18 +72,19 @@ function AppContent() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <BankAccountProvider>
-            <AppContent />
-            <Toaster />
-          </BankAccountProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AuthProvider>
+            <BankAccountProvider>
+              <AppContent />
+              <Toaster />
+            </BankAccountProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
 
 export default App
-

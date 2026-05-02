@@ -85,22 +85,23 @@ module Reports
       # Otimização: usar find_each para grandes volumes e limitar resultados
       items = []
       date_type = params[:date_type] || :due_date
+      date_column = date_type == :due_date ? :due_date : :competency_date
       
       # Combinar queries de transações e transferências
-      combined_query = if transfers_in.any?
+      combined_query = if transfers_in.exists?
                         transactions.or(transfers_in)
                       else
                         transactions
                       end
       
-      combined_query = combined_query.order(date_type, :transaction_type_cd)
+      combined_query = combined_query.order(date_column, :transaction_type_cd)
       
       # Paginação para grandes volumes
       page = params.fetch(:page, 1).to_i
       per_page = [params.fetch(:per_page, 100).to_i, 500].min # Máximo 500 por página
       offset = (page - 1) * per_page
       
-      combined_query.offset(offset).limit(per_page).find_each(batch_size: 100) do |transaction|
+      combined_query.offset(offset).limit(per_page).each do |transaction|
         case transaction.transaction_type
         when :transfer
           if bank_account_ids.include?(transaction.bank_account&.id&.to_s)
@@ -130,7 +131,7 @@ module Reports
 
     def build_default_transaction(transaction:)
       {
-        transaction:,
+        transaction_id: transaction.id,
         transaction_type: transaction.transaction_type,
         date: I18n.l(transaction.date_by_type(date_type: context.params[:date_type])),
         paid: transaction.paid,
@@ -154,7 +155,7 @@ module Reports
 
     def build_transfer_out(transfer:)
       {
-        transaction: transfer,
+        transaction_id: transfer.id,
         transaction_type: transfer.transaction_type,
         date: I18n.l(transfer.date_by_type(date_type: context.params[:date_type])),
         paid: transfer.paid,
@@ -170,7 +171,7 @@ module Reports
 
     def build_transfer_in(transfer:)
       {
-        transaction: transfer,
+        transaction_id: transfer.id,
         transaction_type: transfer.transaction_type,
         date: I18n.l(transfer.date_by_type(date_type: context.params[:date_type])),
         paid: transfer.paid,

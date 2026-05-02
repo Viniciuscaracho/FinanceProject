@@ -155,8 +155,16 @@ gem 'wicked', '~> 2.0'
 gem 'with_advisory_lock', '~> 5.0'
 gem 'workflow-activerecord', '~> 6.0'
 
+# API Documentation
+gem 'rswag-api', '~> 2.13'
+gem 'rswag-ui', '~> 2.13'
+
 # OAuth Authentication
 gem 'omniauth', '~> 2.1'
 gem 'omniauth-google-oauth2', '~> 1.1'
 gem 'omniauth-rails_csrf_protection', '~> 1.0'
 gem 'jwt', '~> 2.7'
+
+# Google Calendar API
+gem 'google-apis-calendar_v3', '~> 0.42'
+gem 'googleauth', '~> 1.11'

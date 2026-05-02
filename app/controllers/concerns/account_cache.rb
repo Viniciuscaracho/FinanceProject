@@ -26,8 +26,14 @@ module AccountCache
     full_key = cache_key(key, endpoint_namespace: endpoint_namespace)
     cache_store = account_cache_store(endpoint_namespace)
 
-    cache_store.fetch(full_key, options) do
-      Rails.logger.debug "Cache miss para: #{full_key}"
+    begin
+      cache_store.fetch(full_key, options) do
+        Rails.logger.debug "Cache miss para: #{full_key}"
+        yield if block_given?
+      end
+    rescue Redis::CannotConnectError, Errno::ECONNREFUSED, Redis::ConnectionError => e
+      Rails.logger.warn "Redis não disponível para cache, executando sem cache: #{e.message}"
+      # Se Redis não estiver disponível, executar o bloco diretamente sem cache
       yield if block_given?
     end
   end
@@ -72,21 +78,26 @@ module AccountCache
 
   # Método auxiliar para limpar cache por padrão usando Redis
   def clear_cache_by_pattern(pattern)
-    redis = RedisClient.current
-    cursor = 0
-    deleted_count = 0
-    
-    loop do
-      cursor, keys = redis.scan(cursor, match: pattern, count: 100)
-      if keys.any?
-        deleted = redis.del(*keys)
-        deleted_count += deleted
+    begin
+      redis = RedisClient.current
+      cursor = 0
+      deleted_count = 0
+      
+      loop do
+        cursor, keys = redis.scan(cursor, match: pattern, count: 100)
+        if keys.any?
+          deleted = redis.del(*keys)
+          deleted_count += deleted
+        end
+        break if cursor.to_i.zero?
       end
-      break if cursor.to_i.zero?
+      
+      Rails.logger.debug "Cache limpo: #{deleted_count} chaves removidas com padrão: #{pattern}"
+      deleted_count
+    rescue Redis::CannotConnectError, Errno::ECONNREFUSED => e
+      Rails.logger.warn "Redis não disponível, pulando limpeza de cache: #{e.message}"
+      0
     end
-    
-    Rails.logger.debug "Cache limpo: #{deleted_count} chaves removidas com padrão: #{pattern}"
-    deleted_count
   end
 
   # Gera o namespace do cache baseado na conta e endpoint

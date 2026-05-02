@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiService } from '../lib/api'
+import { useAuth } from '../contexts/AuthContext'
 
 // Query keys
 export const transactionKeys = {
@@ -12,20 +13,25 @@ export const transactionKeys = {
 
 // Hook para listar transações
 export function useTransactions(page = 1, perPage = 20, filters = {}) {
+  const { isAuthenticated } = useAuth()
+  
   return useQuery({
     queryKey: transactionKeys.list({ page, perPage, ...filters }),
     queryFn: () => apiService.getTransactions(page, perPage, filters),
     staleTime: 2 * 60 * 1000, // 2 minutos
     gcTime: 5 * 60 * 1000, // 5 minutos
+    enabled: isAuthenticated, // Só executa se o usuário estiver autenticado
   })
 }
 
 // Hook para uma transação específica
 export function useTransaction(id) {
+  const { isAuthenticated } = useAuth()
+  
   return useQuery({
     queryKey: transactionKeys.detail(id),
     queryFn: () => apiService.getTransaction(id),
-    enabled: !!id,
+    enabled: isAuthenticated && !!id, // Só executa se o usuário estiver autenticado e tiver um ID
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   })

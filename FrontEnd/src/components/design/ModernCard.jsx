@@ -1,61 +1,58 @@
 import { cn } from '@/lib/utils'
 
-export function ModernCard({ 
-  children, 
-  className, 
-  gradient = 'from-[#5B7A9E] to-[#6B8FA3]',
-  glow = false, // Desabilitado para design Stripe minimalista
-  ...props 
+export function ModernCard({
+  children,
+  className,
+  ...props
 }) {
   return (
-    <div className={cn("relative", className)} {...props}>
-      <div className={cn(
-        "relative bg-surface-elevated rounded-[var(--radius-sm)]",
-        "border border-border",
-        "p-6 transition-colors duration-100"
-      )}>
-        {children}
-      </div>
+    <div
+      className={cn(
+        "bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm",
+        "transition-colors duration-100",
+        className
+      )}
+      {...props}
+    >
+      {children}
     </div>
   )
 }
 
-export function StatCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  gradient = 'from-[#5B7A9E] to-[#6B8FA3]',
+export function StatCard({
+  title,
+  value,
+  icon: Icon,
   subtitle,
   trend,
-  ...props 
+  ...props
 }) {
   return (
     <ModernCard {...props}>
-      <div className="flex items-start justify-between mb-6">
-        {Icon && (
+      {/* Card header row */}
+      <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center space-x-2">
+          {Icon && (
+            <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+          )}
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 leading-none">{title}</p>
+        </div>
+        {trend != null && (
           <div className={cn(
-            "w-10 h-10 rounded-[var(--radius-sm)] flex items-center justify-center",
-            "bg-[var(--brand-primary)]/10 text-[var(--brand-primary)]"
-          )}>
-            <Icon className="w-5 h-5" />
-          </div>
-        )}
-        {trend && (
-          <div className={cn(
-            "text-xs font-medium px-2 py-1 rounded-[var(--radius-sm)]",
-            trend > 0 
-              ? "text-[var(--success)] bg-[var(--success)]/10"
-              : "text-[var(--danger)] bg-[var(--danger)]/10"
+            "text-xs font-medium px-1.5 py-0.5 rounded",
+            trend > 0
+              ? "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20"
+              : "text-rose-500 bg-rose-50 dark:text-rose-400 dark:bg-rose-900/20"
           )}>
             {trend > 0 ? '+' : ''}{trend}%
           </div>
         )}
       </div>
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-text-secondary">{title}</p>
-        <p className="text-3xl font-semibold text-text-primary leading-tight">{value}</p>
+      {/* Card body */}
+      <div className="p-3">
+        <p className="text-xl font-semibold text-gray-900 dark:text-white leading-tight">{value}</p>
         {subtitle && (
-          <p className="text-xs text-text-secondary mt-2">{subtitle}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>
         )}
       </div>
     </ModernCard>

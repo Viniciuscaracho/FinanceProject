@@ -46,6 +46,33 @@ export const supabase = supabaseClient
 // Flag para verificar se Supabase está disponível
 export const isSupabaseAvailable = isSupabaseConfigured
 
+// --- MFA helpers ---
+
+export const mfaEnroll = async () => {
+  if (!isSupabaseAvailable) return { data: null, error: { message: 'Supabase não configurado' } }
+  return supabase.auth.mfa.enroll({ factorType: 'totp' })
+}
+
+export const mfaChallenge = async (factorId) => {
+  if (!isSupabaseAvailable) return { data: null, error: { message: 'Supabase não configurado' } }
+  return supabase.auth.mfa.challenge({ factorId })
+}
+
+export const mfaVerify = async (factorId, challengeId, code) => {
+  if (!isSupabaseAvailable) return { data: null, error: { message: 'Supabase não configurado' } }
+  return supabase.auth.mfa.verify({ factorId, challengeId, code })
+}
+
+export const mfaUnenroll = async (factorId) => {
+  if (!isSupabaseAvailable) return { data: null, error: { message: 'Supabase não configurado' } }
+  return supabase.auth.mfa.unenroll({ factorId })
+}
+
+export const mfaListFactors = async () => {
+  if (!isSupabaseAvailable) return { data: { totp: [] }, error: null }
+  return supabase.auth.mfa.listFactors()
+}
+
 // Helper para obter o usuário atual
 export const getCurrentUser = async () => {
   if (!isSupabaseAvailable) {

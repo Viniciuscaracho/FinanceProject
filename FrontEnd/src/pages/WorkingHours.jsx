@@ -259,7 +259,7 @@ export function WorkingHours() {
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base text-gray-900">
+                            <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100">
                               {day.label}
                             </h3>
                             <div className="flex flex-wrap items-center gap-2 mt-2">

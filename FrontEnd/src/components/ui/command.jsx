@@ -21,7 +21,10 @@ function Command({
     <CommandPrimitive
       data-slot="command"
       className={cn(
-        "bg-popover text-popover-foreground flex h-full w-full flex-col overflow-hidden rounded-md",
+        "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
+        "border border-gray-200 dark:border-gray-700",
+        "shadow-lg shadow-black/10 dark:shadow-black/30",
+        "flex h-full w-full flex-col overflow-hidden rounded-lg",
         className
       )}
       {...props} />
@@ -62,7 +65,7 @@ function CommandInput({
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          "placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+          "placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
         {...props} />

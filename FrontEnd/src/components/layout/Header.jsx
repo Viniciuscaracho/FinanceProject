@@ -81,12 +81,11 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
 
   return (
     <header className={cn(
-      "sticky top-0 z-40 transition-all duration-140",
-      "w-full max-w-full overflow-x-hidden",
-      "bg-surface border-b border-border",
-      scrolled && "border-b-2"
+      "sticky top-0 z-10 w-full max-w-full overflow-x-hidden",
+      "h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700",
+      scrolled && "shadow-sm"
     )}>
-      <div className="w-full bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-6 py-3 flex items-center justify-between transition-colors duration-200">
+      <div className="w-full h-16 px-4 flex items-center justify-between transition-colors duration-200">
         {/* Left side - Wallet */}
         <div className="flex items-center gap-4">
           {!loadingAccounts && bankAccounts.length > 0 ? (

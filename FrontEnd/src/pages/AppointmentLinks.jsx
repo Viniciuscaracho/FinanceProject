@@ -77,11 +77,13 @@ export function AppointmentLinks() {
     active: true,
     service_id: null,
     account_user_id: null,
+    link_type: 'normal', // 'normal' ou 'premium'
     settings: {
       start_hour: 9,
       end_hour: 18,
       slot_interval_minutes: 30,
-      default_duration_minutes: 60
+      default_duration_minutes: 60,
+      days_ahead: 15 // Padrão para link normal
     }
   })
   
@@ -127,11 +129,13 @@ export function AppointmentLinks() {
       active: true,
       service_id: null,
       account_user_id: null,
+      link_type: 'normal',
       settings: {
         start_hour: 9,
         end_hour: 18,
         slot_interval_minutes: 30,
-        default_duration_minutes: 60
+        default_duration_minutes: 60,
+        days_ahead: 15
       }
     })
     setEditingLink(null)
@@ -153,11 +157,15 @@ export function AppointmentLinks() {
         active: formData.active !== false,
         service_id: formData.service_id || null,
         account_user_id: formData.account_user_id || null,
-        settings: formData.settings || {
-          start_hour: 9,
-          end_hour: 18,
-          slot_interval_minutes: 30,
-          default_duration_minutes: 60
+        link_type: formData.link_type || 'normal',
+        settings: {
+          ...(formData.settings || {
+            start_hour: 9,
+            end_hour: 18,
+            slot_interval_minutes: 30,
+            default_duration_minutes: 60
+          }),
+          days_ahead: formData.settings?.days_ahead || (formData.link_type === 'premium' ? 30 : 15)
         }
       }
       
@@ -176,17 +184,22 @@ export function AppointmentLinks() {
   
   const handleEdit = (link) => {
     setEditingLink(link)
+    const settings = link.settings || {}
+    const linkType = link.link_type || (settings.days_ahead >= 30 ? 'premium' : 'normal')
+    
     setFormData({
       name: link.name || '',
       description: link.description || '',
       active: link.active !== false,
       service_id: link.service?.id || link.service_id || null,
       account_user_id: link.professional?.id || link.account_user_id || null,
-      settings: link.settings || {
-        start_hour: 9,
-        end_hour: 18,
-        slot_interval_minutes: 30,
-        default_duration_minutes: 60
+      link_type: linkType,
+      settings: {
+        start_hour: settings.start_hour || 9,
+        end_hour: settings.end_hour || 18,
+        slot_interval_minutes: settings.slot_interval_minutes || 30,
+        default_duration_minutes: settings.default_duration_minutes || 60,
+        days_ahead: settings.days_ahead || (linkType === 'premium' ? 30 : 15)
       }
     })
     setIsEditLinkOpen(true)
@@ -213,11 +226,10 @@ export function AppointmentLinks() {
         active: formData.active !== false,
         service_id: formData.service_id || null,
         account_user_id: formData.account_user_id || null,
-        settings: formData.settings || {
-          start_hour: 9,
-          end_hour: 18,
-          slot_interval_minutes: 30,
-          default_duration_minutes: 60
+        link_type: formData.link_type || 'normal',
+        settings: {
+          ...(formData.settings || {}),
+          days_ahead: formData.settings?.days_ahead || (formData.link_type === 'premium' ? 30 : 15)
         }
       }
       
@@ -495,7 +507,69 @@ export function AppointmentLinks() {
                 </div>
               </div>
               
-              <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-2">Configuração de Calendário</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Configure quantos dias à frente os clientes poderão agendar. Links Premium permitem mais dias.
+                </p>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="link_type">Tipo de Link</Label>
+                    <p className="text-xs text-gray-500 mb-1">Normal: até 15 dias | Premium: até 30 dias (configurável)</p>
+                    <Select
+                      value={formData.link_type || 'normal'}
+                      onValueChange={(value) => {
+                        const defaultDays = value === 'premium' ? 30 : 15
+                        setFormData({
+                          ...formData,
+                          link_type: value,
+                          settings: {
+                            ...formData.settings,
+                            days_ahead: formData.settings?.days_ahead || defaultDays
+                          }
+                        })
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Normal (15 dias)</SelectItem>
+                        <SelectItem value="premium">Premium (30 dias configurável)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="days_ahead">Dias à frente para agendamento</Label>
+                    <p className="text-xs text-gray-500 mb-1">
+                      Quantos dias no futuro o calendário mostrará (máx: {formData.link_type === 'premium' ? '90' : '15'})
+                    </p>
+                    <Input
+                      id="days_ahead"
+                      type="number"
+                      min="1"
+                      max={formData.link_type === 'premium' ? 90 : 15}
+                      value={formData.settings?.days_ahead || (formData.link_type === 'premium' ? 30 : 15)}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || (formData.link_type === 'premium' ? 30 : 15)
+                        const maxDays = formData.link_type === 'premium' ? 90 : 15
+                        const daysAhead = Math.min(Math.max(1, value), maxDays)
+                        setFormData({
+                          ...formData,
+                          settings: {
+                            ...formData.settings,
+                            days_ahead: daysAhead
+                          }
+                        })
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <input
                   type="checkbox"
                   id="active"
@@ -998,6 +1072,68 @@ export function AppointmentLinks() {
                       settings: { ...formData.settings, default_duration_minutes: parseInt(e.target.value) || 60 }
                     })}
                   />
+                </div>
+              </div>
+              
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-2">Configuração de Calendário</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Configure quantos dias à frente os clientes poderão agendar. Links Premium permitem mais dias.
+                </p>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-link_type">Tipo de Link</Label>
+                    <p className="text-xs text-gray-500 mb-1">Normal: até 15 dias | Premium: até 30 dias (configurável)</p>
+                    <Select
+                      value={formData.link_type || 'normal'}
+                      onValueChange={(value) => {
+                        const defaultDays = value === 'premium' ? 30 : 15
+                        setFormData({
+                          ...formData,
+                          link_type: value,
+                          settings: {
+                            ...formData.settings,
+                            days_ahead: formData.settings?.days_ahead || defaultDays
+                          }
+                        })
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Normal (15 dias)</SelectItem>
+                        <SelectItem value="premium">Premium (30 dias configurável)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="edit-days_ahead">Dias à frente para agendamento</Label>
+                    <p className="text-xs text-gray-500 mb-1">
+                      Quantos dias no futuro o calendário mostrará (máx: {formData.link_type === 'premium' ? '90' : '15'})
+                    </p>
+                    <Input
+                      id="edit-days_ahead"
+                      type="number"
+                      min="1"
+                      max={formData.link_type === 'premium' ? 90 : 15}
+                      value={formData.settings?.days_ahead || (formData.link_type === 'premium' ? 30 : 15)}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || (formData.link_type === 'premium' ? 30 : 15)
+                        const maxDays = formData.link_type === 'premium' ? 90 : 15
+                        const daysAhead = Math.min(Math.max(1, value), maxDays)
+                        setFormData({
+                          ...formData,
+                          settings: {
+                            ...formData.settings,
+                            days_ahead: daysAhead
+                          }
+                        })
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

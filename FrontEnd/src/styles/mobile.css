@@ -1,0 +1,360 @@
+/**
+ * Estilos Mobile-First baseados na metodologia Cal.com
+ * Breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px), 2xl (1536px)
+ */
+
+/* ============================================
+   Mobile (< 768px) - Baseado no Cal.com
+   ============================================ */
+@media (max-width: 767px) {
+  /* Touch-friendly: elementos clicáveis com área mínima de 44x44px (Apple HIG) */
+  button,
+  a,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"],
+  [data-slot="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem 1rem;
+    touch-action: manipulation; /* Remove delay de toque */
+    -webkit-tap-highlight-color: transparent; /* Remove highlight padrão */
+  }
+
+  /* Inputs e selects otimizados para mobile */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important; /* Previne zoom automático no iOS */
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    -webkit-appearance: none; /* Remove estilos nativos iOS */
+    appearance: none;
+  }
+
+  /* Labels e textos legíveis */
+  label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  /* Melhorar espaçamento em formulários */
+  .form-group,
+  .space-y-2 > * + *,
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+
+  /* Modais e dialogs otimizados para mobile (padrão Cal.com) */
+  [data-slot="dialog-content"],
+  [role="dialog"] > div {
+    max-width: calc(100vw - 1rem) !important;
+    max-height: 95vh !important;
+    margin: 0.5rem !important;
+    border-radius: 0.75rem !important;
+    padding: 1rem !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    /* Prevenir scroll do body quando modal está aberto */
+    position: relative;
+  }
+
+  /* Sheet/Drawer em mobile - full screen */
+  [data-slot="sheet-content"],
+  [data-sidebar="sidebar"][data-mobile="true"] {
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    width: 100% !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Backdrop para modais mobile */
+  [data-slot="dialog-overlay"],
+  [data-slot="sheet-overlay"] {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  /* Tabelas responsivas - scroll horizontal suave (Cal.com style) */
+  .table-responsive,
+  [data-slot="table-container"],
+  [data-slot="table-wrapper"] {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    /* Indicador visual de scroll */
+    position: relative;
+  }
+
+  [data-slot="table-container"]::-webkit-scrollbar,
+  [data-slot="table-wrapper"]::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  [data-slot="table-container"]::-webkit-scrollbar-track,
+  [data-slot="table-wrapper"]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  [data-slot="table-container"]::-webkit-scrollbar-thumb,
+  [data-slot="table-wrapper"]::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
+
+  [data-slot="table-container"]::-webkit-scrollbar-thumb:hover,
+  [data-slot="table-wrapper"]::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+
+  /* Cards em vez de tabelas em mobile */
+  .mobile-card-view {
+    display: block;
+  }
+
+  .mobile-card-view table,
+  .mobile-card-view thead,
+  .mobile-card-view tbody,
+  .mobile-card-view th,
+  .mobile-card-view td,
+  .mobile-card-view tr {
+    display: block;
+  }
+
+  .mobile-card-view thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+
+  .mobile-card-view tr {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: white;
+  }
+
+  .mobile-card-view td {
+    border: none;
+    position: relative;
+    padding-left: 50% !important;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .mobile-card-view td:before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    width: 45%;
+    padding-right: 10px;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #6b7280;
+  }
+
+  /* Melhorar legibilidade de tabelas em mobile */
+  [data-slot="table"] {
+    font-size: 0.875rem;
+  }
+
+  [data-slot="table-head"] {
+    font-size: 0.75rem;
+  }
+
+  /* Espaçamento reduzido em mobile para tabelas */
+  [data-slot="table-cell"],
+  [data-slot="table-head"] {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* Scroll suave */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevenir seleção de texto acidental */
+  button,
+  [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  /* Melhorar legibilidade */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Ajustar tamanhos de fonte */
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+  }
+
+  /* Espaçamento reduzido em mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Grid responsivo */
+  .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Flex direction column em mobile quando necessário */
+  .flex-mobile-col {
+    flex-direction: column;
+  }
+}
+
+/* ============================================
+   Tablet (768px - 1023px)
+   ============================================ */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Ajustes específicos para tablet */
+  .tablet-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Sidebar colapsado em tablet */
+  [data-slot="sidebar"] {
+    width: 3.5rem; /* 56px - apenas ícones */
+  }
+
+  /* Conteúdo com margem para sidebar colapsado */
+  main {
+    margin-left: 3.5rem;
+  }
+}
+
+/* ============================================
+   Desktop (1024px+)
+   ============================================ */
+@media (min-width: 1024px) {
+  /* Restaurar comportamentos desktop */
+  [data-slot="sidebar"] {
+    width: auto;
+  }
+
+  main {
+    margin-left: 0;
+  }
+}
+
+/* ============================================
+   Otimizações iOS específicas
+   ============================================ */
+@supports (-webkit-touch-callout: none) {
+  /* Prevenir zoom automático em inputs (iOS Safari) */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="password"],
+  input[type="search"],
+  input[type="url"],
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  textarea,
+  select {
+    font-size: 16px !important;
+    /* Remover estilos nativos iOS */
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 0.5rem;
+  }
+
+  /* Melhorar scroll em iOS */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevenir pull-to-refresh acidental */
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* ============================================
+   Melhorias de Performance Mobile
+   ============================================ */
+@media (max-width: 767px) {
+  /* Otimizar animações em mobile */
+  *,
+  *::before,
+  *::after {
+    /* Usar transform e opacity para animações (GPU accelerated) */
+    will-change: auto;
+  }
+
+  /* Reduzir animações em dispositivos com preferência reduzida */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Melhorar renderização de fontes */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Otimizar imagens */
+  img {
+    max-width: 100%;
+    height: auto;
+    /* Lazy loading nativo */
+    loading: lazy;
+  }
+}
+
+/* ============================================
+   Acessibilidade Mobile
+   ============================================ */
+@media (max-width: 767px) {
+  /* Foco visível em mobile */
+  *:focus-visible {
+    outline: 2px solid var(--ring, #3b82f6);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
+  /* Área de toque aumentada para links pequenos */
+  a[href] {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem;
+  }
+}
+
+
+
+

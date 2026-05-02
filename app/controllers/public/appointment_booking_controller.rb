@@ -14,7 +14,15 @@ module Public
     # Redireciona para o frontend React que cuida da UI
     # Esta rota só é chamada quando alguém acessa diretamente o backend (não via Vite)
     def show
-      appointment_link = AppointmentLink.find_by(token: params[:token], active: true)
+      appointment_link = begin
+        cache_key = "appointment_link:#{params[:token]}"
+        Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+          AppointmentLink.find_by(token: params[:token], active: true)
+        end
+      rescue => e
+        Rails.logger.warn "Cache error, fetching directly: #{e.message}"
+        AppointmentLink.find_by(token: params[:token], active: true)
+      end
       
       unless appointment_link
         render json: { error: 'Link de agendamento não encontrado' }, status: :not_found
@@ -28,26 +36,39 @@ module Public
     
     # POST /agendar/:token/book
     def create
-      Rails.logger.info "🔍 PublicAppointmentBooking#create called"
-      Rails.logger.info "  Token: #{params[:token]}"
-      Rails.logger.info "  Params: #{params.inspect}"
-      Rails.logger.info "  Request format: #{request.format}"
-      Rails.logger.info "  Content-Type: #{request.content_type}"
-      
-      appointment_link = AppointmentLink.find_by(token: params[:token], active: true)
+      appointment_link = begin
+        cache_key = "appointment_link:#{params[:token]}"
+        Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+          AppointmentLink.find_by(token: params[:token], active: true)
+        end
+      rescue => e
+        Rails.logger.warn "Cache error, fetching directly: #{e.message}"
+        AppointmentLink.find_by(token: params[:token], active: true)
+      end
       
       unless appointment_link
-        Rails.logger.warn "❌ Appointment link not found or inactive for token: #{params[:token]}"
         render json: { error: 'Link de agendamento não encontrado ou inativo' }, status: :not_found
         return
       end
-      
-      Rails.logger.info "✅ Found appointment link for account: #{appointment_link.account_id}"
       
       account = appointment_link.account
       Current.account = account
       
       appointment_params_data = appointment_params
+
+      raw_google_meet_link = appointment_params_data[:google_meet_link].to_s.strip
+      appointment_params_data[:google_meet_link] = raw_google_meet_link.presence
+
+      raw_recurrence_pattern = params[:recurrence_pattern] || params.dig(:appointment, :recurrence_pattern)
+      recurrence_pattern = sanitize_recurrence_pattern(raw_recurrence_pattern)
+
+      if raw_recurrence_pattern.present? && recurrence_pattern.nil?
+        render json: {
+          success: false,
+          errors: ['Padrão de recorrência inválido. Frequências permitidas: daily, weekly, biweekly, monthly, bimonthly, quarterly, semiannual, annual. Máximo de 24 ocorrências.']
+        }, status: :unprocessable_entity
+        return
+      end
       
       # Extrair client_name e client_email antes de passar para o appointment
       # (esses campos não existem no modelo Appointment)
@@ -55,6 +76,18 @@ module Public
       client_email = appointment_params_data.delete(:client_email)
       
       appointment_params_data[:account_id] = account.id
+
+      # Não salvar diretamente flags de geração de Meet/recorrência no modelo
+      appointment_params_data.delete(:recurrence_pattern)
+      appointment_params_data.delete(:enable_google_meet)
+
+      if appointment_params_data[:google_meet_link].present? && !valid_google_meet_link?(appointment_params_data[:google_meet_link])
+        render json: {
+          success: false,
+          errors: ['Link do Google Meet inválido. Utilize um link no formato https://meet.google.com/xxx-xxxx-xxx']
+        }, status: :unprocessable_entity
+        return
+      end
       
       # Criar ou buscar contato
       # Nota: O modelo Appointment também cria contato automaticamente via callback,
@@ -93,12 +126,67 @@ module Public
         duration_minutes = service.metadata&.dig('duration_minutes')&.to_i || 60
         appointment_params_data[:end_time] = appointment_params_data[:start_time] + duration_minutes.minutes
       end
+
+      service_metadata = service.metadata || {}
+      auto_meet_enabled = service_metadata['auto_meet'] == true
+      modality_online = %w[online hibrido].include?(service_metadata['modality'].to_s.downcase)
+
+      default_generate_google_meet = ENV.fetch('PUBLIC_BOOKING_DEFAULT_GOOGLE_MEET', 'true').to_s.downcase.in?(%w[true 1 yes on])
+
+      should_generate_google_meet = appointment_link.enable_google_meet ||
+                                    truthy?(params[:enable_google_meet]) ||
+                                    truthy?(params.dig(:appointment, :enable_google_meet)) ||
+                                    auto_meet_enabled ||
+                                    modality_online
+
+      if !should_generate_google_meet && default_generate_google_meet
+        Rails.logger.info '🔗 Gerando Google Meet por padrão (PUBLIC_BOOKING_DEFAULT_GOOGLE_MEET habilitado)'
+      end
+      should_generate_google_meet ||= default_generate_google_meet
+
+      # Se o usuário já forneceu um link válido, não gere automaticamente
+      should_generate_google_meet = false if appointment_params_data[:google_meet_link].present?
       
       appointment = account.appointments.build(appointment_params_data)
       appointment.status ||= :pending
       appointment.payment_status ||= :pending
       
       if appointment.save
+        # Gerar link do Google Meet quando configurado
+        google_meet_link = nil
+        if should_generate_google_meet
+          begin
+            result = Appointments::GenerateGoogleMeetLink.call(appointment: appointment)
+            appointment.reload
+            google_meet_link = result.google_meet_link || appointment.google_meet_link
+          rescue => e
+            Rails.logger.error "Erro ao gerar Google Meet: #{e.message}"
+          end
+        end
+
+        recurrence_summary = nil
+        if recurrence_pattern.present?
+          begin
+            recurring_result = Appointments::CreateRecurring.call(
+              parent_appointment: appointment,
+              recurrence_pattern: recurrence_pattern
+            )
+
+            if recurring_result.success?
+              recurrence_summary = {
+                count: recurring_result.count,
+                frequency: recurrence_pattern[:frequency],
+                end_date: recurrence_pattern[:end_date],
+                created_ids: (recurring_result.created_appointments || []).map(&:id)
+              }
+            else
+              Rails.logger.error "Erro ao criar recorrência: #{recurring_result.error}"
+            end
+          rescue => e
+            Rails.logger.error "Exceção ao criar recorrência: #{e.message}"
+          end
+        end
+
         # Criar payment link do Stripe se configurado
         begin
           payment_link = create_stripe_payment_link(appointment, account)
@@ -109,15 +197,19 @@ module Public
           
           render json: {
             success: true,
-            appointment: appointment_json(appointment),
-            payment_link_url: payment_link.url
+            appointment: appointment_json(appointment.reload),
+            payment_link_url: payment_link.url,
+            google_meet_link: google_meet_link || appointment.google_meet_link,
+            recurrence: recurrence_summary
           }, status: :created
         rescue => e
           Rails.logger.error "Erro ao criar payment link: #{e.message}"
           render json: {
             success: true,
-            appointment: appointment_json(appointment),
-            payment_link_url: nil
+            appointment: appointment_json(appointment.reload),
+            payment_link_url: nil,
+            google_meet_link: google_meet_link || appointment.google_meet_link,
+            recurrence: recurrence_summary
           }, status: :created
         end
       else
@@ -151,27 +243,63 @@ module Public
     def appointment_params
       params.require(:appointment).permit(
         :account_user_id, :service_id, :start_time, :end_time,
-        :whatsapp_number, :client_name, :client_email
+        :whatsapp_number, :client_name, :client_email,
+        :enable_google_meet,
+        :google_meet_link,
+        recurrence_pattern: {}
       ).tap do |permitted|
         permitted[:start_time] = Time.zone.parse(permitted[:start_time]) if permitted[:start_time].present?
         permitted[:end_time] = Time.zone.parse(permitted[:end_time]) if permitted[:end_time].present?
       end
+    end
+
+    def valid_google_meet_link?(link)
+      return false if link.blank?
+      normalized = link.strip
+      pattern = %r{\Ahttps://meet\.google\.com/[a-zA-Z0-9]{3}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{3}(?:\?[^\s]*)?\z}
+      normalized.match?(pattern)
+    end
+
+    def sanitize_recurrence_pattern(raw_pattern)
+      return nil unless raw_pattern.is_a?(ActionController::Parameters) || raw_pattern.is_a?(Hash)
+
+      pattern = raw_pattern.to_unsafe_h if raw_pattern.respond_to?(:to_unsafe_h)
+      pattern ||= raw_pattern
+
+      frequency = pattern['frequency']&.to_s&.downcase
+      occurrences = pattern['occurrences']&.to_i if pattern.key?('occurrences')
+      end_date = pattern['end_date']
+
+      allowed_frequencies = %w[daily weekly biweekly monthly bimonthly quarterly semiannual annual]
+      return nil unless frequency.in?(allowed_frequencies)
+
+      occurrences = [[occurrences || 10, 1].max, 24].min
+
+      parsed_end_date = begin
+        Date.parse(end_date) if end_date.present?
+      rescue ArgumentError
+        nil
+      end
+
+      {
+        frequency: frequency,
+        occurrences: occurrences,
+        end_date: parsed_end_date&.iso8601
+      }
+    end
+
+    def truthy?(value)
+      value == true || value.to_s.downcase.in?(%w[true 1 yes on])
     end
     
     def find_or_create_contact(account, whatsapp_number, client_name = nil)
       normalized_number = whatsapp_number.gsub(/\D/, '')
       return nil if normalized_number.blank?
       
-      # Buscar contato existente
-      contact = nil
-      account.contacts.find_each do |c|
-        cell_normalized = (c.cell_phone_number || '').gsub(/\D/, '')
-        phone_normalized = (c.phone_number || '').gsub(/\D/, '')
-        if cell_normalized == normalized_number || phone_normalized == normalized_number
-          contact = c
-          break
-        end
-      end
+      # Buscar contato existente usando query otimizada
+      contact = account.contacts
+        .where("REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(cell_phone_number, ''), ' ', ''), '-', ''), '(', ''), ')', '') = ? OR REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(phone_number, ''), ' ', ''), '-', ''), '(', ''), ')', '') = ?", normalized_number, normalized_number)
+        .first
       
       # Criar novo contato se não existir
       if contact.nil?
@@ -265,7 +393,8 @@ module Public
             cents: appointment.service.selling_price_cents || 0,
             currency: appointment.service.currency || 'BRL',
             formatted: Money.new(appointment.service.selling_price_cents || 0, appointment.service.currency || 'BRL').format
-          }
+          },
+          metadata: appointment.service.metadata || {}
         } : nil,
         professional: appointment.account_user ? {
           id: appointment.account_user.id,
@@ -275,7 +404,12 @@ module Public
         end_time: appointment.end_time&.iso8601,
         status: Appointment::APPOINTMENT_STATUS.key(appointment.status)&.to_s,
         company_whatsapp: whatsapp_number ? normalize_whatsapp_number(whatsapp_number) : nil,
-        company_name: account.company&.name || account.company&.first_name
+        company_name: account.company&.name || account.company&.first_name,
+        google_meet_link: appointment.google_meet_link,
+        has_google_meet: appointment.google_meet_link.present?,
+        recurrence_pattern: appointment.recurrence_pattern,
+        recurring: appointment.recurrence_pattern.present?,
+        parent_appointment_id: appointment.parent_appointment_id
       }
     end
     

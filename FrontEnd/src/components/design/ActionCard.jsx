@@ -1,31 +1,35 @@
 import { ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export function ActionCard({ 
-  title, 
-  description, 
-  icon: Icon, 
+export function ActionCard({
+  title,
+  description,
+  icon: Icon,
   onClick,
   className,
-  ...props 
+  ...props
 }) {
   return (
-    <div 
-      className={cn("group relative cursor-pointer", className)} 
+    <div
+      className={cn(
+        "group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm",
+        "hover:shadow cursor-pointer transition-shadow duration-150",
+        className
+      )}
       onClick={onClick}
       {...props}
     >
-      <div className="relative bg-surface-elevated rounded-[var(--radius-sm)] p-6 border border-border hover:border-accent/50 transition-colors duration-100">
-        <div className="flex items-center space-x-4">
-          <div className="w-14 h-14 rounded-[var(--radius-sm)] flex items-center justify-center bg-accent transition-colors duration-100">
-            <Icon className="w-7 h-7 text-white" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-lg text-text-primary mb-1">{title}</h3>
-            <p className="text-sm text-text-secondary">{description}</p>
-          </div>
-          <ArrowRight className="w-5 h-5 text-text-secondary group-hover:text-accent transition-colors duration-100" />
+      <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center space-x-2">
+          {Icon && (
+            <Icon className="w-4 h-4 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
+          )}
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 leading-none">{title}</p>
         </div>
+        <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-500 transition-colors duration-150" />
+      </div>
+      <div className="p-3">
+        <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
       </div>
     </div>
   )

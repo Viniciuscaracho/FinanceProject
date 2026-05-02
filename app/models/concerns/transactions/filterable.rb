@@ -8,9 +8,7 @@ module Transactions
     included do
       def self.filter_by(**kwargs)
         transactions = apply_basic_filters
-
         apply_advanced_filters(transactions, kwargs)
-
       end
 
       def self.apply_basic_filters
@@ -25,7 +23,6 @@ module Transactions
         transactions = apply_tag_filter(transactions, kwargs.fetch(:tag_list, []))
         transactions = apply_category_filter(transactions, kwargs.fetch(:category_ids, []))
         apply_payment_method_filter(transactions, kwargs.fetch(:payment_methods, []))
-
       end
 
       def self.apply_bank_account_filter(transactions, bank_account_ids)
@@ -49,24 +46,31 @@ module Transactions
           end_date: kwargs.fetch(:end_date, Date.current.end_of_month).to_date,
           date_type: kwargs.fetch(:date_type, :due_date)
         )
-
       end
 
       def self.apply_paid_filter(transactions, paid)
-        transactions.by_paid(paid: paid)
+        # Garantir que paid seja um array
+        paid_array = Array(paid)
+        if paid_array.any?
+          transactions.by_paid(paid: paid_array)
+        else
+          transactions
+        end
       end
 
       def self.apply_payment_method_filter(transactions, payment_methods)
-        payment_methods = payment_methods.map { |i| Transaction.payment_methods[i] } if payment_methods.any?
-        transactions = transactions.by_payment_method(payment_method: payment_methods) if payment_methods.any?
-
+        if payment_methods.any?
+          payment_methods = payment_methods.map { |i| Transaction.payment_methods[i] }
+          transactions = transactions.by_payment_method(payment_method: payment_methods)
+        end
         transactions
       end
 
       def self.apply_tag_filter(transactions, tag_list)
         tag_list = tag_list.reject(&:blank?)
-        transactions = transactions.tagged_with(tag_list, any: true) if tag_list.any?
-
+        if tag_list.any?
+          transactions = transactions.tagged_with(tag_list, any: true)
+        end
         transactions
       end
 

@@ -29,18 +29,16 @@ class AppointmentCommission < ApplicationRecord
     fixed: 1
   }.freeze
 
-  as_enum :commission_type, COMMISSION_TYPES
-
-  monetize :commission_amount_cents, with_currency: :currency
+  as_enum :commission_type, COMMISSION_TYPES, source: :commission_type
 
   belongs_to :appointment
   belongs_to :account_user # Profissional que receberá a comissão
 
   validates :commission_value, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :commission_amount_cents, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :appointment_id, uniqueness: { scope: :account_user_id, message: 'já possui uma comissão para este profissional' }
 
-  def currency
-    appointment.price_currency
-  end
+  # Usar monetize com currency fixa para evitar problemas
+  monetize :commission_amount_cents, with_currency: 'BRL'
 end
 

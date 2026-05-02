@@ -8,9 +8,12 @@ namespace :api, defaults: { format: 'json' } do
     
     # Public appointment booking routes
     namespace :public do
+      get 'health', to: 'public#health_check'
       get 'appointment_data/:token/services', to: 'appointment_data#services'
       get 'appointment_data/:token/professionals', to: 'appointment_data#professionals'
       get 'appointment_data/:token/available_slots', to: 'appointment_data#available_slots'
+      get 'appointment_data/:token/config', to: 'appointment_data#link_config'
+      get 'appointment_data/:token/full', to: 'appointment_data#full'
     end
     
     # Auth routes
@@ -19,13 +22,34 @@ namespace :api, defaults: { format: 'json' } do
     post 'auth/logout', to: 'auth#logout'
     get 'auth/me', to: 'auth#me'
     post 'auth/create_test_user', to: 'auth#create_test_user'
+    post 'auth/register', to: 'auth#register'
     get 'oauth/google_oauth_url', to: 'public#google_oauth_url'
     get 'auth/google_oauth_callback', to: 'auth#google_oauth_callback'
+
+    # Google Calendar integration
+    scope :google_calendar do
+      get    'status',      to: 'google_calendar#status'
+      get    'oauth_url',   to: 'google_calendar#oauth_url'
+      get    'callback',    to: 'google_calendar#callback'
+      delete 'disconnect',  to: 'google_calendar#disconnect'
+      post   'sync',        to: 'google_calendar#sync'
+    end
     
     resources :transactions, only: %i[index show create update destroy] do
       collection do
         get :test
         get :public_test
+        get :check_recurrence_expiry
+        post :extend_recurrence
+      end
+    end
+    
+    # Payment plans routes
+    resources :payment_plans, only: [] do
+      member do
+        get :installments
+        put :update_installments
+        patch :update_installments
       end
     end
     resources :contacts, only: %i[index show create update destroy]
@@ -45,10 +69,21 @@ namespace :api, defaults: { format: 'json' } do
     # Account settings (somente para admins da conta)
     resource :account_settings, only: %i[show update]
     
+    # WhatsApp Configuration
+    resource :whatsapp_config, only: %i[show create update] do
+      member do
+        get :check_connection
+      end
+    end
+    
     # Professionals routes
     resources :professionals, only: %i[index show create update destroy] do
       member do
         patch :update_schedule
+        get :commission_configs
+        post :commission_configs, action: :create_commission_config
+        patch 'commission_configs/:commission_config_id', action: :update_commission_config
+        delete 'commission_configs/:commission_config_id', action: :destroy_commission_config
       end
     end
     
@@ -69,6 +104,20 @@ namespace :api, defaults: { format: 'json' } do
         get :professionals
         get :available_slots
       end
+      member do
+        post :send_reminder
+        post :generate_google_meet
+        post :generate_professional_document
+        get :professional_document_templates
+      end
+      resources :appointment_notes, only: %i[index show create update destroy] do
+        member do
+          post :add_task
+          post :complete_task
+          delete :remove_task, path: 'remove_task/:task_id'
+        end
+      end
+      resources :attachments, only: %i[index create destroy], controller: 'appointments/attachments'
     end
     
     # Appointment Links routes
@@ -80,8 +129,21 @@ namespace :api, defaults: { format: 'json' } do
       get :summary
     end
     
+    # Commissions routes
+    resources :commissions, only: %i[index] do
+      collection do
+        get :summary
+      end
+    end
+    
     # Financial reports (including appointments)
     resources :reports, only: %i[index show]
+    
+    # Document Templates routes
+    resources :receipt_templates, only: %i[index show create update destroy]
+    resources :invoice_templates, only: %i[index show create update destroy]
+    resources :contract_templates, only: %i[index show create update destroy]
+    resources :professional_document_templates, only: %i[index show create update destroy]
     
     # Imports routes
     resources :imports, only: %i[index show create destroy] do
@@ -127,6 +189,7 @@ namespace :api, defaults: { format: 'json' } do
     # WhatsApp Webhook
     namespace :whatsapp do
       post 'webhook', to: 'whats_app_webhook#webhook'
+      post 'webhook/:account_id', to: 'whats_app_webhook#webhook' # Versão com account_id na URL
       get 'webhook', to: 'whats_app_webhook#verify'
     end
     

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,11 +11,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Loader2, Calendar, Clock, User, Phone, Mail, CheckCircle2, ArrowLeft, MessageCircle } from 'lucide-react'
+import { Loader2, Calendar, Clock, User, Phone, Mail, CheckCircle2, ArrowLeft, MessageCircle, Video, Copy, Repeat } from 'lucide-react'
 import { apiService } from '../lib/api'
 
 const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+const recurrenceOptions = [
+  { value: 'weekly', label: 'Semanal' },
+  { value: 'biweekly', label: 'Quinzenal' },
+  { value: 'monthly', label: 'Mensal' },
+  { value: 'bimonthly', label: 'Bimestral' },
+  { value: 'quarterly', label: 'Trimestral' },
+  { value: 'semiannual', label: 'Semestral' },
+  { value: 'annual', label: 'Anual' },
+  { value: 'daily', label: 'Diário' },
+]
 
 export function PublicAppointmentBooking() {
   const { token } = useParams()
@@ -42,12 +52,37 @@ export function PublicAppointmentBooking() {
   const [clientName, setClientName] = useState('')
   const [clientPhone, setClientPhone] = useState('')
   const [clientEmail, setClientEmail] = useState('')
+  const [googleMeetLink, setGoogleMeetLink] = useState('')
   
   // Appointment result
   const [appointmentResult, setAppointmentResult] = useState(null)
-  
+
+  // Online / Meet helpers
+  const [recurrenceEnabled, setRecurrenceEnabled] = useState(false)
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState('weekly')
+  const [recurrenceOccurrences, setRecurrenceOccurrences] = useState(4)
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState('')
+  const [meetLinkCopied, setMeetLinkCopied] = useState(false)
+
+  // Calendar wheel block ref
+  const calendarRef = useRef(null)
+
   // Calendar
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [linkConfig, setLinkConfig] = useState({ days_ahead: 15, link_type: 'normal' })
+  const [companyInfo, setCompanyInfo] = useState(null)
+
+  const isOnlineService = (linkConfig?.enable_google_meet === true) ||
+    selectedService?.auto_meet === true ||
+    selectedService?.metadata?.auto_meet === true ||
+    selectedService?.modality === 'online'
+
+  const isValidGoogleMeetLink = (link) => {
+    if (!link) return false
+    const normalized = link.trim()
+    const pattern = /^https:\/\/meet\.google\.com\/[A-Za-z0-9]{3}-[A-Za-z0-9]{4}-[A-Za-z0-9]{3}(?:\?[^\s]*)?$/
+    return pattern.test(normalized)
+  }
   
   useEffect(() => {
     loadInitialData()
@@ -65,13 +100,18 @@ export function PublicAppointmentBooking() {
       setLoading(true)
       setError(null)
       
-      const [servicesData, professionalsData] = await Promise.all([
-        apiService.getPublicAppointmentServices(token),
-        apiService.getPublicAppointmentProfessionals(token)
-      ])
-      
+      const { services: servicesData, professionals: professionalsData, config: configData, company: companyData } =
+        await apiService.getPublicAppointmentFull(token).catch(() => ({
+          services: [],
+          professionals: [],
+          config: { days_ahead: 15, link_type: 'normal' },
+          company: null
+        }))
+
       setServices(servicesData)
       setProfessionals(professionalsData)
+      setLinkConfig(configData)
+      setCompanyInfo(companyData || null)
       
       // Auto-select service if only one option
       if (servicesData.length === 1) {
@@ -221,7 +261,47 @@ export function PublicAppointmentBooking() {
     setSelectedProfessional(professional)
     setError(null)
   }
-  
+
+  const changeMonth = (delta) => {
+    setCurrentMonth((prevMonth) => {
+      const nextMonth = new Date(prevMonth)
+      nextMonth.setMonth(prevMonth.getMonth() + delta)
+      return nextMonth
+    })
+  }
+
+  const handleCalendarWheel = (event) => {
+    // Bloquear qualquer navegação por rolagem no calendário (somente botões mudam mês)
+    event.preventDefault()
+    event.stopPropagation()
+    // Bloquear handlers nativos adicionais (Safari/trackpads)
+    if (event.nativeEvent && typeof event.nativeEvent.stopImmediatePropagation === 'function') {
+      event.nativeEvent.stopImmediatePropagation()
+    }
+    return false
+  }
+
+  useEffect(() => {
+    const el = calendarRef.current
+    if (!el) return
+
+    const wheelListener = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (typeof e.stopImmediatePropagation === 'function') {
+        e.stopImmediatePropagation()
+      }
+      return false
+    }
+
+    // Listener não-passivo para garantir que preventDefault funcione em trackpads/mouse
+    el.addEventListener('wheel', wheelListener, { passive: false })
+
+    return () => {
+      el.removeEventListener('wheel', wheelListener, { passive: false })
+    }
+  }, [])
+
   const handleDateSelect = (date) => {
     setSelectedDate(date)
     setSelectedSlot(null)
@@ -235,6 +315,7 @@ export function PublicAppointmentBooking() {
     // Validação mais específica com trim
     const trimmedClientName = clientName?.trim() || ''
     const trimmedClientPhone = clientPhone?.trim() || ''
+    const trimmedMeetLink = googleMeetLink?.trim() || ''
     
     // Debug: verificar todos os estados
     console.log('🔍 Validating form:', {
@@ -270,6 +351,9 @@ export function PublicAppointmentBooking() {
     if (!trimmedClientPhone) {
       missingFields.push('WhatsApp')
     }
+    if (isOnlineService && !trimmedMeetLink) {
+      missingFields.push('Link do Google Meet')
+    }
     
     if (missingFields.length > 0) {
       const errorMsg = `Por favor, preencha os seguintes campos: ${missingFields.join(', ')}`
@@ -284,10 +368,22 @@ export function PublicAppointmentBooking() {
       setError('Por favor, informe um número de WhatsApp válido (com DDD)')
       return
     }
+
+    // Validar link do Meet quando necessário
+    if (isOnlineService) {
+      if (!isValidGoogleMeetLink(trimmedMeetLink)) {
+        setError('Informe um link válido do Google Meet (formato https://meet.google.com/xxx-xxxx-xxx)')
+        return
+      }
+    } else if (trimmedMeetLink && !isValidGoogleMeetLink(trimmedMeetLink)) {
+      setError('O link do Google Meet informado é inválido. Use o formato https://meet.google.com/xxx-xxxx-xxx')
+      return
+    }
     
     try {
       setLoading(true)
       setError(null)
+      setMeetLinkCopied(false)
       
       console.log('📝 Submitting appointment:', {
         service_id: selectedService.id,
@@ -305,6 +401,23 @@ export function PublicAppointmentBooking() {
         whatsapp_number: phoneDigits,
         client_name: trimmedClientName,
         client_email: clientEmail?.trim() || null
+      }
+
+      if (trimmedMeetLink) {
+        appointmentData.google_meet_link = trimmedMeetLink
+      }
+      
+      const sanitizedOccurrences = Math.min(Math.max(parseInt(recurrenceOccurrences, 10) || 1, 1), 24)
+      if (recurrenceEnabled) {
+        appointmentData.recurrence_pattern = {
+          frequency: recurrenceFrequency,
+          occurrences: sanitizedOccurrences,
+          ...(recurrenceEndDate ? { end_date: recurrenceEndDate } : {})
+        }
+      }
+
+      if (isOnlineService) {
+        appointmentData.enable_google_meet = true
       }
       
       const result = await apiService.createPublicAppointment(token, appointmentData)
@@ -364,6 +477,12 @@ export function PublicAppointmentBooking() {
     const daysInMonth = lastDay.getDate()
     const startingDayOfWeek = firstDay.getDay()
     
+    // Calcular data máxima permitida baseado em days_ahead
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const maxDate = new Date(today)
+    maxDate.setDate(today.getDate() + (linkConfig.days_ahead || 15))
+    
     const days = []
     
     // Add empty cells for days before month starts
@@ -377,7 +496,7 @@ export function PublicAppointmentBooking() {
       days.push(date)
     }
     
-    return days
+    return { days, maxDate }
   }
   
   const formatTime = (isoString) => {
@@ -409,7 +528,8 @@ export function PublicAppointmentBooking() {
     warning: '#f59e0b'
   }
   
-  if (loading && step === 1) {
+  // Enquanto dados iniciais são carregados, exibir loader independente do passo
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100" style={{ 
         colorScheme: 'light',
@@ -444,6 +564,9 @@ export function PublicAppointmentBooking() {
   }
   
   if (step === 4) {
+    const googleMeetLink = appointmentResult?.google_meet_link || appointmentResult?.appointment?.google_meet_link
+    const recurrenceSummary = appointmentResult?.recurrence
+
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-2xl">
@@ -526,6 +649,58 @@ export function PublicAppointmentBooking() {
                     </p>
                   </div>
                 </div>
+
+                {recurrenceSummary?.count ? (
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center">
+                      <Repeat className="h-5 w-5 text-gray-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">
+                        Recorrência
+                      </p>
+                      <p className="text-sm text-gray-800">
+                        {recurrenceSummary.count} ocorrência{recurrenceSummary.count !== 1 ? 's' : ''} - {recurrenceSummary.frequency}
+                        {recurrenceSummary.end_date ? ` (até ${new Date(recurrenceSummary.end_date).toLocaleDateString('pt-BR')})` : ''}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          )}
+
+          {/* Meet Link */}
+          {googleMeetLink && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-md bg-emerald-100 flex items-center justify-center">
+                    <Video className="h-5 w-5 text-emerald-700" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-900">Atendimento online</p>
+                    <p className="text-sm text-emerald-800">Use o link abaixo para entrar no Google Meet no horário marcado.</p>
+                    <p className="text-xs text-emerald-700 mt-1 break-all">{googleMeetLink}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <Button onClick={() => window.open(googleMeetLink, '_blank')} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white">
+                    <Video className="h-4 w-4 mr-2" /> Entrar no Google Meet
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      navigator.clipboard.writeText(googleMeetLink)
+                      setMeetLinkCopied(true)
+                      setTimeout(() => setMeetLinkCopied(false), 1500)
+                    }}
+                  >
+                    <Copy className="h-4 w-4 mr-2" /> {meetLinkCopied ? 'Copiado!' : 'Copiar link'}
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -541,7 +716,7 @@ export function PublicAppointmentBooking() {
                   Informações importantes
                 </p>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  Chegue com alguns minutos de antecedência. Em caso de necessidade de cancelamento ou remarcação, entre em contato conosco.
+                  {googleMeetLink ? 'Guarde este link para acessar a sessão online. Caso precise reagendar, entre em contato conosco.' : 'Chegue com alguns minutos de antecedência. Em caso de necessidade de cancelamento ou remarcação, entre em contato conosco.'}
                 </p>
               </div>
             </div>
@@ -556,6 +731,8 @@ export function PublicAppointmentBooking() {
                                      appointmentResult?.company_whatsapp ||
                                      appointmentResult?.appointment?.company_whatsapp_number ||
                                      null
+
+              const googleMeetLink = appointmentResult?.google_meet_link || appointmentResult?.appointment?.google_meet_link
               
               console.log('🔍 WhatsApp button check:', {
                 appointmentResult,
@@ -579,13 +756,14 @@ export function PublicAppointmentBooking() {
                     const professionalName = selectedProfessional?.name || 'profissional'
                     const date = selectedSlot ? formatDate(new Date(selectedSlot.start_time)) : ''
                     const time = selectedSlot ? formatTime(selectedSlot.start_time) : ''
+                    const meetLine = googleMeetLink ? `\n🔗 Google Meet: ${googleMeetLink}` : ''
                     
                     const message = encodeURIComponent(
                       `Olá! Acabei de realizar um agendamento:\n\n` +
                       `📅 Serviço: ${serviceName}\n` +
                       `👤 Profissional: ${professionalName}\n` +
                       `📆 Data: ${date}\n` +
-                      `⏰ Horário: ${time}\n\n` +
+                      `⏰ Horário: ${time}${meetLine}\n\n` +
                       `Gostaria de confirmar ou tirar alguma dúvida.`
                     )
                     
@@ -634,6 +812,12 @@ export function PublicAppointmentBooking() {
                   setClientPhone('')
                   setClientEmail('')
                   setAppointmentResult(null)
+                  setRecurrenceEnabled(false)
+                  setRecurrenceFrequency('weekly')
+                  setRecurrenceOccurrences(4)
+                  setRecurrenceEndDate('')
+                  setMeetLinkCopied(false)
+                  setGoogleMeetLink('')
                 }}
                 variant="outline"
                 className="flex-1 border-gray-300 hover:bg-gray-50 h-11 font-medium"
@@ -663,6 +847,35 @@ export function PublicAppointmentBooking() {
             </button>
           )}
         </div>
+
+        {companyInfo && Object.keys(companyInfo).length > 0 && (
+          <div className="mb-8 sm:mb-10 bg-indigo-50 border border-indigo-100 rounded-lg p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-indigo-800 font-semibold mb-1">
+                  Você está agendando com
+                </p>
+                <p className="text-lg sm:text-xl font-semibold text-indigo-900">
+                  {companyInfo.name || 'Nossa empresa'}
+                </p>
+                {companyInfo.email && (
+                  <p className="text-sm text-indigo-800">{companyInfo.email}</p>
+                )}
+              </div>
+
+              <div className="text-sm text-indigo-900 space-y-1 sm:text-right">
+                {(companyInfo.whatsapp_number || companyInfo.cell_phone_number || companyInfo.phone_number) && (
+                  <p className="font-medium">
+                    Contato: {companyInfo.whatsapp_number || companyInfo.cell_phone_number || companyInfo.phone_number}
+                  </p>
+                )}
+                {companyInfo.screen_name && (
+                  <p className="text-indigo-800">{companyInfo.screen_name}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stepper */}
         <div className="flex items-center justify-center gap-4 sm:gap-8 mb-8 sm:mb-12">
@@ -752,7 +965,13 @@ export function PublicAppointmentBooking() {
                 </p>
               </div>
             )}
-            
+
+            {!loading && professionals.length === 0 && (
+              <div className="border-2 border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 rounded-lg mb-6">
+                Nenhum profissional disponível para este link no momento. Tente novamente em instantes ou confirme se o link está ativo.
+              </div>
+            )}
+
             {/* Lista de Profissionais com Horários */}
             <div className="space-y-4">
               {professionals.map((professional) => {
@@ -807,16 +1026,18 @@ export function PublicAppointmentBooking() {
                     {isExpanded && (
                       <div className="px-6 pb-6 border-t border-gray-200 pt-4">
                         {/* Calendário */}
-                        <div className="mb-6">
+                        <div
+                          ref={calendarRef}
+                          className="mb-6"
+                          onWheelCapture={handleCalendarWheel}
+                          onWheel={handleCalendarWheel}
+                          style={{ overscrollBehavior: 'contain' }}
+                        >
                           <div className="flex items-center justify-between mb-4">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                const prevMonth = new Date(currentMonth)
-                                prevMonth.setMonth(prevMonth.getMonth() - 1)
-                                setCurrentMonth(prevMonth)
-                              }}
+                              onClick={() => changeMonth(-1)}
                             >
                               ‹
                             </Button>
@@ -826,11 +1047,7 @@ export function PublicAppointmentBooking() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                const nextMonth = new Date(currentMonth)
-                                nextMonth.setMonth(nextMonth.getMonth() + 1)
-                                setCurrentMonth(nextMonth)
-                              }}
+                              onClick={() => changeMonth(1)}
                             >
                               ›
                             </Button>
@@ -842,33 +1059,43 @@ export function PublicAppointmentBooking() {
                                 {day}
                               </div>
                             ))}
-                            {getDaysInMonth().map((date, idx) => {
-                              if (!date) return <div key={idx} />
-                              
-                              const isSelected = selectedDate && 
-                                date.toDateString() === selectedDate.toDateString()
-                              const isPast = date < new Date().setHours(0, 0, 0, 0)
-                              const isToday = date.toDateString() === new Date().toDateString()
-                              
-                              return (
-                                <button
-                                  key={idx}
-                                  onClick={() => !isPast && handleDateSelect(date)}
-                                  disabled={isPast}
-                                  className={`h-10 rounded transition-colors ${
-                                    isSelected
-                                      ? 'bg-indigo-600 text-white'
-                                      : isPast
-                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                      : isToday
-                                      ? 'bg-indigo-50 text-indigo-600 border-2 border-indigo-600'
-                                      : 'bg-white hover:bg-gray-100 text-gray-900'
-                                  }`}
-                                >
-                                  {date.getDate()}
-                                </button>
-                              )
-                            })}
+                            {(() => {
+                              const { days, maxDate } = getDaysInMonth()
+                              return days.map((date, idx) => {
+                                if (!date) return <div key={idx} />
+                                
+                                const today = new Date()
+                                today.setHours(0, 0, 0, 0)
+                                const dateOnly = new Date(date)
+                                dateOnly.setHours(0, 0, 0, 0)
+                                
+                                const isSelected = selectedDate && 
+                                  date.toDateString() === selectedDate.toDateString()
+                                const isPast = dateOnly < today
+                                const isFuture = dateOnly > maxDate
+                                const isToday = dateOnly.toDateString() === today.toDateString()
+                                const isDisabled = isPast || isFuture
+                                
+                                return (
+                                  <button
+                                    key={idx}
+                                    onClick={() => !isDisabled && handleDateSelect(date)}
+                                    disabled={isDisabled}
+                                    className={`h-10 rounded transition-colors ${
+                                      isSelected
+                                        ? 'bg-indigo-600 text-white'
+                                        : isDisabled
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : isToday
+                                        ? 'bg-indigo-50 text-indigo-600 border-2 border-indigo-600'
+                                        : 'bg-white hover:bg-gray-100 text-gray-900'
+                                    }`}
+                                  >
+                                    {date.getDate()}
+                                  </button>
+                                )
+                              })
+                            })()}
                           </div>
                         </div>
                         
@@ -972,6 +1199,50 @@ export function PublicAppointmentBooking() {
                     <p><strong>Valor:</strong> {selectedService.price?.formatted || 'R$ 0,00'}</p>
                   </div>
                 )}
+
+                {isOnlineService && (
+                  <div className="bg-indigo-50 border border-indigo-200 text-indigo-900 px-4 py-4 rounded-lg mb-6 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-md bg-white/70 flex items-center justify-center">
+                        <Video className="h-5 w-5 text-indigo-700" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold">Atendimento online</p>
+                        <p className="text-sm text-indigo-800">
+                          Gere um link autêntico do Google Meet, copie e cole abaixo para compartilhar com o profissional e manter na sua confirmação.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="sm:w-auto border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                        onClick={() => window.open('https://meet.google.com/new', '_blank', 'noopener')}
+                      >
+                        <Video className="h-4 w-4 mr-2" /> Gerar link no Google Meet
+                      </Button>
+                      <div className="flex-1 space-y-1">
+                        <Label htmlFor="googleMeetLink">Cole aqui o link do Meet *</Label>
+                        <Input
+                          id="googleMeetLink"
+                          value={googleMeetLink}
+                          onChange={(e) => {
+                            setGoogleMeetLink(e.target.value)
+                            setError(null)
+                          }}
+                          placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                          className={`w-full ${isOnlineService && !googleMeetLink?.trim() ? 'border-red-300' : ''}`}
+                        />
+                        <p className="text-xs text-indigo-800">Abra o Meet, copie o link gerado e cole neste campo.</p>
+                        {googleMeetLink && !isValidGoogleMeetLink(googleMeetLink) && (
+                          <p className="text-xs text-red-600">Use o formato https://meet.google.com/xxx-xxxx-xxx</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 {(!selectedService || !selectedSlot) && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca', color: '#991b1b' }}>
@@ -1006,6 +1277,61 @@ export function PublicAppointmentBooking() {
                 )}
                 
                 <div className="space-y-4">
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-gray-900">Repetir agendamento (opcional)</p>
+                        <p className="text-sm text-gray-600">Ideal para aulas, terapias ou consultas semanais.</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="h-5 w-5 mt-1 accent-indigo-600"
+                        checked={recurrenceEnabled}
+                        onChange={(e) => setRecurrenceEnabled(e.target.checked)}
+                      />
+                    </div>
+
+                    {recurrenceEnabled && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        <div className="space-y-2">
+                          <Label>Frequência</Label>
+                          <Select value={recurrenceFrequency} onValueChange={setRecurrenceFrequency}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Escolha a frequência" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {recurrenceOptions.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Número de sessões</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={24}
+                            value={recurrenceOccurrences}
+                            onChange={(e) => setRecurrenceOccurrences(e.target.value)}
+                            placeholder="Ex: 4"
+                          />
+                          <p className="text-xs text-gray-500">Máximo de 24 ocorrências.</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Data final (opcional)</Label>
+                          <Input
+                            type="date"
+                            value={recurrenceEndDate}
+                            onChange={(e) => setRecurrenceEndDate(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <Label htmlFor="clientName">Nome completo *</Label>
                     <Input

@@ -9,14 +9,16 @@ function Table({
   ...props
 }) {
   return (
-    <div data-slot="table-container" className="relative w-full">
-      <table
-        data-slot="table"
-        className={cn(
-          "w-full caption-bottom text-sm border-collapse",
-          className
-        )}
-        {...props} />
+    <div data-slot="table-container" className="relative w-full overflow-x-auto -mx-2 sm:mx-0">
+      <div className="inline-block min-w-full align-middle px-2 sm:px-0">
+        <table
+          data-slot="table"
+          className={cn(
+            "w-full caption-bottom text-sm border-collapse",
+            className
+          )}
+          {...props} />
+      </div>
     </div>
   );
 }
@@ -95,8 +97,8 @@ function TableHead({
     <th
       data-slot="table-head"
       className={cn(
-        "h-[52px] px-6 py-0 text-left align-middle",
-        "text-[14px] font-medium uppercase tracking-wider",
+        "h-[52px] px-3 sm:px-4 md:px-6 py-0 text-left align-middle",
+        "text-xs sm:text-[13px] md:text-[14px] font-medium uppercase tracking-wider",
         "text-text-secondary",
         "bg-surface-elevated",
         "whitespace-nowrap",
@@ -115,8 +117,8 @@ function TableCell({
     <td
       data-slot="table-cell"
       className={cn(
-        "px-6 py-0 align-middle",
-        "text-base text-text-primary",
+        "px-3 sm:px-4 md:px-6 py-2 sm:py-0 align-middle",
+        "text-sm sm:text-base text-text-primary",
         "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}

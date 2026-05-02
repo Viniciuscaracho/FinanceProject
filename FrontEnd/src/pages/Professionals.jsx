@@ -37,7 +37,8 @@ import {
   Mail,
   Phone,
   User,
-  Clock
+  Clock,
+  Percent
 } from 'lucide-react'
 import { apiService } from '../lib/api'
 import { FluidSection } from '@/components/design'
@@ -64,6 +65,7 @@ export function Professionals() {
     password: '',
     role: 'custom',
     phone_number: '',
+    commission_percentage: 50,
     schedule: {
       monday: { enabled: true, start_hour: 9, end_hour: 18 },
       tuesday: { enabled: true, start_hour: 9, end_hour: 18 },
@@ -119,6 +121,7 @@ export function Professionals() {
         password: '',
         role: professional.role || 'custom',
         phone_number: professional.phone_number || '',
+        commission_percentage: professional.commission_percentage ?? 50,
         schedule: mergedSchedule
       })
       setShowScheduleConfig(false)
@@ -149,6 +152,7 @@ export function Professionals() {
       password: '',
       role: 'custom',
       phone_number: '',
+      commission_percentage: 50,
       schedule: {
         monday: { enabled: true, start_hour: 9, end_hour: 18 },
         tuesday: { enabled: true, start_hour: 9, end_hour: 18 },
@@ -428,6 +432,12 @@ export function Professionals() {
                           <span>{professional.phone_number}</span>
                         </div>
                       )}
+                      <div className="flex items-center space-x-2">
+                        <Percent className="h-4 w-4 text-green-500" />
+                        <span className="font-medium text-green-700 dark:text-green-400">
+                          {professional.commission_percentage ?? 50}% de comissão
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -443,6 +453,7 @@ export function Professionals() {
                     <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
                     <TableHead>Função</TableHead>
+                    <TableHead>Comissão</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -475,6 +486,14 @@ export function Professionals() {
                         <Badge variant={professional.role === 'admin' ? 'default' : 'secondary'}>
                           {professional.role === 'admin' ? 'Administrador' : 'Profissional'}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-1">
+                          <Percent className="w-3.5 h-3.5 text-green-500" />
+                          <span className="font-semibold text-green-700 dark:text-green-400">
+                            {professional.commission_percentage ?? 50}%
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
@@ -594,22 +613,41 @@ export function Professionals() {
                   />
                 </div>
               )}
-              <div className="space-y-2">
-                <Label htmlFor="role">Função</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value) => setFormData({ ...formData, role: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="custom">Profissional</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="role">Função</Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value) => setFormData({ ...formData, role: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="custom">Profissional</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="commission_percentage">Comissão (%)</Label>
+                  <div className="relative">
+                    <Input
+                      id="commission_percentage"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.5"
+                      value={formData.commission_percentage}
+                      onChange={(e) => setFormData({ ...formData, commission_percentage: parseFloat(e.target.value) || 0 })}
+                      className="pr-8"
+                    />
+                    <Percent className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  </div>
+                  <p className="text-xs text-gray-500">Aplicada a todos os serviços</p>
+                </div>
               </div>
-              
+
               {!editingProfessional && (
                 <div className="space-y-3 border-t pt-4">
                   <div className="flex items-center justify-between">

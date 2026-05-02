@@ -1,76 +1,63 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { BottomNavigation } from './BottomNavigation'
 import { SupportBanner } from './SupportBanner'
 import { cn } from '@/lib/utils'
 import { useTheme } from '../../contexts/ThemeContext'
+import { useIsMobile, useBreakpoint } from '@/hooks/use-mobile'
+import { BREAKPOINTS } from '@/lib/breakpoints'
+import { ArrowUp } from 'lucide-react'
 
 export function Layout({ children }) {
+  const isMobile = useIsMobile()
+  const breakpoint = useBreakpoint()
+  
+  // Inicializar estado do sidebar baseado no breakpoint
   const [isCollapsed, setIsCollapsed] = useState(() => {
-    // Inicializar baseado no tamanho da tela, mas permitir controle manual depois
     if (typeof window !== 'undefined') {
-      const width = window.innerWidth
-      if (width >= 768 && width < 1024) return true // Small desktop - colapsado
-      if (width >= 1440) return false // Large desktop - expandido
-      return false // Default - expandido
+      const width = window.visualViewport?.width || window.innerWidth
+      // Tablet (md) - colapsado por padrão
+      if (width >= BREAKPOINTS.md && width < BREAKPOINTS.lg) return true
+      // Large desktop (xl+) - expandido
+      if (width >= BREAKPOINTS.xl) return false
+      // Default - expandido
+      return false
     }
     return false
   })
+  
   const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const [isManualControl, setIsManualControl] = useState(false) // Flag para controle manual
+  const [isManualControl, setIsManualControl] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
   const { isDarkMode } = useTheme()
 
   useEffect(() => {
-    const checkMobile = () => {
-      const width = window.innerWidth
-      const mobile = width < 768 // Standard mobile breakpoint
-      setIsMobile(mobile)
-      
-      if (width >= 768) {
-        setIsMobileOpen(false)
-      }
-      
-      // Só aplicar auto-collapse se não estiver em controle manual
-      // Auto-collapse apenas em mudanças significativas de tamanho
-      if (!isManualControl) {
-        if (width >= 768 && width < 1024) {
-          // Small desktop - colapsar
-          setIsCollapsed(true)
-        } else if (width >= 1440) {
-          // Large desktop - expandir
-          setIsCollapsed(false)
-        }
-      }
-    }
+    const handleScroll = () => setShowScrollTop(window.scrollY > 300)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
-    checkMobile()
-    
-    // Debounce resize para melhor performance
-    let resizeTimer
-    const handleResize = () => {
-      clearTimeout(resizeTimer)
-      resizeTimer = setTimeout(checkMobile, 150)
+  // Auto-ajustar sidebar baseado no breakpoint (apenas se não estiver em controle manual)
+  useEffect(() => {
+    if (isManualControl || isMobile) return
+
+    // Usar breakpoint atual para decidir
+    if (breakpoint === 'md') {
+      // Tablet - colapsar
+      setIsCollapsed(true)
+    } else if (breakpoint === 'lg' || breakpoint === 'xl' || breakpoint === '2xl') {
+      // Desktop grande - expandir
+      setIsCollapsed(false)
     }
-    
-    window.addEventListener('resize', handleResize)
-    
-    // Usar Visual Viewport API se disponível (melhor para zoom)
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleResize)
-      window.visualViewport.addEventListener('scroll', handleResize)
+  }, [breakpoint, isManualControl, isMobile])
+
+  // Fechar menu mobile quando sair de mobile
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMobileOpen(false)
     }
-    
-    return () => {
-      window.removeEventListener('resize', handleResize)
-      clearTimeout(resizeTimer)
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleResize)
-        window.visualViewport.removeEventListener('scroll', handleResize)
-      }
-    }
-  }, [isManualControl])
+  }, [isMobile])
 
   // Handler para toggle manual do sidebar
   const handleToggleSidebar = useCallback(() => {
@@ -78,15 +65,26 @@ export function Layout({ children }) {
     setIsCollapsed(prev => !prev) // Toggle o estado
   }, [])
 
-  const handleMobileMenuClick = () => {
+  const handleMobileMenuClick = useCallback(() => {
     setIsMobileOpen(true)
-  }
+  }, [])
+
+  // Memoizar classes para melhor performance
+  const layoutClasses = useMemo(() => cn(
+    "min-h-screen flex gap-0 w-full max-w-full overflow-x-hidden",
+    isDarkMode ? "bg-gray-900" : "bg-gray-100"
+  ), [isDarkMode])
+
+  const mainContentClasses = useMemo(() => cn(
+    "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out",
+    "w-full max-w-full min-w-0 overflow-x-hidden",
+    // When sidebar is fixed+collapsed on desktop, push content right by sidebar width
+    !isMobile && isCollapsed && "md:ml-14",
+    isMobile && "pb-16"
+  ), [isMobile, isCollapsed])
 
   return (
-    <div className={cn(
-      "min-h-screen flex gap-0 w-full max-w-full overflow-x-hidden",
-      isDarkMode ? "bg-gray-900" : "bg-gray-50"
-    )}>
+    <div className={layoutClasses}>
       {/* Mobile overlay */}
       {isMobile && isMobileOpen && (
         <div 
@@ -129,15 +127,7 @@ export function Layout({ children }) {
       )}
 
       {/* Main content */}
-      <div className={cn(
-        "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out",
-        "w-full max-w-full min-w-0 overflow-x-hidden",
-        // Quando sidebar está expandido (relative), ele já empurra o conteúdo naturalmente
-        // Quando colapsado (fixed), precisa de margin para não ficar embaixo
-        !isMobile && isCollapsed && "md:ml-14",
-        // Mobile padding para bottom navigation
-        isMobile && "pb-16"
-      )}>
+      <div className={mainContentClasses}>
         {/* Header */}
         <Header 
           onMobileMenuClick={handleMobileMenuClick}
@@ -150,9 +140,9 @@ export function Layout({ children }) {
         {/* Main content area */}
         <main className={cn(
           "flex-1 w-full max-w-full min-w-0",
-          isMobile 
-            ? "p-2 sm:p-3 pb-4" 
-            : "p-2 md:p-4 lg:p-6 xl:p-8"
+          isMobile
+            ? "p-2 sm:p-3 pb-4"
+            : "p-3 md:p-4"
         )}>
           <div className="w-full max-w-full min-w-0">
             {children}
@@ -162,6 +152,23 @@ export function Layout({ children }) {
 
       {/* Bottom Navigation - Mobile only */}
       {isMobile && <BottomNavigation />}
+
+      {/* Scroll to top button */}
+      {showScrollTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className={cn(
+            "fixed z-50 rounded-full p-2.5 shadow-lg transition-all duration-200",
+            "bg-gray-800 hover:bg-gray-700 dark:bg-gray-200 dark:hover:bg-gray-100",
+            "text-white dark:text-gray-800",
+            isMobile ? "bottom-20 right-4" : "bottom-6 right-6"
+          )}
+          aria-label="Voltar ao topo"
+          title="Voltar ao topo"
+        >
+          <ArrowUp className="w-4 h-4" />
+        </button>
+      )}
     </div>
   )
 }

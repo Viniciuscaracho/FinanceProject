@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -61,12 +62,21 @@ import { cn } from '@/lib/utils'
 import { apiService } from '../lib/api'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { StatCard, FluidSection } from '@/components/design'
-import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from '@/hooks/useTransactions'
+import { useTransactions, useCreateTransaction, useUpdateTransaction, useDeleteTransaction, transactionKeys } from '@/hooks/useTransactions'
+import { useQueryClient } from '@tanstack/react-query'
 import { useCategories, useCostCenters, useBankAccounts, useContacts, useTags } from '@/hooks/useFormData'
 import { Wizard } from '@/components/ui/wizard'
 import { Skeleton, SkeletonCard, SkeletonList, SkeletonTable } from '@/components/ui/skeleton'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+
+const convertDateToISO = (dateString) => {
+  if (!dateString) return ''
+  const parts = dateString.split('/')
+  if (parts.length !== 3) return ''
+  const [day, month, year] = parts
+  return `${year}-${month}-${day}`
+}
 
 // Função para quebrar texto a cada X palavras
 const formatDescriptionWithBreaks = (text, wordsPerLine = 6) => {
@@ -85,9 +95,13 @@ const formatDescriptionWithBreaks = (text, wordsPerLine = 6) => {
 
 export function Transactions() {
   const isMobile = useIsMobile()
+  const queryClient = useQueryClient()
+  const location = useLocation()
+  const initialFilterApplied = useRef(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [isNewTransactionOpen, setIsNewTransactionOpen] = useState(false)
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [isEditTransactionOpen, setIsEditTransactionOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
@@ -106,7 +120,7 @@ export function Transactions() {
   const [selectedPaymentTypes, setSelectedPaymentTypes] = useState([])
   const [includePaid, setIncludePaid] = useState(true)
   const [includeUnpaid, setIncludeUnpaid] = useState(true)
-  const [dateType, setDateType] = useState('payment') // 'payment' ou 'competency'
+  const [dateType, setDateType] = useState('payment') // 'payment' | 'competency'
   
   // Debounced search query para evitar muitas requisições
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
@@ -155,12 +169,15 @@ export function Transactions() {
     if (selectedPaymentTypes.length > 0) {
       f.payment_types = selectedPaymentTypes
     }
-    const paidValues = []
-    if (includePaid) paidValues.push('true')
-    if (includeUnpaid) paidValues.push('false')
-    if (paidValues.length > 0 && paidValues.length < 2) {
-      f.paid = paidValues
+    // Quando nenhum está marcado, forçar resultado vazio enviando filtro impossível
+    if (!includePaid && !includeUnpaid) {
+      f.paid = ['__none__']
+    } else if (includePaid && !includeUnpaid) {
+      f.paid = ['true']
+    } else if (!includePaid && includeUnpaid) {
+      f.paid = ['false']
     }
+    // ambos marcados → sem filtro (backend retorna tudo)
     if (dateType) {
       f.date_type = dateType
     }
@@ -182,6 +199,40 @@ export function Transactions() {
     dateType
   ])
   
+  // Aplicar filtros/pesquisa ao navegar a partir do dashboard
+  useEffect(() => {
+    if (initialFilterApplied.current || !location.state) return
+    initialFilterApplied.current = true
+
+    const { filter, search } = location.state
+
+    if (search) {
+      setSearchQuery(search)
+      setDebouncedSearchQuery(search)
+    }
+
+    const formatDate = (d) => {
+      const dd = String(d.getDate()).padStart(2, '0')
+      const mm = String(d.getMonth() + 1).padStart(2, '0')
+      const yyyy = d.getFullYear()
+      return `${dd}/${mm}/${yyyy}`
+    }
+
+    if (filter === 'today') {
+      const today = new Date()
+      setStartDate(formatDate(today))
+      setEndDate(formatDate(today))
+      setShowFilters(true)
+    } else if (filter === 'overdue') {
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      setEndDate(formatDate(yesterday))
+      setIncludePaid(false)
+      setIncludeUnpaid(true)
+      setShowFilters(true)
+    }
+  }, [location.state])
+
   const { data: transactionsData, isLoading: loadingTransactions, error: transactionsError } = useTransactions(currentPage, 20, filters)
   const { data: categoriesData, isLoading: loadingCategories } = useCategories()
   const { data: costCentersData, isLoading: loadingCostCenters } = useCostCenters()
@@ -214,6 +265,13 @@ export function Transactions() {
   const [newContactName, setNewContactName] = useState('')
   const [newCostCenterName, setNewCostCenterName] = useState('')
   const [duplicateWarning, setDuplicateWarning] = useState('')
+  const [expiringRecurrences, setExpiringRecurrences] = useState([])
+  const [showRecurrenceDialog, setShowRecurrenceDialog] = useState(false)
+  const [selectedRecurrence, setSelectedRecurrence] = useState(null)
+  const [showEditInstallmentsDialog, setShowEditInstallmentsDialog] = useState(false)
+  const [editingPaymentPlan, setEditingPaymentPlan] = useState(null)
+  const [installmentsData, setInstallmentsData] = useState([])
+  const [loadingInstallments, setLoadingInstallments] = useState(false)
 
   // Form state for new transaction
   const [formData, setFormData] = useState({
@@ -232,6 +290,32 @@ export function Transactions() {
     paid: false
   })
 
+  // Payment plan state
+  const [paymentPlan, setPaymentPlan] = useState({
+    enabled: false,
+    type: 'installment', // 'installment' ou 'recurring'
+    number_of_installments: 2,
+    frequency: 'monthly', // 'daily', 'weekly', 'biweekly', 'monthly', 'bimonthly', 'quarterly', 'semiannual', 'annual'
+    amount_type: 'total_amount' // 'total_amount' ou 'installment_amount'
+  })
+
+  // Quick add form state (campos essenciais apenas)
+  const getTodayDate = () => {
+    const today = new Date()
+    const day = today.getDate().toString().padStart(2, '0')
+    const month = (today.getMonth() + 1).toString().padStart(2, '0')
+    const year = today.getFullYear()
+    return `${day}/${month}/${year}`
+  }
+
+  const [quickAddData, setQuickAddData] = useState({
+    description: '',
+    amount_cents: '',
+    due_date: getTodayDate(),
+    paid: false,
+    transaction_type_cd: 0 // Receita por padrão
+  })
+
   // Form state for editing transaction
   const [editFormData, setEditFormData] = useState({
     description: '',
@@ -248,6 +332,36 @@ export function Transactions() {
     payment_type_cd: 0,
     paid: false
   })
+
+  // Verificar recorrências próximas do fim
+  useEffect(() => {
+    const checkRecurrences = async () => {
+      try {
+        const response = await apiService.checkRecurrenceExpiry()
+        if (response.expiring_recurrences && response.expiring_recurrences.length > 0) {
+          setExpiringRecurrences(response.expiring_recurrences)
+          // Mostrar diálogo apenas se não estiver já aberto e houver recorrências
+          setShowRecurrenceDialog(prev => {
+            if (!prev && response.expiring_recurrences.length > 0) {
+              setSelectedRecurrence(response.expiring_recurrences[0])
+              return true
+            }
+            return prev
+          })
+        } else {
+          setExpiringRecurrences([])
+        }
+      } catch (error) {
+        console.error('Erro ao verificar recorrências:', error)
+      }
+    }
+
+    // Verificar imediatamente e depois a cada 5 minutos
+    checkRecurrences()
+    const interval = setInterval(checkRecurrences, 5 * 60 * 1000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Debounce para busca - reset página quando busca muda
   useEffect(() => {
@@ -282,6 +396,74 @@ export function Transactions() {
 
     return { revenue, expenses, balance }
   }, [transactions])
+
+  const handleQuickAdd = () => {
+    // Validações básicas
+    if (!quickAddData.description || quickAddData.description.trim() === '') {
+      alert('Por favor, preencha a descrição da transação')
+      return
+    }
+    
+    if (!quickAddData.amount_cents || parseFloat(quickAddData.amount_cents) <= 0) {
+      alert('Por favor, informe um valor válido maior que zero')
+      return
+    }
+    
+    if (!quickAddData.due_date) {
+      alert('Por favor, informe a data de vencimento')
+      return
+    }
+    
+    const amountInCents = Math.round(parseFloat(quickAddData.amount_cents) * 100)
+    const dueDate = convertDateToISO(quickAddData.due_date)
+    
+    // Usar primeira conta bancária disponível ou padrão
+    const bankAccountId = bankAccounts.length > 0 ? bankAccounts[0].id : 1
+    
+    const transactionData = {
+      transaction: {
+        name: quickAddData.description.trim(),
+        description: quickAddData.description.trim(),
+        amount_cents: amountInCents,
+        amount_currency: 'BRL',
+        transaction_type_cd: quickAddData.transaction_type_cd || 0,
+        due_date: dueDate,
+        paid_at: quickAddData.paid ? new Date().toISOString().split('T')[0] : null,
+        bank_account_id: bankAccountId,
+        payment_method_cd: 0,
+        payment_type_cd: 0,
+        paid: quickAddData.paid || false
+      }
+    }
+
+    console.log('📤 Enviando transação rápida:', transactionData)
+    
+    createTransaction.mutate(transactionData, {
+      onSuccess: () => {
+        setQuickAddData({
+          description: '',
+          amount_cents: '',
+          due_date: getTodayDate(),
+          paid: false,
+          transaction_type_cd: 0
+        })
+        setIsQuickAddOpen(false)
+        // Focar no campo de descrição para próximo lançamento rápido
+        setTimeout(() => {
+          const descInput = document.getElementById('quick-description')
+          descInput?.focus()
+        }, 100)
+      },
+      onError: (error) => {
+        console.error('Error creating transaction:', error)
+        const errorMessage = error?.data?.errors?.join?.('\n') || 
+                            error?.data?.error || 
+                            error?.message || 
+                            'Erro ao criar transação. Verifique os dados e tente novamente.'
+        alert(errorMessage)
+      }
+    })
+  }
 
   const handleCreateTransaction = () => {
     // Validações básicas
@@ -319,27 +501,77 @@ export function Transactions() {
         : 1
       
       const transactionData = {
-        name: formData.description.trim(), // name é usado como título principal
-        description: formData.description.trim(),
-        amount_cents: amountInCents,
-        amount_currency: formData.amount_currency || 'BRL',
-        transaction_type_cd: formData.transaction_type_cd || 0,
-        due_date: dueDate,
-        paid_at: paidAt,
-        category_id: categoryId,
-        cost_center_id: costCenterId,
-        contact_id: contactId,
-        bank_account_id: bankAccountId,
-        payment_method_cd: formData.payment_method_cd || 0,
-        payment_type_cd: formData.payment_type_cd || 0,
-        paid: formData.paid || false
+        transaction: {
+          name: formData.description.trim(), // name é usado como título principal
+          description: formData.description.trim(),
+          amount_cents: amountInCents,
+          amount_currency: formData.amount_currency || 'BRL',
+          transaction_type_cd: formData.transaction_type_cd || 0,
+          due_date: dueDate,
+          paid_at: paidAt,
+          category_id: categoryId,
+          cost_center_id: costCenterId,
+          contact_id: contactId,
+          bank_account_id: bankAccountId,
+          payment_method_cd: formData.payment_method_cd || 0,
+          payment_type_cd: formData.payment_type_cd || 0,
+          paid: formData.paid || false
+        }
+      }
+
+      // Adicionar payment_plan se habilitado
+      if (paymentPlan.enabled) {
+        // Para recorrência, usar número máximo de meses (12 meses) sem mostrar ao cliente
+        const numberOfInstallments = paymentPlan.type === 'recurring' 
+          ? 12  // Máximo de 12 meses para recorrência
+          : paymentPlan.number_of_installments
+        
+        transactionData.payment_plan = {
+          type: paymentPlan.type,
+          amount_type: paymentPlan.type === 'recurring' ? 'installment_amount' : paymentPlan.amount_type,
+          number_of_installments: numberOfInstallments,
+          frequency: paymentPlan.frequency
+        }
+        
+        // O amount_cents sempre representa o valor informado pelo usuário
+        // O backend vai calcular se é total ou por parcela baseado no amount_type
+        transactionData.transaction.amount_cents = amountInCents
       }
 
       console.log('📤 Enviando transação:', transactionData)
       
       // Usar mutate em vez de mutateAsync para melhor UX (não bloquear UI)
       createTransaction.mutate(transactionData, {
-        onSuccess: () => {
+        onSuccess: (data) => {
+          // Se foi criado com parcelas, oferecer opção de editar
+          if (data.installments && data.installments.length > 0) {
+            const shouldEdit = confirm(
+              `Transação criada com ${data.installments.length} parcelas!\n\nDeseja editar as parcelas agora?`
+            )
+            
+            if (shouldEdit) {
+              // Preparar dados para edição
+              const installments = data.installments.map(inst => ({
+                id: inst.id,
+                installment_number: inst.installment_number,
+                amount_cents: (inst.amount_cents / 100).toFixed(2),
+                due_date: formatDateForInput(inst.due_date),
+                paid: inst.paid,
+                paid_at: inst.paid_at ? formatDateForInput(inst.paid_at) : '',
+                description: inst.description || inst.name || '',
+                name: inst.name || '',
+                category_id: inst.category_id,
+                cost_center_id: inst.cost_center_id,
+                contact_id: inst.contact_id,
+                bank_account_id: inst.bank_account_id
+              }))
+              
+              setInstallmentsData(installments)
+              setEditingPaymentPlan(data.transaction.payment_plan_id)
+              setShowEditInstallmentsDialog(true)
+            }
+          }
+          
           setFormData({
             description: '',
             amount_cents: '',
@@ -354,6 +586,13 @@ export function Transactions() {
             payment_method_cd: 0,
             payment_type_cd: 0,
             paid: false
+          })
+          setPaymentPlan({
+            enabled: false,
+            type: 'installment',
+            number_of_installments: 2,
+            frequency: 'monthly',
+            amount_type: 'total_amount'
           })
           setIsNewTransactionOpen(false)
         },
@@ -579,6 +818,93 @@ export function Transactions() {
     }
   }
 
+  const handleEditInstallments = async (transaction) => {
+    if (!transaction.payment_plan_id) {
+      alert('Esta transação não possui parcelas para editar')
+      return
+    }
+
+    setLoadingInstallments(true)
+    setEditingPaymentPlan(transaction.payment_plan_id)
+    
+    try {
+      const response = await apiService.getPaymentPlanInstallments(transaction.payment_plan_id)
+      
+      // Preparar dados para edição
+      const installments = response.installments.map(inst => ({
+        id: inst.id,
+        installment_number: inst.installment_number,
+        amount_cents: (inst.amount_cents / 100).toFixed(2),
+        due_date: formatDateForInput(inst.due_date),
+        paid: inst.paid,
+        paid_at: inst.paid_at ? formatDateForInput(inst.paid_at) : '',
+        description: inst.description || inst.name || '',
+        name: inst.name || '',
+        category_id: inst.category_id,
+        cost_center_id: inst.cost_center_id,
+        contact_id: inst.contact_id,
+        bank_account_id: inst.bank_account_id
+      }))
+      
+      setInstallmentsData(installments)
+      setShowEditInstallmentsDialog(true)
+    } catch (error) {
+      console.error('Erro ao carregar parcelas:', error)
+      alert('Erro ao carregar parcelas. Tente novamente.')
+    } finally {
+      setLoadingInstallments(false)
+    }
+  }
+
+  const handleUpdateInstallments = async () => {
+    if (!editingPaymentPlan) return
+
+    setLoadingInstallments(true)
+    
+    try {
+      // Preparar dados para envio
+      const installmentsToUpdate = installmentsData.map(inst => ({
+        id: inst.id,
+        amount_cents: parseFloat(inst.amount_cents) || 0,
+        due_date: convertDateToISO(inst.due_date),
+        paid: inst.paid,
+        paid_at: inst.paid && inst.paid_at ? convertDateToISO(inst.paid_at) : null,
+        description: inst.description,
+        name: inst.name,
+        category_id: inst.category_id || null,
+        cost_center_id: inst.cost_center_id || null,
+        contact_id: inst.contact_id || null,
+        bank_account_id: inst.bank_account_id || null
+      }))
+
+      await apiService.updatePaymentPlanInstallments(editingPaymentPlan, installmentsToUpdate)
+      
+      // Invalidar cache e recarregar
+      queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })
+      
+      setShowEditInstallmentsDialog(false)
+      setEditingPaymentPlan(null)
+      setInstallmentsData([])
+      
+      alert('Parcelas atualizadas com sucesso!')
+    } catch (error) {
+      console.error('Erro ao atualizar parcelas:', error)
+      const errorMessage = error?.data?.errors?.join?.('\n') || 
+                          error?.data?.error || 
+                          error?.message || 
+                          'Erro ao atualizar parcelas. Verifique os dados e tente novamente.'
+      alert(errorMessage)
+    } finally {
+      setLoadingInstallments(false)
+    }
+  }
+
+  const updateInstallmentField = (index, field, value) => {
+    const updated = [...installmentsData]
+    updated[index] = { ...updated[index], [field]: value }
+    setInstallmentsData(updated)
+  }
+
   const handleTogglePaidStatus = async (transaction) => {
     try {
       const newPaidStatus = !transaction.paid
@@ -637,13 +963,6 @@ export function Transactions() {
     return `${day}/${month}/${year}`
   }
 
-  const convertDateToISO = (dateString) => {
-    if (!dateString) return ''
-    const parts = dateString.split('/')
-    if (parts.length !== 3) return ''
-    const [day, month, year] = parts
-    return `${year}-${month}-${day}`
-  }
 
   const applyDateMask = (value) => {
     const numbers = value.replace(/\D/g, '')
@@ -938,18 +1257,241 @@ export function Transactions() {
               <Download className="w-4 h-4 mr-2" />
               Exportar
             </Button>
-            <Dialog open={isNewTransactionOpen} onOpenChange={setIsNewTransactionOpen}>
+            
+            <Dialog open={isQuickAddOpen} onOpenChange={(open) => {
+              setIsQuickAddOpen(open)
+              if (!open) {
+                // Reset form quando fechar
+                setQuickAddData({
+                  description: '',
+                  amount_cents: '',
+                  due_date: getTodayDate(),
+                  paid: false,
+                  transaction_type_cd: 0
+                })
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button className="w-full sm:w-auto bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white border-0">
                   <Plus className="w-4 h-4 mr-2" />
                   Nova Transação
                 </Button>
               </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Nova Transação</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Descrição *</Label>
+                    <Input
+                      id="quick-description"
+                      value={quickAddData.description}
+                      onChange={(e) => setQuickAddData({...quickAddData, description: e.target.value})}
+                      placeholder="Ex: Venda de produto, Pagamento fornecedor"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          const amountInput = document.getElementById('quick-amount')
+                          amountInput?.focus()
+                        }
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Valor *</Label>
+                      <Input
+                        id="quick-amount"
+                        type="number"
+                        step="0.01"
+                        value={quickAddData.amount_cents}
+                        onChange={(e) => setQuickAddData({...quickAddData, amount_cents: e.target.value})}
+                        placeholder="0,00"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            const dateInput = document.getElementById('quick-date')
+                            dateInput?.focus()
+                          }
+                        }}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Tipo</Label>
+                      <Select 
+                        value={quickAddData.transaction_type_cd.toString()} 
+                        onValueChange={(value) => setQuickAddData({...quickAddData, transaction_type_cd: parseInt(value)})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Receita</SelectItem>
+                          <SelectItem value="1">Despesa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Data de Vencimento *</Label>
+                    <Input
+                      id="quick-date"
+                      type="text"
+                      placeholder="dd/mm/aaaa"
+                      value={quickAddData.due_date}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        const maskedValue = applyDateMask(value)
+                        setQuickAddData({...quickAddData, due_date: maskedValue})
+                      }}
+                      maxLength={10}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleQuickAdd()
+                        }
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="quick-paid"
+                      checked={quickAddData.paid}
+                      onCheckedChange={(checked) => 
+                        setQuickAddData({...quickAddData, paid: checked === true})
+                      }
+                    />
+                    <Label htmlFor="quick-paid" className="cursor-pointer">
+                      Marcar como pago
+                    </Label>
+                  </div>
+                  
+                  <div className="flex gap-2 pt-2">
+                    <Button 
+                      onClick={handleQuickAdd}
+                      className="flex-1 bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white"
+                      disabled={createTransaction.isPending}
+                    >
+                      {createTransaction.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Salvar
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsQuickAddOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                  
+                  {/* Botão de mais opções mais destacado */}
+                  <div className="pt-3 border-t border-border">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full border-2 border-primary/30 hover:border-primary/50 hover:bg-primary/5 text-primary font-medium"
+                      onClick={() => {
+                        // Transferir dados do formulário rápido para o formulário completo
+                        const amountInDecimal = quickAddData.amount_cents ? parseFloat(quickAddData.amount_cents).toFixed(2) : ''
+                        
+                        // Converter data de pagamento para formato brasileiro se estiver pago
+                        let paidAtFormatted = ''
+                        if (quickAddData.paid) {
+                          const today = new Date()
+                          const day = today.getDate().toString().padStart(2, '0')
+                          const month = (today.getMonth() + 1).toString().padStart(2, '0')
+                          const year = today.getFullYear()
+                          paidAtFormatted = `${day}/${month}/${year}`
+                        }
+                        
+                        setFormData({
+                          description: quickAddData.description || '',
+                          amount_cents: amountInDecimal,
+                          amount_currency: 'BRL',
+                          transaction_type_cd: quickAddData.transaction_type_cd || 0,
+                          due_date: quickAddData.due_date || getTodayDate(),
+                          paid_at: paidAtFormatted,
+                          category_id: '',
+                          cost_center_id: '',
+                          contact_id: '',
+                          bank_account_id: bankAccounts.length > 0 ? bankAccounts[0].id.toString() : '1',
+                          payment_method_cd: 0,
+                          payment_type_cd: 0,
+                          paid: quickAddData.paid || false
+                        })
+                        
+                        // Resetar payment plan
+                        setPaymentPlan({
+                          enabled: false,
+                          type: 'installment',
+                          number_of_installments: 2,
+                          frequency: 'monthly',
+                          amount_type: 'total_amount'
+                        })
+                        
+                        setIsQuickAddOpen(false)
+                        // Pequeno delay para garantir que o estado foi atualizado
+                        setTimeout(() => {
+                          setIsNewTransactionOpen(true)
+                        }, 100)
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Mais Opções (Categoria, Centro de Custo, Parcelamento, etc.)
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            
+            <Dialog open={isNewTransactionOpen} onOpenChange={(open) => {
+              setIsNewTransactionOpen(open)
+              if (!open) {
+                // Reset form quando fechar
+                setFormData({
+                  description: '',
+                  amount_cents: '',
+                  amount_currency: 'BRL',
+                  transaction_type_cd: 0,
+                  due_date: '',
+                  paid_at: '',
+                  category_id: '',
+                  cost_center_id: '',
+                  contact_id: '',
+                  bank_account_id: bankAccounts.length > 0 ? bankAccounts[0].id.toString() : '1',
+                  payment_method_cd: 0,
+                  payment_type_cd: 0,
+                  paid: false
+                })
+                setPaymentPlan({
+                  enabled: false,
+                  type: 'installment',
+                  number_of_installments: 2,
+                  frequency: 'monthly',
+                  amount_type: 'total_amount'
+                })
+              }
+            }}>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Nova Transação</DialogTitle>
               </DialogHeader>
               <Wizard
+                initialStep={0}
                 steps={[
                   {
                     title: 'Básico',
@@ -1200,6 +1742,246 @@ export function Transactions() {
                         </div>
                       </div>
                     )
+                  },
+                  {
+                    title: 'Parcelamento/Recorrência',
+                    content: (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="enable-payment-plan"
+                              checked={paymentPlan.enabled}
+                              onCheckedChange={(checked) => {
+                                setPaymentPlan({
+                                  ...paymentPlan, 
+                                  enabled: checked === true,
+                                  type: checked ? paymentPlan.type : 'installment'
+                                })
+                              }}
+                            />
+                            <Label htmlFor="enable-payment-plan" className="cursor-pointer font-medium">
+                              Habilitar parcelamento ou recorrência
+                            </Label>
+                          </div>
+                        </div>
+                        
+                        {!paymentPlan.enabled && (
+                          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                              Precisa parcelar ou criar uma recorrência?
+                            </p>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setPaymentPlan({
+                                    ...paymentPlan,
+                                    enabled: true,
+                                    type: 'installment'
+                                  })
+                                }}
+                                className="text-xs"
+                              >
+                                <Calendar className="w-3 h-3 mr-1" />
+                                Ir para Parcelamento
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setPaymentPlan({
+                                    ...paymentPlan,
+                                    enabled: true,
+                                    type: 'recurring'
+                                  })
+                                }}
+                                className="text-xs"
+                              >
+                                <Calendar className="w-3 h-3 mr-1" />
+                                Ir para Recorrência
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {paymentPlan.enabled && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 space-y-4 pl-6 border-l-2 border-border">
+                            <div className="space-y-2 sm:space-y-3 sm:col-span-2">
+                              <Label>Tipo *</Label>
+                              <Select 
+                                value={paymentPlan.type} 
+                                onValueChange={(value) => {
+                                  setPaymentPlan({
+                                    ...paymentPlan, 
+                                    type: value,
+                                    // Reset número de parcelas quando mudar tipo
+                                    number_of_installments: value === 'recurring' ? 12 : 2
+                                  })
+                                }}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="installment">
+                                    <div>
+                                      <div className="font-medium">Parcelamento</div>
+                                      <div className="text-xs text-text-secondary">Dividir em parcelas fixas</div>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="recurring">
+                                    <div>
+                                      <div className="font-medium">Recorrência</div>
+                                      <div className="text-xs text-text-secondary">Repetir automaticamente</div>
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {/* Mostrar número de parcelas apenas para parcelamento */}
+                            {paymentPlan.type === 'installment' && (
+                              <div className="space-y-2 sm:space-y-3">
+                                <Label>Número de Parcelas *</Label>
+                                <Input
+                                  type="number"
+                                  min="2"
+                                  max="120"
+                                  value={paymentPlan.number_of_installments}
+                                  onChange={(e) => setPaymentPlan({
+                                    ...paymentPlan, 
+                                    number_of_installments: parseInt(e.target.value) || 2
+                                  })}
+                                  className="w-full"
+                                />
+                                <p className="text-xs text-text-secondary">Mínimo: 2, Máximo: 120</p>
+                              </div>
+                            )}
+                            
+                            {/* Mensagem informativa apenas para parcelamento */}
+                            {paymentPlan.type === 'installment' && (
+                              <div className="space-y-2 sm:space-y-3 sm:col-span-2">
+                                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                  <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
+                                    Você pode ajustar o número de parcelas conforme necessário. O valor será recalculado automaticamente.
+                                  </p>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        const newValue = Math.min(paymentPlan.number_of_installments + 1, 120)
+                                        setPaymentPlan({...paymentPlan, number_of_installments: newValue})
+                                      }}
+                                      disabled={paymentPlan.number_of_installments >= 120}
+                                      className="text-xs"
+                                    >
+                                      +1 Parcela
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        const newValue = Math.min(paymentPlan.number_of_installments + 3, 120)
+                                        setPaymentPlan({...paymentPlan, number_of_installments: newValue})
+                                      }}
+                                      disabled={paymentPlan.number_of_installments >= 120}
+                                      className="text-xs"
+                                    >
+                                      +3 Parcelas
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        const newValue = Math.min(paymentPlan.number_of_installments + 6, 120)
+                                        setPaymentPlan({...paymentPlan, number_of_installments: newValue})
+                                      }}
+                                      disabled={paymentPlan.number_of_installments >= 120}
+                                      className="text-xs"
+                                    >
+                                      +6 Parcelas
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div className="space-y-2 sm:space-y-3">
+                              <Label>Frequência *</Label>
+                              <Select 
+                                value={paymentPlan.frequency} 
+                                onValueChange={(value) => setPaymentPlan({...paymentPlan, frequency: value})}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="daily">Diária</SelectItem>
+                                  <SelectItem value="weekly">Semanal</SelectItem>
+                                  <SelectItem value="biweekly">Quinzenal</SelectItem>
+                                  <SelectItem value="monthly">Mensal</SelectItem>
+                                  <SelectItem value="bimonthly">Bimestral</SelectItem>
+                                  <SelectItem value="quarterly">Trimestral</SelectItem>
+                                  <SelectItem value="semiannual">Semestral</SelectItem>
+                                  <SelectItem value="annual">Anual</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {/* Tipo de valor apenas para parcelamento */}
+                            {paymentPlan.type === 'installment' && (
+                              <div className="space-y-2 sm:space-y-3">
+                                <Label>Tipo de Valor</Label>
+                                <Select 
+                                  value={paymentPlan.amount_type} 
+                                  onValueChange={(value) => setPaymentPlan({...paymentPlan, amount_type: value})}
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="total_amount">Valor Total (dividido em parcelas)</SelectItem>
+                                    <SelectItem value="installment_amount">Valor por Parcela</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                            
+                            {/* Resumo apenas para parcelamento */}
+                            {paymentPlan.type === 'installment' && formData.amount_cents && paymentPlan.number_of_installments > 0 && (
+                              <div className="sm:col-span-2 p-4 bg-surface-elevated rounded-lg border border-border">
+                                <p className="text-sm text-text-secondary mb-2">Resumo:</p>
+                                <p className="text-sm">
+                                  {paymentPlan.amount_type === 'total_amount' ? (
+                                    <>
+                                      Valor total: {formatCurrency(parseFloat(formData.amount_cents || 0) * 100)}<br/>
+                                      Valor por parcela: {formatCurrency(
+                                        (parseFloat(formData.amount_cents || 0) * 100) / paymentPlan.number_of_installments
+                                      )}
+                                    </>
+                                  ) : (
+                                    <>
+                                      Valor por parcela: {formatCurrency(parseFloat(formData.amount_cents || 0) * 100)}<br/>
+                                      Valor total: {formatCurrency(
+                                        (parseFloat(formData.amount_cents || 0) * 100) * paymentPlan.number_of_installments
+                                      )}
+                                    </>
+                                  )}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
                   }
                 ]}
                 onComplete={() => {
@@ -1274,7 +2056,7 @@ export function Transactions() {
 
           {/* Painel de Filtros Avançados - Minimalista dentro do FluidSection */}
           {(showFilters || isMobile) && (
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
               <div className="p-3">
                 {/* Filtros principais - sempre visíveis */}
                 <div className="flex flex-wrap items-center gap-3">
@@ -1626,6 +2408,11 @@ export function Transactions() {
                         <Badge className={cn("text-xs", getTransactionTypeColor(transaction.transaction_type_cd))}>
                           {getTransactionTypeLabel(transaction.transaction_type_cd)}
                         </Badge>
+                        {transaction.payment_plan_id && transaction.installment_number && (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            {transaction.installment_number}/{transaction.installment_total || '?'} Parcelas
+                          </Badge>
+                        )}
                         <Button
                           variant={transaction.paid ? "default" : "secondary"}
                           size="sm"
@@ -1682,6 +2469,16 @@ export function Transactions() {
                   </div>
 
                   <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-border" onClick={(e) => e.stopPropagation()}>
+                    {transaction.payment_plan_id && transaction.payment_type_cd === 1 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditInstallments(transaction)}
+                        title="Editar parcelas"
+                      >
+                        <Calendar className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button 
                       variant="ghost" 
                       size="sm"
@@ -1753,21 +2550,30 @@ export function Transactions() {
                       >
                         <TableCell className="text-base whitespace-nowrap text-text-primary py-4">{formatDate(transaction.due_date)}</TableCell>
                         <TableCell className="py-4">
-                          <div 
-                            className="font-medium text-base text-text-primary leading-relaxed" 
-                            style={{ 
-                              whiteSpace: 'normal', 
-                              wordBreak: 'break-word',
-                              overflowWrap: 'anywhere'
-                            }}
-                          >
-                            {transaction.name || transaction.description || 'Sem descrição'}
-                          </div>
-                          {transaction.contact && (
-                            <div className="text-sm text-text-secondary mt-1 truncate">
-                              {transaction.contact.name}
+                          <div className="flex items-start gap-2">
+                            <div className="flex-1">
+                              <div 
+                                className="font-medium text-base text-text-primary leading-relaxed" 
+                                style={{ 
+                                  whiteSpace: 'normal', 
+                                  wordBreak: 'break-word',
+                                  overflowWrap: 'anywhere'
+                                }}
+                              >
+                                {transaction.name || transaction.description || 'Sem descrição'}
+                              </div>
+                              {transaction.contact && (
+                                <div className="text-sm text-text-secondary mt-1 truncate">
+                                  {transaction.contact.name}
+                                </div>
+                              )}
                             </div>
-                          )}
+                            {transaction.payment_plan_id && transaction.installment_number && (
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 flex-shrink-0">
+                                {transaction.installment_number}/{transaction.installment_total || '?'}
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="whitespace-nowrap py-4">
                           {transaction.category ? (
@@ -1817,6 +2623,16 @@ export function Transactions() {
                         </TableCell>
                         <TableCell className="text-right whitespace-nowrap py-4">
                           <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                            {transaction.payment_plan_id && transaction.payment_type_cd === 1 && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleEditInstallments(transaction)}
+                                title="Editar parcelas"
+                              >
+                                <Calendar className="w-4 h-4" />
+                              </Button>
+                            )}
                             <Button 
                               variant="ghost" 
                               size="sm"
@@ -2212,6 +3028,217 @@ export function Transactions() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Diálogo para Editar Parcelas */}
+      <Dialog open={showEditInstallmentsDialog} onOpenChange={setShowEditInstallmentsDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Parcelas</DialogTitle>
+          </DialogHeader>
+          {loadingInstallments ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="text-sm text-text-secondary mb-4">
+                Você pode editar individualmente cada parcela. Os valores podem ser diferentes entre as parcelas.
+              </div>
+              
+              <div className="space-y-3">
+                {installmentsData.map((installment, index) => (
+                  <div key={installment.id} className="p-4 border border-border rounded-lg bg-surface-elevated">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-sm">
+                        Parcela {installment.installment_number}
+                      </h4>
+                      <Badge variant={installment.paid ? "default" : "secondary"}>
+                        {installment.paid ? "Pago" : "Pendente"}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Valor *</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={installment.amount_cents}
+                          onChange={(e) => updateInstallmentField(index, 'amount_cents', e.target.value)}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <Label className="text-xs">Data Vencimento *</Label>
+                        <Input
+                          type="text"
+                          placeholder="dd/mm/aaaa"
+                          value={installment.due_date}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            const maskedValue = applyDateMask(value)
+                            updateInstallmentField(index, 'due_date', maskedValue)
+                          }}
+                          maxLength={10}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <Label className="text-xs">Data Pagamento</Label>
+                        <Input
+                          type="text"
+                          placeholder="dd/mm/aaaa"
+                          value={installment.paid_at}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            const maskedValue = applyDateMask(value)
+                            updateInstallmentField(index, 'paid_at', maskedValue)
+                          }}
+                          maxLength={10}
+                          className="h-9 text-sm"
+                          disabled={!installment.paid}
+                        />
+                      </div>
+                      
+                      <div className="space-y-1 flex items-end">
+                        <div className="flex items-center space-x-2 w-full">
+                          <Checkbox
+                            id={`paid-${installment.id}`}
+                            checked={installment.paid}
+                            onCheckedChange={(checked) => {
+                              updateInstallmentField(index, 'paid', checked === true)
+                              if (checked && !installment.paid_at) {
+                                updateInstallmentField(index, 'paid_at', getTodayDate())
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`paid-${installment.id}`} className="text-xs cursor-pointer">
+                            Pago
+                          </Label>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3 space-y-1">
+                      <Label className="text-xs">Descrição</Label>
+                      <Input
+                        value={installment.description}
+                        onChange={(e) => updateInstallmentField(index, 'description', e.target.value)}
+                        placeholder="Descrição da parcela"
+                        className="h-9 text-sm"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex gap-2 pt-4 border-t">
+                <Button
+                  onClick={handleUpdateInstallments}
+                  className="flex-1 bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white"
+                  disabled={loadingInstallments}
+                >
+                  {loadingInstallments ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    'Salvar Alterações'
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowEditInstallmentsDialog(false)
+                    setEditingPaymentPlan(null)
+                    setInstallmentsData([])
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo para Recorrências Próximas do Fim */}
+      <Dialog open={showRecurrenceDialog} onOpenChange={setShowRecurrenceDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Recorrência Próxima do Fim</DialogTitle>
+          </DialogHeader>
+          {selectedRecurrence && (
+            <div className="space-y-4">
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-2">
+                  <strong>{selectedRecurrence.description}</strong>
+                </p>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                  Esta recorrência termina em {selectedRecurrence.months_remaining} {selectedRecurrence.months_remaining === 1 ? 'mês' : 'meses'}.
+                  Última data: {new Date(selectedRecurrence.last_due_date).toLocaleDateString('pt-BR')}
+                </p>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  onClick={async () => {
+                    try {
+                      await apiService.extendRecurrence(selectedRecurrence.payment_plan_id)
+                      // Remover esta recorrência da lista
+                      setExpiringRecurrences(prev => prev.filter(r => r.payment_plan_id !== selectedRecurrence.payment_plan_id))
+                      // Se houver mais recorrências, mostrar a próxima
+                      const remaining = expiringRecurrences.filter(r => r.payment_plan_id !== selectedRecurrence.payment_plan_id)
+                      if (remaining.length > 0) {
+                        setSelectedRecurrence(remaining[0])
+                      } else {
+                        setShowRecurrenceDialog(false)
+                      }
+                      alert('Recorrência estendida com sucesso por mais 12 meses!')
+                    } catch (error) {
+                      console.error('Erro ao estender recorrência:', error)
+                      alert('Erro ao estender recorrência. Tente novamente.')
+                    }
+                  }}
+                  className="flex-1 bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white"
+                >
+                  Estender por mais 12 meses
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // Remover esta recorrência da lista
+                    setExpiringRecurrences(prev => prev.filter(r => r.payment_plan_id !== selectedRecurrence.payment_plan_id))
+                    // Se houver mais recorrências, mostrar a próxima
+                    const remaining = expiringRecurrences.filter(r => r.payment_plan_id !== selectedRecurrence.payment_plan_id)
+                    if (remaining.length > 0) {
+                      setSelectedRecurrence(remaining[0])
+                    } else {
+                      setShowRecurrenceDialog(false)
+                    }
+                  }}
+                >
+                  Depois
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Botão Flutuante para Mobile - Nova Transação */}
+      <div className="fixed bottom-6 right-6 z-50 sm:hidden">
+        <Button
+          onClick={() => setIsQuickAddOpen(true)}
+          size="lg"
+          className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white border-0"
+        >
+          <Plus className="w-6 h-6" />
+        </Button>
+      </div>
       </div>
     </div>
   )

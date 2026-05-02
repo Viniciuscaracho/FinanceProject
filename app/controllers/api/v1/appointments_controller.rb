@@ -9,7 +9,7 @@ module Api
       skip_before_action :set_current_account, only: [:create, :available_slots]
       before_action :authenticate_api_key, only: [:create, :available_slots]
       before_action :set_account_from_api, only: [:create, :available_slots]
-      before_action :set_appointment, only: [:show, :update, :destroy]
+      before_action :set_appointment, only: [:show, :update, :destroy, :generate_professional_document]
 
       # GET /api/v1/appointments
       # Lista todos os agendamentos
@@ -25,15 +25,29 @@ module Api
           end
           
           appointments = account.appointments
-                               .includes(:account_user, :service, :contact, :appointment_commissions)
+                               .includes(:account_user, :service, :contact, :appointment_commissions, :appointment_note)
                                .order(start_time: :desc)
 
           # Filtros
           appointments = appointments.where(status: params[:status]) if params[:status].present?
           appointments = appointments.where(payment_status: params[:payment_status]) if params[:payment_status].present?
           appointments = appointments.where(account_user_id: params[:account_user_id]) if params[:account_user_id].present?
+          
+          # Filtro por data (para melhor performance)
+          if params[:start_date].present? || params[:end_date].present?
+            start_date = params[:start_date].present? ? Time.parse(params[:start_date]).beginning_of_day : nil
+            end_date = params[:end_date].present? ? Time.parse(params[:end_date]).end_of_day : nil
+            
+            if start_date && end_date
+              appointments = appointments.by_date_range(start_date, end_date)
+            elsif start_date
+              appointments = appointments.where('start_time >= ?', start_date)
+            elsif end_date
+              appointments = appointments.where('start_time <= ?', end_date)
+            end
+          end
 
-          Rails.logger.info "Appointments found: #{appointments.count}"
+          Rails.logger.info "Appointments found: #{appointments.count} (filters: start_date=#{params[:start_date]}, end_date=#{params[:end_date]})"
           render json: appointments.map { |apt| appointment_json(apt) }
         rescue => e
           Rails.logger.error "Error in appointments#index: #{e.message}"
@@ -125,9 +139,13 @@ module Api
             break if slot_end > date.beginning_of_day + end_hour.hours
 
             # Verificar se há conflito com agendamentos existentes
+            # Excluir agendamentos cancelados e não compareceu (no_show)
             conflicting = Appointment
                           .where(account_user_id: professional_id)
-                          .where.not(status: Appointment::APPOINTMENT_STATUS[:canceled])
+                          .where.not(status: [
+                            Appointment::APPOINTMENT_STATUS[:canceled],
+                            Appointment::APPOINTMENT_STATUS[:no_show]
+                          ])
                           .where('(start_time < ? AND end_time > ?)', slot_end, current_time)
                           .exists?
 
@@ -176,6 +194,28 @@ module Api
           appointment.payment_status ||= :pending
 
           if appointment.save
+            # Gerar link do Google Meet se solicitado (após salvar para ter ID)
+            if params[:enable_google_meet].to_s == 'true' || params[:appointment]&.dig(:enable_google_meet).to_s == 'true'
+              result = Appointments::GenerateGoogleMeetLink.call(appointment: appointment)
+              if result.success?
+                appointment.reload
+              end
+            end
+            # Criar agendamentos recorrentes se solicitado
+            if params[:recurrence_pattern].present? || params[:appointment]&.dig(:recurrence_pattern).present?
+              recurrence_pattern = params[:recurrence_pattern] || params[:appointment]&.dig(:recurrence_pattern)
+              recurring_result = Appointments::CreateRecurring.call(
+                parent_appointment: appointment,
+                recurrence_pattern: recurrence_pattern
+              )
+              
+              if recurring_result.success?
+                Rails.logger.info "✅ Criados #{recurring_result.count} agendamentos recorrentes"
+              else
+                Rails.logger.error "❌ Erro ao criar agendamentos recorrentes: #{recurring_result.error}"
+              end
+            end
+
             # Gerar Payment Link do Stripe (se configurado)
             begin
               payment_link = create_stripe_payment_link(appointment)
@@ -265,6 +305,183 @@ module Api
         end
       end
 
+      # POST /api/v1/appointments/:id/send_reminder
+      # Envia lembrete via WhatsApp para o agendamento
+      def send_reminder
+        begin
+          account = Current.account || @current_account
+          unless account
+            render json: { error: 'Account not found' }, status: :forbidden
+            return
+          end
+
+          result = Appointments::SendWhatsappReminder.call(appointment: @appointment)
+          
+          if result.success?
+            render json: {
+              success: true,
+              message: 'Lembrete enviado com sucesso',
+              whatsapp_link: result.whatsapp_link,
+              reminder_sent_at: @appointment.reload.whatsapp_reminder_sent_at&.iso8601
+            }
+          else
+            render json: { 
+              success: false,
+              error: result.error 
+            }, status: :unprocessable_entity
+          end
+        rescue => e
+          Rails.logger.error "Error in appointments#send_reminder: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: e.message }, status: :internal_server_error
+        end
+      end
+
+      # POST /api/v1/appointments/:id/generate_google_meet
+      # Gera um link do Google Meet para o agendamento
+      def generate_google_meet
+        begin
+          account = Current.account || @current_account
+          unless account
+            render json: { error: 'Account not found' }, status: :forbidden
+            return
+          end
+
+          result = Appointments::GenerateGoogleMeetLink.call(appointment: @appointment)
+          
+          if result.success?
+            render json: {
+              success: true,
+              google_meet_link: result.google_meet_link,
+              appointment: appointment_json(@appointment.reload)
+            }
+          else
+            render json: { 
+              success: false,
+              error: result.error 
+            }, status: :unprocessable_entity
+          end
+        rescue => e
+          Rails.logger.error "Error in appointments#generate_google_meet: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: e.message }, status: :internal_server_error
+        end
+      end
+
+      # GET /api/v1/appointments/:id/professional_document_templates
+      # Lista templates de documentos profissionais disponíveis para o agendamento
+      def professional_document_templates
+        begin
+          account = Current.account || @current_account
+          unless account
+            render json: { error: 'Account not found' }, status: :forbidden
+            return
+          end
+
+          templates = account.professional_document_templates.order(created_at: :desc)
+          
+          render json: {
+            templates: templates.map do |template|
+              {
+                id: template.id,
+                name: template.name,
+                description: template.description,
+                professional_type: template.professional_type,
+                professional_type_label: template.professional_type_label,
+                enable_sessions: template.enable_sessions
+              }
+            end
+          }
+        rescue => e
+          Rails.logger.error "Error in appointments#professional_document_templates: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { error: e.message }, status: :internal_server_error
+        end
+      end
+
+      # POST /api/v1/appointments/:id/generate_professional_document
+      # Gera um documento profissional a partir do agendamento
+      def generate_professional_document
+        begin
+          account = Current.account || @current_account
+          unless account
+            render json: { error: 'Account not found' }, status: :forbidden
+            return
+          end
+
+          template_id = params[:template_id]
+          document_content = params[:document_content] || ''
+          progress = params[:progress] || ''
+          instructions = params[:instructions] || ''
+          observations = params[:observations] || ''
+
+          template = account.professional_document_templates.find(template_id)
+          contact = @appointment.contact
+          user = Current.user
+
+          # Gerar documento usando o serviço
+          result = Documents::ProfessionalDocuments::ProfessionalDocumentGenerator.call(
+            account: account,
+            user: user,
+            template: template,
+            contact: contact,
+            appointment: @appointment,
+            document_content: document_content,
+            progress: progress,
+            instructions: instructions,
+            observations: observations
+          )
+
+          if result.content
+            timestamp = Time.current.strftime('%Y%m%d_%H%M%S')
+            safe_name = template.name.parameterize(separator: '_')
+            filename = "#{safe_name}_#{timestamp}.html"
+
+            @appointment.attachments.attach(
+              io: StringIO.new(result.content),
+              filename: filename,
+              content_type: 'text/html'
+            )
+
+            attached = @appointment.attachments.last
+
+            render json: {
+              success: true,
+              content: result.content,
+              template: {
+                id: template.id,
+                name: template.name,
+                professional_type: template.professional_type
+              },
+              attachment: {
+                id: attached.id,
+                filename: attached.filename.to_s,
+                content_type: attached.content_type,
+                byte_size: attached.byte_size,
+                created_at: attached.created_at.iso8601
+              }
+            }
+          else
+            render json: { 
+              success: false,
+              error: 'Erro ao gerar documento'
+            }, status: :unprocessable_entity
+          end
+        rescue ActiveRecord::RecordNotFound => e
+          render json: { 
+            success: false,
+            error: 'Template não encontrado'
+          }, status: :not_found
+        rescue => e
+          Rails.logger.error "Error in appointments#generate_professional_document: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { 
+            success: false,
+            error: e.message 
+          }, status: :internal_server_error
+        end
+      end
+
       private
 
       def set_appointment
@@ -282,14 +499,18 @@ module Api
           params.require(:appointment).permit(
             :account_user_id, :service_id, :contact_id,
             :start_time, :end_time, :whatsapp_number,
-            :price_cents, :price_currency, :status, :payment_status
+            :price_cents, :price_currency, :status, :payment_status,
+            :google_meet_link, :enable_google_meet,
+            recurrence_pattern: {}
           )
         else
           # Parâmetros diretos (para requisições do chatbot)
           params.permit(
             :account_user_id, :service_id, :contact_id,
             :start_time, :end_time, :whatsapp_number,
-            :price_cents, :price_currency, :status, :payment_status
+            :price_cents, :price_currency, :status, :payment_status,
+            :google_meet_link, :enable_google_meet,
+            recurrence_pattern: {}
           )
         end
       end
@@ -405,6 +626,31 @@ module Api
           status: status_key ? status_key.to_s : appointment.status.to_s,
           payment_status: payment_status_key ? payment_status_key.to_s : appointment.payment_status.to_s,
           payment_link_url: payment_link_url || appointment.stripe_payment_link_id ? "https://buy.stripe.com/test_link" : nil,
+          google_meet_link: appointment.google_meet_link,
+          has_google_meet: appointment.has_google_meet?,
+          recurring: appointment.recurring?,
+          recurrence_pattern: appointment.recurrence_pattern,
+          parent_appointment_id: appointment.parent_appointment_id,
+          appointment_note: appointment.appointment_note ? {
+            id: appointment.appointment_note.id,
+            notes: appointment.appointment_note.notes,
+            patient_tasks: appointment.appointment_note.patient_tasks || [],
+            pending_tasks: appointment.appointment_note.pending_tasks,
+            completed_tasks: appointment.appointment_note.completed_tasks
+          } : nil,
+          previous_session_pending_tasks: appointment.previous_session_pending_tasks,
+          all_pending_tasks: appointment.all_pending_tasks_for_patient,
+          whatsapp_reminder_sent: appointment.whatsapp_reminder_sent || false,
+          whatsapp_reminder_sent_at: appointment.whatsapp_reminder_sent_at&.iso8601,
+          attachments: appointment.attachments.attached? ? appointment.attachments.map do |attachment|
+            {
+              id: attachment.id,
+              filename: attachment.filename.to_s,
+              content_type: attachment.content_type,
+              byte_size: attachment.byte_size,
+              created_at: attachment.created_at.iso8601
+            }
+          end : [],
           created_at: appointment.created_at.iso8601,
           updated_at: appointment.updated_at.iso8601
         }

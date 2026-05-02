@@ -3,14 +3,15 @@
 require 'active_support/core_ext/integer/time'
 
 Rails.application.configure do
-  config.after_initialize do
-    Bullet.enable        = true
-    Bullet.alert         = false
-    Bullet.bullet_logger = false
-    Bullet.console       = true
-    Bullet.rails_logger  = true
-    Bullet.add_footer    = false
-  end
+  # Temporarily disable Bullet in dev to avoid interference on public endpoints
+  # config.after_initialize do
+  #   Bullet.enable        = true
+  #   Bullet.alert         = false
+  #   Bullet.bullet_logger = false
+  #   Bullet.console       = true
+  #   Bullet.rails_logger  = true
+  #   Bullet.add_footer    = false
+  # end
 
   # Settings specified here will take precedence over those in config/application.rb.
 
@@ -36,8 +37,31 @@ Rails.application.configure do
     config.public_file_server.headers = {
       'Cache-Control' => "public, max-age=#{2.days.to_i}"
     }
+    
+    # Configurar cache store com fallback para memory_store se Redis não estiver disponível
+    begin
+      redis_url = ENV.fetch('REDIS_URL', 'redis://localhost:6379/0')
+      test_redis = Redis.new(url: redis_url)
+      test_redis.ping
+      test_redis.quit
+      
+      config.cache_store = :redis_cache_store, {
+        url: redis_url,
+        namespace: "barber_management_development_cache",
+        expires_in: 1.hour,
+        reconnect_attempts: 1,
+        error_handler: ->(method:, returning:, exception:) {
+          Rails.logger.warn "Cache error: #{method} failed with #{exception.class}: #{exception.message}"
+        }
+      }
+    rescue Redis::CannotConnectError, Errno::ECONNREFUSED, Redis::ConnectionError => e
+      Rails.logger.warn "Redis não disponível para cache, usando memory_store: #{e.message}"
+      config.cache_store = :memory_store, { size: 64.megabytes }
+    end
   else
     config.action_controller.perform_caching = false
+    # Usar memory_store como padrão quando caching está desabilitado
+    config.cache_store = :memory_store, { size: 64.megabytes }
   end
 
   # Don't care if the mailer can't send.

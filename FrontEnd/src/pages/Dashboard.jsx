@@ -73,13 +73,18 @@ export function Dashboard() {
   })
   const [dashboardData, setDashboardData] = useState(null)
   const [recentTransactions, setRecentTransactions] = useState([])
+  const [recentPage, setRecentPage] = useState(1)
   const [overdueCommitments, setOverdueCommitments] = useState([])
   const [todayCommitments, setTodayCommitments] = useState([])
   const [statistics, setStatistics] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [scrollY, setScrollY] = useState(0)
-  
+  const [overduePage, setOverduePage] = useState(1)
+  const [loadingTransactionId, setLoadingTransactionId] = useState(null)
+  const RECENT_PAGE_SIZE = 5
+  const OVERDUE_PAGE_SIZE = 5
+
   const updateTransaction = useUpdateTransaction()
 
   useEffect(() => {
@@ -92,6 +97,10 @@ export function Dashboard() {
   useEffect(() => {
     loadDashboardData()
   }, [])
+
+  useEffect(() => {
+    setRecentPage(1)
+  }, [recentTransactions])
 
   const loadDashboardData = async () => {
     try {
@@ -133,8 +142,9 @@ export function Dashboard() {
 
   const handleTogglePaidStatus = async (transaction) => {
     try {
+      setLoadingTransactionId(transaction.id)
       const newPaidStatus = !transaction.paid
-      
+
       await updateTransaction.mutateAsync({
         id: transaction.id,
         data: {
@@ -177,8 +187,22 @@ export function Dashboard() {
     } catch (error) {
       console.error('Error toggling paid status:', error)
       alert('Erro ao alterar status da transação')
+    } finally {
+      setLoadingTransactionId(null)
     }
   }
+
+  const recentTotalPages = Math.max(1, Math.ceil(recentTransactions.length / RECENT_PAGE_SIZE))
+  const paginatedRecentTransactions = recentTransactions.slice(
+    (recentPage - 1) * RECENT_PAGE_SIZE,
+    recentPage * RECENT_PAGE_SIZE
+  )
+
+  const overdueTotalPages = Math.max(1, Math.ceil(overdueCommitments.length / OVERDUE_PAGE_SIZE))
+  const paginatedOverdueCommitments = overdueCommitments.slice(
+    (overduePage - 1) * OVERDUE_PAGE_SIZE,
+    overduePage * OVERDUE_PAGE_SIZE
+  )
 
   const formatCurrency = (value) => {
     if (typeof value === 'number') {
@@ -227,41 +251,39 @@ export function Dashboard() {
   }
 
   return (
-    <div className="relative min-h-screen bg-surface">
-      <div className="relative z-10 w-full max-w-full min-w-0 px-6 py-6 md:px-12 md:py-8 space-y-6 md:space-y-8">
-        {/* Header - Bold Typography */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-4">
+    <div className="w-full max-w-full min-w-0 space-y-3">
+        {/* Page header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold mb-2 text-text-primary">
+            <h1 className="text-base font-semibold text-gray-700 dark:text-gray-200">
               Dashboard
             </h1>
-            <p className="text-sm text-text-secondary">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               Visão geral das suas finanças em tempo real
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              onClick={() => {
-                console.log('Seletor de período - em desenvolvimento')
-              }}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => {}}
             >
-              <Calendar className="w-4 h-4 mr-2" />
-              {selectedPeriod}
+              <Calendar className="w-3.5 h-3.5" />
+              <span>{selectedPeriod}</span>
             </Button>
-            <Button 
+            <Button
+              variant="primary"
               size="sm"
               onClick={loadDashboardData}
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Atualizar
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Atualizar</span>
             </Button>
           </div>
         </div>
 
-        {/* Main Stats - Asymmetric Cards with Glassmorphism */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Stats grid — archieve home pattern: lg:grid-cols-3 xl:grid-cols-4 */}
+        <div className="flex flex-col space-y-3 lg:grid lg:grid-cols-3 lg:gap-3 lg:space-y-0 xl:grid-cols-4">
           <StatCard
             title="Receitas"
             value={formatCurrency(animatedValues.receitas)}
@@ -274,7 +296,7 @@ export function Dashboard() {
             value={formatCurrency(animatedValues.despesas)}
             icon={TrendingDown}
             subtitle="vs mês anterior"
-            trend={8}
+            trend={-8}
           />
           <StatCard
             title="Saldo"
@@ -287,11 +309,12 @@ export function Dashboard() {
             value={formatCurrency(animatedValues.resultado)}
             icon={Zap}
             subtitle="Resultado do período"
+            className="lg:col-span-3 xl:col-span-1"
           />
         </div>
 
-        {/* Charts Section - Fluid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Monthly Chart - Larger, Prominent */}
           <FluidSection
             className="lg:col-span-2"
@@ -299,38 +322,41 @@ export function Dashboard() {
             subtitle="Evolução mensal"
             icon={BarChart3}
           >
-              <ResponsiveContainer width="100%" height={isMobile ? 200 : 280}>
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
-                  <XAxis 
-                    dataKey="name" 
-                    tick={{ fontSize: isMobile ? 10 : 12, fill: 'currentColor' }}
-                    angle={isMobile ? -45 : 0}
-                    textAnchor={isMobile ? 'end' : 'middle'}
-                    height={isMobile ? 60 : 30}
-                  />
-                  <YAxis tick={{ fontSize: isMobile ? 10 : 12, fill: 'currentColor' }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                      border: '1px solid rgba(0,0,0,0.1)',
-                      borderRadius: '12px'
-                    }}
-                  />
-                  <Bar dataKey="receitas" fill="url(#receitasGradient)" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="despesas" fill="url(#despesasGradient)" radius={[8, 8, 0, 0]} />
-                  <defs>
-                    <linearGradient id="receitasGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
-                      <stop offset="100%" stopColor="#059669" stopOpacity={0.8} />
-                    </linearGradient>
-                    <linearGradient id="despesasGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
-                      <stop offset="100%" stopColor="#dc2626" stopOpacity={0.8} />
-                    </linearGradient>
-                  </defs>
-                </BarChart>
-              </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={isMobile ? 180 : 260}>
+              <BarChart data={monthlyData} margin={{ top: 4, right: 4, left: isMobile ? -20 : 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 11, fill: 'currentColor' }}
+                  tickLine={false}
+                />
+                <YAxis tick={{ fontSize: 11, fill: 'currentColor' }} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.97)',
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: '10px',
+                    fontSize: '12px'
+                  }}
+                />
+                <Bar dataKey="receitas" name="Receitas" fill="url(#receitasGradient)" radius={[6, 6, 0, 0]} maxBarSize={32} />
+                <Bar dataKey="despesas" name="Despesas" fill="url(#despesasGradient)" radius={[6, 6, 0, 0]} maxBarSize={32} />
+                <defs>
+                  <linearGradient id="receitasGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#059669" stopOpacity={0.8} />
+                  </linearGradient>
+                  <linearGradient id="despesasGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#dc2626" stopOpacity={0.8} />
+                  </linearGradient>
+                </defs>
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex items-center gap-4 justify-center mt-1 pb-1">
+              <span className="flex items-center gap-1.5 text-xs text-gray-500"><span className="inline-block w-3 h-3 rounded-sm bg-emerald-500" />Receitas</span>
+              <span className="flex items-center gap-1.5 text-xs text-gray-500"><span className="inline-block w-3 h-3 rounded-sm bg-red-500" />Despesas</span>
+            </div>
           </FluidSection>
 
           {/* Category Distribution - Compact */}
@@ -339,317 +365,339 @@ export function Dashboard() {
             subtitle="Distribuição"
             icon={PieChartIcon}
           >
-              <ResponsiveContainer width="100%" height={isMobile ? 200 : 280}>
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={isMobile ? 70 : 100}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={isMobile ? false : ({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                      border: '1px solid rgba(0,0,0,0.1)',
-                      borderRadius: '12px'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={isMobile ? 160 : 220}>
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={isMobile ? 40 : 55}
+                  outerRadius={isMobile ? 70 : 90}
+                  fill="#8884d8"
+                  dataKey="value"
+                  paddingAngle={3}
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.97)',
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: '10px',
+                    fontSize: '12px'
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="space-y-1 px-1 pb-1">
+              {categoryData.map((entry) => (
+                <div key={entry.name} className="flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 truncate">
+                    <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: entry.color }} />
+                    {entry.name}
+                  </span>
+                  <span className="font-medium text-gray-700 dark:text-gray-300 ml-2 flex-shrink-0">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(entry.value)}
+                  </span>
+                </div>
+              ))}
+            </div>
           </FluidSection>
         </div>
 
         {/* Today's Commitments */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm p-6">
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold text-text-primary flex items-center gap-2">
-              <Clock className="w-5 h-5" />
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <h5 className="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2 text-sm">
+              <Clock className="w-4 h-4 text-amber-500" />
               Compromissos para hoje
-            </h2>
-            <p className="text-sm text-text-secondary mt-1">
-              {todayCommitments.length} compromisso(s) para hoje
-            </p>
+            </h5>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">{todayCommitments.length} item(s)</span>
+              <Button variant="ghost" size="sm" className="text-xs h-6 px-2 text-gray-500 hover:text-gray-700"
+                onClick={() => navigate('/transactions', { state: { filter: 'today' } })}>
+                Ver <ChevronRight className="w-3 h-3 ml-0.5" />
+              </Button>
+            </div>
           </div>
-          <div className="space-y-3">
+          <div className="p-3">
+            <div className="space-y-1.5">
             {todayCommitments.length > 0 ? (
-              todayCommitments.map((commitment, index) => (
-                <div 
+              todayCommitments.map((commitment) => (
+                <div
                   key={commitment.id}
-                  className="group/item flex items-center justify-between p-4 rounded-[var(--radius-lg)] bg-surface-elevated border border-border shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-all duration-140 cursor-pointer"
-                  onClick={() => navigate('/transactions')}
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-700 hover:bg-amber-50 dark:hover:bg-amber-900/10 hover:border-amber-200 dark:hover:border-amber-800/40 transition-colors cursor-pointer group"
+                  onClick={() => navigate('/transactions', { state: { search: commitment.description || commitment.name } })}
                 >
-                  <div className="flex items-center space-x-4 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0 bg-accent">
-                      <Clock className="w-5 h-5 text-white" />
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div className={cn(
+                      "w-6 h-6 rounded flex items-center justify-center flex-shrink-0",
+                      commitment.transaction_type_cd === 0 ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-rose-100 dark:bg-rose-900/30'
+                    )}>
+                      {commitment.transaction_type_cd === 0 ? (
+                        <ArrowUpRight className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                      ) : (
+                        <ArrowDownRight className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-text-primary truncate">
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
                         {commitment.description || commitment.name || 'Sem descrição'}
                       </p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <p className="text-sm text-text-secondary">
-                          {formatDate(commitment.due_date)}
-                        </p>
-                        {commitment.category && (
-                          <>
-                            <span className="text-gray-400">•</span>
-                            <p className="text-sm text-text-secondary">
-                              {commitment.category.name}
-                            </p>
-                          </>
-                        )}
-                      </div>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                        {commitment.category?.name || 'Sem categoria'}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3 ml-4">
-                    <p className={`text-lg font-semibold ${
-                      commitment.transaction_type_cd === 0 
-                        ? 'text-accent' 
-                        : 'text-danger'
-                    }`}>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <p className={cn(
+                      "text-xs font-semibold tabular-nums",
+                      commitment.transaction_type_cd === 0 ? 'text-emerald-600' : 'text-rose-600'
+                    )}>
                       {commitment.transaction_type_cd === 0 ? '+' : '-'}
                       {formatCurrency(commitment.amount_cents / 100)}
                     </p>
                     <Button
-                      variant={commitment.paid ? "default" : "secondary"}
+                      variant="ghost"
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleTogglePaidStatus(commitment)
-                      }}
-                      disabled={updateTransaction.isPending}
+                      onClick={(e) => { e.stopPropagation(); handleTogglePaidStatus(commitment) }}
+                      disabled={loadingTransactionId !== null}
                       className={cn(
-                        "flex items-center gap-2 whitespace-nowrap font-semibold shadow-md transition-all hover:scale-105",
-                        commitment.paid 
-                          ? "bg-green-500 hover:bg-green-600 text-white border-0 hover:shadow-lg" 
-                          : "bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-2 border-yellow-400 hover:border-yellow-500 dark:bg-yellow-900/20 dark:text-yellow-400 hover:shadow-lg"
+                        "h-6 w-6 p-0 rounded-full flex-shrink-0",
+                        commitment.paid
+                          ? "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                          : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                       )}
+                      title={commitment.paid ? 'Marcar como não pago' : 'Marcar como pago'}
                     >
-                      {updateTransaction.isPending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                      {loadingTransactionId === commitment.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : commitment.paid ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          Pago
-                        </>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
                       ) : (
-                        <>
-                          <Circle className="w-4 h-4" />
-                          Pendente
-                        </>
+                        <Circle className="w-3.5 h-3.5" />
                       )}
                     </Button>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 rounded-[var(--radius-lg)] bg-surface-elevated border border-border">
-                <p className="text-text-secondary">Nenhum compromisso previsto para hoje</p>
+              <div className="text-center py-5 rounded-lg bg-gray-50 dark:bg-gray-700/30">
+                <Clock className="w-5 h-5 text-gray-300 dark:text-gray-600 mx-auto mb-1" />
+                <p className="text-xs text-gray-400 dark:text-gray-500">Nenhum compromisso para hoje</p>
               </div>
             )}
+            </div>
           </div>
         </div>
 
         {/* Overdue Commitments */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm p-6">
-          <div className="mb-4">
-            <h2 className="text-xl font-semibold text-text-primary flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" />
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-rose-200 dark:border-rose-800/50 shadow-sm">
+          <div className="px-3 py-2 border-b border-rose-200 dark:border-rose-800/50 flex items-center justify-between bg-rose-50/50 dark:bg-rose-900/10 rounded-t-lg">
+            <h5 className="font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-2 text-sm">
+              <AlertCircle className="w-4 h-4" />
               Compromissos atrasados
-            </h2>
-            <p className="text-sm text-text-secondary mt-1">
-              {overdueCommitments.length} compromisso(s) em atraso
-            </p>
+              {overdueCommitments.length > 0 && (
+                <span className="bg-rose-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">
+                  {overdueCommitments.length}
+                </span>
+              )}
+            </h5>
+            <Button variant="ghost" size="sm" className="text-xs h-6 px-2 text-rose-500 hover:text-rose-700 hover:bg-rose-100/50"
+              onClick={() => navigate('/transactions', { state: { filter: 'overdue' } })}>
+              Ver <ChevronRight className="w-3 h-3 ml-0.5" />
+            </Button>
           </div>
-          <div className="space-y-3">
-            {overdueCommitments.length > 0 ? (
-              overdueCommitments.map((commitment, index) => (
-                <div 
+          <div className="p-3">
+            <div className="space-y-1.5">
+            {paginatedOverdueCommitments.length > 0 ? (
+              paginatedOverdueCommitments.map((commitment) => (
+                <div
                   key={commitment.id}
-                  className="group/item flex items-center justify-between p-4 rounded-[var(--radius-lg)] bg-surface-elevated border border-danger/30 hover:border-danger/50 transition-all duration-140 hover:shadow-[var(--shadow-md)] cursor-pointer"
-                  onClick={() => navigate('/transactions')}
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-rose-50/60 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-800/40 hover:bg-rose-100/60 dark:hover:bg-rose-900/20 transition-colors cursor-pointer"
+                  onClick={() => navigate('/transactions', { state: { search: commitment.description || commitment.name } })}
                 >
-                  <div className="flex items-center space-x-4 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0 bg-danger">
-                      <AlertCircle className="w-5 h-5 text-white" />
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-rose-100 dark:bg-rose-900/30">
+                      <AlertCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2">
-                        <p className="text-sm font-medium text-danger">
-                          {formatDate(commitment.due_date)}
-                        </p>
-                        <AlertCircle className="w-4 h-4 text-red-500" />
-                      </div>
-                      <p className="font-semibold text-gray-900 dark:text-white truncate mt-1">
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
                         {commitment.description || commitment.name || 'Sem descrição'}
                       </p>
-                      {commitment.category && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          {commitment.category.name}
-                        </p>
-                      )}
+                      <p className="text-xs text-rose-500 dark:text-rose-400 truncate">
+                        Venceu em {formatDate(commitment.due_date)}
+                        {commitment.category && ` · ${commitment.category.name}`}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3 ml-4">
-                    <p className={`text-lg font-semibold ${
-                      commitment.transaction_type_cd === 0 
-                        ? 'text-accent' 
-                        : 'text-danger'
-                    }`}>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <p className={cn(
+                      "text-xs font-semibold tabular-nums",
+                      commitment.transaction_type_cd === 0 ? 'text-emerald-600' : 'text-rose-600'
+                    )}>
                       {commitment.transaction_type_cd === 0 ? '+' : '-'}
                       {formatCurrency(commitment.amount_cents / 100)}
                     </p>
                     <Button
-                      variant={commitment.paid ? "default" : "secondary"}
+                      variant="ghost"
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleTogglePaidStatus(commitment)
-                      }}
-                      disabled={updateTransaction.isPending}
+                      onClick={(e) => { e.stopPropagation(); handleTogglePaidStatus(commitment) }}
+                      disabled={loadingTransactionId !== null}
                       className={cn(
-                        "flex items-center gap-2 whitespace-nowrap font-semibold shadow-md transition-all hover:scale-105",
-                        commitment.paid 
-                          ? "bg-green-500 hover:bg-green-600 text-white border-0 hover:shadow-lg" 
-                          : "bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-2 border-yellow-400 hover:border-yellow-500 dark:bg-yellow-900/20 dark:text-yellow-400 hover:shadow-lg"
+                        "h-6 w-6 p-0 rounded-full flex-shrink-0",
+                        commitment.paid
+                          ? "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                          : "text-rose-400 hover:text-rose-600 hover:bg-rose-50"
                       )}
+                      title={commitment.paid ? 'Marcar como não pago' : 'Marcar como pago'}
                     >
-                      {updateTransaction.isPending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                      {loadingTransactionId === commitment.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : commitment.paid ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          Pago
-                        </>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
                       ) : (
-                        <>
-                          <Circle className="w-4 h-4" />
-                          Pendente
-                        </>
+                        <Circle className="w-3.5 h-3.5" />
                       )}
                     </Button>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 rounded-[var(--radius-lg)] bg-surface-elevated border border-border">
-                <p className="text-text-secondary">Nenhum compromisso em atraso</p>
+              <div className="text-center py-5 rounded-lg bg-gray-50 dark:bg-gray-700/30">
+                <CheckCircle className="w-5 h-5 text-emerald-400 mx-auto mb-1" />
+                <p className="text-xs text-gray-400 dark:text-gray-500">Nenhum compromisso em atraso</p>
               </div>
             )}
+            {overdueCommitments.length > 0 && overdueTotalPages > 1 && (
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  {(overduePage - 1) * OVERDUE_PAGE_SIZE + 1}–{Math.min(overduePage * OVERDUE_PAGE_SIZE, overdueCommitments.length)} de {overdueCommitments.length}
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs"
+                    onClick={() => setOverduePage(p => p - 1)} disabled={overduePage === 1}>
+                    ‹
+                  </Button>
+                  <span className="text-xs text-gray-400 px-1">{overduePage}/{overdueTotalPages}</span>
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs"
+                    onClick={() => setOverduePage(p => p + 1)} disabled={overduePage === overdueTotalPages}>
+                    ›
+                  </Button>
+                </div>
+              </div>
+            )}
+            </div>
           </div>
         </div>
 
-        {/* Recent Transactions - Modern List */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-text-primary">Transações Recentes</h2>
-              <p className="text-sm text-text-secondary mt-1">Últimas movimentações</p>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="group/btn"
-              onClick={() => navigate('/transactions')}
-            >
-              Ver todas
-              <ChevronRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+        {/* Recent Transactions */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <h5 className="font-semibold text-gray-700 dark:text-gray-200 text-sm flex items-center gap-2">
+              <FileText className="w-4 h-4 text-gray-400" />
+              Transações Recentes
+            </h5>
+            <Button variant="ghost" size="sm" className="group/btn text-xs h-6 px-2 text-gray-500 hover:text-gray-700"
+              onClick={() => navigate('/transactions', { state: { filter: 'overdue' } })}>
+              Ver pendentes <ChevronRight className="w-3 h-3 ml-0.5 group-hover/btn:translate-x-0.5 transition-transform" />
             </Button>
           </div>
-          <div className="space-y-3">
-              {recentTransactions.length > 0 ? (
-                recentTransactions.map((transaction, index) => (
-                  <div 
-                    key={transaction.id} 
-                    className="group/item flex items-center justify-between p-4 rounded-[var(--radius-lg)] bg-surface-elevated border border-border shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-all duration-140 cursor-pointer"
-                    onClick={() => navigate('/transactions')}
-                    style={{ animationDelay: `${index * 50}ms` }}
+          <div className="p-3">
+            <div className="space-y-1.5">
+              {paginatedRecentTransactions.length > 0 ? (
+                paginatedRecentTransactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                    onClick={() => navigate('/transactions', { state: { search: transaction.description || transaction.name } })}
                   >
-                    <div className="flex items-center space-x-4 flex-1 min-w-0">
-                      <div className={`w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0 ${
-                        transaction.transaction_type_cd === 0 
-                          ? 'bg-accent' 
-                          : 'bg-danger'
-                      }`}>
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <div className={cn(
+                        "w-6 h-6 rounded flex items-center justify-center flex-shrink-0",
+                        transaction.transaction_type_cd === 0
+                          ? 'bg-emerald-100 dark:bg-emerald-900/30'
+                          : 'bg-rose-100 dark:bg-rose-900/30'
+                      )}>
                         {transaction.transaction_type_cd === 0 ? (
-                          <ArrowUpRight className="w-5 h-5 text-white" />
+                          <ArrowUpRight className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                         ) : (
-                          <ArrowDownRight className="w-5 h-5 text-white" />
+                          <ArrowDownRight className="w-3 h-3 text-rose-600 dark:text-rose-400" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-text-primary truncate">
+                        <p className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
                           {transaction.description || transaction.name || 'Sem descrição'}
                         </p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <p className="text-sm text-text-secondary">
-                            {transaction.category?.name || 'Sem categoria'}
-                          </p>
-                          <span className="text-gray-400">•</span>
-                          <p className="text-sm text-text-secondary">
-                            {formatDate(transaction.due_date)}
-                          </p>
-                        </div>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                          {transaction.category?.name || 'Sem categoria'} · {formatDate(transaction.due_date)}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-3 ml-4">
-                      <p className={`text-lg font-semibold ${
-                        transaction.transaction_type_cd === 0 
-                          ? 'text-accent' 
-                          : 'text-danger'
-                      }`}>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <p className={cn(
+                        "text-xs font-semibold tabular-nums",
+                        transaction.transaction_type_cd === 0 ? 'text-emerald-600' : 'text-rose-600'
+                      )}>
                         {transaction.transaction_type_cd === 0 ? '+' : '-'}
                         {formatCurrency(transaction.amount_cents / 100)}
                       </p>
                       <Button
-                        variant={transaction.paid ? "default" : "secondary"}
+                        variant="ghost"
                         size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleTogglePaidStatus(transaction)
-                        }}
-                        disabled={updateTransaction.isPending}
-                        className="flex items-center gap-2 whitespace-nowrap"
+                        onClick={(e) => { e.stopPropagation(); handleTogglePaidStatus(transaction) }}
+                        disabled={loadingTransactionId !== null}
+                        className={cn(
+                          "h-6 w-6 p-0 rounded-full flex-shrink-0",
+                          transaction.paid
+                            ? "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                            : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                        )}
+                        title={transaction.paid ? 'Marcar como não pago' : 'Marcar como pago'}
                       >
-                        {updateTransaction.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                        {loadingTransactionId === transaction.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : transaction.paid ? (
-                          <>
-                            <CheckCircle2 className="w-4 h-4" />
-                            Pago
-                          </>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
                         ) : (
-                          <>
-                            <Circle className="w-4 h-4" />
-                            Pendente
-                          </>
+                          <Circle className="w-3.5 h-3.5" />
                         )}
                       </Button>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 rounded-[var(--radius-lg)] bg-surface-elevated flex items-center justify-center mx-auto mb-4">
-                    <FileText className="w-8 h-8 text-text-secondary" />
-                  </div>
-                  <p className="text-text-secondary">Nenhuma transação recente</p>
+                <div className="text-center py-6">
+                  <FileText className="w-5 h-5 text-gray-300 dark:text-gray-600 mx-auto mb-1" />
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Nenhuma transação recente</p>
                 </div>
               )}
+              {recentTransactions.length > 0 && recentTotalPages > 1 && (
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    {(recentPage - 1) * RECENT_PAGE_SIZE + 1}–{Math.min(recentPage * RECENT_PAGE_SIZE, recentTransactions.length)} de {recentTransactions.length}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs"
+                      onClick={() => setRecentPage(p => p - 1)} disabled={recentPage === 1}>
+                      ‹
+                    </Button>
+                    <span className="text-xs text-gray-400 px-1">{recentPage}/{recentTotalPages}</span>
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs"
+                      onClick={() => setRecentPage(p => p + 1)} disabled={recentPage === recentTotalPages}>
+                      ›
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Quick Actions - Diagonal Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           <ActionCard
             title="Nova Transação"
             description="Adicionar receita ou despesa"
@@ -669,7 +717,6 @@ export function Dashboard() {
             onClick={() => navigate('/reports')}
           />
         </div>
-      </div>
     </div>
   )
 }

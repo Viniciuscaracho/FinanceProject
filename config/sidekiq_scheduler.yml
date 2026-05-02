@@ -14,3 +14,7 @@ fix_company_person_type:
     cron: '0 3 * * * America/Sao_Paulo'
     class: FixCompanyPersonTypeWorker
     enabled: false
+appointment_reminders:
+    cron: '0 * * * * America/Sao_Paulo'
+    class: AppointmentReminderJob
+    enabled: true

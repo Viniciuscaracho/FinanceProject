@@ -2,10 +2,38 @@
 
 module Api
   module V1
-    class AuthController < ApplicationController
-      skip_before_action :authenticate_user!, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :test_user, :debug_user, :test_logs, :create_test_user]
-      skip_before_action :set_current_account, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :test_user, :debug_user, :test_logs, :create_test_user]
+    class AuthController < Api::V1::ApplicationController
+      skip_before_action :authenticate_user!, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :test_user, :debug_user, :test_logs, :create_test_user, :register]
+      skip_before_action :set_current_account, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :test_user, :debug_user, :test_logs, :create_test_user, :register]
+      skip_before_action :create_or_refresh_session, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :test_user, :debug_user, :test_logs, :create_test_user, :register]
       before_action :set_user, only: [:me, :logout]
+      before_action :force_json_format
+      
+      # Garantir que sempre retornamos JSON, mesmo em caso de erro
+      rescue_from StandardError, with: :handle_error
+      
+      def force_json_format
+        request.format = :json
+      end
+      
+      def handle_error(exception)
+        Rails.logger.error "=== Erro em AuthController ==="
+        Rails.logger.error "Exception: #{exception.class.name}"
+        Rails.logger.error "Message: #{exception.message}"
+        Rails.logger.error "Backtrace:"
+        Rails.logger.error exception.backtrace.join("\n")
+        
+        # Verificar se já foi renderizado para evitar double render
+        return if performed?
+        
+        # Sempre retornar JSON, mesmo em desenvolvimento
+        render json: {
+          success: false,
+          error: "Erro interno do servidor: #{exception.message}",
+          message: exception.message,
+          details: Rails.env.development? ? exception.backtrace.first(10) : nil
+        }, status: :internal_server_error
+      end
 
       def login
         puts "=== REQUISIÇÃO CHEGOU NO BACKEND ==="
@@ -218,7 +246,22 @@ module Api
       end
 
       def me
-        render json: { user: user_data(@user) }
+        begin
+          unless @user
+            Rails.logger.error "Método me chamado sem @user definido"
+            return render json: { error: 'Usuário não encontrado' }, status: :unauthorized
+          end
+          
+          user_data_result = user_data(@user)
+          render json: { user: user_data_result }
+        rescue => e
+          Rails.logger.error "Erro no método me: #{e.class}: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
+          render json: { 
+            error: "Erro ao obter dados do usuário: #{e.message}",
+            details: Rails.env.development? ? e.backtrace.first(5) : nil
+          }, status: :internal_server_error
+        end
       end
 
       def logout
@@ -244,52 +287,69 @@ module Api
       end
 
       def login_simple
+        Rails.logger.info "=== login_simple chamado ==="
+        Rails.logger.info "Params: #{params.inspect}"
+        Rails.logger.info "Email: #{params[:email]}"
+        Rails.logger.info "Password presente: #{params[:password].present?}"
+        
+        user = User.find_by(email: params[:email])
+        Rails.logger.info "Usuário encontrado: #{user&.id}"
+        
+        unless user
+          Rails.logger.warn "Login falhou: usuário não encontrado para email: #{params[:email]}"
+          return render json: { 
+            success: false, 
+            error: 'Email ou senha inválidos' 
+          }, status: :unauthorized
+        end
+        
+        # Verificar se o usuário foi criado via OAuth
+        if user.provider.present?
+          Rails.logger.warn "Login falhou: usuário OAuth tentando login tradicional - email: #{params[:email]}, provider: #{user.provider}"
+          return render json: { 
+            success: false, 
+            error: 'Este usuário foi criado via autenticação social. Use o login via ' + user.provider.capitalize + ' ou redefina sua senha.',
+            oauth_user: true,
+            provider: user.provider
+          }, status: :unauthorized
+        end
+        
+        Rails.logger.info "Verificando senha..."
+        unless user.valid_password?(params[:password])
+          Rails.logger.warn "Login falhou: senha inválida para email: #{params[:email]}"
+          return render json: { 
+            success: false, 
+            error: 'Email ou senha inválidos' 
+          }, status: :unauthorized
+        end
+        
         begin
-          user = User.find_by(email: params[:email])
-          
-          unless user
-            Rails.logger.warn "Login falhou: usuário não encontrado para email: #{params[:email]}"
-            return render json: { 
-              success: false, 
-              error: 'Email ou senha inválidos' 
-            }, status: :unauthorized
-          end
-          
-          # Verificar se o usuário foi criado via OAuth
-          if user.provider.present?
-            Rails.logger.warn "Login falhou: usuário OAuth tentando login tradicional - email: #{params[:email]}, provider: #{user.provider}"
-            return render json: { 
-              success: false, 
-              error: 'Este usuário foi criado via autenticação social. Use o login via ' + user.provider.capitalize + ' ou redefina sua senha.',
-              oauth_user: true,
-              provider: user.provider
-            }, status: :unauthorized
-          end
-          
-          unless user.valid_password?(params[:password])
-            Rails.logger.warn "Login falhou: senha inválida para email: #{params[:email]}"
-            return render json: { 
-              success: false, 
-              error: 'Email ou senha inválidos' 
-            }, status: :unauthorized
-          end
-          
+          Rails.logger.info "Senha válida, gerando dados do usuário..."
           # Gerar dados do usuário e token
           user_data_result = user_data(user)
-          token = generate_token(user)
+          Rails.logger.info "user_data gerado com sucesso"
           
+          token = generate_token(user)
+          Rails.logger.info "Token gerado com sucesso"
+          
+          Rails.logger.info "Login bem-sucedido para usuário ID: #{user.id}"
           render json: {
             success: true,
             user: user_data_result,
             token: token
           }
         rescue => e
-          Rails.logger.error "Erro no login_simple: #{e.class}: #{e.message}"
+          Rails.logger.error "Erro ao processar login: #{e.class}: #{e.message}"
           Rails.logger.error e.backtrace.join("\n")
-          render json: { 
-            success: false, 
-            error: 'Erro interno do servidor',
-            message: e.message
+          
+          # Verificar se já foi renderizado para evitar double render
+          return if performed?
+          
+          render json: {
+            success: false,
+            error: 'Erro ao processar login',
+            message: e.message,
+            details: Rails.env.development? ? e.backtrace.first(5) : nil
           }, status: :internal_server_error
         end
       end
@@ -335,6 +395,63 @@ module Api
         puts "Timestamp: #{Time.current}"
         
         render json: { message: "Logs funcionando", timestamp: Time.current }
+      end
+
+      def register
+        email = params[:email].to_s.strip.downcase
+        password = params[:password].to_s
+        full_name = params[:name].to_s.strip
+        account_name = params[:account_name].to_s.strip.presence || full_name
+
+        if email.blank? || password.blank? || full_name.blank?
+          return render json: { success: false, error: 'Preencha todos os campos obrigatórios' }, status: :unprocessable_entity
+        end
+
+        if User.exists?(email: email)
+          return render json: { success: false, error: 'Este e-mail já está cadastrado' }, status: :unprocessable_entity
+        end
+
+        name_parts = full_name.split(' ', 2)
+        first_name = name_parts[0]
+        last_name = name_parts[1].to_s
+
+        if first_name.length < 3
+          return render json: { success: false, error: 'Nome deve ter pelo menos 3 caracteres' }, status: :unprocessable_entity
+        end
+
+        ActiveRecord::Base.transaction do
+          user = User.new(
+            email: email,
+            password: password,
+            password_confirmation: password,
+            first_name: first_name,
+            last_name: last_name,
+            accepted_terms_at: Time.current,
+            accepted_privacy_at: Time.current
+          )
+          user.skip_confirmation!
+          user.save!
+
+          # O callback create_default_account_if_needed já criou a conta — apenas atualiza o nome
+          account = user.account
+          if account&.company && account_name.present?
+            account.company.update_columns(first_name: account_name, last_name: nil)
+          end
+
+          Current.user = user
+          Current.account = account
+
+          render json: {
+            success: true,
+            user: user_data(user),
+            token: generate_token(user)
+          }
+        end
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { success: false, error: e.record.errors.full_messages.first || 'Erro ao criar conta' }, status: :unprocessable_entity
+      rescue => e
+        Rails.logger.error "Erro em register: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
+        render json: { success: false, error: 'Erro interno ao criar conta' }, status: :internal_server_error
       end
 
       def create_test_user
@@ -400,11 +517,24 @@ module Api
           # Tentar obter a conta do usuário
           account = nil
           begin
-            account = Current.account || user.account || user.accounts.first
-            Current.account = account if account && Current.account != account
+            # Tentar obter conta em ordem de prioridade
+            if Current.account.present?
+              account = Current.account
+            elsif user.account.present?
+              account = user.account
+            elsif user.accounts.any?
+              account = user.accounts.first
+            end
+            
+            # Definir Current.account se encontrada
+            if account.present? && Current.account != account
+              Current.account = account
+            end
           rescue => e
-            Rails.logger.warn "Erro ao obter conta do usuário: #{e.message}"
+            Rails.logger.warn "Erro ao obter conta do usuário: #{e.class}: #{e.message}"
+            Rails.logger.warn e.backtrace.first(3).join("\n")
             # Continuar sem conta se houver erro
+            account = nil
           end
           
           # Verificar se o usuário é admin da conta ou dono

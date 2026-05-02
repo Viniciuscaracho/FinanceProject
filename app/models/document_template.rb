@@ -2,16 +2,21 @@
 #
 # Table name: document_templates
 #
-#  id                  :bigint           not null, primary key
-#  content             :text
-#  default             :boolean          default(FALSE)
-#  description         :text
-#  name                :string           not null
-#  transaction_type_cd :integer
-#  type                :string
-#  created_at          :datetime         not null
-#  updated_at          :datetime         not null
-#  account_id          :bigint           not null
+#  id                                                                                  :bigint           not null, primary key
+#  content                                                                             :text
+#  default                                                                             :boolean          default(FALSE)
+#  description                                                                         :text
+#  enable_sessions                                                                     :boolean          default(FALSE), not null
+#  name                                                                                :string           not null
+#  professional_type(Tipo de profissional (psicólogo, professor, nutricionista, etc.)) :string
+#  session_count                                                                       :integer
+#  session_number                                                                      :integer
+#  session_type                                                                        :string
+#  transaction_type_cd                                                                 :integer
+#  type                                                                                :string
+#  created_at                                                                          :datetime         not null
+#  updated_at                                                                          :datetime         not null
+#  account_id                                                                          :bigint           not null
 #
 # Indexes
 #
@@ -24,6 +29,20 @@
 #
 class DocumentTemplate < ApplicationRecord
   validates :name, presence: true
+
+  # Tipos de profissionais suportados
+  PROFESSIONAL_TYPES = {
+    'psicologo' => 'Psicólogo',
+    'professor' => 'Professor',
+    'nutricionista' => 'Nutricionista',
+    'fisioterapeuta' => 'Fisioterapeuta',
+    'medico' => 'Médico',
+    'dentista' => 'Dentista',
+    'personal_trainer' => 'Personal Trainer',
+    'coach' => 'Coach',
+    'terapeuta' => 'Terapeuta',
+    'outro' => 'Outro'
+  }.freeze
 
   has_settings do |s|
     s.key :receipt, defaults: {
@@ -48,5 +67,9 @@ class DocumentTemplate < ApplicationRecord
 
   def self.subclasses
     Object.singleton_class.instance_method(:subclasses).bind(self).call
+  end
+
+  def professional_type_label
+    PROFESSIONAL_TYPES[professional_type] || professional_type&.humanize || 'Não especificado'
   end
 end

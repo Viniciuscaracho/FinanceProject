@@ -1,0 +1,675 @@
+openapi: 3.0.1
+info:
+  title: Barber Management API
+  version: v1
+  description: API para gerenciamento de barbearia — agendamentos, transações financeiras e links públicos.
+  contact:
+    name: Equipe Barber Management
+servers:
+  - url: /api/v1
+    description: API v1
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Token
+  schemas:
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        role:
+          type: string
+        account_id:
+          type: integer
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        description:
+          type: string
+        amount:
+          type: number
+          format: float
+        kind:
+          type: string
+          enum: [income, expense]
+        status:
+          type: string
+          enum: [pending, paid, cancelled]
+        due_date:
+          type: string
+          format: date
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true
+        category_id:
+          type: integer
+          nullable: true
+        contact_id:
+          type: integer
+          nullable: true
+        bank_account_id:
+          type: integer
+          nullable: true
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: integer
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [scheduled, completed, cancelled, no_show]
+        notes:
+          type: string
+          nullable: true
+        service_id:
+          type: integer
+        professional_id:
+          type: integer
+        client_name:
+          type: string
+        client_phone:
+          type: string
+          nullable: true
+    AppointmentLink:
+      type: object
+      properties:
+        id:
+          type: integer
+        token:
+          type: string
+        name:
+          type: string
+        active:
+          type: boolean
+        booking_url:
+          type: string
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Criar nova conta
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                  example: João Silva
+                account_name:
+                  type: string
+                  example: Barbearia do João
+                email:
+                  type: string
+                  format: email
+                  example: joao@exemplo.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+      responses:
+        '201':
+          description: Conta criada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+        '422':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login_simple:
+    post:
+      tags: [Auth]
+      summary: Login com email e senha
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Encerrar sessão
+      responses:
+        '200':
+          description: Logout realizado
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Dados do usuário autenticado
+      responses:
+        '200':
+          description: Dados do usuário
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Não autenticado
+
+  /transactions:
+    get:
+      tags: [Transactions]
+      summary: Listar transações
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: kind
+          in: query
+          schema:
+            type: string
+            enum: [income, expense]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, paid, cancelled]
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: q
+          in: query
+          description: Busca por descrição
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de transações
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      per_page:
+                        type: integer
+
+    post:
+      tags: [Transactions]
+      summary: Criar transação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [description, amount, kind, due_date]
+              properties:
+                description:
+                  type: string
+                amount:
+                  type: number
+                kind:
+                  type: string
+                  enum: [income, expense]
+                due_date:
+                  type: string
+                  format: date
+                status:
+                  type: string
+                  enum: [pending, paid, cancelled]
+                category_id:
+                  type: integer
+                contact_id:
+                  type: integer
+                bank_account_id:
+                  type: integer
+      responses:
+        '201':
+          description: Transação criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '422':
+          description: Dados inválidos
+
+  /transactions/{id}:
+    get:
+      tags: [Transactions]
+      summary: Buscar transação por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Transação encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Não encontrada
+
+    patch:
+      tags: [Transactions]
+      summary: Atualizar transação
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+      responses:
+        '200':
+          description: Atualizada com sucesso
+        '422':
+          description: Dados inválidos
+
+    delete:
+      tags: [Transactions]
+      summary: Excluir transação
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Excluída com sucesso
+
+  /appointments:
+    get:
+      tags: [Appointments]
+      summary: Listar agendamentos
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [scheduled, completed, cancelled, no_show]
+        - name: professional_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de agendamentos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Appointment'
+
+    post:
+      tags: [Appointments]
+      summary: Criar agendamento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [starts_at, service_id, professional_id, client_name]
+              properties:
+                starts_at:
+                  type: string
+                  format: date-time
+                service_id:
+                  type: integer
+                professional_id:
+                  type: integer
+                client_name:
+                  type: string
+                client_phone:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Agendamento criado
+        '422':
+          description: Dados inválidos
+
+  /appointments/{id}:
+    get:
+      tags: [Appointments]
+      summary: Buscar agendamento por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Agendamento encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+        '404':
+          description: Não encontrado
+
+    patch:
+      tags: [Appointments]
+      summary: Atualizar agendamento
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Appointment'
+      responses:
+        '200':
+          description: Atualizado com sucesso
+
+    delete:
+      tags: [Appointments]
+      summary: Cancelar agendamento
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Cancelado com sucesso
+
+  /appointment_links:
+    get:
+      tags: [Appointment Links]
+      summary: Listar links de agendamento público
+      responses:
+        '200':
+          description: Lista de links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AppointmentLink'
+
+    post:
+      tags: [Appointment Links]
+      summary: Criar link de agendamento público
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                active:
+                  type: boolean
+                  default: true
+      responses:
+        '201':
+          description: Link criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentLink'
+
+  /appointment_links/{id}:
+    patch:
+      tags: [Appointment Links]
+      summary: Atualizar link de agendamento
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                active:
+                  type: boolean
+      responses:
+        '200':
+          description: Atualizado com sucesso
+
+    delete:
+      tags: [Appointment Links]
+      summary: Excluir link de agendamento
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Excluído com sucesso
+
+  /public/appointment_data/{token}/services:
+    get:
+      tags: [Public Booking]
+      summary: Listar serviços disponíveis para agendamento público
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de serviços
+        '404':
+          description: Link inválido ou inativo
+
+  /public/appointment_data/{token}/professionals:
+    get:
+      tags: [Public Booking]
+      summary: Listar profissionais disponíveis
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: service_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de profissionais
+
+  /public/appointment_data/{token}/available_slots:
+    get:
+      tags: [Public Booking]
+      summary: Horários disponíveis para agendamento
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: professional_id
+          in: query
+          schema:
+            type: integer
+        - name: service_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de horários disponíveis
+
+  /bank_accounts:
+    get:
+      tags: [Bank Accounts]
+      summary: Listar contas bancárias
+      responses:
+        '200':
+          description: Lista de contas
+    post:
+      tags: [Bank Accounts]
+      summary: Criar conta bancária
+      responses:
+        '201':
+          description: Conta criada
+
+  /bank_accounts/balance:
+    get:
+      tags: [Bank Accounts]
+      summary: Saldo consolidado de todas as contas
+      responses:
+        '200':
+          description: Saldo consolidado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: number
+                  income:
+                    type: number
+                  expense:
+                    type: number

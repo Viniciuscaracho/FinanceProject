@@ -44,6 +44,7 @@
 #
 # Indexes
 #
+#  index_transactions_on_account_due_date                    (account_id,due_date)
 #  index_transactions_on_account_id                          (account_id)
 #  index_transactions_on_account_id_and_category_id          (account_id,category_id)
 #  index_transactions_on_account_id_and_contact_id           (account_id,contact_id)
@@ -51,6 +52,7 @@
 #  index_transactions_on_account_id_and_due_date             (account_id,due_date DESC)
 #  index_transactions_on_account_id_and_id                   (account_id,id DESC)
 #  index_transactions_on_account_id_and_transaction_type_cd  (account_id,transaction_type_cd)
+#  index_transactions_on_account_paid                        (account_id,paid)
 #  index_transactions_on_appointment_id                      (appointment_id)
 #  index_transactions_on_bank_acccount_balance               (paid DESC,kind_cd,transaction_type_cd,account_id,bank_account_id)
 #  index_transactions_on_bank_account_id                     (bank_account_id)
