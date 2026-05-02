@@ -40,10 +40,10 @@ export function LandingPage() {
 
   // SEO e Metadados
   useEffect(() => {
-    document.title = "BarberManagement | Gestão Completa para sua Barbearia"
+    document.title = "Orbi | Gestão de Agenda para Profissionais"
     const metaDescription = document.querySelector('meta[name="description"]')
     if (metaDescription) {
-      metaDescription.setAttribute("content", "Aumente os lucros da sua barbearia com gestão financeira, agendamento online e controle de comissões. Teste nosso simulador gratuito.")
+      metaDescription.setAttribute("content", "Agenda inteligente, controle financeiro e gestão de comissões para advogados, professores de idiomas e personal trainers. Teste grátis por 14 dias.")
     }
   }, [])
 
@@ -67,16 +67,16 @@ export function LandingPage() {
   ]
 
   const categoryData = [
-    { name: 'Cortes', value: 45, color: '#3F5B8A' },
-    { name: 'Barba', value: 30, color: '#5B7AA8' },
-    { name: 'Produtos', value: 15, color: '#7A9D96' },
-    { name: 'Outros', value: 10, color: '#D4A574' },
+    { name: 'Consultas', value: 45, color: '#3F5B8A' },
+    { name: 'Aulas',     value: 30, color: '#5B7AA8' },
+    { name: 'Treinos',   value: 15, color: '#7A9D96' },
+    { name: 'Outros',    value: 10, color: '#D4A574' },
   ]
 
   const commissionData = [
-    { name: 'João', comissao: 1250, servicos: 28, percentual: '30%' },
-    { name: 'Maria', comissao: 980, servicos: 22, percentual: '30%' },
-    { name: 'Pedro', comissao: 1450, servicos: 35, percentual: '30%' },
+    { name: 'Ana',    comissao: 1250, servicos: 28, percentual: '40%' },
+    { name: 'Carlos', comissao: 980,  servicos: 22, percentual: '35%' },
+    { name: 'Bianca', comissao: 1450, servicos: 35, percentual: '50%' },
   ]
 
   return (
@@ -91,7 +91,7 @@ export function LandingPage() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-            BarberManagement
+            Orbi
           </span>
           <a
             href="#signup"
@@ -109,14 +109,13 @@ export function LandingPage() {
           {/* LEFT */}
           <div className="text-center lg:text-left space-y-8">
             <h1 className="text-4xl lg:text-6xl font-bold text-[#1A1C1E] leading-tight tracking-tight">
-              Controle seu dinheiro,
+              Sua agenda organizada,
               <br className="hidden sm:block" />
-              <span className="text-[#3F5B8A]"> sem planilhas e complicação</span>
+              <span className="text-[#3F5B8A]"> suas finanças no controle</span>
             </h1>
 
             <p className="text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              Simule ganhos, preveja gastos e visualize seu futuro financeiro 
-              com nossa ferramenta profissional. <span className="text-[#1A1C1E] font-semibold">Simples, rápido e eficiente.</span>
+              Para advogados, professores de idiomas e personal trainers que querem parar de perder tempo com planilhas. <span className="text-[#1A1C1E] font-semibold">Simples, rápido e feito para você.</span>
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
@@ -266,12 +265,12 @@ export function LandingPage() {
 
               <div className="space-y-3 flex-1">
                 {[
-                  { time: '09:00', client: 'João Silva', service: 'Corte + Barba', price: 'R$ 85', status: 'done' },
-                  { time: '10:30', client: 'Marcos Oliveira', service: 'Corte Social', price: 'R$ 50', status: 'done' },
-                  { time: '14:00', client: 'Ricardo Alves', service: 'Degradê', price: 'R$ 45', status: 'current' },
-                  { time: '15:15', client: 'Lucas Penteado', service: 'Barba Terapia', price: 'R$ 40', status: 'pending' },
-                  { time: '16:30', client: 'André Souza', service: 'Corte Infantil', price: 'R$ 40', status: 'pending' },
-                  { time: '17:45', client: 'Gabriel Lima', service: 'Luzes', price: 'R$ 120', status: 'pending' },
+                  { time: '08:00', client: 'Fernanda Costa', service: 'Aula de Inglês', price: 'R$ 120', status: 'done' },
+                  { time: '09:30', client: 'Rafael Mendes', service: 'Consultoria Jurídica', price: 'R$ 350', status: 'done' },
+                  { time: '11:00', client: 'Patrícia Lima', service: 'Treino Funcional', price: 'R$ 90', status: 'current' },
+                  { time: '14:00', client: 'Bruno Alves', service: 'Aula de Espanhol', price: 'R$ 110', status: 'pending' },
+                  { time: '15:30', client: 'Camila Torres', service: 'Avaliação Física', price: 'R$ 150', status: 'pending' },
+                  { time: '17:00', client: 'Diego Souza', service: 'Contrato Imobiliário', price: 'R$ 480', status: 'pending' },
                 ].map((apt, i) => (
                   <div 
                     key={apt.client} 
@@ -441,27 +440,27 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-3 tracking-tight">O que dizem nossos parceiros</h2>
-            <p className="text-base text-neutral-600">Histórias reais de quem transformou a gestão da barbearia</p>
+            <p className="text-base text-neutral-600">Histórias reais de quem transformou a gestão do seu trabalho</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                name: "Ricardo Santos",
-                role: "Barbearia Classic",
-                text: "O sistema mudou minha vida. Antes eu perdia horas calculando comissões, agora é tudo automático. Meus barbeiros amam a transparência.",
+                name: "Dra. Mariana Fonseca",
+                role: "Advogada — Direito de Família",
+                text: "Antes eu controlava honorários e comissões da minha sócia em planilha. Agora tudo é automático. Economizo 3 horas por semana só no fechamento do mês.",
                 rating: 5
               },
               {
-                name: "Felipe Melo",
-                role: "Barber Shop Elite",
-                text: "O simulador gratuito me convenceu. Vi que o sistema era sério e decidi assinar. O agendamento online reduziu faltas em 40%.",
+                name: "Felipe Andrade",
+                role: "Professor de Inglês e Espanhol",
+                text: "O link de agendamento que envio para os alunos mudou tudo. Praticamente zerei as faltas sem aviso. O controle de recebimentos ficou muito mais simples.",
                 rating: 5
               },
               {
-                name: "Bruno Oliveira",
-                role: "Studio B",
-                text: "Design limpo e muito fácil de usar. Meus clientes elogiam muito a facilidade de agendar pelo link. Recomendo para qualquer barbeiro.",
+                name: "Camila Rocha",
+                role: "Personal Trainer",
+                text: "Consigo ver minha agenda da semana, controlar o que cada aluno me deve e ainda acompanhar minhas metas financeiras. É tudo que eu precisava num lugar só.",
                 rating: 5
               }
             ].map((testimonial, i) => (
@@ -536,10 +535,10 @@ export function LandingPage() {
               viewport={{ once: true }}
             >
               <h2 className="text-3xl sm:text-4xl font-bold mb-5 tracking-tight text-neutral-900 leading-[1.1]">
-                Pronto para transformar sua barbearia?
+                Pronto para organizar sua agenda profissional?
               </h2>
               <p className="text-base text-neutral-600 mb-8 max-w-md">
-                Junte-se a centenas de barbeiros que já simplificaram sua gestão e aumentaram seus lucros.
+                Junte-se a advogados, professores e personal trainers que já simplificaram sua gestão e aumentaram seus lucros.
               </p>
               
               <div className="space-y-3.5">
@@ -614,9 +613,9 @@ export function LandingPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           <div className="space-y-6">
-            <h3 className="text-lg font-bold tracking-tight">BarberManagement</h3>
+            <h3 className="text-lg font-bold tracking-tight">Orbi</h3>
             <p className="text-neutral-500 text-sm leading-relaxed max-w-xs">
-              A solução definitiva para gestão de barbearias. Simplificamos sua rotina para você focar no seu talento.
+              A plataforma de gestão para profissionais independentes. Simplifique sua rotina e foque no que você faz de melhor.
             </p>
             <div className="flex gap-3">
               <a href="#" className="p-2 bg-neutral-50 border border-neutral-100 rounded-lg hover:bg-neutral-100 transition-colors text-neutral-400 hover:text-neutral-900" aria-label="Instagram">
@@ -656,7 +655,7 @@ export function LandingPage() {
             <ul className="space-y-4 text-sm text-neutral-500">
               <li className="flex items-center gap-3">
                 <Mail className="size-4 text-neutral-400" />
-                <span>suporte@barbermanagement.com</span>
+                <span>suporte@orbi.app</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="size-4 text-neutral-400" />
@@ -672,7 +671,7 @@ export function LandingPage() {
 
         <div className="pt-10 border-t border-neutral-100 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-neutral-500 text-[10px] font-bold uppercase tracking-widest">
-            © 2025 BarberManagement. Todos os direitos reservados.
+            © 2025 Orbi. Todos os direitos reservados.
           </p>
           <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-neutral-400">
             <a href="#" className="hover:text-neutral-900 transition-colors">Segurança</a>

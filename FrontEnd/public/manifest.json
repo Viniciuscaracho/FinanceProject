@@ -1,7 +1,7 @@
 {
-  "name": "BarberManagement - Controle Financeiro",
-  "short_name": "BarberManagement",
-  "description": "Sistema de gestão financeira para barbearias",
+  "name": "Orbi — Gestão para Profissionais",
+  "short_name": "Orbi",
+  "description": "Agenda e gestão financeira para advogados, professores de idiomas e personal trainers",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -32,4 +32,3 @@
     }
   ]
 }
-

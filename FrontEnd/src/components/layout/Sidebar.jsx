@@ -221,14 +221,14 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen
                 isDarkMode ? "text-gray-100" : "text-gray-900",
                 "truncate"
               )}>
-                BarberManagement
+                Orbi
               </span>
               <p className={cn(
                 "text-[10px] leading-tight mt-0.5",
                 isDarkMode ? "text-gray-400" : "text-gray-500",
                 "truncate"
               )}>
-                Controle Financeiro
+                Gestão Profissional
               </p>
             </div>
           </div>

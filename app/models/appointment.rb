@@ -20,6 +20,7 @@
 #  updated_at                :datetime         not null
 #  account_id                :bigint           not null
 #  account_user_id           :bigint           not null
+#  appointment_link_id       :bigint
 #  contact_id                :bigint
 #  google_calendar_event_id  :string
 #  parent_appointment_id     :bigint
@@ -33,6 +34,7 @@
 #  index_appointments_on_account_professional_status_time  (account_id,account_user_id,status,start_time)
 #  index_appointments_on_account_time_status               (account_id,start_time,status)
 #  index_appointments_on_account_user_id                   (account_user_id)
+#  index_appointments_on_appointment_link_id               (appointment_link_id)
 #  index_appointments_on_contact_id                        (contact_id)
 #  index_appointments_on_google_calendar_event_id          (google_calendar_event_id)
 #  index_appointments_on_parent_appointment_id             (parent_appointment_id)
@@ -45,33 +47,29 @@
 #
 #  fk_rails_...  (account_id => accounts.id)
 #  fk_rails_...  (account_user_id => account_users.id)
+#  fk_rails_...  (appointment_link_id => appointment_links.id) ON DELETE => nullify
 #  fk_rails_...  (contact_id => people.id)
 #  fk_rails_...  (parent_appointment_id => appointments.id) ON DELETE => nullify
 #  fk_rails_...  (service_id => offers.id)
 #
 class Appointment < ApplicationRecord
-  # Note: Discardable não está disponível pois a tabela não tem discarded_at
-  # include Discardable
-
   include Attachable
 
   acts_as_tenant :account
 
-  # Status do agendamento
   APPOINTMENT_STATUS = {
-    pending: 0,      # Pré-agendado, aguardando pagamento
-    confirmed: 1,   # Confirmado após pagamento
-    completed: 2,   # Serviço realizado
-    canceled: 3,    # Cancelado
-    no_show: 4      # Cliente não compareceu
+    pending: 0,
+    confirmed: 1,
+    completed: 2,
+    canceled: 3,
+    no_show: 4
   }.freeze
 
-  # Status do pagamento
   PAYMENT_STATUS = {
-    pending: 0,     # Aguardando pagamento
-    paid: 1,        # Pago
-    failed: 2,      # Falhou
-    refunded: 3     # Reembolsado
+    pending: 0,
+    paid: 1,
+    failed: 2,
+    refunded: 3
   }.freeze
 
   as_enum :status, APPOINTMENT_STATUS, source: :status
@@ -79,10 +77,11 @@ class Appointment < ApplicationRecord
 
   monetize :price_cents, with_model_currency: :price_currency
 
-  belongs_to :account_user # Profissional (cabeleireiro)
+  belongs_to :account_user
   belongs_to :service
-  belongs_to :contact, optional: true # Cliente (se já existir no sistema)
+  belongs_to :contact, optional: true
   belongs_to :parent_appointment, optional: true, class_name: 'Appointment', foreign_key: 'parent_appointment_id'
+  belongs_to :appointment_link, optional: true
 
   has_many :appointment_commissions, dependent: :destroy
   has_many :recurring_appointments, class_name: 'Appointment', foreign_key: 'parent_appointment_id', dependent: :nullify
@@ -111,17 +110,15 @@ class Appointment < ApplicationRecord
   before_create :calculate_end_time_if_missing
   after_update :sync_transaction_on_payment_status_change
   after_update :sync_transaction_on_status_change
+  after_update :send_whatsapp_on_confirmation
   after_create :create_audit_transaction_if_unpaid
   after_create :schedule_google_calendar_sync
   after_update :schedule_google_calendar_sync_on_change
 
   def confirm_payment!
-    update!(
-      status: :confirmed,
-      payment_status: :paid
-    )
+    update!(status: :confirmed, payment_status: :paid)
     create_commissions
-    create_transaction
+    create_paid_transaction
   end
 
   def cancel!
@@ -271,18 +268,22 @@ class Appointment < ApplicationRecord
     errors.add(:end_time, 'deve ser após o horário de início') if end_time <= start_time
   end
 
+  # Pending appointments older than this window are treated as abandoned (payment never completed).
+  PENDING_PAYMENT_WINDOW = 30.minutes
+
   def no_overlapping_appointments
-    return unless start_time && end_time && account_user_id
+    return unless start_time && end_time && account_user_id && account_id
 
     overlapping = Appointment
+                  .where(account_id: account_id)
                   .where(account_user_id: account_user_id)
                   .where.not(id: id)
                   .where.not(status: [APPOINTMENT_STATUS[:canceled], APPOINTMENT_STATUS[:no_show]])
                   .where(
-                    '(start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?)',
-                    end_time, start_time,
-                    start_time, end_time
+                    'NOT (status = ? AND created_at < ?)',
+                    APPOINTMENT_STATUS[:pending], PENDING_PAYMENT_WINDOW.ago
                   )
+                  .where('start_time < ? AND end_time > ?', end_time, start_time)
                   .exists?
 
     errors.add(:base, 'Já existe um agendamento neste horário para este profissional') if overlapping
@@ -381,20 +382,15 @@ class Appointment < ApplicationRecord
   end
 
   def ensure_contact_from_whatsapp
-    # Criar contato automaticamente se não existir contact_id mas houver whatsapp_number
     return if contact_id.present? || whatsapp_number.blank?
-    return unless account.present? # Garantir que account está disponível
+    return unless account.present?
 
     normalized_number = whatsapp_number.gsub(/\D/, '')
     return if normalized_number.blank?
 
-    # Buscar contato existente por número de telefone
-    # Primeiro tenta buscar diretamente pelo número normalizado
     contact = account.contacts.find_by(cell_phone_number: normalized_number) ||
               account.contacts.find_by(phone_number: normalized_number)
 
-    # Se não encontrar, buscar em memória comparando números normalizados
-    # (para casos onde o número pode estar formatado de forma diferente)
     if contact.nil?
       account.contacts.find_each do |c|
         cell_normalized = (c.cell_phone_number || '').gsub(/\D/, '')
@@ -406,78 +402,58 @@ class Appointment < ApplicationRecord
       end
     end
 
-    # Criar novo contato se não existir
     if contact.nil?
-      # Garantir que o nome tenha pelo menos 2 caracteres (validação do Person)
-      contact_name = whatsapp_number.present? ? "Cliente #{whatsapp_number}" : "Cliente"
-      # Limitar a 200 caracteres e garantir mínimo de 2
+      contact_name = "Cliente #{whatsapp_number}"
       contact_name = contact_name[0..199] if contact_name.length > 200
       contact_name = "Cliente" if contact_name.length < 2
-      
+
       contact = account.contacts.build(
         first_name: contact_name,
         cell_phone_number: normalized_number,
         contact_type_cd: Contact::CONTACT_TYPES[:customer],
-        account_id: account.id # Garantir que account_id está definido
+        account_id: account.id
       )
-      
+
       unless contact.save
-        error_messages = contact.errors.full_messages.join(', ')
-        Rails.logger.error "Failed to create contact for appointment: #{error_messages}"
-        Rails.logger.error "Contact attributes: #{contact.attributes.inspect}"
-        Rails.logger.error "Contact errors: #{contact.errors.inspect}"
-        Rails.logger.error "Account: #{account.inspect}"
-        errors.add(:base, "Não foi possível criar o contato: #{error_messages}")
-        return false # Retornar false para interromper a validação
+        errors.add(:base, "Não foi possível criar o contato: #{contact.errors.full_messages.join(', ')}")
+        return false
       end
     end
 
     self.contact_id = contact.id
-    true # Retornar true para continuar a validação
+    true
   end
 
   def create_contact_from_whatsapp
-    # Método legado mantido para compatibilidade
-    # Garante que o contato existe e retorna ele
     ensure_contact_from_whatsapp unless contact_id.present?
     contact
   end
 
-  # Callback para criar/atualizar transação quando payment_status mudar para paid
   def sync_transaction_on_payment_status_change
     return unless payment_status_changed?
-    
-    # Verificar se mudou para paid (pode ser símbolo ou string)
+
     is_paid = payment_status == :paid || payment_status == 'paid' || payment_status == PAYMENT_STATUS[:paid]
     return unless is_paid
 
-    # Se já existe uma transação, atualizar para paga
     if financial_transaction.present?
       professional_name = professional&.name || "#{professional&.first_name || ''} #{professional&.last_name || ''}".strip.presence || 'N/A'
-      description_text = "Agendamento PAGO: #{service.name} - Profissional: #{professional_name} - Cliente: #{client_name}"
-      
       financial_transaction.update!(
         paid: true,
         paid_at: Time.current,
         paid_amount_cents: price_cents,
-        description: description_text
+        description: "Agendamento PAGO: #{service.name} - Profissional: #{professional_name} - Cliente: #{client_name}"
       )
     else
-      # Criar nova transação de receita paga
       create_paid_transaction
     end
   end
 
-  # Callback para criar/atualizar transação quando status mudar para canceled
   def sync_transaction_on_status_change
     return unless status_changed?
-    
-    # Verificar se mudou para canceled (pode ser símbolo ou string)
+
     is_canceled = status == :canceled || status == 'canceled' || status == APPOINTMENT_STATUS[:canceled]
     return unless is_canceled
 
-    # Se estava pago, o payment_status já foi atualizado para refunded no método cancel!
-    # Se já existe uma transação, atualizar para não paga (cancelada)
     if financial_transaction.present?
       financial_transaction.update!(
         paid: false,
@@ -486,17 +462,14 @@ class Appointment < ApplicationRecord
         description: "Agendamento CANCELADO: #{service.name} - #{client_name}"
       )
     else
-      # Criar transação de auditoria (receita não paga)
       create_audit_transaction(canceled: true)
     end
   end
 
-  # Callback para criar transação de auditoria quando agendamento é criado mas não pago
   def create_audit_transaction_if_unpaid
     return if payment_status == :paid
-    return if financial_transaction.present? # Evitar duplicação
+    return if financial_transaction.present?
 
-    # Criar transação de auditoria (receita não paga) para rastrear valores pedidos
     create_audit_transaction(canceled: false)
   end
 
@@ -513,7 +486,7 @@ class Appointment < ApplicationRecord
     professional_name = professional&.name || "#{professional&.first_name || ''} #{professional&.last_name || ''}".strip.presence || 'N/A'
     description_text = "Agendamento PAGO: #{service.name} - Profissional: #{professional_name} - Cliente: #{client_name}"
 
-    transaction_record = Transaction.create!(
+    Transaction.create!(
       account: account,
       bank_account: bank_account,
       contact: contact_record,
@@ -523,7 +496,7 @@ class Appointment < ApplicationRecord
       amount_cents: price_cents,
       amount_currency: price_currency,
       due_date: start_time.to_date,
-      payment_method_cd: Transaction::PAYMENT_METHOD[:pix], # Assumindo PIX como padrão para agendamentos
+      payment_method_cd: Transaction::PAYMENT_METHOD[:pix],
       payment_type_cd: Transaction::PAYMENT_TYPE[:on_cash],
       paid: true,
       paid_at: Time.current,
@@ -531,8 +504,6 @@ class Appointment < ApplicationRecord
       description: description_text,
       name: "Agendamento #{service.name}"
     )
-
-    transaction_record
   end
 
   def schedule_google_calendar_sync
@@ -555,20 +526,14 @@ class Appointment < ApplicationRecord
 
   def create_audit_transaction(canceled: false)
     bank_account = account.default_bank_account || account.bank_accounts.first
-    
-    unless bank_account
-      Rails.logger.warn "Não foi possível criar transação de auditoria para agendamento #{id}: nenhuma conta bancária encontrada"
-      return
-    end
+    return unless bank_account
 
     contact_record = contact || create_contact_from_whatsapp
-
-    status_text = canceled ? 'CANCELADO' : 'NÃO PAGO'
-    description_text = canceled ? 
+    description_text = canceled ?
       "Agendamento CANCELADO: #{service.name} - #{client_name}" :
       "Agendamento NÃO PAGO (Auditoria): #{service.name} - #{client_name}"
 
-    transaction_record = Transaction.create!(
+    Transaction.create!(
       account: account,
       bank_account: bank_account,
       contact: contact_record,
@@ -584,10 +549,17 @@ class Appointment < ApplicationRecord
       paid_at: nil,
       paid_amount_cents: 0,
       description: description_text,
-      name: "Agendamento #{status_text} - #{service.name}"
+      name: "Agendamento #{canceled ? 'CANCELADO' : 'NÃO PAGO'} - #{service.name}"
     )
+  end
 
-    transaction_record
+  def send_whatsapp_on_confirmation
+    return unless status_changed? && status == :confirmed
+    return unless whatsapp_number.present?
+
+    Appointments::SendWhatsappConfirmation.call(appointment: self)
+  rescue => e
+    Rails.logger.error "Erro ao enviar confirmação WhatsApp: #{e.message}"
   end
 end
 

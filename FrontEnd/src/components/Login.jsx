@@ -75,7 +75,7 @@ export function Login() {
   const { loginSimple, register, error } = useAuth();
 
   useEffect(() => {
-    document.title = mode === 'register' ? 'Criar conta - BarberManagement' : 'Login - BarberManagement';
+    document.title = mode === 'register' ? 'Criar conta - Orbi' : 'Login - Orbi';
     document.body.setAttribute('data-page', mode);
     return () => document.body.removeAttribute('data-page');
   }, [mode]);
@@ -147,7 +147,7 @@ export function Login() {
       }}
     >
       <div className="absolute top-6 left-6 z-10">
-        <div className="text-white font-bold text-xl">BarberManagement</div>
+        <div className="text-white font-bold text-xl">Orbi</div>
       </div>
 
       <div className="z-10 mx-auto" style={{ width: '460px', maxWidth: 'calc(100vw - 32px)' }}>
@@ -205,7 +205,7 @@ export function Login() {
 
               <div className="mt-8 text-center">
                 <p className="text-sm text-gray-600">
-                  Novo no BarberManagement?{' '}
+                  Novo no Orbi?{' '}
                   <button type="button" style={linkStyle} onClick={() => switchMode('register')}
                     onMouseEnter={(e) => { e.currentTarget.style.color = '#5B7A9E'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = '#6B8FA3'; }}
@@ -219,7 +219,7 @@ export function Login() {
             <>
               <div className="text-center mb-8">
                 <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Criar conta</h1>
-                <p className="text-sm text-gray-500 mt-1">Comece a usar o BarberManagement gratuitamente</p>
+                <p className="text-sm text-gray-500 mt-1">Comece a usar o Orbi gratuitamente</p>
               </div>
 
               <form onSubmit={handleRegister} className="space-y-4">
@@ -232,7 +232,7 @@ export function Login() {
                     type="text"
                     value={regAccountName}
                     onChange={(e) => setRegAccountName(e.target.value)}
-                    placeholder="Ex: Barbearia do João"
+                    placeholder="Ex: Escritório Silva Advocacia"
                     className="h-11 text-base md:text-sm border-gray-300 focus:border-[#6B8FA3] focus:ring-[#6B8FA3]"
                     required
                     autoComplete="organization"
@@ -321,7 +321,7 @@ export function Login() {
       </div>
 
       <div className="absolute bottom-6 left-6 z-10">
-        <p className="text-white/80 text-xs">© BarberManagement Privacidade e termos</p>
+        <p className="text-white/80 text-xs">© Orbi Privacidade e termos</p>
       </div>
     </div>
   );

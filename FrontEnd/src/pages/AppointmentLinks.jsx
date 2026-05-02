@@ -56,6 +56,7 @@ import {
   Calendar,
   User,
   Scissors,
+  QrCode,
 } from 'lucide-react'
 import { apiService } from '../lib/api'
 
@@ -70,6 +71,7 @@ export function AppointmentLinks() {
   const [isEditLinkOpen, setIsEditLinkOpen] = useState(false)
   const [editingLink, setEditingLink] = useState(null)
   const [copiedLink, setCopiedLink] = useState(null)
+  const [qrCodeLink, setQrCodeLink] = useState(null)
   
   const [formData, setFormData] = useState({
     name: '',
@@ -717,6 +719,16 @@ export function AppointmentLinks() {
                       </div>
                     )}
                     <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
+                      {link.public_url && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setQrCodeLink(link)}
+                          title="Ver QR Code"
+                        >
+                          <QrCode className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -849,6 +861,16 @@ export function AppointmentLinks() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end space-x-2">
+                          {link.public_url && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setQrCodeLink(link)}
+                              title="Ver QR Code"
+                            >
+                              <QrCode className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1174,6 +1196,64 @@ export function AppointmentLinks() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Code Dialog */}
+      <Dialog open={!!qrCodeLink} onOpenChange={(open) => { if (!open) setQrCodeLink(null) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              QR Code do Link
+            </DialogTitle>
+            <DialogDescription>
+              {qrCodeLink?.name} — Escaneie para agendar
+            </DialogDescription>
+          </DialogHeader>
+          {qrCodeLink?.public_url && (
+            <div className="flex flex-col items-center gap-4 py-2">
+              <div className="p-3 bg-white rounded-xl border shadow-sm">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrCodeLink.public_url)}&size=220x220&margin=10`}
+                  alt="QR Code do link de agendamento"
+                  width={220}
+                  height={220}
+                  className="block"
+                />
+              </div>
+              <p className="text-xs text-gray-500 text-center break-all max-w-[260px]">
+                {qrCodeLink.public_url}
+              </p>
+              <div className="flex gap-2 w-full">
+                <Button
+                  variant="outline"
+                  className="flex-1 text-sm"
+                  onClick={() => handleCopyLink(qrCodeLink.public_url)}
+                >
+                  {copiedLink === qrCodeLink.public_url ? (
+                    <><CheckCircle2 className="h-4 w-4 mr-1" /> Copiado!</>
+                  ) : (
+                    <><Copy className="h-4 w-4 mr-1" /> Copiar Link</>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 text-sm"
+                  onClick={() => {
+                    const imgUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrCodeLink.public_url)}&size=400x400&margin=10`
+                    const a = document.createElement('a')
+                    a.href = imgUrl
+                    a.download = `qrcode-${qrCodeLink.name.replace(/\s+/g, '-')}.png`
+                    a.target = '_blank'
+                    a.click()
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4 mr-1" /> Baixar QR
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
       </div>

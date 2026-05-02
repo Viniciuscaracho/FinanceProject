@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { format } from 'date-fns'
+import { format, addDays, addWeeks, addMonths } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -22,7 +23,7 @@ import {
 } from '@/components/ui/responsive-dialog'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon, Loader2, Clock, User, Scissors, Phone, DollarSign, AlertCircle } from 'lucide-react'
+import { CalendarIcon, Loader2, Clock, User, Scissors, Phone, DollarSign, AlertCircle, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { STATUS_LABELS, PAYMENT_STATUS_LABELS } from '@/utils/appointmentUtils'
 import {
@@ -32,6 +33,39 @@ import {
   calculateEndTime
 } from '@/utils/appointmentUtils'
 import { formatCurrency } from '@/utils/format'
+
+const RECURRENCE_FREQUENCIES = [
+  { value: 'daily',      label: 'Diária' },
+  { value: 'weekly',     label: 'Semanal' },
+  { value: 'biweekly',   label: 'Quinzenal' },
+  { value: 'monthly',    label: 'Mensal' },
+  { value: 'bimonthly',  label: 'Bimestral' },
+  { value: 'quarterly',  label: 'Trimestral' },
+  { value: 'semiannual', label: 'Semestral' },
+  { value: 'annual',     label: 'Anual' },
+]
+
+function calcLastOccurrenceDate(startDate, startTime, frequency, occurrences) {
+  if (!startDate || !startTime || !frequency || occurrences < 2) return null
+  const [h, m] = startTime.split(':').map(Number)
+  let base = new Date(startDate)
+  base.setHours(h, m, 0, 0)
+
+  const advanceFns = {
+    daily:      (d, n) => addDays(d, n),
+    weekly:     (d, n) => addWeeks(d, n),
+    biweekly:   (d, n) => addWeeks(d, n * 2),
+    monthly:    (d, n) => addMonths(d, n),
+    bimonthly:  (d, n) => addMonths(d, n * 2),
+    quarterly:  (d, n) => addMonths(d, n * 3),
+    semiannual: (d, n) => addMonths(d, n * 6),
+    annual:     (d, n) => addMonths(d, n * 12),
+  }
+
+  const advance = advanceFns[frequency]
+  if (!advance) return null
+  return advance(base, occurrences - 1)
+}
 
 export function AppointmentForm({
   open,
@@ -62,6 +96,11 @@ export function AppointmentForm({
   })
 
   const [errors, setErrors] = useState({})
+  const [recurrence, setRecurrence] = useState({
+    enabled: false,
+    frequency: 'weekly',
+    occurrences: 4,
+  })
 
   // Carregar dados do appointment quando editar ou quando initialDate mudar
   useEffect(() => {
@@ -119,6 +158,7 @@ export function AppointmentForm({
       })
     }
     setErrors({})
+    setRecurrence({ enabled: false, frequency: 'weekly', occurrences: 4 })
   }, [appointment, initialDate, open])
 
   // Atualizar preço quando serviço é selecionado
@@ -299,6 +339,14 @@ export function AppointmentForm({
         delete submitData[key]
       }
     })
+
+    // Incluir recorrência apenas em criação
+    if (!isEdit && recurrence.enabled) {
+      submitData.recurrence_pattern = {
+        frequency: recurrence.frequency,
+        occurrences: recurrence.occurrences,
+      }
+    }
 
     await onSubmit(submitData)
   }
@@ -754,6 +802,87 @@ export function AppointmentForm({
                 )}
               </div>
             </div>
+
+            {/* Seção: Repetir Agendamento */}
+            {!isEdit && (
+              <div className={cn("space-y-4", isMobile && "space-y-3")}>
+                <div className="flex items-center justify-between">
+                  <h3 className={cn(
+                    "text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2",
+                    isMobile && "text-xs"
+                  )}>
+                    <RefreshCw className={cn("h-4 w-4", isMobile && "h-3 w-3")} />
+                    Repetir Agendamento
+                  </h3>
+                  <Switch
+                    checked={recurrence.enabled}
+                    onCheckedChange={(checked) =>
+                      setRecurrence(prev => ({ ...prev, enabled: checked }))
+                    }
+                  />
+                </div>
+
+                {recurrence.enabled && (
+                  <div className="space-y-4 pl-1">
+                    <div className={cn(
+                      "grid grid-cols-1 gap-4",
+                      !isMobile && "sm:grid-cols-2"
+                    )}>
+                      <div className="space-y-2">
+                        <Label>Frequência</Label>
+                        <Select
+                          value={recurrence.frequency}
+                          onValueChange={(v) => setRecurrence(prev => ({ ...prev, frequency: v }))}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {RECURRENCE_FREQUENCIES.map(f => (
+                              <SelectItem key={f.value} value={f.value}>
+                                {f.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Número de sessões (1–24)</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={24}
+                          value={recurrence.occurrences}
+                          onChange={(e) => {
+                            const val = Math.min(24, Math.max(1, parseInt(e.target.value) || 1))
+                            setRecurrence(prev => ({ ...prev, occurrences: val }))
+                          }}
+                          className="h-11"
+                        />
+                      </div>
+                    </div>
+
+                    {formData.start_date && formData.start_time && (() => {
+                      const lastDate = calcLastOccurrenceDate(
+                        formData.start_date,
+                        formData.start_time,
+                        recurrence.frequency,
+                        recurrence.occurrences
+                      )
+                      const freqLabel = RECURRENCE_FREQUENCIES.find(f => f.value === recurrence.frequency)?.label || ''
+                      return lastDate ? (
+                        <p className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md px-3 py-2">
+                          {recurrence.occurrences} agendamentos ({freqLabel.toLowerCase()}), de{' '}
+                          <strong>{format(formData.start_date, 'dd/MM/yyyy', { locale: ptBR })}</strong> até{' '}
+                          <strong>{format(lastDate, 'dd/MM/yyyy', { locale: ptBR })}</strong>
+                        </p>
+                      ) : null
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Seção: Cliente e Valor */}
             <div className={cn("space-y-4", isMobile && "space-y-3")}>

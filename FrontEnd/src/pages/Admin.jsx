@@ -111,7 +111,7 @@ export function Admin() {
             Painel Administrativo
           </h1>
           <p className="text-sm sm:text-base text-gray-600 mt-1">
-            Gerenciamento completo do sistema BarberManagement
+            Gerenciamento completo do sistema Orbi
           </p>
         </div>
         <Button

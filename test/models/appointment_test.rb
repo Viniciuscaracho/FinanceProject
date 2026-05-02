@@ -20,6 +20,7 @@
 #  updated_at                :datetime         not null
 #  account_id                :bigint           not null
 #  account_user_id           :bigint           not null
+#  appointment_link_id       :bigint
 #  contact_id                :bigint
 #  google_calendar_event_id  :string
 #  parent_appointment_id     :bigint
@@ -33,6 +34,7 @@
 #  index_appointments_on_account_professional_status_time  (account_id,account_user_id,status,start_time)
 #  index_appointments_on_account_time_status               (account_id,start_time,status)
 #  index_appointments_on_account_user_id                   (account_user_id)
+#  index_appointments_on_appointment_link_id               (appointment_link_id)
 #  index_appointments_on_contact_id                        (contact_id)
 #  index_appointments_on_google_calendar_event_id          (google_calendar_event_id)
 #  index_appointments_on_parent_appointment_id             (parent_appointment_id)
@@ -45,6 +47,7 @@
 #
 #  fk_rails_...  (account_id => accounts.id)
 #  fk_rails_...  (account_user_id => account_users.id)
+#  fk_rails_...  (appointment_link_id => appointment_links.id) ON DELETE => nullify
 #  fk_rails_...  (contact_id => people.id)
 #  fk_rails_...  (parent_appointment_id => appointments.id) ON DELETE => nullify
 #  fk_rails_...  (service_id => offers.id)

@@ -322,7 +322,7 @@ export function Professionals() {
               </span>
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-400">
-              Gerencie os profissionais que trabalham no salão
+              Gerencie os profissionais da sua equipe
             </p>
           </div>
           <Button 

@@ -2,13 +2,9 @@
 
 module Public
   class AppointmentBookingController < ApplicationController
-    # Desabilitar autenticação e CSRF para rotas públicas
     skip_before_action :authenticate_user!
     skip_before_action :set_request_details
     skip_forgery_protection
-    
-    # Log para debug
-    before_action :log_request, only: [:create]
     
     # GET /agendar/:token
     # Redireciona para o frontend React que cuida da UI
@@ -53,8 +49,22 @@ module Public
       
       account = appointment_link.account
       Current.account = account
+      set_current_tenant(account)
       
       appointment_params_data = appointment_params
+
+      if appointment_params_data[:start_time].present?
+        days_ahead = appointment_link.settings&.dig('days_ahead')&.to_i
+        days_ahead = 15 if days_ahead.nil? || days_ahead <= 0
+        max_date = Date.current + days_ahead.days
+        if appointment_params_data[:start_time].to_date > max_date
+          render json: {
+            success: false,
+            errors: ["Data fora do período permitido. Máximo #{days_ahead} dias à frente."]
+          }, status: :unprocessable_entity
+          return
+        end
+      end
 
       raw_google_meet_link = appointment_params_data[:google_meet_link].to_s.strip
       appointment_params_data[:google_meet_link] = raw_google_meet_link.presence
@@ -76,6 +86,7 @@ module Public
       client_email = appointment_params_data.delete(:client_email)
       
       appointment_params_data[:account_id] = account.id
+      appointment_params_data[:appointment_link_id] = appointment_link.id
 
       # Não salvar diretamente flags de geração de Meet/recorrência no modelo
       appointment_params_data.delete(:recurrence_pattern)
@@ -89,62 +100,37 @@ module Public
         return
       end
       
-      # Criar ou buscar contato
-      # Nota: O modelo Appointment também cria contato automaticamente via callback,
-      # mas fazemos aqui também para ter o nome do cliente se fornecido
       if appointment_params_data[:whatsapp_number].present?
         begin
           contact = find_or_create_contact(account, appointment_params_data[:whatsapp_number], client_name)
           appointment_params_data[:contact_id] = contact.id if contact
-          
-          # Atualizar email do contato se fornecido
-          if client_email.present? && contact
-            contact.update(email: client_email) unless contact.email.present?
-          end
+          contact.update(email: client_email) if client_email.present? && contact && !contact.email.present?
         rescue => e
           Rails.logger.error "Error creating/finding contact: #{e.message}"
-          Rails.logger.error e.backtrace.join("\n")
-          # Continuar - o callback do modelo tentará criar se necessário
         end
       end
-      
-      # Buscar serviço para obter preço
+
       service = account.services.find_by(id: appointment_params_data[:service_id])
       unless service
-        render json: { 
-          success: false,
-          errors: ['Serviço não encontrado'] 
-        }, status: :unprocessable_entity
-        return
+        return render json: { success: false, errors: ['Serviço não encontrado'] }, status: :unprocessable_entity
       end
-      
-      # Calcular preço e end_time se necessário
+
       appointment_params_data[:price_cents] ||= service.selling_price_cents || 0
       appointment_params_data[:price_currency] ||= service.currency || 'BRL'
-      
+
       if appointment_params_data[:end_time].blank? && appointment_params_data[:start_time].present?
         duration_minutes = service.metadata&.dig('duration_minutes')&.to_i || 60
         appointment_params_data[:end_time] = appointment_params_data[:start_time] + duration_minutes.minutes
       end
 
       service_metadata = service.metadata || {}
-      auto_meet_enabled = service_metadata['auto_meet'] == true
-      modality_online = %w[online hibrido].include?(service_metadata['modality'].to_s.downcase)
-
-      default_generate_google_meet = ENV.fetch('PUBLIC_BOOKING_DEFAULT_GOOGLE_MEET', 'true').to_s.downcase.in?(%w[true 1 yes on])
-
       should_generate_google_meet = appointment_link.enable_google_meet ||
                                     truthy?(params[:enable_google_meet]) ||
                                     truthy?(params.dig(:appointment, :enable_google_meet)) ||
-                                    auto_meet_enabled ||
-                                    modality_online
+                                    service_metadata['auto_meet'] == true ||
+                                    %w[online hibrido].include?(service_metadata['modality'].to_s.downcase) ||
+                                    ENV.fetch('PUBLIC_BOOKING_DEFAULT_GOOGLE_MEET', 'true').to_s.downcase.in?(%w[true 1 yes on])
 
-      if !should_generate_google_meet && default_generate_google_meet
-        Rails.logger.info '🔗 Gerando Google Meet por padrão (PUBLIC_BOOKING_DEFAULT_GOOGLE_MEET habilitado)'
-      end
-      should_generate_google_meet ||= default_generate_google_meet
-
-      # Se o usuário já forneceu um link válido, não gere automaticamente
       should_generate_google_meet = false if appointment_params_data[:google_meet_link].present?
       
       appointment = account.appointments.build(appointment_params_data)
@@ -152,8 +138,7 @@ module Public
       appointment.payment_status ||= :pending
       
       if appointment.save
-        # Gerar link do Google Meet quando configurado
-        google_meet_link = nil
+          google_meet_link = nil
         if should_generate_google_meet
           begin
             result = Appointments::GenerateGoogleMeetLink.call(appointment: appointment)
@@ -230,15 +215,6 @@ module Public
     end
     
     private
-    
-    def log_request
-      Rails.logger.info "📥 Incoming request:"
-      Rails.logger.info "  Method: #{request.method}"
-      Rails.logger.info "  Path: #{request.path}"
-      Rails.logger.info "  Format: #{request.format}"
-      Rails.logger.info "  Content-Type: #{request.content_type}"
-      Rails.logger.info "  Params keys: #{params.keys.inspect}"
-    end
     
     def appointment_params
       params.require(:appointment).permit(
@@ -372,17 +348,8 @@ module Public
     
     def appointment_json(appointment)
       account = appointment.account
-      # Priorizar cell_phone_number (celular) sobre phone_number (fixo)
       whatsapp_number = account.company&.cell_phone_number.presence || account.company&.phone_number.presence
-      
-      Rails.logger.info "📱 WhatsApp number lookup for account #{account.id}:"
-      Rails.logger.info "  - company exists: #{account.company.present?}"
-      Rails.logger.info "  - phone_number: #{account.company&.phone_number.inspect}"
-      Rails.logger.info "  - cell_phone_number: #{account.company&.cell_phone_number.inspect}"
-      Rails.logger.info "  - selected: #{whatsapp_number.inspect}"
-      
       normalized_whatsapp = whatsapp_number ? normalize_whatsapp_number(whatsapp_number) : nil
-      Rails.logger.info "  - normalized: #{normalized_whatsapp.inspect}"
       
       {
         id: appointment.id,
@@ -403,7 +370,7 @@ module Public
         start_time: appointment.start_time&.iso8601,
         end_time: appointment.end_time&.iso8601,
         status: Appointment::APPOINTMENT_STATUS.key(appointment.status)&.to_s,
-        company_whatsapp: whatsapp_number ? normalize_whatsapp_number(whatsapp_number) : nil,
+        company_whatsapp: normalized_whatsapp,
         company_name: account.company&.name || account.company&.first_name,
         google_meet_link: appointment.google_meet_link,
         has_google_meet: appointment.google_meet_link.present?,

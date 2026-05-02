@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_02_000003) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_02_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -252,10 +252,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_02_000003) do
     t.boolean "whatsapp_reminder_sent", default: false
     t.datetime "whatsapp_reminder_sent_at"
     t.string "google_calendar_event_id"
+    t.bigint "appointment_link_id"
     t.index ["account_id", "account_user_id", "status", "start_time"], name: "index_appointments_on_account_professional_status_time"
     t.index ["account_id", "start_time", "status"], name: "index_appointments_on_account_time_status"
     t.index ["account_id"], name: "index_appointments_on_account_id"
     t.index ["account_user_id"], name: "index_appointments_on_account_user_id"
+    t.index ["appointment_link_id"], name: "index_appointments_on_appointment_link_id"
     t.index ["contact_id"], name: "index_appointments_on_contact_id"
     t.index ["google_calendar_event_id"], name: "index_appointments_on_google_calendar_event_id"
     t.index ["parent_appointment_id"], name: "index_appointments_on_parent_appointment_id"
@@ -1206,6 +1208,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_02_000003) do
   add_foreign_key "appointment_notes", "appointments"
   add_foreign_key "appointments", "account_users"
   add_foreign_key "appointments", "accounts"
+  add_foreign_key "appointments", "appointment_links", on_delete: :nullify
   add_foreign_key "appointments", "appointments", column: "parent_appointment_id", on_delete: :nullify
   add_foreign_key "appointments", "offers", column: "service_id"
   add_foreign_key "appointments", "people", column: "contact_id"

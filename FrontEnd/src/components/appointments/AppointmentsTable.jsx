@@ -22,6 +22,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Loader2,
+  Link2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -229,6 +230,12 @@ function MobileAppointmentCard({
           <Badge className={cn('text-xs', PAYMENT_STATUS_COLORS[paymentStatus])}>
             {PAYMENT_STATUS_LABELS[paymentStatus] || paymentStatus}
           </Badge>
+          {appointment.booking_source === 'public_link' && (
+            <Badge variant="outline" className="text-xs text-blue-600 border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-400">
+              <Link2 className="w-3 h-3 mr-1" />
+              Link Público
+            </Badge>
+          )}
         </div>
 
         {/* Actions */}
@@ -485,6 +492,22 @@ export function AppointmentsTable({ onEdit, onDelete, onOpenConsultation }) {
               onChange={handlePaymentStatusChange}
             />
           )
+        },
+      }),
+      colHelper.display({
+        id: 'origin',
+        header: 'Origem',
+        cell: ({ row }) => {
+          const apt = row.original
+          if (apt.booking_source === 'public_link') {
+            return (
+              <Badge variant="outline" className="text-xs text-blue-600 border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-400 whitespace-nowrap">
+                <Link2 className="w-3 h-3 mr-1" />
+                Link Público
+              </Badge>
+            )
+          }
+          return <span className="text-xs text-gray-400">Manual</span>
         },
       }),
       colHelper.display({

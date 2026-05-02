@@ -585,7 +585,7 @@ export function FinancialReports() {
               Relatórios Financeiros
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-400">
-              Análise financeira da barbearia
+              Análise financeira do seu negócio
             </p>
           </div>
           <Button 

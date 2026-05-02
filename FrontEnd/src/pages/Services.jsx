@@ -212,7 +212,7 @@ export function Services() {
               </span>
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-400">
-              Gerencie os serviços oferecidos pelo salão
+              Gerencie os serviços que você oferece
             </p>
           </div>
           <Button 
