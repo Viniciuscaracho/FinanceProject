@@ -1182,7 +1182,7 @@ export function Transactions() {
   if (loading && transactions.length === 0) {
     return (
       <div className="relative min-h-screen bg-surface">
-        <div className="relative z-10 w-full max-w-full min-w-0 px-6 py-8 md:px-12 md:py-12">
+        <div className="relative z-10 w-full max-w-full min-w-0 px-3 py-4 sm:px-6 sm:py-6 md:px-10 md:py-8">
           {/* Header Skeleton */}
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
@@ -1225,7 +1225,7 @@ export function Transactions() {
 
   return (
     <div className="relative min-h-screen bg-surface">
-      <div className="relative z-10 w-full max-w-full min-w-0 px-6 py-6 md:px-12 md:py-8">
+      <div className="relative z-10 w-full max-w-full min-w-0 px-3 py-4 sm:px-6 sm:py-6 md:px-10 md:py-8">
         {/* Header - Minimalista */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 w-full max-w-full mb-6">
           <div>

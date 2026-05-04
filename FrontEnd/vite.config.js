@@ -11,6 +11,10 @@ export default defineConfig({
     },
   },
   build: {
+    target: 'es2020',
+    sourcemap: false,
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -39,9 +43,8 @@ export default defineConfig({
     strictPort: true, // Falha se a porta estiver ocupada
     host: '0.0.0.0', // Escuta em todas as interfaces (IPv4 e IPv6) - necessário para acesso mobile
     hmr: {
-      protocol: 'ws',
-      host: 'localhost',
-      port: 5173,
+      // Use the actual host for HMR so mobile devices get hot reload
+      clientPort: 5173,
     },
     proxy: {
       '/api': {

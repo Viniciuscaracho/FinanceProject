@@ -60,6 +60,106 @@ import {
 } from 'lucide-react'
 import { apiService } from '../lib/api'
 
+const AUTOMATION_OPTIONS = [
+  {
+    key: 'reminder_1h',
+    label: 'Lembrete 1 hora antes',
+    description: '"Seu encontro começa em 1 hora." + link da reunião',
+    icon: '⏰',
+  },
+  {
+    key: 'billing_notification',
+    label: 'Cobrança pendente',
+    description: 'Enviada logo após a confirmação quando o pagamento está pendente',
+    icon: '📋',
+  },
+  {
+    key: 'pix_reminder',
+    label: 'Lembrete PIX',
+    description: 'Lembrete de pagamento via PIX 24h antes do agendamento',
+    icon: '💳',
+    requiresPix: true,
+  },
+  {
+    key: 'overdue',
+    label: 'Atraso no pagamento',
+    description: 'Enviada após o atendimento quando o pagamento ainda está pendente',
+    icon: '⚠️',
+  },
+  {
+    key: 'payment_confirmation',
+    label: 'Confirmação de pagamento',
+    description: 'Enviada imediatamente após o pagamento ser confirmado',
+    icon: '✅',
+  },
+]
+
+function AutomacoesPanel({ formData, setAutomation, setFormData }) {
+  const automations = formData.settings?.automations || {}
+  const anyEnabled = AUTOMATION_OPTIONS.some(o => automations[o.key])
+  const needsPix = AUTOMATION_OPTIONS.some(o => o.requiresPix && automations[o.key])
+
+  return (
+    <div className="border border-indigo-200 dark:border-indigo-800 rounded-xl overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/30">
+        <span className="text-base">🤖</span>
+        <div className="flex-1">
+          <p className="font-semibold text-sm text-indigo-800 dark:text-indigo-200">Automações WhatsApp</p>
+          <p className="text-xs text-indigo-600 dark:text-indigo-400">
+            Mensagens enviadas automaticamente para o cliente via WhatsApp
+          </p>
+        </div>
+        {anyEnabled && (
+          <span className="text-xs font-medium bg-indigo-600 text-white px-2 py-0.5 rounded-full">
+            {AUTOMATION_OPTIONS.filter(o => automations[o.key]).length} ativa{AUTOMATION_OPTIONS.filter(o => automations[o.key]).length !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+
+      <div className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+        {AUTOMATION_OPTIONS.map(option => (
+          <label
+            key={option.key}
+            className="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+          >
+            <input
+              type="checkbox"
+              checked={automations[option.key] === true}
+              onChange={e => setAutomation(option.key, e.target.checked)}
+              className="mt-0.5 rounded border-gray-300 accent-indigo-600 flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                {option.icon} {option.label}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{option.description}</p>
+            </div>
+          </label>
+        ))}
+
+        {/* Chave PIX — aparece quando lembrete PIX ou cobrança pendente está ativo */}
+        {(automations.pix_reminder || automations.billing_notification || automations.overdue) && (
+          <div className="px-4 py-3 bg-amber-50 dark:bg-amber-900/20">
+            <label className="block text-sm font-medium text-amber-800 dark:text-amber-200 mb-1.5">
+              🔑 Chave PIX
+            </label>
+            <input
+              type="text"
+              placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+              value={automations.pix_key || ''}
+              onChange={e => setAutomation('pix_key', e.target.value)}
+              className="w-full rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+              Incluída nas mensagens de cobrança pendente, lembrete PIX e atraso
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function AppointmentLinks() {
   const isMobile = useIsMobile()
   const [links, setLinks] = useState([])
@@ -73,21 +173,40 @@ export function AppointmentLinks() {
   const [copiedLink, setCopiedLink] = useState(null)
   const [qrCodeLink, setQrCodeLink] = useState(null)
   
+  const DEFAULT_AUTOMATIONS = {
+    reminder_1h: false,
+    billing_notification: false,
+    pix_reminder: false,
+    overdue: false,
+    payment_confirmation: false,
+    pix_key: ''
+  }
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     active: true,
     service_id: null,
     account_user_id: null,
-    link_type: 'normal', // 'normal' ou 'premium'
+    link_type: 'normal',
     settings: {
       start_hour: 9,
       end_hour: 18,
       slot_interval_minutes: 30,
       default_duration_minutes: 60,
-      days_ahead: 15 // Padrão para link normal
+      days_ahead: 15,
+      automations: { ...DEFAULT_AUTOMATIONS }
     }
   })
+
+  const setAutomation = (key, value) =>
+    setFormData(prev => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        automations: { ...(prev.settings.automations || DEFAULT_AUTOMATIONS), [key]: value }
+      }
+    }))
   
   useEffect(() => {
     loadData()
@@ -137,7 +256,8 @@ export function AppointmentLinks() {
         end_hour: 18,
         slot_interval_minutes: 30,
         default_duration_minutes: 60,
-        days_ahead: 15
+        days_ahead: 15,
+        automations: { ...DEFAULT_AUTOMATIONS }
       }
     })
     setEditingLink(null)
@@ -201,7 +321,8 @@ export function AppointmentLinks() {
         end_hour: settings.end_hour || 18,
         slot_interval_minutes: settings.slot_interval_minutes || 30,
         default_duration_minutes: settings.default_duration_minutes || 60,
-        days_ahead: settings.days_ahead || (linkType === 'premium' ? 30 : 15)
+        days_ahead: settings.days_ahead || (linkType === 'premium' ? 30 : 15),
+        automations: { ...DEFAULT_AUTOMATIONS, ...(settings.automations || {}) }
       }
     })
     setIsEditLinkOpen(true)
@@ -291,7 +412,7 @@ export function AppointmentLinks() {
         {/* Header - Bold Typography */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-2 responsive-text-xl">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">
               <span className="bg-gradient-to-r from-[#5B7A9E] via-[#6B8FA3] to-[#7A9D96] bg-clip-text text-transparent">
                 Links de Agendamento
               </span>
@@ -587,7 +708,10 @@ export function AppointmentLinks() {
                 </Label>
               </div>
             </div>
-            
+
+            {/* Automações */}
+            <AutomacoesPanel formData={formData} setAutomation={setAutomation} setFormData={setFormData} />
+
             <DialogFooter>
               <Button variant="outline" onClick={() => {
                 setIsNewLinkOpen(false)
@@ -1176,7 +1300,10 @@ export function AppointmentLinks() {
               </Label>
             </div>
           </div>
-          
+
+          {/* Automações */}
+          <AutomacoesPanel formData={formData} setAutomation={setAutomation} setFormData={setFormData} />
+
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setIsEditLinkOpen(false)

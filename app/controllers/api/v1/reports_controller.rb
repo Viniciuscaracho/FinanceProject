@@ -23,162 +23,119 @@ module Api
       end
 
       def show
-        Rails.logger.info "=== Reports#show ==="
-        Rails.logger.info "Report ID: #{params[:id]}"
-        Rails.logger.info "Params: #{params.inspect}"
-        Rails.logger.info "Current.account: #{Current.account&.id}"
-        
-          unless Current.account
-          return render json: { error: 'Conta não encontrada. Faça login novamente.' }, status: :unauthorized
+        return render json: { error: 'Conta não encontrada. Faça login novamente.' }, status: :unauthorized unless Current.account
+
+        case params[:id]
+        when 'income_expense'
+          render_income_expense_report
+        when 'category_analysis'
+          render_category_analysis_report
+        when 'monthly_summary'
+          render_monthly_summary_report
+        when 'cash_flow'
+          render_cash_flow_report
+        when 'appointments_integrated'
+          render_appointments_integrated_report
+        when 'financial_with_appointments'
+          render_financial_with_appointments_report
+        when 'dre'
+          render_dre_report
+        when 'extract'
+          render_extract_report
+        when 'per_category'
+          render_per_category_report
+        when 'per_description'
+          render_per_description_report
+        when 'per_period'
+          render_per_period_report
+        when 'financial_history'
+          render_financial_history_report
+        else
+          render json: { error: 'Relatório não encontrado' }, status: :not_found
         end
-        
-        begin
-          case params[:id]
-          when 'income_expense'
-            render_income_expense_report
-          when 'category_analysis'
-            render_category_analysis_report
-          when 'monthly_summary'
-            render_monthly_summary_report
-          when 'cash_flow'
-            render_cash_flow_report
-          when 'appointments_integrated'
-            render_appointments_integrated_report
-          when 'financial_with_appointments'
-            render_financial_with_appointments_report
-          when 'dre'
-            render_dre_report
-          when 'extract'
-            render_extract_report
-          when 'per_category'
-            render_per_category_report
-          when 'per_description'
-            render_per_description_report
-          when 'per_period'
-            render_per_period_report
-          when 'financial_history'
-            render_financial_history_report
-          else
-            render json: { error: 'Relatório não encontrado' }, status: :not_found
-          end
-        rescue => e
-          Rails.logger.error "Error in Reports#show: #{e.class.name}: #{e.message}"
-          Rails.logger.error e.backtrace.join("\n")
-          render json: { 
-            error: "Erro ao processar relatório: #{e.message}",
-            details: Rails.env.development? ? e.backtrace.first(5) : nil
-          }, status: :internal_server_error
-        end
+      rescue => e
+        Rails.logger.error "Error in Reports#show: #{e.class.name}: #{e.message}"
+        render json: { error: "Erro ao processar relatório: #{e.message}" }, status: :internal_server_error
       end
 
       private
 
       def render_income_expense_report
-        begin
-          # Aplicar filtros de data se fornecidos
-          start_date = if params[:start_date].present?
-            Date.parse(params[:start_date])
-          else
-            Date.today.beginning_of_month
-          end
-          end_date = if params[:end_date].present?
-            Date.parse(params[:end_date])
-          else
-            Date.today.end_of_month
-          end
-          date_type = params[:date_type]&.to_sym || :due_date
-        rescue ArgumentError => e
-          Rails.logger.error "Error parsing dates in income_expense_report: #{e.message}"
-          Rails.logger.error e.backtrace.join("\n")
-          return render json: { error: "Data inválida: #{e.message}" }, status: :bad_request
-        end
-        
-        # Cache independente para este endpoint
+        start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
+        end_date   = params[:end_date].present?   ? Date.parse(params[:end_date])   : Date.today.end_of_month
+        date_type  = params[:date_type]&.to_sym || :due_date
+
         cache_key = "income_expense:#{start_date}:#{end_date}:#{date_type}"
-        
-        begin
-          report_data = fetch_from_cache(
-            cache_key,
-            { expires_in: 15.minutes },
-            endpoint_namespace: 'income_expense'
-          ) do
-            # Usar SQL direto com sanitize_sql_array para evitar qualquer join ou scope implícito
-            date_column = date_type == :due_date ? 'due_date' : 'competency_date'
 
-            # Construir SQL base
-            # transaction_type_cd: 0 = receita, 1-4 = despesa, 5 = transferência (ignorada)
-            sql_base = <<-SQL
-              SELECT
-                SUM(CASE WHEN transaction_type_cd = 0 THEN amount_cents ELSE 0 END) as income_cents,
-                SUM(CASE WHEN transaction_type_cd BETWEEN 1 AND 4 THEN amount_cents ELSE 0 END) as expenses_cents
-              FROM transactions
-              WHERE account_id = ?
-                AND #{date_column} >= ?
-                AND #{date_column} <= ?
-                AND kind_cd IN (0, 2)
-                AND transaction_type_cd != 5
-            SQL
-            
-            # Adicionar filtro de paid se necessário
-            sql_params = [Current.account.id, start_date, end_date]
-            if params[:paid].present?
-              paid_values = params[:paid].is_a?(Array) ? params[:paid] : [params[:paid]]
-              paid_bools = paid_values.map { |p| p.to_s == 'true' || p == true }
-              sql_base += " AND paid IN (#{paid_bools.map { '?' }.join(', ')})"
-              sql_params += paid_bools
-            end
-            
-            # Sanitizar e executar SQL
-            sanitized_sql = ActiveRecord::Base.sanitize_sql_array([sql_base] + sql_params)
-            Rails.logger.info "Executing SQL for income_expense: #{sanitized_sql}"
-            result = ActiveRecord::Base.connection.exec_query(sanitized_sql)
-            
-            row = result.first
-            income_cents = row&.dig('income_cents')&.to_i || 0
-            expenses_cents = row&.dig('expenses_cents')&.to_i || 0
-            
-            {
-              income: income_cents,
-              expenses: expenses_cents,
-              net: income_cents - expenses_cents,
-              savings_rate: income_cents > 0 ? ((income_cents - expenses_cents).to_f / income_cents * 100).round(2) : 0
-            }
+        report_data = fetch_from_cache(
+          cache_key,
+          { expires_in: 15.minutes },
+          endpoint_namespace: 'income_expense'
+        ) do
+          date_column = date_type == :due_date ? 'due_date' : 'competency_date'
+
+          sql_base = <<-SQL
+            SELECT
+              SUM(CASE WHEN transaction_type_cd = 0 THEN amount_cents ELSE 0 END) as income_cents,
+              SUM(CASE WHEN transaction_type_cd BETWEEN 1 AND 4 THEN amount_cents ELSE 0 END) as expenses_cents
+            FROM transactions
+            WHERE account_id = ?
+              AND #{date_column} >= ?
+              AND #{date_column} <= ?
+              AND kind_cd IN (0, 2)
+              AND transaction_type_cd != 5
+          SQL
+
+          sql_params = [Current.account.id, start_date, end_date]
+          if params[:paid].present?
+            paid_values = params[:paid].is_a?(Array) ? params[:paid] : [params[:paid]]
+            paid_bools = paid_values.map { |p| p.to_s == 'true' || p == true }
+            sql_base += " AND paid IN (#{paid_bools.map { '?' }.join(', ')})"
+            sql_params += paid_bools
           end
 
-          render json: {
-            report: {
-              type: 'income_expense',
-              data: report_data
-            }
+          row = ActiveRecord::Base.connection.exec_query(
+            ActiveRecord::Base.sanitize_sql_array([sql_base] + sql_params)
+          ).first
+
+          income_cents   = row&.dig('income_cents')&.to_i || 0
+          expenses_cents = row&.dig('expenses_cents')&.to_i || 0
+
+          {
+            income: income_cents,
+            expenses: expenses_cents,
+            net: income_cents - expenses_cents,
+            savings_rate: income_cents > 0 ? ((income_cents - expenses_cents).to_f / income_cents * 100).round(2) : 0
           }
-        rescue => e
-          Rails.logger.error "Error in render_income_expense_report: #{e.class.name}: #{e.message}"
-          Rails.logger.error e.backtrace.join("\n")
-          render json: { 
-            error: "Erro ao gerar relatório de receitas vs despesas: #{e.message}",
-            details: Rails.env.development? ? e.backtrace.first(5) : nil
-          }, status: :internal_server_error
         end
+
+        render json: {
+          report: {
+            type: 'income_expense',
+            data: report_data
+          }
+        }
+      rescue ArgumentError => e
+        render json: { error: "Data inválida: #{e.message}" }, status: :bad_request
+      rescue => e
+        Rails.logger.error "Error in render_income_expense_report: #{e.class.name}: #{e.message}"
+        render json: { error: "Erro ao gerar relatório de receitas vs despesas: #{e.message}" }, status: :internal_server_error
       end
 
       def render_category_analysis_report
-        # Aplicar filtros de data se fornecidos
         start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
-        end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
-        date_type = params[:date_type]&.to_sym || :due_date
-        
-        # Cache independente para este endpoint
+        end_date   = params[:end_date].present?   ? Date.parse(params[:end_date])   : Date.today.end_of_month
+        date_type  = params[:date_type]&.to_sym || :due_date
+
         cache_key = "category_analysis:#{start_date}:#{end_date}:#{date_type}"
-        
+
         categories_data = fetch_from_cache(
           cache_key,
           { expires_in: 15.minutes },
           endpoint_namespace: 'category_analysis'
         ) do
-          # Usar SQL direto para evitar problemas de GROUP BY
           date_column = date_type == :due_date ? 'due_date' : 'competency_date'
-          
-          # Query para estatísticas por categoria (transferências excluídas)
+
           sql_stats = <<-SQL
             SELECT
               domains.name as category_name,
@@ -196,18 +153,17 @@ module Api
             GROUP BY domains.name, transactions.category_id
           SQL
 
-          sanitized_sql = ActiveRecord::Base.sanitize_sql_array([
-            sql_stats,
-            'Category',
-            Current.account.id,
-            Current.account.id,
-            start_date,
-            end_date
-          ])
+          result_stats = ActiveRecord::Base.connection.exec_query(
+            ActiveRecord::Base.sanitize_sql_array([
+              sql_stats,
+              'Category',
+              Current.account.id,
+              Current.account.id,
+              start_date,
+              end_date
+            ])
+          )
 
-          result_stats = ActiveRecord::Base.connection.exec_query(sanitized_sql)
-
-          # Query para contagem por categoria
           sql_counts = <<-SQL
             SELECT
               transactions.category_id,
@@ -220,34 +176,25 @@ module Api
               AND transactions.transaction_type_cd != 5
             GROUP BY transactions.category_id
           SQL
-          
-          sanitized_sql_counts = ActiveRecord::Base.sanitize_sql_array([
-            sql_counts,
-            Current.account.id,
-            start_date,
-            end_date
-          ])
-          
-          result_counts = ActiveRecord::Base.connection.exec_query(sanitized_sql_counts)
-          category_counts = result_counts.index_by { |row| row['category_id'] }
 
-          # Otimização: carregar todas as categorias de uma vez
-          category_ids = result_stats.map { |row| row['category_id'] }.compact.uniq
+          category_counts = ActiveRecord::Base.connection.exec_query(
+            ActiveRecord::Base.sanitize_sql_array([sql_counts, Current.account.id, start_date, end_date])
+          ).index_by { |row| row['category_id'] }
+
+          category_ids   = result_stats.map { |row| row['category_id'] }.compact.uniq
           categories_map = Current.account.categories.where(id: category_ids).index_by(&:id)
 
           result_stats.map do |row|
-            category_id = row['category_id']
+            category_id   = row['category_id']
             category_name = row['category_name']
-            total_amount = row['total_amount']&.to_i || 0
-            
-            # Se não tiver nome, buscar da categoria
+            total_amount  = row['total_amount']&.to_i || 0
+
             if category_name.blank? && category_id.present?
-              category = categories_map[category_id]
-              category_name = category&.name || 'Sem categoria'
+              category_name = categories_map[category_id]&.name || 'Sem categoria'
             end
-            
-            next if category_id.nil? # Pular se não tiver categoria
-            
+
+            next if category_id.nil?
+
             {
               id: category_id,
               name: category_name || 'Sem categoria',
@@ -268,23 +215,19 @@ module Api
       end
 
       def render_monthly_summary_report
-        # Aplicar filtros de data se fornecidos
         start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
-        end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
-        date_type = params[:date_type]&.to_sym || :due_date
-        
-        # Cache independente para este endpoint
+        end_date   = params[:end_date].present?   ? Date.parse(params[:end_date])   : Date.today.end_of_month
+        date_type  = params[:date_type]&.to_sym || :due_date
+
         cache_key = "monthly_summary:#{start_date}:#{end_date}:#{date_type}"
-        
+
         report_data = fetch_from_cache(
           cache_key,
           { expires_in: 15.minutes },
           endpoint_namespace: 'monthly_summary'
         ) do
-          # Usar SQL direto para evitar problemas de GROUP BY
           date_column = date_type == :due_date ? 'due_date' : 'competency_date'
 
-          # transaction_type_cd: 0 = receita, 1-4 = despesa, 5 = transferência (ignorada)
           sql = <<-SQL
             SELECT
               COUNT(*) as total_transactions,
@@ -298,11 +241,11 @@ module Api
               AND transaction_type_cd != 5
           SQL
 
-          sanitized_sql = ActiveRecord::Base.sanitize_sql_array([sql, Current.account.id, start_date, end_date])
-          result = ActiveRecord::Base.connection.exec_query(sanitized_sql)
-          row = result.first
+          row = ActiveRecord::Base.connection.exec_query(
+            ActiveRecord::Base.sanitize_sql_array([sql, Current.account.id, start_date, end_date])
+          ).first
 
-          income_cents  = row&.dig('income_cents')&.to_i || 0
+          income_cents   = row&.dig('income_cents')&.to_i || 0
           expenses_cents = row&.dig('expenses_cents')&.to_i || 0
 
           {
@@ -323,47 +266,39 @@ module Api
       end
 
       def render_cash_flow_report
-        # Aplicar filtros de data se fornecidos, ou usar últimos 6 meses como padrão
         if params[:start_date].present? && params[:end_date].present?
           start_date = Date.parse(params[:start_date])
-          end_date = Date.parse(params[:end_date])
-          date_type = params[:date_type]&.to_sym || :due_date
-          
-          # Dividir o período em meses
+          end_date   = Date.parse(params[:end_date])
+          date_type  = params[:date_type]&.to_sym || :due_date
+
           current = start_date.beginning_of_month
-          months = []
+          months  = []
           while current <= end_date
             month_start = [current, start_date].max
-            month_end = [current.end_of_month, end_date].min
+            month_end   = [current.end_of_month, end_date].min
             months << { start: month_start, end: month_end, label: current.strftime('%B %Y') }
             current = current.next_month
           end
         else
-          # Padrão: últimos 6 meses
           months = 6.times.map do |i|
             month_start = i.months.ago.beginning_of_month
-            month_end = i.months.ago.end_of_month
+            month_end   = i.months.ago.end_of_month
             { start: month_start, end: month_end, label: month_start.strftime('%B %Y') }
           end
           date_type = :due_date
         end
 
-        # Cache independente para este endpoint
         cache_key = "cash_flow:#{months.first[:start]}:#{months.last[:end]}:#{date_type}"
-        
+
         cash_flow = fetch_from_cache(
           cache_key,
           { expires_in: 15.minutes },
           endpoint_namespace: 'cash_flow'
         ) do
-          # Otimização: fazer uma única query para todo o período e agrupar por mês
           overall_start = months.map { |m| m[:start] }.min
-          overall_end = months.map { |m| m[:end] }.max
-          
-          # Usar SQL direto para evitar problemas de GROUP BY
-          date_column = date_type == :due_date ? 'due_date' : 'competency_date'
+          overall_end   = months.map { |m| m[:end] }.max
+          date_column   = date_type == :due_date ? 'due_date' : 'competency_date'
 
-          # transaction_type_cd: 0 = receita, 1-4 = despesa, 5 = transferência (ignorada)
           sql = <<-SQL
             SELECT
               DATE_TRUNC('month', #{date_column}) as month,
@@ -378,14 +313,12 @@ module Api
             GROUP BY DATE_TRUNC('month', #{date_column})
           SQL
 
-          sanitized_sql = ActiveRecord::Base.sanitize_sql_array([sql, Current.account.id, overall_start, overall_end])
-          result = ActiveRecord::Base.connection.exec_query(sanitized_sql)
-
-          monthly_stats = result.index_by { |row| row['month'].to_date.beginning_of_month }
+          monthly_stats = ActiveRecord::Base.connection.exec_query(
+            ActiveRecord::Base.sanitize_sql_array([sql, Current.account.id, overall_start, overall_end])
+          ).index_by { |row| row['month'].to_date.beginning_of_month }
 
           months.map do |month_info|
-            month_key = month_info[:start].beginning_of_month
-            stats = monthly_stats[month_key]
+            stats          = monthly_stats[month_info[:start].beginning_of_month]
             income_cents   = stats&.dig('income_cents')&.to_i || 0
             expenses_cents = stats&.dig('expenses_cents')&.to_i || 0
 
@@ -410,11 +343,10 @@ module Api
 
       def render_appointments_integrated_report
         start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
-        end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
-        
-        # Cache independente para este endpoint
+        end_date   = params[:end_date].present?   ? Date.parse(params[:end_date])   : Date.today.end_of_month
+
         cache_key = "appointments_integrated:#{start_date}:#{end_date}"
-        
+
         report_data = fetch_from_cache(
           cache_key,
           { expires_in: 10.minutes },
@@ -422,17 +354,10 @@ module Api
         ) do
           result = Reports::AppointmentsIntegrated.call(
             account: Current.account,
-            params: {
-              start_date: start_date,
-              end_date: end_date
-            }
+            params: { start_date: start_date, end_date: end_date }
           )
 
-          if result.success?
-            result.result
-          else
-            raise StandardError, result.message || 'Erro ao gerar relatório'
-          end
+          result.success? ? result.result : raise(StandardError, result.message || 'Erro ao gerar relatório')
         end
 
         render json: {
@@ -446,18 +371,10 @@ module Api
       end
 
       def render_financial_with_appointments_report
-        begin
-          start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
-          end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
-        rescue ArgumentError => e
-          Rails.logger.error "Error parsing dates in render_financial_with_appointments_report: #{e.message}"
-          start_date = Date.today.beginning_of_month
-          end_date = Date.today.end_of_month
-        end
+        start_date, end_date = parse_date_range
 
-        # Cache independente para este endpoint
         cache_key = "financial_with_appointments:#{start_date}:#{end_date}"
-        
+
         report_data = fetch_from_cache(
           cache_key,
           { expires_in: 10.minutes },
@@ -465,17 +382,10 @@ module Api
         ) do
           result = Reports::FinancialWithAppointments.call(
             account: Current.account,
-            params: {
-              start_date: start_date,
-              end_date: end_date
-            }
+            params: { start_date: start_date, end_date: end_date }
           )
 
-          if result.success?
-            result.result
-          else
-            raise StandardError, result.message || 'Erro ao gerar relatório'
-          end
+          result.success? ? result.result : raise(StandardError, result.message || 'Erro ao gerar relatório')
         end
 
         render json: {
@@ -489,16 +399,7 @@ module Api
       end
 
       def render_dre_report
-        # Converter parâmetros de string para tipos apropriados
-        begin
-          start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
-          end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
-        rescue ArgumentError => e
-          Rails.logger.error "Error parsing dates in DRE report: #{e.message}"
-          start_date = Date.today.beginning_of_month
-          end_date = Date.today.end_of_month
-        end
-        
+        start_date, end_date = parse_date_range
         date_type = params[:date_type]&.to_sym || :due_date
         paid = if params[:paid].is_a?(Array)
                  params[:paid].map { |p| p.to_s == 'true' }
@@ -507,10 +408,9 @@ module Api
                else
                  [true, false]
                end
-        
-        # Cache independente para este endpoint
+
         cache_key = "dre:#{start_date}:#{end_date}:#{date_type}:#{paid.map(&:to_s).sort.join(',')}"
-        
+
         report_data = fetch_from_cache(
           cache_key,
           { expires_in: 15.minutes },
@@ -529,9 +429,7 @@ module Api
           if result.success?
             result.result
           else
-            error_message = result.message || 'Erro ao gerar DRE'
-            Rails.logger.error "DRE service failed: #{error_message}"
-            raise StandardError, error_message
+            raise StandardError, result.message || 'Erro ao gerar DRE'
           end
         end
 
@@ -543,22 +441,19 @@ module Api
         }
       rescue StandardError => e
         Rails.logger.error "Error in render_dre_report: #{e.message}"
-        Rails.logger.error e.backtrace.join("\n")
-        render json: { 
+        render json: {
           error: e.message,
           message: "Erro ao gerar relatório DRE. Verifique os logs do servidor para mais detalhes."
         }, status: :internal_server_error
       end
 
       def render_extract_report
-        # Paginação para extrato (pode ter muitos itens)
-        page = params[:page]&.to_i || 1
-        per_page = [params[:per_page]&.to_i || 100, 500].min # Máximo de 500 por página
-        
-        # Converter parâmetros
+        page     = params[:page]&.to_i || 1
+        per_page = [params[:per_page]&.to_i || 100, 500].min
+
         start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
-        end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
-        date_type = params[:date_type]&.to_sym || :due_date
+        end_date   = params[:end_date].present?   ? Date.parse(params[:end_date])   : Date.today.end_of_month
+        date_type  = params[:date_type]&.to_sym || :due_date
         paid = if params[:paid].is_a?(Array)
                  params[:paid].map { |p| p.to_s == 'true' }
                elsif params[:paid].present?
@@ -566,17 +461,15 @@ module Api
                else
                  [true, false]
                end
-        
-        # Processar arrays de IDs
+
         bank_account_ids = params[:bank_account_ids].is_a?(Array) ? params[:bank_account_ids] : (params[:bank_account_ids].present? ? [params[:bank_account_ids]] : [])
-        cost_center_ids = params[:cost_center_ids].is_a?(Array) ? params[:cost_center_ids] : (params[:cost_center_ids].present? ? [params[:cost_center_ids]] : [])
-        category_ids = params[:category_ids].is_a?(Array) ? params[:category_ids] : (params[:category_ids].present? ? [params[:category_ids]] : [])
-        tag_ids = params[:tag_ids].is_a?(Array) ? params[:tag_ids] : (params[:tag_ids].present? ? [params[:tag_ids]] : [])
-        payment_methods = params[:payment_methods].is_a?(Array) ? params[:payment_methods] : (params[:payment_methods].present? ? [params[:payment_methods]] : [])
-        
-        # Cache independente para este endpoint (cache mais curto devido à paginação)
+        cost_center_ids  = params[:cost_center_ids].is_a?(Array)  ? params[:cost_center_ids]  : (params[:cost_center_ids].present?  ? [params[:cost_center_ids]]  : [])
+        category_ids     = params[:category_ids].is_a?(Array)     ? params[:category_ids]     : (params[:category_ids].present?     ? [params[:category_ids]]     : [])
+        tag_ids          = params[:tag_ids].is_a?(Array)          ? params[:tag_ids]          : (params[:tag_ids].present?          ? [params[:tag_ids]]          : [])
+        payment_methods  = params[:payment_methods].is_a?(Array)  ? params[:payment_methods]  : (params[:payment_methods].present?  ? [params[:payment_methods]]  : [])
+
         cache_key = "extract:#{start_date}:#{end_date}:#{date_type}:#{paid.map(&:to_s).sort.join(',')}:#{bank_account_ids.sort.join(',')}:#{cost_center_ids.sort.join(',')}:#{category_ids.sort.join(',')}:#{tag_ids.sort.join(',')}:#{payment_methods.sort.join(',')}:#{page}:#{per_page}"
-        
+
         report_data = fetch_from_cache(
           cache_key,
           { expires_in: 5.minutes },
@@ -601,16 +494,14 @@ module Api
 
           if result.success?
             items, totals = result.result
-            total_items = items.is_a?(Array) ? items.length : 0
-            
             {
               items: items,
               totals: totals,
               pagination: {
                 page: page,
                 per_page: per_page,
-                total_items: total_items,
-                has_more: total_items >= per_page
+                total_items: items.is_a?(Array) ? items.length : 0,
+                has_more: (items.is_a?(Array) ? items.length : 0) >= per_page
               }
             }
           else
@@ -630,14 +521,13 @@ module Api
 
       def render_per_category_report
         transaction_type = params[:transaction_type] == 'revenue' ? :revenue : :expense
-        
+
         start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
-        end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
-        date_type = params[:date_type]&.to_sym || :due_date
-        
-        # Cache independente para este endpoint
+        end_date   = params[:end_date].present?   ? Date.parse(params[:end_date])   : Date.today.end_of_month
+        date_type  = params[:date_type]&.to_sym || :due_date
+
         cache_key = "per_category:#{transaction_type}:#{start_date}:#{end_date}:#{date_type}:#{params[:order]}"
-        
+
         report_data = fetch_from_cache(
           cache_key,
           { expires_in: 15.minutes },
@@ -683,14 +573,13 @@ module Api
 
       def render_per_description_report
         transaction_type = params[:transaction_type] == 'revenue' ? :revenue : :expense
-        
+
         start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
-        end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
-        date_type = params[:date_type]&.to_sym || :due_date
-        
-        # Cache independente para este endpoint
+        end_date   = params[:end_date].present?   ? Date.parse(params[:end_date])   : Date.today.end_of_month
+        date_type  = params[:date_type]&.to_sym || :due_date
+
         cache_key = "per_description:#{transaction_type}:#{start_date}:#{end_date}:#{date_type}:#{params[:order]}"
-        
+
         report_data = fetch_from_cache(
           cache_key,
           { expires_in: 15.minutes },
@@ -736,14 +625,13 @@ module Api
 
       def render_per_period_report
         transaction_type = params[:transaction_type] == 'revenue' ? :revenue : :expense
-        
+
         start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
-        end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
-        date_type = params[:date_type]&.to_sym || :due_date
-        
-        # Cache independente para este endpoint
+        end_date   = params[:end_date].present?   ? Date.parse(params[:end_date])   : Date.today.end_of_month
+        date_type  = params[:date_type]&.to_sym || :due_date
+
         cache_key = "per_period:#{transaction_type}:#{start_date}:#{end_date}:#{date_type}:#{params[:order]}"
-        
+
         report_data = fetch_from_cache(
           cache_key,
           { expires_in: 15.minutes },
@@ -789,12 +677,11 @@ module Api
 
       def render_financial_history_report
         start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
-        end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
-        date_type = params[:date_type]&.to_sym || :due_date
-        
-        # Cache independente para este endpoint
+        end_date   = params[:end_date].present?   ? Date.parse(params[:end_date])   : Date.today.end_of_month
+        date_type  = params[:date_type]&.to_sym || :due_date
+
         cache_key = "financial_history:#{start_date}:#{end_date}:#{date_type}"
-        
+
         report_data = fetch_from_cache(
           cache_key,
           { expires_in: 15.minutes },
@@ -841,6 +728,14 @@ module Api
       rescue StandardError => e
         render json: { error: e.message }, status: :internal_server_error
       end
+
+      def parse_date_range
+        start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
+        end_date   = params[:end_date].present?   ? Date.parse(params[:end_date])   : Date.today.end_of_month
+        [start_date, end_date]
+      rescue ArgumentError
+        [Date.today.beginning_of_month, Date.today.end_of_month]
+      end
     end
   end
-end   
+end

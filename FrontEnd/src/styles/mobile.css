@@ -14,11 +14,8 @@
   input[type="submit"],
   input[type="button"],
   [data-slot="button"] {
-    min-height: 44px;
-    min-width: 44px;
-    padding: 0.75rem 1rem;
-    touch-action: manipulation; /* Remove delay de toque */
-    -webkit-tap-highlight-color: transparent; /* Remove highlight padrão */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Inputs e selects otimizados para mobile */

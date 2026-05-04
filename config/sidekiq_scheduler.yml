@@ -18,3 +18,7 @@ appointment_reminders:
     cron: '0 * * * * America/Sao_Paulo'
     class: AppointmentReminderJob
     enabled: true
+appointment_billing_notifications:
+    cron: '0 * * * * America/Sao_Paulo'
+    class: AppointmentBillingNotificationsJob
+    enabled: true

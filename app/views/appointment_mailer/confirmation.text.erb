@@ -1,0 +1,20 @@
+Agendamento confirmado!
+
+Olá, <%= @client_name %>! Seu agendamento foi registrado com sucesso.
+
+DETALHES DO AGENDAMENTO
+Serviço:      <%= @service_name %>
+Profissional: <%= @professional_name %>
+Data:         <%= @date %>
+Horário:      <%= @time %>
+<% if @company_name.present? %>
+Local:        <%= @company_name %>
+<% end %>
+<% if @google_meet_link.present? %>
+
+Link da reunião: <%= @google_meet_link %>
+<% end %>
+<% if @company_whatsapp.present? %>
+
+Dúvidas ou cancelamentos? Fale pelo WhatsApp: https://wa.me/<%= @company_whatsapp %>
+<% end %>

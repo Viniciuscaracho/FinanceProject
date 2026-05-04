@@ -79,44 +79,75 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
     window.scrollTo(0, 0)
   }
 
+  const formatBalance = () => {
+    if (balanceLoading) return null
+    return `R$ ${balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
+
   return (
     <header className={cn(
       "sticky top-0 z-10 w-full max-w-full overflow-x-hidden",
-      "h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700",
+      "h-14 sm:h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700",
       scrolled && "shadow-sm"
     )}>
-      <div className="w-full h-16 px-4 flex items-center justify-between transition-colors duration-200">
-        {/* Left side - Wallet */}
-        <div className="flex items-center gap-4">
+      <div className="w-full h-full px-3 sm:px-4 flex items-center justify-between gap-2 transition-colors duration-200">
+        {/* Left side - Hamburger (mobile) + Wallet */}
+        <div className="flex items-center gap-2 min-w-0">
+          {/* Hamburger button - mobile only */}
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onMobileMenuClick}
+              className="h-9 w-9 p-0 flex-shrink-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              aria-label="Abrir menu"
+            >
+              <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+            </Button>
+          )}
+
           {!loadingAccounts && bankAccounts.length > 0 ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-3 px-4 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/20 shadow-sm cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">
-                  <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white">
-                    <Wallet className="w-5 h-5" />
+                {/* Desktop: full wallet widget | Mobile: compact icon + balance */}
+                <div className={cn(
+                  "flex items-center cursor-pointer rounded-xl border transition-colors",
+                  "border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/20 shadow-sm",
+                  "hover:bg-emerald-50 dark:hover:bg-emerald-900/30",
+                  isMobile ? "gap-2 px-2.5 py-1.5" : "gap-3 px-4 py-2"
+                )}>
+                  <div className={cn(
+                    "flex items-center justify-center rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white flex-shrink-0",
+                    isMobile ? "w-7 h-7" : "w-9 h-9"
+                  )}>
+                    <Wallet className={isMobile ? "w-4 h-4" : "w-5 h-5"} />
                   </div>
 
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800 dark:text-white">{selectedAccount?.name || 'Wallet'}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                      Saldo atual
-                      {lastUpdated && (
-                        <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3" />
-                          Atualizado agora
-                        </span>
-                      )}
-                    </p>
-                  </div>
+                  {/* Desktop-only labels */}
+                  {!isMobile && (
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800 dark:text-white">{selectedAccount?.name || 'Wallet'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        Saldo atual
+                        {lastUpdated && (
+                          <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" />
+                            Atualizado agora
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  )}
 
-                  <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400 ml-4">
+                  <p className={cn(
+                    "font-semibold text-emerald-600 dark:text-emerald-400",
+                    isMobile ? "text-sm" : "text-lg ml-4"
+                  )}>
                     {balanceLoading ? (
                       <RefreshCw className="h-4 w-4 animate-spin inline" />
-                    ) : (
-                      `R$ ${balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                    )}
+                    ) : formatBalance()}
                   </p>
-                  <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500 ml-2" />
+                  <ChevronDown className={cn("text-gray-400 dark:text-gray-500", isMobile ? "h-3 w-3" : "h-4 w-4 ml-2")} />
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
@@ -187,43 +218,52 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center gap-3 px-4 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/20 shadow-sm">
-              <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white">
-                <Wallet className="w-5 h-5" />
+            <div className={cn(
+              "flex items-center rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/20 shadow-sm",
+              isMobile ? "gap-2 px-2.5 py-1.5" : "gap-3 px-4 py-2"
+            )}>
+              <div className={cn(
+                "flex items-center justify-center rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white flex-shrink-0",
+                isMobile ? "w-7 h-7" : "w-9 h-9"
+              )}>
+                <Wallet className={isMobile ? "w-4 h-4" : "w-5 h-5"} />
               </div>
 
-              <div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-white">Wallet</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                  Saldo atual
-                  {lastUpdated && (
-                    <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3" />
-                      Atualizado agora
-                    </span>
-                  )}
-                </p>
-              </div>
+              {!isMobile && (
+                <div>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-white">Wallet</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    Saldo atual
+                    {lastUpdated && (
+                      <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3" />
+                        Atualizado agora
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
 
-              <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400 ml-4">
+              <p className={cn(
+                "font-semibold text-emerald-600 dark:text-emerald-400",
+                isMobile ? "text-sm" : "text-lg ml-4"
+              )}>
                 {balanceLoading ? (
                   <RefreshCw className="h-4 w-4 animate-spin inline" />
-                ) : (
-                  `R$ ${balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                )}
+                ) : formatBalance()}
               </p>
             </div>
           )}
         </div>
 
         {/* Right side - Theme Toggle & User */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {/* Theme Toggle Button */}
           <Button
             variant="ghost"
             size="sm"
             onClick={toggleTheme}
-            className="h-9 w-9 p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="h-9 w-9 p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
             title={isDarkMode ? 'Alternar para modo claro' : 'Alternar para modo escuro'}
           >
             {isDarkMode ? (
@@ -236,17 +276,27 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity px-2 py-1 rounded-lg">
-                <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white font-semibold">
+              {/* Desktop: avatar + name + email | Mobile: avatar only */}
+              <div className={cn(
+                "flex items-center cursor-pointer hover:opacity-80 transition-opacity rounded-lg",
+                isMobile ? "gap-0 px-1 py-1" : "gap-4 px-2 py-1"
+              )}>
+                <div className={cn(
+                  "flex items-center justify-center rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white font-semibold flex-shrink-0",
+                  isMobile ? "w-8 h-8 text-sm" : "w-10 h-10"
+                )}>
                   {user?.name?.charAt(0) || 'A'}
                 </div>
 
-                <div>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-white">{user?.name || 'Admin Exemplo'}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || 'admin@exemplo.com'}</p>
-                </div>
-
-                <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                {!isMobile && (
+                  <>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800 dark:text-white">{user?.name || 'Admin Exemplo'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || 'admin@exemplo.com'}</p>
+                    </div>
+                    <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  </>
+                )}
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent 

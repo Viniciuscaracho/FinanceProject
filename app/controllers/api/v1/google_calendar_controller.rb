@@ -5,87 +5,61 @@ module Api
     class GoogleCalendarController < ApplicationController
       CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar'
 
-      skip_before_action :authenticate_user!, only: [:callback]
-      skip_before_action :set_current_account, only: [:callback]
+      skip_before_action :authenticate_user!,        only: [:callback]
+      skip_before_action :set_current_account,       only: [:callback]
       skip_before_action :create_or_refresh_session, only: [:callback]
 
-      # GET /api/v1/google_calendar/status
       def status
-        account = Current.account
         render json: {
-          connected:  account.google_calendar_connected?,
-          calendar_id: account.google_calendar_id
+          connected:   Current.account.google_calendar_connected?,
+          calendar_id: Current.account.google_calendar_id
         }
       end
 
-      # GET /api/v1/google_calendar/oauth_url
-      # Retorna a URL de autorização do Google Calendar para a conta atual.
       def oauth_url
-        account  = Current.account
-        state    = build_state(account)
-
-        url = build_oauth_url(state)
-        render json: { oauth_url: url }
+        state = build_state(Current.account)
+        render json: { oauth_url: build_oauth_url(state) }
       end
 
-      # GET /api/v1/google_calendar/callback
-      # Google redireciona aqui após o usuário autorizar.
       def callback
-        code  = params[:code]
-        state = params[:state]
+        return redirect_to "#{frontend_url}/configuracoes?google_calendar=error&reason=no_code" if params[:code].blank?
 
-        if code.blank?
-          return redirect_to "#{frontend_url}/configuracoes?google_calendar=error&reason=no_code"
-        end
+        account = decode_state(params[:state])
+        return redirect_to "#{frontend_url}/configuracoes?google_calendar=error&reason=invalid_state" if account.nil?
 
-        account = decode_state(state)
-        if account.nil?
-          return redirect_to "#{frontend_url}/configuracoes?google_calendar=error&reason=invalid_state"
-        end
-
-        token_data = exchange_code(code)
-        if token_data[:error]
-          return redirect_to "#{frontend_url}/configuracoes?google_calendar=error&reason=token_exchange"
-        end
+        token_data = exchange_code(params[:code])
+        return redirect_to "#{frontend_url}/configuracoes?google_calendar=error&reason=token_exchange" if token_data[:error]
 
         account.update_columns(
-          google_access_token:     token_data[:access_token],
-          google_refresh_token:    token_data[:refresh_token],
-          google_token_expires_at: token_data[:expires_at],
+          google_access_token:       token_data[:access_token],
+          google_refresh_token:      token_data[:refresh_token],
+          google_token_expires_at:   token_data[:expires_at],
           google_calendar_connected: true
         )
 
         redirect_to "#{frontend_url}/configuracoes?google_calendar=connected"
       end
 
-      # DELETE /api/v1/google_calendar/disconnect
       def disconnect
         Current.account.update_columns(
-          google_access_token:     nil,
-          google_refresh_token:    nil,
-          google_token_expires_at: nil,
+          google_access_token:       nil,
+          google_refresh_token:      nil,
+          google_token_expires_at:   nil,
           google_calendar_connected: false
         )
 
         render json: { success: true, message: 'Google Calendar desconectado com sucesso' }
       end
 
-      # POST /api/v1/google_calendar/sync
-      # Dispara a sincronização de todos os agendamentos futuros da conta.
       def sync
         account = Current.account
-
-        unless account.google_calendar_connected?
-          return render json: { error: 'Google Calendar não está conectado' }, status: :unprocessable_entity
-        end
+        return render json: { error: 'Google Calendar não está conectado' }, status: :unprocessable_entity unless account.google_calendar_connected?
 
         appointments = account.appointments
                               .where('start_time >= ?', Time.current)
                               .where.not(status: Appointment::APPOINTMENT_STATUS[:canceled])
 
-        appointments.find_each do |appointment|
-          GoogleCalendarSyncJob.perform_later(appointment.id)
-        end
+        appointments.find_each { |appointment| GoogleCalendarSyncJob.perform_later(appointment.id) }
 
         render json: {
           success: true,

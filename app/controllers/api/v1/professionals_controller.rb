@@ -7,7 +7,6 @@ module Api
                                               :commission_configs, :create_commission_config,
                                               :update_commission_config, :destroy_commission_config]
 
-      # GET /api/v1/professionals
       def index
         professionals = current_account.account_users
                                       .includes(:user)
@@ -16,12 +15,10 @@ module Api
         render json: professionals.map { |au| professional_json(au) }
       end
 
-      # GET /api/v1/professionals/:id
       def show
         render json: professional_json(@professional)
       end
 
-      # POST /api/v1/professionals
       def create
         user = User.find_by(email: professional_params[:email])
 
@@ -35,17 +32,12 @@ module Api
             last_name = name_parts[1] if last_name.blank? && name_parts.length > 1
           end
 
-          if first_name.blank?
-            render json: { errors: ['Nome é obrigatório'] }, status: :unprocessable_entity
-            return
-          end
-
-          last_name = last_name.presence || ''
+          return render json: { errors: ['Nome é obrigatório'] }, status: :unprocessable_entity if first_name.blank?
 
           user = User.new(
             email: professional_params[:email]&.strip,
             first_name: first_name,
-            last_name: last_name,
+            last_name: last_name.presence || '',
             phone_number: professional_params[:phone_number]&.strip,
             password: professional_params[:password].presence || Devise.friendly_token[0, 20],
             password_confirmation: professional_params[:password].presence || Devise.friendly_token[0, 20],
@@ -53,24 +45,17 @@ module Api
             accepted_privacy_at: Time.current
           )
 
-          unless user.save
-            render json: { errors: user.errors.full_messages }, status: :unprocessable_entity
-            return
-          end
+          return render json: { errors: user.errors.full_messages }, status: :unprocessable_entity unless user.save
         end
 
         existing_account_user = current_account.account_users.find_by(user: user)
-        if existing_account_user
-          render json: { errors: ['Este profissional já está cadastrado nesta conta'] }, status: :unprocessable_entity
-          return
-        end
+        return render json: { errors: ['Este profissional já está cadastrado nesta conta'] }, status: :unprocessable_entity if existing_account_user
 
         schedule_data = nil
         if professional_params[:schedule].present?
           schedule_data = {}
           professional_params[:schedule].each do |key, value|
-            day_key = key.to_sym
-            schedule_data[day_key] = {
+            schedule_data[key.to_sym] = {
               enabled: value[:enabled] || value['enabled'] || false,
               start_hour: (value[:start_hour] || value['start_hour'] || 9).to_i,
               end_hour: (value[:end_hour] || value['end_hour'] || 18).to_i
@@ -78,13 +63,11 @@ module Api
           end
         end
 
-        commission_pct = professional_params[:commission_percentage].present? ? professional_params[:commission_percentage].to_f : 50.0
-
         account_user = current_account.account_users.build(
           user: user,
           role: professional_params[:role] || :custom,
           schedule: schedule_data,
-          commission_percentage: commission_pct
+          commission_percentage: professional_params[:commission_percentage].present? ? professional_params[:commission_percentage].to_f : 50.0
         )
 
         if account_user.save
@@ -94,66 +77,57 @@ module Api
         end
       end
 
-      # PATCH /api/v1/professionals/:id
       def update
         user = @professional.user
 
-        user_params = {}
-        user_params[:first_name] = professional_params[:first_name] if professional_params[:first_name].present?
-        user_params[:last_name] = professional_params[:last_name] if professional_params[:last_name].present?
-        user_params[:email] = professional_params[:email] if professional_params[:email].present?
-        user_params[:phone_number] = professional_params[:phone_number] if professional_params[:phone_number].present?
-        user_params[:password] = professional_params[:password] if professional_params[:password].present?
-        user_params[:password_confirmation] = professional_params[:password] if professional_params[:password].present?
+        user_attrs = {}
+        user_attrs[:first_name]            = professional_params[:first_name]    if professional_params[:first_name].present?
+        user_attrs[:last_name]             = professional_params[:last_name]     if professional_params[:last_name].present?
+        user_attrs[:email]                 = professional_params[:email]         if professional_params[:email].present?
+        user_attrs[:phone_number]          = professional_params[:phone_number]  if professional_params[:phone_number].present?
+        user_attrs[:password]              = professional_params[:password]      if professional_params[:password].present?
+        user_attrs[:password_confirmation] = professional_params[:password]      if professional_params[:password].present?
 
-        user.update!(user_params) if user_params.any?
+        user.update!(user_attrs) if user_attrs.any?
 
-        account_user_params = {}
-        account_user_params[:role] = professional_params[:role] if professional_params[:role].present?
-        account_user_params[:schedule] = professional_params[:schedule] if professional_params[:schedule].present?
-        account_user_params[:commission_percentage] = professional_params[:commission_percentage].to_f if professional_params[:commission_percentage].present?
+        au_attrs = {}
+        au_attrs[:role]                  = professional_params[:role]                             if professional_params[:role].present?
+        au_attrs[:schedule]              = professional_params[:schedule]                         if professional_params[:schedule].present?
+        au_attrs[:commission_percentage] = professional_params[:commission_percentage].to_f       if professional_params[:commission_percentage].present?
 
-        @professional.update!(account_user_params) if account_user_params.any?
+        @professional.update!(au_attrs) if au_attrs.any?
 
         render json: professional_json(@professional)
       end
 
-      # PATCH /api/v1/professionals/:id/update_schedule
       def update_schedule
         schedule_data = params[:schedule] || {}
+        return render json: { error: 'Dados de horário não fornecidos' }, status: :unprocessable_entity unless schedule_data.present?
 
-        if schedule_data.present?
-          normalized_schedule = {}
-          schedule_data.each do |key, value|
-            day_key = key.to_sym
-            normalized_schedule[day_key] = {
-              enabled: value[:enabled] || value['enabled'] || false,
-              start_hour: (value[:start_hour] || value['start_hour'] || 9).to_i,
-              end_hour: (value[:end_hour] || value['end_hour'] || 18).to_i
-            }
-          end
-
-          @professional.update!(schedule: normalized_schedule)
-          render json: {
-            success: true,
-            schedule: @professional.schedule,
-            message: 'Horários atualizados com sucesso'
+        normalized_schedule = {}
+        schedule_data.each do |key, value|
+          normalized_schedule[key.to_sym] = {
+            enabled: value[:enabled] || value['enabled'] || false,
+            start_hour: (value[:start_hour] || value['start_hour'] || 9).to_i,
+            end_hour: (value[:end_hour] || value['end_hour'] || 18).to_i,
+            has_break: value[:has_break] || value['has_break'] || false,
+            break_start: value[:break_start] || value['break_start'],
+            break_end: value[:break_end] || value['break_end']
           }
-        else
-          render json: { error: 'Dados de horário não fornecidos' }, status: :unprocessable_entity
         end
+
+        @professional.update!(schedule: normalized_schedule)
+        render json: { success: true, schedule: @professional.schedule, message: 'Horários atualizados com sucesso' }
       rescue => e
         Rails.logger.error "Error updating schedule: #{e.message}"
         render json: { error: e.message }, status: :unprocessable_entity
       end
 
-      # GET /api/v1/professionals/:id/commission_configs
       def commission_configs
         configs = @professional.professional_commissions.includes(:service)
         render json: configs.map { |c| commission_config_json(c) }
       end
 
-      # POST /api/v1/professionals/:id/commission_configs
       def create_commission_config
         config = @professional.professional_commissions.build(commission_config_params)
         if config.save
@@ -163,7 +137,6 @@ module Api
         end
       end
 
-      # PATCH /api/v1/professionals/:id/commission_configs/:commission_config_id
       def update_commission_config
         config = @professional.professional_commissions.find(params[:commission_config_id])
         if config.update(commission_config_params)
@@ -175,7 +148,6 @@ module Api
         render json: { error: 'Configuração não encontrada' }, status: :not_found
       end
 
-      # DELETE /api/v1/professionals/:id/commission_configs/:commission_config_id
       def destroy_commission_config
         config = @professional.professional_commissions.find(params[:commission_config_id])
         config.destroy
@@ -184,7 +156,6 @@ module Api
         render json: { error: 'Configuração não encontrada' }, status: :not_found
       end
 
-      # DELETE /api/v1/professionals/:id
       def destroy
         @professional.destroy
         head :no_content

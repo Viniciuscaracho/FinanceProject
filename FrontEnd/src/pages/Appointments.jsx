@@ -1715,7 +1715,7 @@ function AppointmentsPage() {
         {/* Header - Bold Typography */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 pb-2">
           <div className="space-y-2">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-2 responsive-text-xl text-text-primary transition-all duration-200">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 text-text-primary">
               Agendamentos
             </h1>
             <p className="text-base md:text-lg text-text-secondary transition-colors duration-200">

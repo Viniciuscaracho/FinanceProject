@@ -316,7 +316,7 @@ export function Professionals() {
         {/* Header - Bold Typography */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-2 responsive-text-xl">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">
               <span className="bg-gradient-to-r from-[#5B7A9E] via-[#6B8FA3] to-[#7A9D96] bg-clip-text text-transparent">
                 Profissionais
               </span>

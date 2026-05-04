@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <style>
+      body { margin: 0; padding: 0; background-color: #f4f5f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      .wrapper { width: 100%; background-color: #f4f5f7; padding: 32px 16px; }
+      .container { max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+      .header { background: linear-gradient(135deg, #5B7A9E 0%, #7A9D96 100%); padding: 32px 40px; text-align: center; }
+      .header h1 { margin: 0; color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+      .header p { margin: 4px 0 0; color: rgba(255,255,255,0.8); font-size: 13px; }
+      .body { padding: 32px 40px; color: #374151; }
+      .footer { padding: 24px 40px; text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #f3f4f6; }
+      .footer a { color: #6b7280; text-decoration: none; }
+      @media (max-width: 600px) {
+        .header, .body, .footer { padding-left: 24px; padding-right: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="container">
+        <div class="header">
+          <h1>Orbi</h1>
+          <p>Gestão Profissional de Agenda</p>
+        </div>
+        <div class="body">
+          <%= yield %>
+        </div>
+        <div class="footer">
+          <p>Você recebeu este e-mail porque realizou um agendamento.</p>
+          <p>&copy; <%= Time.current.year %> Orbi. Todos os direitos reservados.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

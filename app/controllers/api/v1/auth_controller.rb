@@ -8,25 +8,20 @@ module Api
       skip_before_action :create_or_refresh_session, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :test_user, :debug_user, :test_logs, :create_test_user, :register]
       before_action :set_user, only: [:me, :logout]
       before_action :force_json_format
-      
-      # Garantir que sempre retornamos JSON, mesmo em caso de erro
+
       rescue_from StandardError, with: :handle_error
-      
+
       def force_json_format
         request.format = :json
       end
-      
+
       def handle_error(exception)
         Rails.logger.error "=== Erro em AuthController ==="
         Rails.logger.error "Exception: #{exception.class.name}"
         Rails.logger.error "Message: #{exception.message}"
-        Rails.logger.error "Backtrace:"
-        Rails.logger.error exception.backtrace.join("\n")
-        
-        # Verificar se já foi renderizado para evitar double render
+
         return if performed?
-        
-        # Sempre retornar JSON, mesmo em desenvolvimento
+
         render json: {
           success: false,
           error: "Erro interno do servidor: #{exception.message}",
@@ -36,364 +31,160 @@ module Api
       end
 
       def login
-        puts "=== REQUISIÇÃO CHEGOU NO BACKEND ==="
-        puts "Método: #{request.method}"
-        puts "URL: #{request.url}"
-        puts "Headers: #{request.headers.to_h.select { |k,v| k.start_with?('HTTP_') }}"
-        puts "Body: #{request.body.read}"
-        puts "Parâmetros: #{params.inspect}"
-        
-        # Usar a mesma consulta que funciona no debug
         user = User.where(email: params[:email]).first
-        puts "Usuário encontrado: #{user&.id} - #{user&.email}"
-        
-        unless user
-          puts "Login falhou: usuário não encontrado para email: #{params[:email]}"
-          return render json: { 
-            success: false, 
-            error: 'Email ou senha inválidos' 
-          }, status: :unauthorized
-        end
-        
-        # Verificar se o usuário foi criado via OAuth
+
+        return render json: { success: false, error: 'Email ou senha inválidos' }, status: :unauthorized unless user
+
         if user.provider.present?
-          puts "Login falhou: usuário OAuth tentando login tradicional - email: #{params[:email]}, provider: #{user.provider}"
-          return render json: { 
-            success: false, 
+          return render json: {
+            success: false,
             error: 'Este usuário foi criado via autenticação social. Use o login via ' + user.provider.capitalize + ' ou redefina sua senha.',
             oauth_user: true,
             provider: user.provider
           }, status: :unauthorized
         end
-        
+
         if user.valid_password?(params[:password])
-          puts "Senha válida, gerando token para usuário ID: #{user.id}"
-          user_response = user_data(user)
-          puts "Resposta do user_data: #{user_response.inspect}"
-          
-          response_data = {
-            success: true,
-            user: user_response,
-            token: generate_token(user)
-          }
-          
-          puts "Resposta final: #{response_data.inspect}"
-          render json: response_data
+          render json: { success: true, user: user_data(user), token: generate_token(user) }
         else
-          puts "Login falhou para email: #{params[:email]}"
-          render json: { 
-            success: false, 
-            error: 'Email ou senha inválidos' 
-          }, status: :unauthorized
+          render json: { success: false, error: 'Email ou senha inválidos' }, status: :unauthorized
         end
       end
 
       def firebase_login
-        user_data = params.permit(:uid, :email, :name, :photo_url, :provider)
-        
-        # Buscar usuário pelo UID do Firebase ou criar novo
-        user = User.find_or_initialize_by(uid: user_data[:uid])
-        
+        data = params.permit(:uid, :email, :name, :photo_url, :provider)
+        user = User.find_or_initialize_by(uid: data[:uid])
+
         if user.new_record?
-          # Criar novo usuário
-          user.email = user_data[:email]
-          user.first_name = user_data[:name]&.split(' ')&.first || ''
-          user.last_name = user_data[:name]&.split(' ')&.last || ''
-          user.provider = user_data[:provider] || 'firebase'
+          user.email = data[:email]
+          user.first_name = data[:name]&.split(' ')&.first || ''
+          user.last_name = data[:name]&.split(' ')&.last || ''
+          user.provider = data[:provider] || 'firebase'
           user.password = Devise.friendly_token[0, 20]
-          
-          # Definir conta padrão se necessário
+
           if user.accounts.empty?
-            account = Account.create!(
-              name: "Conta Principal",
-              account_type: 'personal',
-              default_currency: 'BRL'
-            )
+            account = Account.create!(name: "Conta Principal", account_type: 'personal', default_currency: 'BRL')
             user.accounts << account
           end
-          
-          unless user.save
-            render json: { 
-              success: false, 
-              error: 'Erro ao criar usuário',
-              details: user.errors.full_messages 
-            }, status: :unprocessable_entity
-            return
-          end
+
+          return render json: { success: false, error: 'Erro ao criar usuário', details: user.errors.full_messages }, status: :unprocessable_entity unless user.save
         else
-          # Atualizar dados do usuário existente
           user.update(
-            email: user_data[:email],
-            first_name: user_data[:name]&.split(' ')&.first || user.first_name,
-            last_name: user_data[:name]&.split(' ')&.last || user.last_name
+            email: data[:email],
+            first_name: data[:name]&.split(' ')&.first || user.first_name,
+            last_name: data[:name]&.split(' ')&.last || user.last_name
           )
         end
-        
-        # Fazer login do usuário
+
         sign_in user
-        
-        render json: {
-          success: true,
-          user: user_data(user),
-          token: generate_token(user)
-        }
+
+        render json: { success: true, user: user_data(user), token: generate_token(user) }
       rescue => e
-        Rails.logger.error "Erro no firebase_login: #{e.message}"
-        render json: { 
-          success: false, 
-          error: 'Erro interno do servidor' 
-        }, status: :internal_server_error
+        render json: { success: false, error: 'Erro interno do servidor' }, status: :internal_server_error
       end
 
-      # Login via Supabase Auth
-      # Recebe o access_token do Supabase e valida, depois cria/atualiza usuário local
       def supabase_login
         access_token = params[:access_token] || request.headers['Authorization']&.gsub(/^Bearer /, '')
-        
-        unless access_token.present?
-          render json: { 
-            success: false, 
-            error: 'Token de acesso não fornecido' 
-          }, status: :unauthorized
-          return
-        end
-        
-        # Verificar token e obter usuário do Supabase
+
+        return render json: { success: false, error: 'Token de acesso não fornecido' }, status: :unauthorized unless access_token.present?
+
         user = Supabase::Auth.get_user_from_token(access_token)
-        
-        unless user
-          render json: { 
-            success: false, 
-            error: 'Token inválido ou expirado' 
-          }, status: :unauthorized
-          return
-        end
-        
-        # Gerar token de acesso para o sistema local
+
+        return render json: { success: false, error: 'Token inválido ou expirado' }, status: :unauthorized unless user
+
         token = Supabase::Auth.generate_access_token(user)
-        
-        render json: {
-          success: true,
-          user: user_data(user),
-          token: token,
-          supabase_token: access_token # Retornar também o token do Supabase se necessário
-        }
+
+        render json: { success: true, user: user_data(user), token: token, supabase_token: access_token }
       rescue => e
-        Rails.logger.error "Erro no supabase_login: #{e.message}"
-        Rails.logger.error e.backtrace.join("\n")
-        render json: { 
-          success: false, 
-          error: 'Erro interno do servidor' 
-        }, status: :internal_server_error
+        render json: { success: false, error: 'Erro interno do servidor' }, status: :internal_server_error
       end
 
       def google_oauth_url
-        # Gerar URL de autorização do Google
-        client_id = ENV['GOOGLE_CLIENT_ID'] || 'test_client_id'
-        redirect_uri = "#{request.base_url}/oauth/callback"
-        scope = 'email profile'
-        
-        auth_url = "https://accounts.google.com/o/oauth2/v2/auth?" +
-                   "client_id=#{client_id}&" +
-                   "redirect_uri=#{CGI.escape(redirect_uri)}&" +
-                   "scope=#{CGI.escape(scope)}&" +
-                   "response_type=code&" +
-                   "access_type=offline&" +
-                   "prompt=consent"
-        
-        render json: { auth_url: auth_url }
+        render json: {
+          auth_url: "https://accounts.google.com/o/oauth2/v2/auth?" \
+                    "client_id=#{ENV['GOOGLE_CLIENT_ID'] || 'test_client_id'}&" \
+                    "redirect_uri=#{CGI.escape("#{request.base_url}/oauth/callback")}&" \
+                    "scope=#{CGI.escape('email profile')}&" \
+                    "response_type=code&" \
+                    "access_type=offline&" \
+                    "prompt=consent"
+        }
       end
 
       def google_oauth_callback
-        code = params[:code]
-        
-        if code.blank?
-          render json: { error: 'Código de autorização não fornecido' }, status: :bad_request
-          return
-        end
+        return render json: { error: 'Código de autorização não fornecido' }, status: :bad_request if params[:code].blank?
 
-        # Trocar código por token de acesso
-        token_response = exchange_code_for_token(code)
-        
-        if token_response[:error]
-          render json: { error: token_response[:error] }, status: :bad_request
-          return
-        end
+        token_response = exchange_code_for_token(params[:code])
+        return render json: { error: token_response[:error] }, status: :bad_request if token_response[:error]
 
-        # Obter informações do usuário do Google
         user_info = get_google_user_info(token_response[:access_token])
-        
-        if user_info[:error]
-          render json: { error: user_info[:error] }, status: :bad_request
-          return
-        end
+        return render json: { error: user_info[:error] }, status: :bad_request if user_info[:error]
 
-        # Criar ou encontrar usuário
         user = User.from_omniauth_data(user_info)
-        
+
         if user.persisted?
-          render json: {
-            success: true,
-            user: user_data(user),
-            token: generate_token(user)
-          }
+          render json: { success: true, user: user_data(user), token: generate_token(user) }
         else
-          render json: { 
-            error: 'Erro ao criar usuário',
-            details: user.errors.full_messages 
-          }, status: :unprocessable_entity
+          render json: { error: 'Erro ao criar usuário', details: user.errors.full_messages }, status: :unprocessable_entity
         end
       end
 
       def me
-        begin
-          unless @user
-            Rails.logger.error "Método me chamado sem @user definido"
-            return render json: { error: 'Usuário não encontrado' }, status: :unauthorized
-          end
-          
-          user_data_result = user_data(@user)
-          render json: { user: user_data_result }
-        rescue => e
-          Rails.logger.error "Erro no método me: #{e.class}: #{e.message}"
-          Rails.logger.error e.backtrace.join("\n")
-          render json: { 
-            error: "Erro ao obter dados do usuário: #{e.message}",
-            details: Rails.env.development? ? e.backtrace.first(5) : nil
-          }, status: :internal_server_error
-        end
+        return render json: { error: 'Usuário não encontrado' }, status: :unauthorized unless @user
+
+        render json: { user: user_data(@user) }
+      rescue => e
+        render json: { error: "Erro ao obter dados do usuário: #{e.message}" }, status: :internal_server_error
       end
 
       def logout
-        # Log do logout para auditoria
-        Rails.logger.info "Logout realizado para usuário: #{@user&.email || 'desconhecido'}"
-        
-        # Com tokens base64 simples, não há necessidade de invalidar no servidor
-        # Em futuras implementações com JWT e blacklist, adicionar invalidação aqui
-        
-        render json: { 
-          success: true, 
-          message: 'Logout realizado com sucesso' 
-        }
+        render json: { success: true, message: 'Logout realizado com sucesso' }
       end
 
       def test_user
         user = User.find_by(email: 'admin@financialproject.com')
-        render json: {
-          direct_id: user.id,
-          user_data: user_data(user),
-          user_inspect: user.inspect
-        }
+        render json: { direct_id: user.id, user_data: user_data(user), user_inspect: user.inspect }
       end
 
       def login_simple
-        Rails.logger.info "=== login_simple chamado ==="
-        Rails.logger.info "Params: #{params.inspect}"
-        Rails.logger.info "Email: #{params[:email]}"
-        Rails.logger.info "Password presente: #{params[:password].present?}"
-        
         user = User.find_by(email: params[:email])
-        Rails.logger.info "Usuário encontrado: #{user&.id}"
-        
-        unless user
-          Rails.logger.warn "Login falhou: usuário não encontrado para email: #{params[:email]}"
-          return render json: { 
-            success: false, 
-            error: 'Email ou senha inválidos' 
-          }, status: :unauthorized
-        end
-        
-        # Verificar se o usuário foi criado via OAuth
+
+        return render json: { success: false, error: 'Email ou senha inválidos' }, status: :unauthorized unless user
+
         if user.provider.present?
-          Rails.logger.warn "Login falhou: usuário OAuth tentando login tradicional - email: #{params[:email]}, provider: #{user.provider}"
-          return render json: { 
-            success: false, 
+          return render json: {
+            success: false,
             error: 'Este usuário foi criado via autenticação social. Use o login via ' + user.provider.capitalize + ' ou redefina sua senha.',
             oauth_user: true,
             provider: user.provider
           }, status: :unauthorized
         end
-        
-        Rails.logger.info "Verificando senha..."
-        unless user.valid_password?(params[:password])
-          Rails.logger.warn "Login falhou: senha inválida para email: #{params[:email]}"
-          return render json: { 
-            success: false, 
-            error: 'Email ou senha inválidos' 
-          }, status: :unauthorized
-        end
-        
-        begin
-          Rails.logger.info "Senha válida, gerando dados do usuário..."
-          # Gerar dados do usuário e token
-          user_data_result = user_data(user)
-          Rails.logger.info "user_data gerado com sucesso"
-          
-          token = generate_token(user)
-          Rails.logger.info "Token gerado com sucesso"
-          
-          Rails.logger.info "Login bem-sucedido para usuário ID: #{user.id}"
-          render json: {
-            success: true,
-            user: user_data_result,
-            token: token
-          }
-        rescue => e
-          Rails.logger.error "Erro ao processar login: #{e.class}: #{e.message}"
-          Rails.logger.error e.backtrace.join("\n")
-          
-          # Verificar se já foi renderizado para evitar double render
-          return if performed?
-          
-          render json: {
-            success: false,
-            error: 'Erro ao processar login',
-            message: e.message,
-            details: Rails.env.development? ? e.backtrace.first(5) : nil
-          }, status: :internal_server_error
-        end
+
+        return render json: { success: false, error: 'Email ou senha inválidos' }, status: :unauthorized unless user.valid_password?(params[:password])
+
+        render json: { success: true, user: user_data(user), token: generate_token(user) }
+      rescue => e
+        return if performed?
+        render json: { success: false, error: 'Erro ao processar login', message: e.message }, status: :internal_server_error
       end
 
       def debug_user
-        puts "=== DEBUG USER ==="
-        puts "Email: admin@financialproject.com"
-        
-        # Testar consulta SQL direta
         sql = "SELECT id, email FROM users WHERE email = 'admin@financialproject.com'"
-        puts "SQL: #{sql}"
         result = ActiveRecord::Base.connection.execute(sql)
-        puts "Resultado: #{result.to_a}"
-        
-        # Testar find_by
         user = User.find_by(email: 'admin@financialproject.com')
-        puts "find_by - ID: #{user&.id}, Email: #{user&.email}"
-        
-        # Testar where
         user2 = User.where(email: 'admin@financialproject.com').first
-        puts "where - ID: #{user2&.id}, Email: #{user2&.email}"
-        
-        # Testar user_data
         user_data_result = user_data(user) if user
-        puts "user_data - ID: #{user_data_result&.dig(:id)}"
-        
-        # Testar serialização JSON
-        json_result = user_data_result.to_json
-        puts "JSON: #{json_result}"
-        
+
         render json: {
           sql_result: result.to_a,
           find_by_id: user&.id,
           where_id: user2&.id,
           user_data_id: user_data_result&.dig(:id),
-          json_result: json_result
+          json_result: user_data_result.to_json
         }
       end
 
       def test_logs
-        puts "=== TESTE DE LOGS ==="
-        puts "Este é um teste de logs"
-        puts "Timestamp: #{Time.current}"
-        
         render json: { message: "Logs funcionando", timestamp: Time.current }
       end
 
@@ -403,21 +194,12 @@ module Api
         full_name = params[:name].to_s.strip
         account_name = params[:account_name].to_s.strip.presence || full_name
 
-        if email.blank? || password.blank? || full_name.blank?
-          return render json: { success: false, error: 'Preencha todos os campos obrigatórios' }, status: :unprocessable_entity
-        end
+        return render json: { success: false, error: 'Preencha todos os campos obrigatórios' }, status: :unprocessable_entity if email.blank? || password.blank? || full_name.blank?
+        return render json: { success: false, error: 'Este e-mail já está cadastrado' }, status: :unprocessable_entity if User.exists?(email: email)
 
-        if User.exists?(email: email)
-          return render json: { success: false, error: 'Este e-mail já está cadastrado' }, status: :unprocessable_entity
-        end
+        first_name, last_name = full_name.split(' ', 2).then { |parts| [parts[0], parts[1].to_s] }
 
-        name_parts = full_name.split(' ', 2)
-        first_name = name_parts[0]
-        last_name = name_parts[1].to_s
-
-        if first_name.length < 3
-          return render json: { success: false, error: 'Nome deve ter pelo menos 3 caracteres' }, status: :unprocessable_entity
-        end
+        return render json: { success: false, error: 'Nome deve ter pelo menos 3 caracteres' }, status: :unprocessable_entity if first_name.length < 3
 
         ActiveRecord::Base.transaction do
           user = User.new(
@@ -432,50 +214,29 @@ module Api
           user.skip_confirmation!
           user.save!
 
-          # O callback create_default_account_if_needed já criou a conta — apenas atualiza o nome
           account = user.account
-          if account&.company && account_name.present?
-            account.company.update_columns(first_name: account_name, last_name: nil)
-          end
+          account.company.update_columns(first_name: account_name, last_name: nil) if account&.company && account_name.present?
 
           Current.user = user
           Current.account = account
 
-          render json: {
-            success: true,
-            user: user_data(user),
-            token: generate_token(user)
-          }
+          render json: { success: true, user: user_data(user), token: generate_token(user) }
         end
       rescue ActiveRecord::RecordInvalid => e
         render json: { success: false, error: e.record.errors.full_messages.first || 'Erro ao criar conta' }, status: :unprocessable_entity
       rescue => e
-        Rails.logger.error "Erro em register: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
         render json: { success: false, error: 'Erro interno ao criar conta' }, status: :internal_server_error
       end
 
       def create_test_user
-        # Verificar se já existe um usuário admin
         existing_user = User.find_by(email: 'admin@barbermanagement.io')
-        
+
         if existing_user
-          render json: { 
-            success: true, 
-            message: 'Usuário admin já existe',
-            email: 'admin@barbermanagement.io',
-            password: 'password123'
-          }
-          return
+          return render json: { success: true, message: 'Usuário admin já existe', email: 'admin@barbermanagement.io', password: 'password123' }
         end
 
-        # Criar conta padrão
-        account = Account.create!(
-          name: "Conta Principal",
-          account_type: 'personal',
-          default_currency: 'BRL'
-        )
+        account = Account.create!(name: "Conta Principal", account_type: 'personal', default_currency: 'BRL')
 
-        # Criar usuário admin
         user = User.create!(
           email: 'admin@barbermanagement.io',
           password: 'password123',
@@ -484,21 +245,11 @@ module Api
           last_name: 'BarberManagement'
         )
 
-        # Associar usuário à conta
         user.accounts << account
 
-        render json: { 
-          success: true, 
-          message: 'Usuário admin criado com sucesso',
-          email: 'admin@barbermanagement.io',
-          password: 'password123'
-        }
+        render json: { success: true, message: 'Usuário admin criado com sucesso', email: 'admin@barbermanagement.io', password: 'password123' }
       rescue => e
-        render json: { 
-          success: false, 
-          error: 'Erro ao criar usuário de teste',
-          details: e.message
-        }, status: :unprocessable_entity
+        render json: { success: false, error: 'Erro ao criar usuário de teste', details: e.message }, status: :unprocessable_entity
       end
 
       private
@@ -508,110 +259,68 @@ module Api
       end
 
       def user_data(user)
-        Rails.logger.info "user_data chamado com user ID: #{user.id}"
-        
-        begin
-          # Definir Current.user
-          Current.user = user unless Current.user == user
-          
-          # Tentar obter a conta do usuário
-          account = nil
-          begin
-            # Tentar obter conta em ordem de prioridade
-            if Current.account.present?
-              account = Current.account
-            elsif user.account.present?
-              account = user.account
-            elsif user.accounts.any?
-              account = user.accounts.first
-            end
-            
-            # Definir Current.account se encontrada
-            if account.present? && Current.account != account
-              Current.account = account
-            end
-          rescue => e
-            Rails.logger.warn "Erro ao obter conta do usuário: #{e.class}: #{e.message}"
-            Rails.logger.warn e.backtrace.first(3).join("\n")
-            # Continuar sem conta se houver erro
-            account = nil
-          end
-          
-          # Verificar se o usuário é admin da conta ou dono
-          is_account_admin = false
-          is_account_owner = false
-          if account
-            begin
-              account_user = user.current_account_user
-              is_account_admin = account_user&.admin? || false
-              is_account_owner = user.current_account_owner? || false
-            rescue => e
-              Rails.logger.warn "Erro ao verificar permissões do usuário: #{e.message}"
-            end
-          end
-          
-          account_data = nil
-          if account
-            begin
-              account_data = {
-                id: account.id,
-                prefix_id: account.prefix_id,
-                name: account.name,
-                admin: account.admin == true, # Conta do dono do sistema (BarberManagement)
-                account_type: account.account_type
-              }
-            rescue => e
-              Rails.logger.warn "Erro ao serializar dados da conta: #{e.message}"
-            end
-          end
-          
-          {
-            id: user.id,
-            email: user.email,
-            first_name: user.first_name || '',
-            last_name: user.last_name || '',
-            name: user.name || '',
-            preferred_language: user.preferred_language,
-            admin: user.admin? || false, # Admin do sistema
-            account_admin: is_account_admin, # Admin da conta empresarial
-            account_owner: is_account_owner, # Dono da conta
-            account: account_data
-          }
-        rescue => e
-          Rails.logger.error "Erro em user_data: #{e.class}: #{e.message}"
-          Rails.logger.error e.backtrace.join("\n")
-          # Retornar dados mínimos em caso de erro
-          {
-            id: user.id,
-            email: user.email,
-            first_name: user.first_name || '',
-            last_name: user.last_name || '',
-            name: user.name || '',
-            preferred_language: user.preferred_language,
-            admin: false,
-            account_admin: false,
-            account_owner: false,
-            account: nil
-          }
+        Current.user = user unless Current.user == user
+
+        account = if Current.account.present?
+                    Current.account
+                  elsif user.account.present?
+                    user.account
+                  elsif user.accounts.any?
+                    user.accounts.first
+                  end
+
+        Current.account = account if account.present? && Current.account != account
+
+        is_account_admin = false
+        is_account_owner = false
+        if account
+          account_user = user.current_account_user
+          is_account_admin = account_user&.admin? || false
+          is_account_owner = user.current_account_owner? || false
         end
+
+        account_data = if account
+                         {
+                           id: account.id,
+                           prefix_id: account.prefix_id,
+                           name: account.name,
+                           admin: account.admin == true,
+                           account_type: account.account_type
+                         }
+                       end
+
+        {
+          id: user.id,
+          email: user.email,
+          first_name: user.first_name || '',
+          last_name: user.last_name || '',
+          name: user.name || '',
+          preferred_language: user.preferred_language,
+          admin: user.admin? || false,
+          account_admin: is_account_admin,
+          account_owner: is_account_owner,
+          account: account_data
+        }
+      rescue => e
+        {
+          id: user.id,
+          email: user.email,
+          first_name: user.first_name || '',
+          last_name: user.last_name || '',
+          name: user.name || '',
+          preferred_language: user.preferred_language,
+          admin: false,
+          account_admin: false,
+          account_owner: false,
+          account: nil
+        }
       end
 
       def generate_token(user)
-        # Gerar token simples baseado no ID do usuário
-        # Em produção, use uma gem JWT como 'jwt' ou 'json-jwt'
-        token_data = {
-          user_id: user.id,
-          email: user.email,
-          exp: 24.hours.from_now.to_i
-        }
-        
-        # Codificar em base64 para simplicidade
-        Base64.strict_encode64(token_data.to_json)
+        Base64.strict_encode64({ user_id: user.id, email: user.email, exp: 24.hours.from_now.to_i }.to_json)
       end
 
       def exchange_code_for_token(code)
-        client_id = ENV['GOOGLE_CLIENT_ID']
-        client_secret = ENV['GOOGLE_CLIENT_SECRET']
         redirect_uri = "#{request.base_url}/oauth/callback"
 
         uri = URI('https://oauth2.googleapis.com/token')
@@ -621,8 +330,8 @@ module Api
         request = Net::HTTP::Post.new(uri)
         request['Content-Type'] = 'application/x-www-form-urlencoded'
         request.body = URI.encode_www_form({
-          client_id: client_id,
-          client_secret: client_secret,
+          client_id: ENV['GOOGLE_CLIENT_ID'],
+          client_secret: ENV['GOOGLE_CLIENT_SECRET'],
           code: code,
           grant_type: 'authorization_code',
           redirect_uri: redirect_uri
@@ -631,11 +340,7 @@ module Api
         response = http.request(request)
         data = JSON.parse(response.body)
 
-        if response.code == '200'
-          { access_token: data['access_token'] }
-        else
-          { error: data['error_description'] || 'Erro ao trocar código por token' }
-        end
+        response.code == '200' ? { access_token: data['access_token'] } : { error: data['error_description'] || 'Erro ao trocar código por token' }
       rescue => e
         { error: "Erro na comunicação com Google: #{e.message}" }
       end
@@ -652,14 +357,7 @@ module Api
         data = JSON.parse(response.body)
 
         if response.code == '200'
-          {
-            provider: 'google_oauth2',
-            uid: data['id'],
-            email: data['email'],
-            first_name: data['given_name'],
-            last_name: data['family_name'],
-            name: data['name']
-          }
+          { provider: 'google_oauth2', uid: data['id'], email: data['email'], first_name: data['given_name'], last_name: data['family_name'], name: data['name'] }
         else
           { error: 'Erro ao obter informações do usuário' }
         end
@@ -668,4 +366,4 @@ module Api
       end
     end
   end
-end 
+end

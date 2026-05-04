@@ -4,29 +4,37 @@
 #
 # Table name: appointments
 #
-#  id                        :bigint           not null, primary key
-#  end_time                  :datetime
-#  google_meet_link          :string
-#  payment_status            :integer
-#  price_cents               :integer          not null
-#  price_currency            :string           default("BRL")
-#  recurrence_pattern        :jsonb
-#  start_time                :datetime
-#  status                    :integer          default(0)
-#  whatsapp_number           :string
-#  whatsapp_reminder_sent    :boolean          default(FALSE)
-#  whatsapp_reminder_sent_at :datetime
-#  created_at                :datetime         not null
-#  updated_at                :datetime         not null
-#  account_id                :bigint           not null
-#  account_user_id           :bigint           not null
-#  appointment_link_id       :bigint
-#  contact_id                :bigint
-#  google_calendar_event_id  :string
-#  parent_appointment_id     :bigint
-#  service_id                :bigint           not null
-#  stripe_payment_intent_id  :string
-#  stripe_payment_link_id    :string
+#  id                           :bigint           not null, primary key
+#  billing_notification_sent    :boolean          default(FALSE), not null
+#  billing_notification_sent_at :datetime
+#  end_time                     :datetime
+#  google_meet_link             :string
+#  overdue_notification_sent    :boolean          default(FALSE), not null
+#  overdue_notification_sent_at :datetime
+#  payment_status               :integer
+#  pix_reminder_sent            :boolean          default(FALSE), not null
+#  pix_reminder_sent_at         :datetime
+#  price_cents                  :integer          not null
+#  price_currency               :string           default("BRL")
+#  recurrence_pattern           :jsonb
+#  start_time                   :datetime
+#  status                       :integer          default(0)
+#  whatsapp_1h_reminder_sent    :boolean          default(FALSE), not null
+#  whatsapp_1h_reminder_sent_at :datetime
+#  whatsapp_number              :string
+#  whatsapp_reminder_sent       :boolean          default(FALSE)
+#  whatsapp_reminder_sent_at    :datetime
+#  created_at                   :datetime         not null
+#  updated_at                   :datetime         not null
+#  account_id                   :bigint           not null
+#  account_user_id              :bigint           not null
+#  appointment_link_id          :bigint
+#  contact_id                   :bigint
+#  google_calendar_event_id     :string
+#  parent_appointment_id        :bigint
+#  service_id                   :bigint           not null
+#  stripe_payment_intent_id     :string
+#  stripe_payment_link_id       :string
 #
 # Indexes
 #
@@ -35,8 +43,10 @@
 #  index_appointments_on_account_time_status               (account_id,start_time,status)
 #  index_appointments_on_account_user_id                   (account_user_id)
 #  index_appointments_on_appointment_link_id               (appointment_link_id)
+#  index_appointments_on_billing_notification_sent         (billing_notification_sent)
 #  index_appointments_on_contact_id                        (contact_id)
 #  index_appointments_on_google_calendar_event_id          (google_calendar_event_id)
+#  index_appointments_on_overdue_notification_sent         (overdue_notification_sent)
 #  index_appointments_on_parent_appointment_id             (parent_appointment_id)
 #  index_appointments_on_payment_status                    (payment_status)
 #  index_appointments_on_service_id                        (service_id)
@@ -103,6 +113,10 @@ class Appointment < ApplicationRecord
   scope :by_date_range, ->(start_date, end_date) { where(start_time: start_date..end_date) }
   scope :upcoming, -> { where('start_time > ?', Time.current) }
   scope :needs_reminder, -> { where(whatsapp_reminder_sent: false).where('start_time > ? AND start_time <= ?', Time.current, 24.hours.from_now) }
+  scope :needs_1h_reminder, -> { where(whatsapp_1h_reminder_sent: false).where('start_time > ? AND start_time <= ?', 1.hour.from_now, 2.hours.from_now) }
+  scope :needs_billing_notification, -> { where(billing_notification_sent: false, payment_status: PAYMENT_STATUS[:pending]) }
+  scope :needs_pix_reminder, -> { where(pix_reminder_sent: false, payment_status: PAYMENT_STATUS[:pending]).where('start_time > ? AND start_time <= ?', 24.hours.from_now, 25.hours.from_now) }
+  scope :needs_overdue_notification, -> { where(overdue_notification_sent: false, payment_status: PAYMENT_STATUS[:pending]).where('start_time < ? AND start_time >= ?', Time.current, 48.hours.ago) }
   scope :recurring, -> { where.not(recurrence_pattern: nil).where.not(recurrence_pattern: {}) }
   scope :parent_appointments, -> { where(parent_appointment_id: nil) }
 
@@ -111,8 +125,10 @@ class Appointment < ApplicationRecord
   after_update :sync_transaction_on_payment_status_change
   after_update :sync_transaction_on_status_change
   after_update :send_whatsapp_on_confirmation
+  after_update :send_payment_confirmation_whatsapp
   after_create :create_audit_transaction_if_unpaid
   after_create :schedule_google_calendar_sync
+  after_create :send_confirmation_email
   after_update :schedule_google_calendar_sync_on_change
 
   def confirm_payment!
@@ -560,6 +576,30 @@ class Appointment < ApplicationRecord
     Appointments::SendWhatsappConfirmation.call(appointment: self)
   rescue => e
     Rails.logger.error "Erro ao enviar confirmação WhatsApp: #{e.message}"
+  end
+
+  def send_payment_confirmation_whatsapp
+    return unless payment_status_changed? && (payment_status == :paid || payment_status == PAYMENT_STATUS[:paid])
+    return unless whatsapp_number.present?
+    return unless automation_enabled?(:payment_confirmation)
+
+    Appointments::SendPaymentConfirmation.call(appointment: self)
+  rescue => e
+    Rails.logger.error "Erro ao enviar confirmação de pagamento WhatsApp: #{e.message}"
+  end
+
+  def automation_enabled?(key)
+    return false unless appointment_link
+    settings = appointment_link.settings || {}
+    (settings.dig('automations', key.to_s)) == true
+  end
+
+  def send_confirmation_email
+    return unless contact&.email.present?
+
+    AppointmentMailer.confirmation(self).deliver_later
+  rescue => e
+    Rails.logger.error "Erro ao enviar e-mail de confirmação: #{e.message}"
   end
 end
 

@@ -162,11 +162,11 @@ export function DocumentTemplates() {
 
   return (
     <div className="relative min-h-screen bg-surface">
-      <div className="relative z-10 w-full max-w-full min-w-0 px-6 py-8 md:px-12 md:py-12 space-y-8 md:space-y-12">
+      <div className="relative z-10 w-full max-w-full min-w-0 px-3 py-4 sm:px-6 sm:py-6 md:px-10 md:py-8 space-y-4 sm:space-y-6 md:space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-3 responsive-text-xl text-text-primary">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 text-text-primary">
               Modelos de Documentos
             </h1>
             <p className="text-lg text-text-secondary">
