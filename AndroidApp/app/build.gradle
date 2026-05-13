@@ -12,20 +12,25 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
-        
-        // Para Appium
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // URLs por ambiente — sobrescritas por buildType abaixo
+        buildConfigField "String", "FRONTEND_URL", '"https://dev.barbermanagement.io"'
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Aponta para o ambiente de produção/staging
+            buildConfigField "String", "FRONTEND_URL", '"https://dev.barbermanagement.io"'
         }
         debug {
             debuggable true
-            // Para desenvolvimento - permite conexão com localhost
             applicationIdSuffix ".debug"
+            // localhost:5173 funciona via `adb reverse tcp:5173 tcp:5173`
+            buildConfigField "String", "FRONTEND_URL", '"http://localhost:5173"'
         }
     }
     
@@ -34,9 +39,9 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     
-    // Para Appium - necessário para encontrar elementos
     buildFeatures {
         viewBinding true
+        buildConfig true
     }
 }
 

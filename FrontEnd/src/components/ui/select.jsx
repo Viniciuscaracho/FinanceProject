@@ -36,7 +36,7 @@ function SelectTrigger({
         "flex w-fit items-center justify-between gap-2 rounded-md border-2 border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800",
         "h-11 px-4 py-0 text-base text-gray-900 dark:text-white whitespace-nowrap",
         "data-[placeholder]:text-gray-500 dark:data-[placeholder]:text-gray-400",
-        "transition-all duration-140 outline-none",
+        "transition-all duration-140 outline-none cursor-pointer",
         "hover:border-gray-500 dark:hover:border-gray-500",
         "focus-visible:border-blue-500 dark:focus-visible:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-500/20 dark:focus-visible:ring-blue-400/20 focus-visible:ring-offset-0",
         "aria-invalid:border-red-500 dark:aria-invalid:border-red-400 aria-invalid:ring-red-500/20 dark:aria-invalid:ring-red-400/20",

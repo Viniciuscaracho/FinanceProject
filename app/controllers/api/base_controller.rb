@@ -3,6 +3,7 @@
 module Api
   class BaseController < ActionController::API
     include Pagy::Backend
+    include ActiveStorage::SetCurrent
     prepend_before_action :authenticate_api_token!
     before_action :ensure_api_enabled
 

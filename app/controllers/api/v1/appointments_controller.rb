@@ -19,8 +19,14 @@ module Api
                              .includes(:account_user, :service, :contact, :appointment_commissions, :appointment_note)
                              .order(start_time: :desc)
 
-        appointments = appointments.where(status: params[:status]) if params[:status].present?
-        appointments = appointments.where(payment_status: params[:payment_status]) if params[:payment_status].present?
+        if params[:status].present?
+          status_val = Appointment::APPOINTMENT_STATUS[params[:status].to_sym]
+          appointments = appointments.where(status: status_val) if status_val
+        end
+        if params[:payment_status].present?
+          ps_val = Appointment::PAYMENT_STATUS[params[:payment_status].to_sym]
+          appointments = appointments.where(payment_status: ps_val) if ps_val
+        end
         appointments = appointments.where(account_user_id: params[:account_user_id]) if params[:account_user_id].present?
 
         if params[:start_date].present? || params[:end_date].present?
@@ -181,8 +187,8 @@ module Api
       end
 
       def destroy
-        @appointment.destroy
-        head :no_content
+        @appointment.cancel!
+        render json: appointment_json(@appointment.reload)
       rescue => e
         Rails.logger.error "appointments#destroy: #{e.message}"
         render json: { error: e.message }, status: :internal_server_error
@@ -290,6 +296,7 @@ module Api
           :start_time, :end_time, :whatsapp_number,
           :price_cents, :price_currency, :status, :payment_status,
           :google_meet_link, :enable_google_meet,
+          additional_service_ids: [],
           recurrence_pattern: {}
         ]
         params[:appointment].present? ? params.require(:appointment).permit(*permitted) : params.permit(*permitted)
@@ -298,7 +305,7 @@ module Api
       def authenticate_api_key
         api_key = request.headers['X-API-Key'] || params[:api_key]
         expected_key = Rails.application.credentials.dig(:n8n, :api_key)
-        expected_key = 'dev_api_key_12345' if Rails.env.development? && expected_key.nil?
+        expected_key = 'dev_api_key_12345' if (Rails.env.development? || Rails.env.test?) && expected_key.nil?
 
         unless api_key && api_key == expected_key
           render json: { error: 'Invalid API key' }, status: :unauthorized
@@ -380,6 +387,11 @@ module Api
         {
           id: appointment.id,
           service: appointment.service ? service_json(appointment.service) : nil,
+          additional_service_ids: appointment.additional_service_ids || [],
+          additional_services: begin
+            ids = (appointment.additional_service_ids || []).map(&:to_i).uniq
+            ids.any? ? appointment.account.services.where(id: ids).map { |s| service_json(s) } : []
+          end,
           professional: appointment.account_user ? professional_json(appointment.account_user) : nil,
           client: appointment.contact ? {
             id: appointment.contact.id,
@@ -432,11 +444,13 @@ module Api
 
       def service_json(service)
         return nil unless service
-        
+
         {
           id: service.id,
           name: service.name,
           description: service.description,
+          modality: Service::MODALITIES.key(service.modality || 0)&.to_s || 'presencial',
+          meeting_url: service.meeting_url,
           selling_price_cents: service.selling_price_cents || 0,
           currency: service.currency || 'BRL',
           price: {
@@ -457,7 +471,8 @@ module Api
           id: account_user.id,
           user_id: user.id,
           name: "#{user.first_name} #{user.last_name}".strip,
-          email: user.email
+          email: user.email,
+          schedule: account_user.schedule
         }
       end
 

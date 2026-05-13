@@ -1,107 +1,95 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { BottomNavigation } from './BottomNavigation'
 import { SupportBanner } from './SupportBanner'
-import { cn } from '@/lib/utils'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useIsMobile, useBreakpoint } from '@/hooks/use-mobile'
-import { BREAKPOINTS } from '@/lib/breakpoints'
 import { ArrowUp } from 'lucide-react'
+import { OnboardingWizard, useOnboarding } from '@/components/onboarding/OnboardingWizard'
+
+const SIDEBAR_EXPANDED = 192
+const SIDEBAR_COLLAPSED = 56
 
 export function Layout({ children }) {
-  const isMobile = useIsMobile()
+  const isMobile  = useIsMobile()
   const breakpoint = useBreakpoint()
-  
-  // Inicializar estado do sidebar baseado no breakpoint
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const width = window.visualViewport?.width || window.innerWidth
-      // Tablet (md) - colapsado por padrão
-      if (width >= BREAKPOINTS.md && width < BREAKPOINTS.lg) return true
-      // Large desktop (xl+) - expandido
-      if (width >= BREAKPOINTS.xl) return false
-      // Default - expandido
-      return false
-    }
-    return false
-  })
-  
-  const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [isManualControl, setIsManualControl] = useState(false)
-  const [showScrollTop, setShowScrollTop] = useState(false)
+  const { show: showOnboarding, dismiss: dismissOnboarding } = useOnboarding()
   const { isDarkMode } = useTheme()
 
+  const [isCollapsed,    setIsCollapsed]    = useState(() => {
+    if (typeof window === 'undefined') return false
+    const w = window.visualViewport?.width || window.innerWidth
+    return w < 1536 // colapsa em tudo abaixo de 2xl por padrão
+  })
+  const [isMobileOpen,   setIsMobileOpen]   = useState(false)
+  const [isManualControl, setIsManualControl] = useState(false)
+  const [showScrollTop,  setShowScrollTop]  = useState(false)
+
+  /* ── scroll-to-top ───────────────────────────── */
   useEffect(() => {
-    const handleScroll = () => setShowScrollTop(window.scrollY > 300)
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    const handle = () => setShowScrollTop(window.scrollY > 300)
+    window.addEventListener('scroll', handle, { passive: true })
+    return () => window.removeEventListener('scroll', handle)
   }, [])
 
-  // Auto-ajustar sidebar baseado no breakpoint (apenas se não estiver em controle manual)
+  /* ── auto-collapse baseado em breakpoint ─────── */
   useEffect(() => {
-    if (isManualControl || isMobile) return
-
-    // Usar breakpoint atual para decidir
-    if (breakpoint === 'md') {
-      // Tablet - colapsar
+    if (isMobile) return
+    // Colapsa em tudo abaixo de 2xl (inclui zoom 110-125% em displays ≤1440px)
+    if (['xs', 'sm', 'md', 'lg', 'xl'].includes(breakpoint)) {
       setIsCollapsed(true)
-    } else if (breakpoint === 'lg' || breakpoint === 'xl' || breakpoint === '2xl') {
-      // Desktop grande - expandir
+    } else if (!isManualControl && breakpoint === '2xl') {
       setIsCollapsed(false)
     }
   }, [breakpoint, isManualControl, isMobile])
 
-  // Fechar menu mobile quando sair de mobile
+  /* ── fecha drawer mobile ao sair do modo mobile ─ */
   useEffect(() => {
-    if (!isMobile) {
-      setIsMobileOpen(false)
-    }
+    if (!isMobile) setIsMobileOpen(false)
   }, [isMobile])
 
-  // Handler para toggle manual do sidebar
   const handleToggleSidebar = useCallback(() => {
-    setIsManualControl(true) // Ativar controle manual ao primeiro toggle
-    setIsCollapsed(prev => !prev) // Toggle o estado
+    setIsManualControl(true)
+    setIsCollapsed(prev => !prev)
   }, [])
 
-  const handleMobileMenuClick = useCallback(() => {
-    setIsMobileOpen(true)
-  }, [])
+  const handleMobileMenuClick = useCallback(() => setIsMobileOpen(true), [])
 
-  // Memoizar classes para melhor performance
-  const layoutClasses = useMemo(() => cn(
-    "min-h-screen flex gap-0 w-full max-w-full overflow-x-hidden",
-    isDarkMode ? "bg-gray-900" : "bg-gray-100"
-  ), [isDarkMode])
+  /* ── largura do sidebar para cálculo do margin ── */
+  const sidebarW = isMobile ? 0 : (isCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED)
 
-  const mainContentClasses = useMemo(() => cn(
-    "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out",
-    "w-full max-w-full min-w-0 overflow-x-hidden",
-    // When sidebar is fixed+collapsed on desktop, push content right by sidebar width
-    !isMobile && isCollapsed && "md:ml-14",
-    isMobile && "pb-16"
-  ), [isMobile, isCollapsed])
+  const bg = isDarkMode ? '#111111' : '#F5F5F2'
 
   return (
-    <div className={layoutClasses}>
-      {/* Mobile overlay */}
+    /* Outer shell — overflow-x:hidden aqui captura qualquer vazamento
+       horizontal de páginas filhas sem esconder o sidebar (que é fixed). */
+    <div style={{ minHeight: '100vh', background: bg }}>
+      {showOnboarding && <OnboardingWizard onDone={dismissOnboarding} />}
+
+      {/* ── Overlay mobile ──────────────────────── */}
       {isMobile && isMobileOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+        <div
           onClick={() => setIsMobileOpen(false)}
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 40,
+          }}
         />
       )}
 
-      {/* Sidebar - Desktop only */}
+      {/* ── Sidebar desktop: SEMPRE fixed ────────── */}
       {!isMobile && (
-        <div className={cn(
-          "fixed inset-y-0 left-0 z-50 transition-all duration-300 ease-in-out",
-          // No desktop: quando expandido é relative (ocupa espaço natural, sem margin no conteúdo)
-          // quando colapsado continua fixed (precisa margin no conteúdo)
-          !isCollapsed && "md:relative md:translate-x-0 md:flex-shrink-0",
-          isCollapsed && "md:fixed"
-        )}>
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, bottom: 0,
+          width: isCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED,
+          zIndex: 50,
+          transition: 'width 280ms ease',
+          overflow: 'hidden',
+        }}>
           <Sidebar
             isCollapsed={isCollapsed}
             setIsCollapsed={handleToggleSidebar}
@@ -111,12 +99,16 @@ export function Layout({ children }) {
         </div>
       )}
 
-      {/* Sidebar - Mobile drawer */}
+      {/* ── Sidebar mobile: drawer deslizante ────── */}
       {isMobile && (
-        <div className={cn(
-          "fixed inset-y-0 left-0 z-50 transition-all duration-300 ease-in-out",
-          !isMobileOpen && "-translate-x-full"
-        )}>
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, bottom: 0,
+          width: 280,
+          zIndex: 50,
+          transform: isMobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 280ms ease',
+        }}>
           <Sidebar
             isCollapsed={false}
             setIsCollapsed={setIsCollapsed}
@@ -126,50 +118,63 @@ export function Layout({ children }) {
         </div>
       )}
 
-      {/* Main content */}
-      <div className={mainContentClasses}>
-        {/* Header */}
-        <Header 
+      {/* ── Conteúdo principal ────────────────────
+          marginLeft = largura exata do sidebar (fixed).
+          O sidebar nunca entra no fluxo do documento,
+          então nunca há sobreposição nem corte.        */}
+      <div style={{
+        marginLeft: sidebarW,
+        transition: 'margin-left 280ms ease',
+        minHeight: '100vh',
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
+        <Header
           onMobileMenuClick={handleMobileMenuClick}
           isMobile={isMobile}
         />
-        
-        {/* Support Banner */}
+
         <SupportBanner />
-        
-        {/* Main content area */}
-        <main className={cn(
-          "flex-1 w-full max-w-full min-w-0",
-          isMobile
-            ? "p-2 sm:p-3 pb-4"
-            : "p-3 md:p-4"
-        )}>
-          <div className="w-full max-w-full min-w-0">
-            {children}
-          </div>
+
+        <main style={{
+          flex: 1,
+          padding: isMobile ? '8px 8px 16px' : '12px 16px',
+          boxSizing: 'border-box',
+          width: '100%',
+          overflowX: 'auto',
+        }}>
+          {children}
         </main>
+
+        {isMobile && <BottomNavigation />}
       </div>
 
-      {/* Bottom Navigation - Mobile only */}
-      {isMobile && <BottomNavigation />}
-
-      {/* Scroll to top button */}
+      {/* ── Scroll to top ────────────────────────── */}
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className={cn(
-            "fixed z-50 rounded-full p-2.5 shadow-lg transition-all duration-200",
-            "bg-gray-800 hover:bg-gray-700 dark:bg-gray-200 dark:hover:bg-gray-100",
-            "text-white dark:text-gray-800",
-            isMobile ? "bottom-20 right-4" : "bottom-6 right-6"
-          )}
+          style={{
+            position: 'fixed',
+            bottom: isMobile ? 80 : 24,
+            right: 16,
+            zIndex: 50,
+            width: 36, height: 36,
+            borderRadius: '50%',
+            background: '#4C60AA',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(76,96,170,0.35)',
+          }}
           aria-label="Voltar ao topo"
-          title="Voltar ao topo"
         >
-          <ArrowUp className="w-4 h-4" />
+          <ArrowUp style={{ width: 16, height: 16 }} />
         </button>
       )}
     </div>
   )
 }
-

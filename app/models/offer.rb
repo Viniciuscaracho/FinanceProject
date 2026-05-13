@@ -10,7 +10,9 @@
 #  discarded_at        :datetime
 #  enabled             :string           default("t"), not null
 #  internal_code       :string
+#  meeting_url         :string
 #  metadata            :jsonb            not null
+#  modality            :integer          default(0), not null
 #  name                :string           not null
 #  offer_type_cd       :integer
 #  selling_price_cents :bigint           default(0), not null

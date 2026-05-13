@@ -68,6 +68,15 @@ import {
   normalizePaymentStatus,
 } from '@/utils/appointmentUtils'
 import { useAppointmentsContext } from '@/contexts/AppointmentsContext'
+import { T, DISPLAY } from '@/lib/tokens'
+
+const STATUS_PILL_COLORS = {
+  pending:   { color: '#F59E0B', label: 'Pendente'   },
+  confirmed: { color: '#4C60AA', label: 'Confirmado' },
+  completed: { color: '#10B981', label: 'Concluído'  },
+  canceled:  { color: '#D1D5DB', label: 'Cancelado'  },
+  no_show:   { color: '#D1D5DB', label: 'Não veio'   },
+}
 
 const colHelper = createColumnHelper()
 
@@ -164,16 +173,10 @@ function MobileAppointmentCard({
 
   return (
     <Card className="border-border shadow-sm">
-      {/* Coloured left border by status */}
+      {/* Coloured top bar by status */}
       <div
-        className={cn(
-          'h-1 w-full rounded-t-lg',
-          status === 'confirmed' && 'bg-green-500',
-          status === 'pending' && 'bg-yellow-400',
-          status === 'completed' && 'bg-blue-500',
-          status === 'canceled' && 'bg-red-500',
-          status === 'no_show' && 'bg-gray-400'
-        )}
+        className="h-1 w-full rounded-t-lg"
+        style={{ background: STATUS_PILL_COLORS[status]?.color || '#9CA3AF' }}
       />
       <CardContent className="p-5 space-y-4">
         {/* Header row */}
@@ -224,14 +227,21 @@ function MobileAppointmentCard({
 
         {/* Status badges */}
         <div className="flex flex-wrap gap-2">
-          <Badge className={cn('text-xs', STATUS_COLORS[status])}>
+          <span
+            className="text-xs font-semibold px-2 py-0.5"
+            style={{
+              borderRadius: 20,
+              background: (STATUS_PILL_COLORS[status]?.color || '#9CA3AF') + '18',
+              color: STATUS_PILL_COLORS[status]?.color || '#9CA3AF',
+            }}
+          >
             {STATUS_LABELS[status] || status}
-          </Badge>
+          </span>
           <Badge className={cn('text-xs', PAYMENT_STATUS_COLORS[paymentStatus])}>
             {PAYMENT_STATUS_LABELS[paymentStatus] || paymentStatus}
           </Badge>
           {appointment.booking_source === 'public_link' && (
-            <Badge variant="outline" className="text-xs text-blue-600 border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-400">
+            <Badge variant="outline" className="text-xs" style={{ color: T.brand, borderColor: T.brand + '80', background: T.chip }}>
               <Link2 className="w-3 h-3 mr-1" />
               Link Público
             </Badge>
@@ -246,7 +256,7 @@ function MobileAppointmentCard({
           <Button
             size="sm"
             onClick={() => onOpenConsultation(appointment)}
-            className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800"
+            style={{ background: T.chip, color: T.brand, border: `1px solid ${T.brand}40` }}
           >
             <FileText className="w-4 h-4 mr-1.5" />
             Anotações
@@ -402,11 +412,20 @@ export function AppointmentsTable({ onEdit, onDelete, onOpenConsultation }) {
           header: 'Cliente',
           cell: ({ row, getValue }) => {
             const apt = row.original
+            const aptStatus = resolveStatus(apt.status)
+            const aptStatusColor = STATUS_PILL_COLORS[aptStatus]?.color || '#9CA3AF'
+            const clientName = getValue()
+            const initials = clientName.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
             return (
               <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-gray-400 shrink-0" />
+                <div
+                  className="flex-shrink-0 flex items-center justify-center rounded-full text-[11px] font-bold"
+                  style={{ width: 30, height: 30, background: aptStatusColor + '20', color: aptStatusColor }}
+                >
+                  {initials}
+                </div>
                 <div>
-                  <p className="font-medium">{getValue()}</p>
+                  <p className="font-medium">{clientName}</p>
                   {apt.client?.whatsapp_number && (
                     <p className="text-xs text-gray-500 flex items-center gap-1">
                       <Phone className="w-3 h-3" />
@@ -501,7 +520,7 @@ export function AppointmentsTable({ onEdit, onDelete, onOpenConsultation }) {
           const apt = row.original
           if (apt.booking_source === 'public_link') {
             return (
-              <Badge variant="outline" className="text-xs text-blue-600 border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-400 whitespace-nowrap">
+              <Badge variant="outline" className="text-xs whitespace-nowrap" style={{ color: T.brand, borderColor: T.brand + '80', background: T.chip }}>
                 <Link2 className="w-3 h-3 mr-1" />
                 Link Público
               </Badge>
@@ -522,7 +541,7 @@ export function AppointmentsTable({ onEdit, onDelete, onOpenConsultation }) {
               <Button
                 size="sm"
                 onClick={() => onOpenConsultation(apt)}
-                className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 dark:text-blue-400 dark:border-blue-800"
+                style={{ background: T.chip, color: T.brand, border: `1px solid ${T.brand}40` }}
               >
                 <FileText className="w-4 h-4 mr-1.5" />
                 Anotações
@@ -649,15 +668,25 @@ export function AppointmentsTable({ onEdit, onDelete, onOpenConsultation }) {
                 ))}
               </TableHeader>
               <TableBody>
-                {pageRows.map((row) => (
-                  <TableRow key={row.id} className="hover:bg-muted/50">
+                {pageRows.map((row) => {
+                const apt = row.original
+                const aptStatus = resolveStatus(apt.status)
+                const aptStatusColor = STATUS_PILL_COLORS[aptStatus]?.color || '#9CA3AF'
+                return (
+                  <TableRow
+                    key={row.id}
+                    style={{ borderLeft: `3px solid ${aptStatusColor}`, transition: 'background 100ms' }}
+                    onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
                   </TableRow>
-                ))}
+                )
+              })}
               </TableBody>
             </Table>
           </div>

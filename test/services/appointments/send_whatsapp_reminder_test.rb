@@ -96,7 +96,7 @@ module Appointments
     end
 
     test "should not send reminder if appointment is not confirmed" do
-      @appointment.update!(status: :pending)
+      @appointment.update_column(:status, Appointment::APPOINTMENT_STATUS[:pending])
       
       WhatsApp::EvolutionApiClient.expects(:send_message).never
       

@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { 
-  Building2, 
-  Save, 
+import {
+  Building2,
+  Save,
   Loader2,
   CheckCircle2,
   AlertCircle,
@@ -15,7 +15,11 @@ import {
   Phone,
   FileText,
   DollarSign,
-  Globe
+  Globe,
+  Eye,
+  ExternalLink,
+  Camera,
+  X
 } from 'lucide-react'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
@@ -29,8 +33,10 @@ export function CompanySettings() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(false)
+  const [logoUrl, setLogoUrl] = useState(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [coverUrl, setCoverUrl] = useState(null)
+  const [uploadingCover, setUploadingCover] = useState(false)
 
   // Verificar se o usuário é admin da conta
   const isAccountAdmin = user?.account_admin || user?.account_owner || false
@@ -38,7 +44,9 @@ export function CompanySettings() {
   const [formData, setFormData] = useState({
     // Informações da empresa
     company: {
+      id: null,
       name: '',
+      screen_name_natural: '',
       name_natural: '',
       document_1: '',
       document_1_natural: '',
@@ -62,7 +70,11 @@ export function CompanySettings() {
     invoice_number_starts_at: 1,
     invoice_due_days: 30,
     invoice_tax_percentage: 0,
-    invoice_tax_already_applied: false
+    invoice_tax_already_applied: false,
+    // Vitrine pública
+    directory_visible: false,
+    profession_category: '',
+    directory_description: '',
   })
 
   useEffect(() => {
@@ -79,14 +91,15 @@ export function CompanySettings() {
   const loadAccountSettings = async () => {
     try {
       setLoading(true)
-      setError(null)
       
       const response = await apiService.getAccountSettings()
       if (response.account) {
         const account = response.account
         setFormData({
           company: {
+            id: account.company?.id || null,
             name: account.company?.name || '',
+            screen_name_natural: account.company?.screen_name || '',
             name_natural: account.company?.name_natural || '',
             document_1: account.company?.document_1 || '',
             document_1_natural: account.company?.document_1_natural || '',
@@ -111,12 +124,15 @@ export function CompanySettings() {
           invoice_number_starts_at: account.invoice_number_starts_at || 1,
           invoice_due_days: account.invoice_due_days || 30,
           invoice_tax_percentage: account.invoice_tax_percentage || 0,
-          invoice_tax_already_applied: account.invoice_tax_already_applied || false
+          invoice_tax_already_applied: account.invoice_tax_already_applied || false,
+          directory_visible: account.directory_visible || false,
+          profession_category: account.profession_category || '',
+          directory_description: account.directory_description || '',
         })
+        setLogoUrl(account.company?.logo_url || null)
+        setCoverUrl(account.company?.cover_url || null)
       }
     } catch (error) {
-      console.error('Error loading account settings:', error)
-      setError('Erro ao carregar configurações da empresa')
       toast.error('Erro ao carregar configurações da empresa')
     } finally {
       setLoading(false)
@@ -155,20 +171,13 @@ export function CompanySettings() {
       }))
     }
 
-    // Limpar mensagens de sucesso/erro ao editar
-    if (success) setSuccess(false)
-    if (error) setError(null)
   }
 
   const handleSaveSettings = async () => {
     try {
       setSaving(true)
-      setError(null)
-      setSuccess(false)
 
-      // Validar campos obrigatórios
       if (!formData.company.name.trim()) {
-        setError('Nome da empresa é obrigatório')
         toast.error('Nome da empresa é obrigatório')
         return
       }
@@ -181,8 +190,13 @@ export function CompanySettings() {
         invoice_due_days: parseInt(formData.invoice_due_days) || 30,
         invoice_tax_percentage: parseFloat(formData.invoice_tax_percentage) || 0,
         invoice_tax_already_applied: formData.invoice_tax_already_applied,
+        directory_visible: formData.directory_visible,
+        profession_category: formData.profession_category,
+        directory_description: formData.directory_description,
         company_attributes: {
+          ...(formData.company.id ? { id: formData.company.id } : {}),
           name: formData.company.name,
+          screen_name_natural: formData.company.screen_name_natural,
           name_natural: formData.company.name_natural,
           document_1: formData.company.document_1,
           document_1_natural: formData.company.document_1_natural,
@@ -190,8 +204,8 @@ export function CompanySettings() {
           email: formData.company.email,
           phone_number: formData.company.phone_number,
           description: formData.company.description,
-          addresses_attributes: formData.company.addresses.map((addr, idx) => ({
-            id: addr.id || null,
+          addresses_attributes: formData.company.addresses.map(addr => ({
+            ...(addr.id ? { id: addr.id } : {}),
             country: addr.country,
             state: addr.state,
             city: addr.city,
@@ -205,19 +219,68 @@ export function CompanySettings() {
 
       await apiService.updateAccountSettings(updateData)
       
-      setSuccess(true)
       toast.success('Configurações da empresa atualizadas com sucesso!')
 
       // Recarregar configurações para obter dados atualizados
       await loadAccountSettings()
 
     } catch (error) {
-      console.error('Error updating account settings:', error)
       const errorMessage = error.message || error.data?.error || 'Erro ao atualizar configurações da empresa'
-      setError(errorMessage)
       toast.error(errorMessage)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecione um arquivo de imagem')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB')
+      return
+    }
+    try {
+      setUploadingLogo(true)
+      const preview = URL.createObjectURL(file)
+      setLogoUrl(preview)
+      const res = await apiService.uploadCompanyLogo(file)
+      if (res.logo_url) setLogoUrl(res.logo_url)
+      toast.success('Foto atualizada!')
+    } catch {
+      toast.error('Erro ao enviar foto')
+      setLogoUrl(null)
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecione um arquivo de imagem')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 10MB')
+      return
+    }
+    try {
+      setUploadingCover(true)
+      const preview = URL.createObjectURL(file)
+      setCoverUrl(preview)
+      const res = await apiService.uploadCompanyCover(file)
+      if (res.cover_url) setCoverUrl(res.cover_url)
+      toast.success('Capa atualizada!')
+    } catch {
+      toast.error('Erro ao enviar capa')
+      setCoverUrl(null)
+    } finally {
+      setUploadingCover(false)
     }
   }
 
@@ -237,31 +300,16 @@ export function CompanySettings() {
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
+    <div className="space-y-3 max-w-5xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
           Configurações da Empresa
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Gerencie as informações e configurações da sua empresa
         </p>
       </div>
-
-      {/* Success/Error Messages */}
-      {success && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center space-x-2">
-          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-          <p className="text-green-800 dark:text-green-200">Configurações atualizadas com sucesso!</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center space-x-2">
-          <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-          <p className="text-red-800 dark:text-red-200">{error}</p>
-        </div>
-      )}
 
       {/* Informações da Empresa */}
       <Card>
@@ -341,7 +389,7 @@ export function CompanySettings() {
               onChange={(e) => handleInputChange(e, 'company')}
               placeholder="Descrição da empresa"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-border rounded-md bg-card text-foreground"
             />
           </div>
         </CardContent>
@@ -360,7 +408,7 @@ export function CompanySettings() {
         </CardHeader>
         <CardContent className="space-y-4">
           {formData.company.addresses.map((address, index) => (
-            <div key={index} className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div key={index} className="space-y-4 p-4 border border-border rounded-lg">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor={`address_${index}_address_line1`}>Endereço</Label>
@@ -459,7 +507,7 @@ export function CompanySettings() {
                 name="default_currency"
                 value={formData.default_currency}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-border rounded-md bg-card text-foreground"
               >
                 <option value="BRL">R$ (Real Brasileiro)</option>
                 <option value="USD">$ (Dólar Americano)</option>
@@ -533,6 +581,223 @@ export function CompanySettings() {
               Imposto já aplicado nos valores
             </Label>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Vitrine Pública */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Eye className="h-5 w-5 mr-2 text-emerald-600" />
+            Vitrine Pública
+          </CardTitle>
+          <CardDescription>
+            Apareça no Descobrir — nosso diretório público de profissionais
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start space-x-3 p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-lg border border-emerald-100 dark:border-emerald-800">
+            <input
+              type="checkbox"
+              id="directory_visible"
+              name="directory_visible"
+              checked={formData.directory_visible}
+              onChange={handleInputChange}
+              className="w-4 h-4 mt-0.5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer"
+            />
+            <div>
+              <Label htmlFor="directory_visible" className="cursor-pointer font-medium text-emerald-900 dark:text-emerald-100">
+                Aparecer no Descobrir
+              </Label>
+              <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
+                Seu perfil ficará visível para qualquer pessoa que buscar no diretório público
+              </p>
+              {formData.directory_visible && (
+                <a
+                  href="/descobrir"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:underline mt-1.5"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Ver vitrine pública
+                </a>
+              )}
+            </div>
+          </div>
+
+          {formData.directory_visible && (
+            <>
+              {/* Logo / Foto de perfil */}
+              <div className="space-y-2">
+                <Label>Foto de perfil</Label>
+                <div className="flex items-center gap-4">
+                  <div className="relative flex-shrink-0">
+                    <div style={{
+                      width: 72, height: 72, borderRadius: 12,
+                      background: logoUrl ? 'transparent' : '#EEF2FA',
+                      border: '2px solid var(--border)',
+                      overflow: 'hidden',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {logoUrl ? (
+                        <img
+                          src={logoUrl}
+                          alt="Logo"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={() => setLogoUrl(null)}
+                        />
+                      ) : (
+                        <span style={{ fontSize: 24, fontWeight: 800, color: '#4C60AA' }}>
+                          {(formData.company.screen_name_natural || formData.company.name || '?').charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    {uploadingLogo && (
+                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Loader2 size={18} style={{ color: '#fff', animation: 'spin 1s linear infinite' }} />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="logo-upload" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#4C60AA', background: '#EEF2FA', border: 'none', borderRadius: 8, padding: '7px 14px' }}>
+                      <Camera size={14} />
+                      {logoUrl ? 'Trocar foto' : 'Adicionar foto'}
+                    </label>
+                    <input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={handleLogoUpload}
+                    />
+                    <p className="text-xs text-gray-500 mt-1.5">JPG, PNG ou WebP · max 5MB</p>
+                    {logoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setLogoUrl(null)}
+                        className="text-xs text-red-500 hover:underline mt-1 flex items-center gap-1"
+                      >
+                        <X size={11} /> Remover foto
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">Aparece no seu card e perfil público no Descobrir.</p>
+              </div>
+
+              {/* Capa / Cover photo */}
+              <div className="space-y-2">
+                <Label>Foto de capa</Label>
+                <div className="space-y-2">
+                  <div className="relative w-full" style={{ height: 120, borderRadius: 12, overflow: 'hidden', border: '2px dashed var(--border)', background: coverUrl ? 'transparent' : 'linear-gradient(135deg, #1E2440, #4C60AA)' }}>
+                    {coverUrl && (
+                      <img
+                        src={coverUrl}
+                        alt="Capa"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={() => setCoverUrl(null)}
+                      />
+                    )}
+                    {!coverUrl && (
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
+                        Pré-visualização da capa
+                      </div>
+                    )}
+                    {uploadingCover && (
+                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Loader2 size={22} style={{ color: '#fff', animation: 'spin 1s linear infinite' }} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <label htmlFor="cover-upload" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#4C60AA', background: '#EEF2FA', border: 'none', borderRadius: 8, padding: '7px 14px' }}>
+                      <Camera size={14} />
+                      {coverUrl ? 'Trocar capa' : 'Adicionar capa'}
+                    </label>
+                    <input
+                      id="cover-upload"
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={handleCoverUpload}
+                    />
+                    {coverUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setCoverUrl(null)}
+                        className="text-xs text-red-500 hover:underline flex items-center gap-1"
+                      >
+                        <X size={11} /> Remover capa
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">Imagem horizontal · JPG, PNG ou WebP · max 10MB · aparece no topo do seu perfil público.</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="company_screen_name">
+                  Nome de exibição na vitrine
+                </Label>
+                <Input
+                  id="company_screen_name"
+                  name="screen_name_natural"
+                  value={formData.company.screen_name_natural}
+                  onChange={(e) => handleInputChange(e, 'company')}
+                  placeholder={formData.company.name || 'Ex: Dr. João Silva Psicólogo'}
+                  className="w-full sm:max-w-sm"
+                />
+                <p className="text-xs text-gray-500">
+                  Como seu perfil aparece no Descobrir. Se vazio, usa o nome da empresa.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="profession_category">Categoria profissional</Label>
+                <select
+                  id="profession_category"
+                  name="profession_category"
+                  value={formData.profession_category}
+                  onChange={handleInputChange}
+                  className="w-full sm:max-w-xs px-3 py-2 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="">Selecione uma categoria</option>
+                  {[
+                    'Psicólogo', 'Advogado', 'Nutricionista', 'Personal Trainer',
+                    'Barbeiro', 'Cabeleireiro', 'Dentista', 'Médico', 'Fisioterapeuta',
+                    'Professor', 'Coach', 'Terapeuta', 'Contador', 'Veterinário',
+                    'Arquiteto', 'Designer', 'Outro',
+                  ].map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="directory_description">Descrição pública</Label>
+                <textarea
+                  id="directory_description"
+                  name="directory_description"
+                  value={formData.directory_description}
+                  onChange={handleInputChange}
+                  rows={3}
+                  placeholder="Descreva sua especialidade, forma de atendimento, diferenciais..."
+                  className="w-full px-3 py-2 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                />
+                <p className="text-xs text-gray-500">Esta descrição aparece no seu perfil público para clientes em potencial.</p>
+              </div>
+
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-amber-800 dark:text-amber-200 space-y-1">
+                <p className="font-medium">Para o perfil funcionar completamente:</p>
+                <ul className="list-disc list-inside space-y-0.5 text-amber-700 dark:text-amber-300">
+                  <li>Preencha <strong>Cidade</strong> e <strong>Bairro</strong> no endereço acima — aparece nos filtros de localização</li>
+                  <li>Crie pelo menos um <strong>Serviço</strong> — aparece no card da vitrine</li>
+                  <li>Crie um <strong>Link de Agendamento</strong> ativo — habilita o botão "Agendar" no perfil público</li>
+                </ul>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

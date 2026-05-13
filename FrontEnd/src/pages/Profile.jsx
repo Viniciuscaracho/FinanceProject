@@ -32,8 +32,6 @@ export function Profile() {
   const { user: authUser, isAuthenticated, enrollMfa, verifyMfa, unenrollMfa, listMfaFactors } = useAuth()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
 
@@ -116,7 +114,6 @@ export function Profile() {
   const loadUserProfile = async () => {
     try {
       setLoading(true)
-      setError(null)
       
       const response = await apiService.getCurrentUser()
       if (response.user) {
@@ -130,8 +127,6 @@ export function Profile() {
         })
       }
     } catch (error) {
-      console.error('Error loading profile:', error)
-      setError('Erro ao carregar perfil')
       toast.error('Erro ao carregar informações do perfil')
     } finally {
       setLoading(false)
@@ -144,54 +139,40 @@ export function Profile() {
       ...prev,
       [name]: value
     }))
-    // Limpar mensagens de sucesso/erro ao editar
-    if (success) setSuccess(false)
-    if (error) setError(null)
   }
 
   const handleSaveProfile = async () => {
     try {
       setSaving(true)
-      setError(null)
-      setSuccess(false)
 
-      // Validar campos obrigatórios
       if (!formData.name.trim()) {
-        setError('Nome é obrigatório')
         toast.error('Nome é obrigatório')
         return
       }
 
       if (!formData.email.trim()) {
-        setError('Email é obrigatório')
         toast.error('Email é obrigatório')
         return
       }
 
-      // Validar email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(formData.email)) {
-        setError('Email inválido')
         toast.error('Email inválido')
         return
       }
 
-      // Se há senha nova, validar
       if (formData.new_password) {
         if (!formData.current_password) {
-          setError('Senha atual é obrigatória para alterar a senha')
           toast.error('Senha atual é obrigatória para alterar a senha')
           return
         }
 
         if (formData.new_password.length < 6) {
-          setError('A nova senha deve ter pelo menos 6 caracteres')
           toast.error('A nova senha deve ter pelo menos 6 caracteres')
           return
         }
 
         if (formData.new_password !== formData.new_password_confirmation) {
-          setError('As senhas não coincidem')
           toast.error('As senhas não coincidem')
           return
         }
@@ -222,7 +203,6 @@ export function Profile() {
 
       await apiService.updateUser(userId, updateData)
       
-      setSuccess(true)
       toast.success('Perfil atualizado com sucesso!')
       
       // Limpar campos de senha
@@ -237,9 +217,7 @@ export function Profile() {
       await loadUserProfile()
 
     } catch (error) {
-      console.error('Error updating profile:', error)
       const errorMessage = error.message || error.data?.error || 'Erro ao atualizar perfil'
-      setError(errorMessage)
       toast.error(errorMessage)
     } finally {
       setSaving(false)
@@ -267,31 +245,16 @@ export function Profile() {
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+    <div className="space-y-3 max-w-4xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
           Meu Perfil
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Gerencie suas informações pessoais e configurações da conta
         </p>
       </div>
-
-      {/* Success/Error Messages */}
-      {success && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center space-x-2">
-          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-          <p className="text-green-800 dark:text-green-200">Perfil atualizado com sucesso!</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center space-x-2">
-          <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-          <p className="text-red-800 dark:text-red-200">{error}</p>
-        </div>
-      )}
 
       {/* Profile Card */}
       <Card>
@@ -326,7 +289,7 @@ export function Profile() {
           {/* Informações Pessoais */}
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center">
                 <User className="h-5 w-5 mr-2 text-blue-600" />
                 Informações Pessoais
               </h3>
@@ -384,11 +347,11 @@ export function Profile() {
           {/* Alterar Senha */}
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center">
                 <Lock className="h-5 w-5 mr-2 text-blue-600" />
                 Alterar Senha
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Deixe em branco se não desejar alterar a senha
               </p>
             </div>
@@ -517,7 +480,7 @@ export function Profile() {
                 ))}
               </div>
             ) : !mfaEnrolling ? (
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-md border border-border">
                 <div className="flex items-center gap-2 text-gray-500">
                   <Shield className="h-4 w-4" />
                   <span className="text-sm">MFA não configurado</span>
@@ -530,15 +493,15 @@ export function Profile() {
             ) : null}
 
             {mfaEnrolling && mfaQrCode && (
-              <div className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-md">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="space-y-4 p-4 border border-border rounded-md">
+                <p className="text-sm text-muted-foreground">
                   Escaneie o QR code com seu app autenticador, depois insira o código de 6 dígitos para confirmar.
                 </p>
                 <div className="flex justify-center">
                   <img src={mfaQrCode} alt="QR Code MFA" className="w-48 h-48 border rounded-md" />
                 </div>
                 {mfaSecret && (
-                  <p className="text-xs text-center text-gray-500 dark:text-gray-400 font-mono break-all">
+                  <p className="text-xs text-center text-muted-foreground font-mono break-all">
                     Chave manual: {mfaSecret}
                   </p>
                 )}

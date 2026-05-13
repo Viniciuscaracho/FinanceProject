@@ -1,0 +1,186 @@
+# frozen_string_literal: true
+
+module Api
+  module V1
+    module Public
+      class DiscoverController < ActionController::API
+        include ActiveStorage::SetCurrent
+        PAGE_SIZE = 24
+
+        CATEGORIES = %w[
+          Psicólogo Advogado Nutricionista Personal\ Trainer Barbeiro Cabeleireiro
+          Dentista Médico Fisioterapeuta Professor Coach Terapeuta
+          Contador Veterinário Arquiteto Designer
+        ].freeze
+
+        def index
+          accounts_query = base_query
+
+          if params[:q].present?
+            q = params[:q]
+            accounts_query = accounts_query.where(
+              "unaccent(people.first_name) ILIKE unaccent(:q) OR unaccent(people.last_name) ILIKE unaccent(:q) OR " \
+              "unaccent(people.screen_name) ILIKE unaccent(:q) OR unaccent(accounts.profession_category) ILIKE unaccent(:q)",
+              q: "%#{q}%"
+            )
+          end
+
+          if params[:category].present?
+            accounts_query = accounts_query.where(
+              "unaccent(accounts.profession_category) ILIKE unaccent(?)", "%#{params[:category]}%"
+            )
+          end
+
+          # Campo único "cidade ou bairro" — busca em city E district, sem exigir acento
+          if params[:city].present?
+            accounts_query = accounts_query.joins(
+              "LEFT JOIN addresses ON addresses.addressable_id = people.id " \
+              "AND addresses.addressable_type = 'Person'"
+            )
+            accounts_query = accounts_query.where(
+              "unaccent(addresses.city) ILIKE unaccent(:loc) OR unaccent(addresses.district) ILIKE unaccent(:loc)",
+              loc: "%#{params[:city]}%"
+            )
+          end
+
+          # Busca por raio (Haversine) quando lat/lng/radius fornecidos
+          if params[:latitude].present? && params[:longitude].present?
+            lat    = params[:latitude].to_f
+            lng    = params[:longitude].to_f
+            radius = [params[:radius].to_f, 1.0].max # mínimo 1 km
+
+            accounts_query = accounts_query.joins(
+              "LEFT JOIN addresses addr_r ON addr_r.addressable_id = people.id " \
+              "AND addr_r.addressable_type = 'Person'"
+            ).where(
+              "addr_r.latitude IS NOT NULL AND addr_r.longitude IS NOT NULL AND " \
+              "(6371 * acos(LEAST(1.0, cos(radians(?)) * cos(radians(addr_r.latitude)) * " \
+              "cos(radians(addr_r.longitude) - radians(?)) + sin(radians(?)) * " \
+              "sin(radians(addr_r.latitude))))) <= ?",
+              lat, lng, lat, radius
+            )
+          end
+
+          total      = accounts_query.distinct.count
+          page       = [params[:page].to_i, 0].max
+          ids        = accounts_query.distinct.select("accounts.id").limit(PAGE_SIZE).offset(page * PAGE_SIZE).map(&:id)
+          accounts   = Account.where(id: ids).includes(company: [:address, { logo_attachment: :blob }, { cover_image_attachment: :blob }], services: [], appointment_links: [])
+
+          render json: { results: accounts.map { |a| card_json(a) }, total: total, page: page }
+        rescue StandardError => e
+          render json: { error: e.message }, status: :internal_server_error
+        end
+
+        def show
+          account = Account.includes(company: [:address, { logo_attachment: :blob }, { cover_image_attachment: :blob }], services: [], appointment_links: [])
+                           .find_by(id: params[:id], directory_visible: true, suspended: false)
+          return render json: { error: 'Profissional não encontrado' }, status: :not_found unless account
+
+          render json: profile_json(account)
+        rescue StandardError => e
+          render json: { error: e.message }, status: :internal_server_error
+        end
+
+        def categories
+          render json: { categories: CATEGORIES }
+        end
+
+        private
+
+        def base_query
+          Account
+            .joins(:company)
+            .where(directory_visible: true, suspended: false)
+            .where(discarded_at: nil)
+        end
+
+        def card_json(account)
+          company = account.company
+          address = company&.address
+          token   = account.appointment_links.find { |al| al.active }&.token
+
+          {
+            id:                  account.id,
+            name:                display_name(company),
+            profession_category: account.profession_category,
+            description:         account.directory_description,
+            logo_url:            logo_url_for(company),
+            cover_url:           cover_url_for(company),
+            location: {
+              city:      address&.city,
+              district:  address&.district,
+              state:     address&.state,
+              latitude:  address&.latitude,
+              longitude: address&.longitude
+            },
+            services_count:    account.services.size,
+            services_preview:  account.services.first(3).map { |s|
+              { name: s.name, price_cents: s.selling_price_cents }
+            },
+            booking_token: token
+          }
+        end
+
+        def profile_json(account)
+          company = account.company
+          address = company&.address
+          token   = account.appointment_links.find { |al| al.active }&.token
+
+          {
+            id:                  account.id,
+            name:                display_name(company),
+            legal_name:          company&.name,
+            profession_category: account.profession_category,
+            description:         account.directory_description,
+            logo_url:            logo_url_for(company),
+            cover_url:           cover_url_for(company),
+            email:               company&.email,
+            phone:               company&.cell_phone_number.presence || company&.phone_number,
+            location: {
+              city:          address&.city,
+              district:      address&.district,
+              state:         address&.state,
+              postcode:      address&.postcode,
+              address_line1: address&.address_line1,
+              latitude:      address&.latitude,
+              longitude:     address&.longitude
+            },
+            services: account.services.map { |s|
+              {
+                id:               s.id,
+                name:             s.name,
+                description:      s.description,
+                price_cents:      s.selling_price_cents,
+                duration_minutes: s.metadata&.dig('duration_minutes')&.to_i || 60,
+                modality:         s.metadata&.dig('modality') || 'presencial'
+              }
+            },
+            booking_token: token
+          }
+        end
+
+        def logo_url_for(company)
+          return nil unless company&.logo&.attached?
+          rails_blob_url(company.logo)
+        rescue StandardError => e
+          Rails.logger.error "[DiscoverController] logo_url_for failed for company #{company&.id}: #{e.message}"
+          nil
+        end
+
+        def cover_url_for(company)
+          return nil unless company&.cover_image&.attached?
+          rails_blob_url(company.cover_image)
+        rescue StandardError => e
+          Rails.logger.error "[DiscoverController] cover_url_for failed for company #{company&.id}: #{e.message}"
+          nil
+        end
+
+        def display_name(company)
+          return '' unless company
+
+          company.screen_name.presence || "#{company.first_name} #{company.last_name}".strip
+        end
+      end
+    end
+  end
+end

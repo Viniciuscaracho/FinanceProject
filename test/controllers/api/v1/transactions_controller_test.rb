@@ -3,83 +3,77 @@ require "test_helper"
 class Api::V1::TransactionsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user, @account = register_user
-    # Flipper.enable(:api, @account)
-
     @bank_account = create_bank_account(@account)
-    @api_token_without_permission = create_api_token(@account, @user)
-
     @transaction = create_transaction(@account, @bank_account)
+    @auth_token = generate_auth_token(@user)
 
-    @api_token_with_permission = create_api_token(@account, @user, permissions: { transaction: { read: true, create: true, edit: true, remove: true } })
+    @valid_params = {
+      transaction: {
+        name: "Test Transaction",
+        description: "Test description",
+        amount_cents: 1000,
+        amount_currency: "BRL",
+        transaction_type_cd: 0,
+        due_date: Date.current.iso8601,
+        bank_account_id: @bank_account.id,
+        paid: false
+      }
+    }
   end
 
-  # make the tests without token in index, show, create, update, and destroy pass
   test "should not get index without token" do
     get api_v1_transactions_url, headers: { "Authorization" => "Bearer invalid_token" }
-    assert_response :forbidden
-  end
-
-  test "should not get show without token" do
-    transaction = create_transaction(@account, @bank_account)
-    get api_v1_transaction_url(transaction), headers: { "Authorization" => "Bearer invalid_token" }
+    assert_response :unauthorized
   end
 
   test "should not create transaction without token" do
     assert_no_difference("Transaction.count") do
-      post api_v1_transactions_url, params: { transaction: { amount: 100, date: "2021-01-01", description: "test" } }, headers: { "Authorization" => "Bearer invalid_token" }
+      post api_v1_transactions_url, params: @valid_params, headers: { "Authorization" => "Bearer invalid_token" }
     end
-    assert_response :forbidden
+    assert_response :unauthorized
   end
 
   test "should not update transaction without token" do
-    transaction = create_transaction(@account, @bank_account)
-    patch api_v1_transaction_url(transaction), params: { transaction: { amount: 100, date: "2021-01-01", description: "test" } }, headers: { "Authorization" => "Bearer invalid_token" }
-    assert_response :forbidden
+    patch api_v1_transaction_url(@transaction), params: @valid_params, headers: { "Authorization" => "Bearer invalid_token" }
+    assert_response :unauthorized
   end
 
   test "should not destroy transaction without token" do
-    transaction = create_transaction(@account, @bank_account)
     assert_no_difference("Transaction.count") do
-      delete api_v1_transaction_url(transaction), headers: { "Authorization" => "Bearer invalid_token" }
+      delete api_v1_transaction_url(@transaction), headers: { "Authorization" => "Bearer invalid_token" }
     end
-    assert_response :forbidden
+    assert_response :unauthorized
   end
 
-  # make the tests with token in index, show, create, update, and destroy pass
-
   test "should get index with token" do
-
-    #  in json formtat
-    get api_v1_transactions_url(format: :json), headers: { "Authorization" => "Bearer " + @api_token_with_permission.token }
+    get api_v1_transactions_url(format: :json), headers: { "Authorization" => "Bearer #{@auth_token}" }
     assert_response :success
   end
 
   test "should get show with token" do
-    transaction = create_transaction(@account, @bank_account)
-    get api_v1_transaction_url(transaction, format: :json), headers: { "Authorization" => "Bearer " + @api_token_with_permission.token }
+    get api_v1_transaction_url(@transaction, format: :json), headers: { "Authorization" => "Bearer #{@auth_token}" }
     assert_response :success
   end
 
   test "should create transaction with token" do
-
     assert_difference("Transaction.count") do
-      post api_v1_transactions_url(format: :json), params: { **@transaction.attributes }, headers: { "Authorization" => "Bearer " + @api_token_with_permission.token }
+      post api_v1_transactions_url(format: :json), params: @valid_params, headers: { "Authorization" => "Bearer #{@auth_token}" }
     end
     assert_response :created
   end
 
   test "should update transaction with token" do
-    transaction = create_transaction(@account, @bank_account)
-    patch api_v1_transaction_url(transaction, format: :json), params: { **@transaction.attributes }, headers: { "Authorization" => "Bearer " + @api_token_with_permission.token }
+    patch api_v1_transaction_url(@transaction, format: :json),
+          params: { transaction: { description: "Updated description" } },
+          headers: { "Authorization" => "Bearer #{@auth_token}" }
     assert_response :success
   end
 
   test "should destroy transaction with token" do
     transaction = create_transaction(@account, @bank_account)
     assert_difference("Transaction.count", -1) do
-      delete api_v1_transaction_url(transaction, format: :json), headers: { "Authorization" => "Bearer " + @api_token_with_permission.token }
+      delete api_v1_transaction_url(transaction, format: :json), headers: { "Authorization" => "Bearer #{@auth_token}" }
     end
-    assert_response :ok
+    assert_response :success
   end
-
 end

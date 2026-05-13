@@ -11,7 +11,6 @@ import {
   Sun,
   Globe,
   Mail,
-  Shield,
   Database,
   Save,
   Loader2,
@@ -26,8 +25,6 @@ export function Settings() {
   const isMobile = useIsMobile()
   const { isDarkMode, toggleTheme } = useTheme()
   const [saving, setSaving] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState(null)
 
   const [settings, setSettings] = useState({
     // Notificações
@@ -66,7 +63,6 @@ export function Settings() {
         setSettings(prev => ({ ...prev, ...parsed }))
       }
     } catch (error) {
-      console.error('Error loading settings:', error)
     }
   }
 
@@ -75,65 +71,31 @@ export function Settings() {
       ...prev,
       [key]: value
     }))
-    // Limpar mensagens ao alterar
-    if (success) setSuccess(false)
-    if (error) setError(null)
   }
 
   const handleSaveSettings = async () => {
     try {
       setSaving(true)
-      setError(null)
-      setSuccess(false)
-
-      // Salvar no localStorage
       localStorage.setItem('app_settings', JSON.stringify(settings))
-      
-      // Aqui você pode adicionar uma chamada à API para salvar no backend
-      // await apiService.updateSettings(settings)
-      
-      setSuccess(true)
       toast.success('Configurações salvas com sucesso!')
-      
-      // Limpar mensagem de sucesso após 3 segundos
-      setTimeout(() => setSuccess(false), 3000)
-
     } catch (error) {
-      console.error('Error saving settings:', error)
-      const errorMessage = error.message || 'Erro ao salvar configurações'
-      setError(errorMessage)
-      toast.error(errorMessage)
+      toast.error(error.message || 'Erro ao salvar configurações')
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+    <div className="space-y-3 max-w-4xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
           Configurações
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           Gerencie as preferências do sistema e personalização
         </p>
       </div>
-
-      {/* Success/Error Messages */}
-      {success && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center space-x-2">
-          <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-          <p className="text-green-800 dark:text-green-200">Configurações salvas com sucesso!</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center space-x-2">
-          <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-          <p className="text-red-800 dark:text-red-200">{error}</p>
-        </div>
-      )}
 
       {/* Aparência */}
       <Card>
@@ -152,13 +114,13 @@ export function Settings() {
               <Label htmlFor="theme" className="text-base">
                 Modo Escuro
               </Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Alternar entre tema claro e escuro
               </p>
             </div>
             <div className="flex items-center space-x-2">
               {isDarkMode ? (
-                <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                <Moon className="h-5 w-5 text-muted-foreground" />
               ) : (
                 <Sun className="h-5 w-5 text-yellow-500" />
               )}
@@ -189,7 +151,7 @@ export function Settings() {
               <Label htmlFor="emailNotifications" className="text-base">
                 Notificações por Email
               </Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Receber notificações importantes por email
               </p>
             </div>
@@ -207,7 +169,7 @@ export function Settings() {
               <Label htmlFor="pushNotifications" className="text-base">
                 Notificações Push
               </Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Receber notificações no navegador
               </p>
             </div>
@@ -225,7 +187,7 @@ export function Settings() {
               <Label htmlFor="appointmentReminders" className="text-base">
                 Lembretes de Agendamentos
               </Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Receber lembretes antes dos agendamentos
               </p>
             </div>
@@ -243,7 +205,7 @@ export function Settings() {
               <Label htmlFor="paymentReminders" className="text-base">
                 Lembretes de Pagamentos
               </Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Receber lembretes de pagamentos pendentes
               </p>
             </div>
@@ -261,7 +223,7 @@ export function Settings() {
               <Label htmlFor="weeklyReports" className="text-base">
                 Relatórios Semanais
               </Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Receber relatórios semanais por email
               </p>
             </div>
@@ -293,7 +255,7 @@ export function Settings() {
                 id="language"
                 value={settings.language}
                 onChange={(e) => handleSettingChange('language', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-border rounded-md bg-card text-foreground"
               >
                 <option value="pt-BR">Português (Brasil)</option>
                 <option value="en-US">English (US)</option>
@@ -307,7 +269,7 @@ export function Settings() {
                 id="dateFormat"
                 value={settings.dateFormat}
                 onChange={(e) => handleSettingChange('dateFormat', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-border rounded-md bg-card text-foreground"
               >
                 <option value="dd/MM/yyyy">DD/MM/YYYY</option>
                 <option value="MM/dd/yyyy">MM/DD/YYYY</option>
@@ -321,7 +283,7 @@ export function Settings() {
                 id="timeFormat"
                 value={settings.timeFormat}
                 onChange={(e) => handleSettingChange('timeFormat', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-border rounded-md bg-card text-foreground"
               >
                 <option value="24h">24 horas</option>
                 <option value="12h">12 horas (AM/PM)</option>
@@ -334,61 +296,13 @@ export function Settings() {
                 id="currency"
                 value={settings.currency}
                 onChange={(e) => handleSettingChange('currency', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-border rounded-md bg-card text-foreground"
               >
                 <option value="BRL">R$ (Real Brasileiro)</option>
                 <option value="USD">$ (Dólar Americano)</option>
                 <option value="EUR">€ (Euro)</option>
               </select>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Privacidade */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Shield className="h-5 w-5 mr-2 text-blue-600" />
-            Privacidade e Segurança
-          </CardTitle>
-          <CardDescription>
-            Configure as opções de privacidade e segurança
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="shareAnalytics" className="text-base">
-                Compartilhar Análises
-              </Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Permitir compartilhamento de dados anônimos para melhorias
-              </p>
-            </div>
-            <Switch
-              id="shareAnalytics"
-              checked={settings.shareAnalytics}
-              onCheckedChange={(checked) => handleSettingChange('shareAnalytics', checked)}
-            />
-          </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="allowDataExport" className="text-base">
-                Permitir Exportação de Dados
-              </Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Permitir exportação dos seus dados
-              </p>
-            </div>
-            <Switch
-              id="allowDataExport"
-              checked={settings.allowDataExport}
-              onCheckedChange={(checked) => handleSettingChange('allowDataExport', checked)}
-            />
           </div>
         </CardContent>
       </Card>
@@ -410,7 +324,7 @@ export function Settings() {
               <Label htmlFor="autoBackup" className="text-base">
                 Backup Automático
               </Label>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Fazer backup automático dos dados periodicamente
               </p>
             </div>
@@ -432,9 +346,9 @@ export function Settings() {
               max="120"
               value={settings.sessionTimeout}
               onChange={(e) => handleSettingChange('sessionTimeout', parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-border rounded-md bg-card text-foreground"
             />
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Tempo de inatividade antes de fazer logout automático
             </p>
           </div>
@@ -450,9 +364,9 @@ export function Settings() {
               max="10"
               value={settings.maxLoginAttempts}
               onChange={(e) => handleSettingChange('maxLoginAttempts', parseInt(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-border rounded-md bg-card text-foreground"
             />
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Número máximo de tentativas de login antes de bloquear a conta
             </p>
           </div>

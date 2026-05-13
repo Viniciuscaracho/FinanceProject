@@ -9,14 +9,16 @@ module Appointments
     @bank_account = create_bank_account(@account)
     @account_user = @account.account_users.first
     
-    # Configurar horário de trabalho (segunda a sexta, 9h-18h)
+    # Configurar horário de trabalho (todos os dias, 9h-18h para recorrência mensal funcionar em qualquer dia)
     @account_user.update!(
       schedule: {
         'monday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
         'tuesday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
         'wednesday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
         'thursday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
-        'friday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 }
+        'friday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
+        'saturday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
+        'sunday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 }
       }
     )
     
@@ -24,7 +26,7 @@ module Appointments
     @contact = create_contact(@account)
     
     # Criar agendamento pai em uma segunda-feira às 10h (dentro do horário de trabalho)
-    next_monday = (Time.current + 1.week).beginning_of_week + 1.day
+    next_monday = (Time.current + 1.week).beginning_of_week
     start_time = next_monday.beginning_of_day + 10.hours
     
     @parent_appointment = @account.appointments.create!(

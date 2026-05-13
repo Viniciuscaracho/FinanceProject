@@ -3,6 +3,9 @@ import { lazy } from 'react'
 // Public pages - carregam imediatamente
 export { LandingPage } from '../pages/LandingPage'
 export { PublicAppointmentBooking } from '../pages/PublicAppointmentBooking'
+export { AppointmentManage } from '../pages/AppointmentManage'
+export { PublicDiscover } from '../pages/PublicDiscover'
+export { PublicProfessionalProfile } from '../pages/PublicProfessionalProfile'
 
 // Protected pages - lazy loaded
 export const Dashboard = lazy(() => import('../pages/Dashboard').then(m => ({ default: m.Dashboard })))
@@ -24,6 +27,7 @@ export const AdminAccountDetails = lazy(() => import('../pages/AdminAccountDetai
 export const Profile = lazy(() => import('../pages/Profile').then(m => ({ default: m.Profile })))
 export const Settings = lazy(() => import('../pages/Settings').then(m => ({ default: m.Settings })))
 export const CompanySettings = lazy(() => import('../pages/CompanySettings').then(m => ({ default: m.CompanySettings })))
+export const Vitrine = lazy(() => import('../pages/Vitrine').then(m => ({ default: m.Vitrine })))
 
 export const protectedRoutes = [
   { path: '/',                              element: Dashboard },
@@ -46,6 +50,7 @@ export const protectedRoutes = [
   { path: '/profile',                       element: Profile },
   { path: '/settings',                      element: Settings },
   { path: '/company-settings',              element: CompanySettings },
+  { path: '/vitrine',                       element: Vitrine },
   {
     path: '/reconciliations',
     element: lazy(() => Promise.resolve({

@@ -16,39 +16,23 @@ const isAndroidWebView = typeof window !== 'undefined' &&
 // Para emulador Android: usa 10.0.2.2 (IP especial do Android para localhost do host)
 // Para outros: usa variável de ambiente ou padrão
 const getApiBaseUrl = () => {
-  // 1. Verificar se foi injetado pelo WebView (prioridade máxima)
   if (typeof window !== 'undefined' && window.APP_API_BASE_URL) {
-    console.log('🔧 Usando URL da API injetada pelo WebView:', window.APP_API_BASE_URL);
     return window.APP_API_BASE_URL;
   }
-  
-  // 2. Verificar variável de ambiente
+
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl) {
-    return envUrl;
-  }
-  
-  // 3. Detectar automaticamente baseado no ambiente
+  if (envUrl) return envUrl;
+
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    
-    // Se estiver em WebView Android ou dispositivo móvel
     if (isAndroidWebView || isAndroidEmulator || (isMobile && hostname !== 'localhost' && hostname !== '127.0.0.1')) {
-      if (hostname === '10.0.2.2') {
-        // Emulador Android - 10.0.2.2 é o IP especial para acessar localhost do host
-        console.log('🔧 Detectado emulador Android, usando 10.0.2.2:3000');
-        return 'http://10.0.2.2:3000/api/v1';
-      } else if (hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '') {
-        // Dispositivo móvel na mesma rede - usa o IP da máquina
-        const apiUrl = `http://${hostname}:3000/api/v1`;
-        console.log('🔧 Detectado dispositivo móvel, usando:', apiUrl);
-        return apiUrl;
+      if (hostname === '10.0.2.2') return 'http://10.0.2.2:3000/api/v1';
+      if (hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '') {
+        return `http://${hostname}:3000/api/v1`;
       }
     }
   }
-  
-  // 4. Padrão: usa proxy do Vite ou localhost
-  console.log('🔧 Usando URL padrão (proxy Vite): /api/v1');
+
   return '/api/v1';
 };
 
@@ -58,13 +42,6 @@ class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
     this.token = localStorage.getItem('auth_token');
-    
-    // Log para debug (remover em produção)
-    if (import.meta.env.DEV) {
-      console.log('🔧 API Base URL:', this.baseURL);
-      console.log('📱 Is Android Emulator:', isAndroidEmulator);
-      console.log('📱 Is Mobile:', isMobile);
-    }
   }
 
   setToken(token) {
@@ -87,12 +64,6 @@ class ApiService {
 
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
-      // Log apenas em desenvolvimento
-      if (import.meta.env.DEV) {
-        console.log('🔑 Token sendo enviado:', this.token.substring(0, 30) + '...');
-      }
-    } else {
-      console.warn('⚠️ Nenhum token encontrado no localStorage');
     }
 
     return headers;
@@ -100,203 +71,88 @@ class ApiService {
 
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
-    const config = {
-      headers: this.getHeaders(),
-      ...options,
-    };
-
-    // Log detalhado para debug
-    console.log('🌐 API Request:', {
-      method: config.method || 'GET',
-      url: url,
-      baseURL: this.baseURL,
-      endpoint: endpoint,
-      headers: config.headers,
-      hasToken: !!this.token
-    });
+    const config = { headers: this.getHeaders(), ...options };
 
     try {
       const response = await fetch(url, config);
-      
-      console.log('📡 API Response:', {
-        status: response.status,
-        statusText: response.statusText,
-        url: response.url,
-        ok: response.ok
-      });
-      
+
       if (!response.ok) {
         let errorData = {};
         let errorText = '';
 
         try {
-          // Tentar ler o texto da resposta primeiro
           errorText = await response.text();
-          console.error('📄 Raw error response text:', errorText);
-          
-          // Tentar parsear como JSON
           if (errorText && errorText.trim().startsWith('{')) {
             try {
               errorData = JSON.parse(errorText);
-              console.error('✅ Parsed error JSON:', errorData);
-            } catch (jsonError) {
-              console.error('❌ Failed to parse as JSON:', jsonError);
-              errorData = { message: errorText || `HTTP error! status: ${response.status}` };
+            } catch {
+              errorData = { message: errorText };
             }
           } else {
-            // Se não for JSON, usar o texto como mensagem
             errorData = { message: errorText || `HTTP error! status: ${response.status}` };
           }
-        } catch (parseError) {
-          console.error('❌ Error reading error response:', parseError);
-          errorData = { 
-            message: `HTTP error! status: ${response.status}`,
-            rawError: parseError.message
-          };
+        } catch {
+          errorData = { message: `HTTP error! status: ${response.status}` };
         }
-        
-        // Extract Rails validation errors - priorizar mensagens do backend
-        let errorMessage = null;
-        
-        // Log do errorData completo para debug
-        console.error('🔍 errorData completo:', errorData);
-        console.error('🔍 errorText:', errorText);
-        
-        // Priorizar mensagem de erro do backend se disponível
-        if (errorData.error && typeof errorData.error === 'string') {
-          errorMessage = errorData.error;
-        } else if (errorData.message && typeof errorData.message === 'string') {
-          errorMessage = errorData.message;
-        } else if (errorData.error) {
-          errorMessage = String(errorData.error);
-        } else if (errorData.message) {
-          errorMessage = String(errorData.message);
-        }
-        
-        // Se ainda não tiver mensagem, tentar extrair do texto bruto
+
+        let errorMessage =
+          (typeof errorData.error === 'string' ? errorData.error : null) ||
+          (typeof errorData.message === 'string' ? errorData.message : null) ||
+          (errorData.error ? String(errorData.error) : null) ||
+          (errorData.message ? String(errorData.message) : null);
+
         if (!errorMessage && errorText) {
-          // Tentar extrair mensagem de erro de HTML se for o caso
           const htmlMatch = errorText.match(/<title>(.*?)<\/title>/i) || errorText.match(/<h1>(.*?)<\/h1>/i);
-          if (htmlMatch) {
-            errorMessage = htmlMatch[1];
-          } else if (errorText.length < 500) {
-            // Se o texto for curto, usar como mensagem
-            errorMessage = errorText;
-          }
+          errorMessage = htmlMatch ? htmlMatch[1] : (errorText.length < 500 ? errorText : null);
         }
-        
-        // Handle Rails validation errors format: { errors: [...] } or { errors: { field: [...] } }
+
         if (!errorMessage && errorData.errors) {
           if (Array.isArray(errorData.errors)) {
-            // Format: { errors: ["Error 1", "Error 2"] }
             errorMessage = errorData.errors.join(', ');
           } else if (typeof errorData.errors === 'object') {
-            // Format: { errors: { field: ["Error message"] } }
-            const errorMessages = [];
-            Object.keys(errorData.errors).forEach(field => {
-              const fieldErrors = errorData.errors[field];
-              if (Array.isArray(fieldErrors)) {
-                fieldErrors.forEach(msg => {
-                  errorMessages.push(`${field}: ${msg}`);
-                });
-              } else {
-                errorMessages.push(`${field}: ${fieldErrors}`);
-              }
-            });
-            errorMessage = errorMessages.join(', ');
+            errorMessage = Object.entries(errorData.errors)
+              .flatMap(([field, msgs]) =>
+                Array.isArray(msgs) ? msgs.map(m => `${field}: ${m}`) : [`${field}: ${msgs}`]
+              )
+              .join(', ');
           }
         }
-        
-        // Fallback to generic error message
-        if (!errorMessage) {
-          errorMessage = `HTTP error! status: ${response.status}. Verifique os logs do servidor para mais detalhes.`;
-        }
-        
-        // Log detalhado do erro
-        console.error('❌ API Error:', {
-          status: response.status,
-          statusText: response.statusText,
-          url: url,
-          error: errorMessage,
-          data: errorData
-        });
-        console.error('❌ API Error Details:', JSON.stringify({
-          status: response.status,
-          statusText: response.statusText,
-          url: url,
-          error: errorMessage,
-          data: errorData
-        }, null, 2));
-        
-        // Criar erro com mais informações
+
+        if (!errorMessage) errorMessage = `HTTP error! status: ${response.status}`;
+
         const error = new Error(errorMessage);
         error.status = response.status;
         error.data = errorData;
         throw error;
       }
 
-      // Lidar com respostas sem corpo (ex.: 204 No Content)
-      if (response.status === 204 || response.status === 205) {
-        console.log('✅ API Success (no content):', { endpoint, status: response.status });
-        return null;
-      }
+      if (response.status === 204 || response.status === 205) return null;
 
       const responseText = await response.text();
-
-      // Se não houver corpo, retornar nulo para evitar erros de parsing
-      if (!responseText || responseText.trim() === '') {
-        console.log('✅ API Success (empty body):', { endpoint, status: response.status });
-        return null;
-      }
+      if (!responseText || responseText.trim() === '') return null;
 
       const contentType = response.headers.get('Content-Type') || '';
-      const looksLikeJson = contentType.includes('application/json') || responseText.trim().startsWith('{') || responseText.trim().startsWith('[');
+      const looksLikeJson =
+        contentType.includes('application/json') ||
+        responseText.trim().startsWith('{') ||
+        responseText.trim().startsWith('[');
 
-      let data;
       if (looksLikeJson) {
         try {
-          data = JSON.parse(responseText);
-        } catch (parseError) {
-          console.error('❌ Failed to parse JSON response:', {
-            endpoint,
-            error: parseError.message,
-            responseText
-          });
+          return JSON.parse(responseText);
+        } catch {
           throw new Error('Erro ao processar resposta do servidor');
         }
-      } else {
-        data = responseText;
       }
 
-      console.log('✅ API Success:', { endpoint, data });
-      return data;
+      return responseText;
     } catch (error) {
-      // Log detalhado do erro de rede ou parsing
-      const errorDetails = {
-        url: url,
-        endpoint: endpoint,
-        error: error.message,
-        status: error.status || 'N/A',
-        data: error.data || null,
-        stack: error.stack
-      };
-      console.error('❌ API request failed:', errorDetails);
-      console.error('❌ API request failed (JSON):', JSON.stringify(errorDetails, null, 2));
       throw error;
     }
   }
 
-  // Health check
   async healthCheck() {
-    console.log('🏥 Executando health check...');
-    try {
-      const result = await this.request('/health');
-      console.log('✅ Health check OK:', result);
-      return result;
-    } catch (error) {
-      console.error('❌ Health check falhou:', error);
-      throw error;
-    }
+    return await this.request('/health');
   }
 
   // Auth methods
@@ -906,9 +762,7 @@ class ApiService {
       }
     }
     const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
-    const url = `/reports/${reportId}${queryString}`;
-    console.log('📊 Fetching report:', url);
-    return await this.request(url);
+    return await this.request(`/reports/${reportId}${queryString}`);
   }
 
   async getAppointmentsIntegratedReport(startDate, endDate) {
@@ -1061,28 +915,15 @@ class ApiService {
     const headers = this.getHeaders();
     delete headers['Content-Type']; // Deixar o browser definir o Content-Type com boundary
 
-    console.log('📤 Uploading import:', {
-      url,
-      hasFile: !!importData.file,
-      source: importData.source,
-      fileName: importData.file?.name
-    });
-
     const response = await fetch(url, {
       method: 'POST',
       headers: headers,
       body: formData,
     });
 
-    console.log('📥 Upload response:', {
-      status: response.status,
-      ok: response.ok
-    });
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const errorMessage = errorData.error || errorData.errors?.join(', ') || `HTTP error! status: ${response.status}`;
-      console.error('❌ Upload error:', errorData);
       throw new Error(errorMessage);
     }
 
@@ -1125,8 +966,6 @@ class ApiService {
     const baseUrl = this.baseURL.replace('/api/v1', '');
     const url = `${baseUrl}/api/v1/public/appointment_data/${token}/full`;
 
-    console.log('📡 Fetching appointment full payload from:', url);
-
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -1139,34 +978,22 @@ class ApiService {
 
       clearTimeout(timer);
 
-      console.log('📡 Full response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-      });
-
       const data = await response.json().catch(() => null);
 
       if (!response.ok || !data) {
-        const errorMessage = (data && (data.error || data.message)) || `HTTP error! status: ${response.status}`;
-        console.error('❌ Full API Error:', { status: response.status, error: errorMessage, data });
-        throw new Error(errorMessage);
+        throw new Error((data && (data.error || data.message)) || `HTTP error! status: ${response.status}`);
       }
 
       if (!Array.isArray(data.services) || !Array.isArray(data.professionals) || typeof data.config !== 'object') {
-        console.error('❌ Unexpected full response format:', data);
         throw new Error('Formato de resposta inesperado da API');
       }
 
       return data;
     } catch (error) {
       clearTimeout(timer);
-      console.error('❌ Full request failed:', { url, error: error.message, stack: error.stack });
-
       if (error.name === 'AbortError' || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
         throw new Error('Servidor indisponível ou tempo de resposta excedido. Tente novamente.');
       }
-
       throw error;
     }
   }
@@ -1179,59 +1006,21 @@ class ApiService {
     const baseUrl = this.baseURL.replace('/api/v1', '');
     const url = `${baseUrl}/api/v1/public/appointment_data/${token}/services`;
     
-    console.log('📡 Fetching services from:', url);
-    
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      console.log('📡 Services response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      });
-      
+      const response = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
       const data = await response.json();
-      console.log('✅ Services data received:', data);
-      
-      // Se a resposta não for ok, lançar erro
-      if (!response.ok) {
-        const errorMessage = data.error || data.message || `HTTP error! status: ${response.status}`;
-        console.error('❌ Services API Error:', {
-          status: response.status,
-          error: errorMessage,
-          data: data
-        });
-        throw new Error(errorMessage);
-      }
-      
-      // Se a resposta for um objeto de erro (não um array), lançar erro
+
+      if (!response.ok) throw new Error(data.error || data.message || `HTTP error! status: ${response.status}`);
+
       if (data && !Array.isArray(data)) {
-        if (data.error || data.message) {
-          console.warn('⚠️ API returned error object instead of array:', data);
-          throw new Error(data.message || data.error || 'Formato de resposta inválido da API');
-        }
-        // Se não for array nem objeto de erro, algo está errado
-        console.error('❌ Unexpected response format:', data);
-        throw new Error('Formato de resposta inesperado da API');
+        throw new Error(data.message || data.error || 'Formato de resposta inesperado da API');
       }
-      
+
       return data;
     } catch (error) {
-      console.error('❌ Services request failed:', {
-        url: url,
-        error: error.message,
-        stack: error.stack
-      });
-      
       if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
         throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');
       }
-      
       throw error;
     }
   }
@@ -1244,126 +1033,21 @@ class ApiService {
     const baseUrl = this.baseURL.replace('/api/v1', '');
     const url = `${baseUrl}/api/v1/public/appointment_data/${token}/professionals`;
     
-    console.log('📡 Fetching professionals from:', url);
-    
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      console.log('📡 Professionals response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      });
-      
+      const response = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
       const data = await response.json();
-      console.log('✅ Professionals data received:', data);
-      
-      // Se a resposta não for ok, lançar erro
-      if (!response.ok) {
-        const errorMessage = data.error || data.message || `HTTP error! status: ${response.status}`;
-        console.error('❌ Professionals API Error:', {
-          status: response.status,
-          error: errorMessage,
-          data: data
-        });
-        throw new Error(errorMessage);
-      }
-      
-      // Se a resposta for um objeto de erro (não um array), lançar erro
-      if (data && !Array.isArray(data)) {
-        if (data.error || data.message) {
-          console.warn('⚠️ API returned error object instead of array:', data);
-          throw new Error(data.message || data.error || 'Formato de resposta inválido da API');
-        }
-        // Se não for array nem objeto de erro, algo está errado
-        console.error('❌ Unexpected response format:', data);
-        throw new Error('Formato de resposta inesperado da API');
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('❌ Professionals request failed:', {
-        url: url,
-        error: error.message,
-        stack: error.stack
-      });
-      
-      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');
-      }
-      
-      throw error;
-    }
-  }
 
-  async getPublicAvailableSlots(token, professionalId, date, serviceId = null) {
-    if (!token) {
-      throw new Error('Token de agendamento não fornecido');
-    }
-    if (!professionalId) {
-      throw new Error('ID do profissional não fornecido');
-    }
-    if (!date) {
-      throw new Error('Data não fornecida');
-    }
-    
-    const params = new URLSearchParams({
-      professional_id: professionalId,
-      date: date,
-    });
-    if (serviceId) {
-      params.append('service_id', serviceId);
-    }
-    
-    const baseUrl = this.baseURL.replace('/api/v1', '');
-    const url = `${baseUrl}/api/v1/public/appointment_data/${token}/available_slots?${params}`;
-    
-    console.log('📡 Fetching available slots from:', url);
-    
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      console.log('📡 Available slots response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || errorData.message || `HTTP error! status: ${response.status}`;
-        console.error('❌ Available slots API Error:', {
-          status: response.status,
-          error: errorMessage,
-          data: errorData
-        });
-        throw new Error(errorMessage);
+      if (!response.ok) throw new Error(data.error || data.message || `HTTP error! status: ${response.status}`);
+
+      if (data && !Array.isArray(data)) {
+        throw new Error(data.message || data.error || 'Formato de resposta inesperado da API');
       }
-      
-      const data = await response.json();
-      console.log('✅ Available slots data received:', data);
+
       return data;
     } catch (error) {
-      console.error('❌ Available slots request failed:', {
-        url: url,
-        error: error.message,
-        stack: error.stack
-      });
-      
       if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
         throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');
       }
-      
       throw error;
     }
   }
@@ -1376,27 +1060,14 @@ class ApiService {
     const baseUrl = this.baseURL.replace('/api/v1', '');
     const url = `${baseUrl}/api/v1/public/appointment_data/${token}/config`;
     
-    console.log('📡 Fetching appointment config from:', url);
-    
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
+      const response = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || errorData.message || `HTTP error! status: ${response.status}`;
-        throw new Error(errorMessage);
+        throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
       }
-      
-      const data = await response.json();
-      console.log('✅ Appointment config received:', data);
-      return data;
+      return await response.json();
     } catch (error) {
-      console.error('❌ Config request failed:', error);
       throw error;
     }
   }
@@ -1417,79 +1088,84 @@ class ApiService {
     
     const url = `${baseUrl}/agendar/${token}/book`;
     
-    console.log('📡 Creating public appointment:', {
-      baseURL: this.baseURL,
-      baseUrl: baseUrl,
-      token: token,
-      url: url,
-      data: appointmentData
-    });
-    
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ appointment: appointmentData }),
       });
-      
-      console.log('📡 Public Appointment Response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        url: url
-      });
-      
+
       if (!response.ok) {
         let errorData = {};
         let errorText = '';
         try {
           errorText = await response.text();
           errorData = errorText ? JSON.parse(errorText) : {};
-        } catch (e) {
-          console.warn('⚠️ Could not parse error response as JSON:', e);
-          errorText = errorText || 'No error message';
-        }
-        
-        // Extrair mensagens de erro de diferentes formatos
-        let errorMessage = '';
-        if (errorData.errors && Array.isArray(errorData.errors)) {
-          errorMessage = errorData.errors.join(', ');
-        } else if (errorData.error) {
-          errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
-        } else if (errorData.message) {
-          errorMessage = errorData.message;
-        } else {
-          errorMessage = `HTTP error! status: ${response.status}`;
-        }
-        
-        // Log detalhado
-        console.error('❌ Public Appointment Error:');
-        console.error('  Status:', response.status, response.statusText);
-        console.error('  URL:', url);
-        console.error('  Error Message:', errorMessage);
-        console.error('  Full Error Data:', JSON.stringify(errorData, null, 2));
-        console.error('  Raw Response Text:', errorText);
-        
+        } catch { /* ignore parse errors */ }
+
+        let errorMessage =
+          (Array.isArray(errorData.errors) ? errorData.errors.join(', ') : null) ||
+          (typeof errorData.error === 'string' ? errorData.error : errorData.error ? JSON.stringify(errorData.error) : null) ||
+          errorData.message ||
+          `HTTP error! status: ${response.status}`;
+
         const error = new Error(errorMessage);
         error.status = response.status;
         error.data = errorData;
         error.errors = errorData.errors || [];
         throw error;
       }
-      
-      const data = await response.json();
-      console.log('✅ Public Appointment Success:', data);
-      return data;
+
+      return await response.json();
     } catch (error) {
-      console.error('❌ Public Appointment request failed:', {
-        url: url,
-        error: error.message,
-        stack: error.stack
-      });
       throw error;
     }
+  }
+
+  // Client self-manage (public, no auth)
+  async getManageAppointment(manageToken) {
+    let baseUrl = this.baseURL.startsWith('/') ? 'http://localhost:3000' : this.baseURL.replace('/api/v1', '').replace(/\/$/, '')
+    const response = await fetch(`${baseUrl}/agendar/gerenciar/${manageToken}`)
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.error || `HTTP ${response.status}`)
+    }
+    return response.json()
+  }
+
+  async cancelManageAppointment(manageToken) {
+    let baseUrl = this.baseURL.startsWith('/') ? 'http://localhost:3000' : this.baseURL.replace('/api/v1', '').replace(/\/$/, '')
+    const response = await fetch(`${baseUrl}/agendar/gerenciar/${manageToken}/cancel`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`)
+    return data
+  }
+
+  async rescheduleManageAppointment(manageToken, newStartTime, newEndTime) {
+    let baseUrl = this.baseURL.startsWith('/') ? 'http://localhost:3000' : this.baseURL.replace('/api/v1', '').replace(/\/$/, '')
+    const response = await fetch(`${baseUrl}/agendar/gerenciar/${manageToken}/reschedule`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_start_time: newStartTime, new_end_time: newEndTime })
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`)
+    return data
+  }
+
+  async getPublicAvailableSlots(token, { professionalId, date, serviceId, excludeAppointmentId } = {}) {
+    let baseUrl = this.baseURL.startsWith('/') ? 'http://localhost:3000' : this.baseURL.replace('/api/v1', '').replace(/\/$/, '')
+    const params = new URLSearchParams()
+    if (professionalId) params.set('professional_id', professionalId)
+    if (date) params.set('date', date)
+    if (serviceId) params.set('service_id', serviceId)
+    if (excludeAppointmentId) params.set('exclude_appointment_id', excludeAppointmentId)
+    const response = await fetch(`${baseUrl}/api/v1/public/appointment_data/${token}/available_slots?${params}`)
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.error || `HTTP ${response.status}`)
+    }
+    return response.json()
   }
 
   // Appointment Links Management
@@ -1531,20 +1207,10 @@ class ApiService {
   }
 
   async createSubscriptionCheckout(planId) {
-    try {
-      return await this.request('/subscriptions/create_checkout', {
-        method: 'POST',
-        body: JSON.stringify({ plan_id: planId }),
-      });
-    } catch (error) {
-      // Extrair mensagem de erro mais detalhada
-      const errorMessage = error.message || 'Erro desconhecido ao criar checkout';
-      console.error('Erro detalhado no checkout:', {
-        message: errorMessage,
-        planId: planId
-      });
-      throw new Error(errorMessage);
-    }
+    return await this.request('/subscriptions/create_checkout', {
+      method: 'POST',
+      body: JSON.stringify({ plan_id: planId }),
+    });
   }
 
   async getBillingPortal(returnUrl = null) {
@@ -1560,6 +1226,12 @@ class ApiService {
 
   async reactivateSubscription() {
     return await this.request('/subscriptions/reactivate', {
+      method: 'POST',
+    });
+  }
+
+  async syncSubscription() {
+    return await this.request('/subscriptions/sync', {
       method: 'POST',
     });
   }
@@ -1660,6 +1332,38 @@ class ApiService {
       method: 'PATCH',
       body: JSON.stringify({ account: accountData }),
     });
+  }
+
+  async uploadCompanyLogo(file) {
+    const url = `${this.baseURL}/account_settings/upload_logo`
+    const formData = new FormData()
+    formData.append('logo', file)
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${this.token || localStorage.getItem('auth_token')}` },
+      body: formData,
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: response.statusText }))
+      throw new Error(err.error || 'Erro ao enviar imagem')
+    }
+    return response.json()
+  }
+
+  async uploadCompanyCover(file) {
+    const url = `${this.baseURL}/account_settings/upload_cover`
+    const formData = new FormData()
+    formData.append('cover', file)
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${this.token || localStorage.getItem('auth_token')}` },
+      body: formData,
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: response.statusText }))
+      throw new Error(err.error || 'Erro ao enviar imagem')
+    }
+    return response.json()
   }
 
   // Document Templates - API v1 endpoints
@@ -1801,6 +1505,22 @@ class ApiService {
       default:
         return await this.deleteReceiptTemplate(id);
     }
+  }
+
+  // Vitrine pública — Descobrir profissionais
+  async discoverSearch(params = {}) {
+    const query = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v !== '' && v !== null && v !== undefined))
+    ).toString()
+    return this.request(`/public/discover${query ? `?${query}` : ''}`)
+  }
+
+  async discoverProfile(id) {
+    return this.request(`/public/discover/${id}`)
+  }
+
+  async discoverCategories() {
+    return this.request('/public/discover/categories')
   }
 }
 

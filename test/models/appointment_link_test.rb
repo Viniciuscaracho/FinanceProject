@@ -66,7 +66,7 @@ class AppointmentLinkTest < ActiveSupport::TestCase
     )
     
     assert_not link2.valid?
-    assert_includes link2.errors[:token], 'has already been taken'
+    assert_includes link2.errors[:token], 'já está em uso'
   end
 
   test "should require name" do
@@ -75,7 +75,7 @@ class AppointmentLinkTest < ActiveSupport::TestCase
     )
     
     assert_not link.valid?
-    assert_includes link.errors[:name], "can't be blank"
+    assert_includes link.errors[:name], "não pode ficar em branco"
   end
 
   test "should be active by default" do

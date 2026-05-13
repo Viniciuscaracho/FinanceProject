@@ -80,8 +80,10 @@ module Api
       end
 
       def destroy
-        @bank_account.destroy
+        @bank_account.archive_or_destroy!
         render json: { message: 'Conta bancária removida com sucesso' }
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.message }, status: :unprocessable_entity
       end
 
       def balance

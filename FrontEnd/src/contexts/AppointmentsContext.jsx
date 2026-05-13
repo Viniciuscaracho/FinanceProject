@@ -24,6 +24,7 @@ export function AppointmentsProvider({ children }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [newlyCreatedAppointment, setNewlyCreatedAppointment] = useState(null)
 
   // Reset para página 0 sempre que filtros ou busca mudarem
   useEffect(() => {
@@ -79,6 +80,8 @@ export function AppointmentsProvider({ children }) {
     setIsConsultationModalOpen,
     isSubmitting,
     setIsSubmitting,
+    newlyCreatedAppointment,
+    setNewlyCreatedAppointment,
   }
 
   return (

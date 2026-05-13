@@ -38,6 +38,7 @@ import {
 } from 'lucide-react'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { apiService } from '@/lib/api'
+import { toast } from 'sonner'
 import { DocumentEditor } from '@/components/DocumentEditor'
 import { DocumentPreview } from '@/components/DocumentPreview'
 import { cn } from '@/lib/utils'
@@ -75,8 +76,6 @@ export function DocumentTemplateForm() {
   const editorRef = useRef(null)
   const [loading, setLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(false)
   const [isVariableDialogOpen, setIsVariableDialogOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -148,8 +147,7 @@ export function DocumentTemplateForm() {
         professional_type: template.professional_type || '',
       })
     } catch (err) {
-      console.error('Error loading template:', err)
-      setError('Erro ao carregar template')
+      toast.error('Erro ao carregar template')
     } finally {
       setLoading(false)
     }
@@ -158,8 +156,6 @@ export function DocumentTemplateForm() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
-    setError(null)
-    setSuccess(false)
 
     try {
       const templatePayload = {
@@ -231,13 +227,12 @@ export function DocumentTemplateForm() {
         }
       }
 
-      setSuccess(true)
+      toast.success(isEditing ? 'Template atualizado com sucesso!' : 'Template criado com sucesso!')
       setTimeout(() => {
         navigate('/document-templates')
       }, 800)
     } catch (err) {
-      console.error('Error saving template:', err)
-      setError(err.message || 'Erro ao salvar template')
+      toast.error(err.message || 'Erro ao salvar template')
     } finally {
       setIsSubmitting(false)
     }
@@ -422,7 +417,7 @@ export function DocumentTemplateForm() {
     <div className="relative min-h-screen bg-surface">
       <div className="relative z-10 w-full max-w-full min-w-0">
         {/* Header - Compacto */}
-        <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 md:px-6">
+        <div className="border-b border-border bg-background px-4 py-3 md:px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Button
@@ -443,28 +438,6 @@ export function DocumentTemplateForm() {
           </div>
         </div>
 
-        {/* Error Alert */}
-        {error && (
-          <div className="px-4 py-2 md:px-6">
-            <Alert variant="destructive" className="mb-0 py-2">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle className="text-sm">Erro</AlertTitle>
-              <AlertDescription className="text-xs">{error}</AlertDescription>
-            </Alert>
-          </div>
-        )}
-
-        {/* Success Alert */}
-        {success && (
-          <div className="px-4 py-2 md:px-6">
-            <Alert className="mb-0 border-green-200 bg-green-50 text-green-800 py-2">
-              <AlertCircle className="h-4 w-4 text-green-600" />
-              <AlertTitle className="text-sm">Sucesso</AlertTitle>
-              <AlertDescription className="text-xs">Template salvo com sucesso!</AlertDescription>
-            </Alert>
-          </div>
-        )}
-
         {/* Form */}
         <form id="document-form" onSubmit={handleSubmit} className="px-4 py-4 md:px-6 h-[calc(100vh-140px)] flex flex-col">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 flex-1 min-h-0">
@@ -472,7 +445,7 @@ export function DocumentTemplateForm() {
             <div className="flex flex-col min-h-0">
               {/* Campos Compactos em Accordion */}
               <Accordion type="multiple" defaultValue={['basic']} className="mb-3 flex-shrink-0">
-                <AccordionItem value="basic" className="border border-gray-200 dark:border-gray-700 rounded-lg px-3">
+                <AccordionItem value="basic" className="border border-border rounded-lg px-3">
                   <AccordionTrigger className="py-2 text-sm font-medium">
                     Informações básicas
                   </AccordionTrigger>
@@ -508,7 +481,7 @@ export function DocumentTemplateForm() {
                 </AccordionItem>
 
                 {/* Configurações de Sessões */}
-                <AccordionItem value="sessions" className="border border-gray-200 dark:border-gray-700 rounded-lg px-3">
+                <AccordionItem value="sessions" className="border border-border rounded-lg px-3">
                   <AccordionTrigger className="py-2 text-sm font-medium">
                     Sessões e Profissional
                   </AccordionTrigger>
@@ -604,7 +577,7 @@ export function DocumentTemplateForm() {
 
                 {/* Configurações do Recibo */}
                 {type === 'receipt' && (
-                  <AccordionItem value="settings" className="border border-gray-200 dark:border-gray-700 rounded-lg px-3">
+                  <AccordionItem value="settings" className="border border-border rounded-lg px-3">
                     <AccordionTrigger className="py-2 text-sm font-medium">
                       Configurações
                     </AccordionTrigger>
@@ -652,7 +625,7 @@ export function DocumentTemplateForm() {
 
                 {/* Configurações da Fatura */}
                 {type === 'invoice' && (
-                  <AccordionItem value="settings" className="border border-gray-200 dark:border-gray-700 rounded-lg px-3">
+                  <AccordionItem value="settings" className="border border-border rounded-lg px-3">
                     <AccordionTrigger className="py-2 text-sm font-medium">
                       Configurações
                     </AccordionTrigger>
@@ -747,7 +720,7 @@ export function DocumentTemplateForm() {
 
                 {/* Configurações do Contrato */}
                 {type === 'contract' && (
-                  <AccordionItem value="settings" className="border border-gray-200 dark:border-gray-700 rounded-lg px-3">
+                  <AccordionItem value="settings" className="border border-border rounded-lg px-3">
                     <AccordionTrigger className="py-2 text-sm font-medium">
                       Configurações
                     </AccordionTrigger>
@@ -814,7 +787,7 @@ export function DocumentTemplateForm() {
         </form>
 
         {/* Sticky Action Bar - Compacto */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-2 md:px-6 z-50 shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border px-4 py-2 md:px-6 z-50 shadow-lg">
           <div className="flex items-center justify-end gap-2">
             <Button
               type="button"
@@ -851,7 +824,7 @@ export function DocumentTemplateForm() {
 
         {/* Variables Dialog - Refinado com categorias */}
         <Dialog open={isVariableDialogOpen} onOpenChange={setIsVariableDialogOpen}>
-          <DialogContent className="max-w-3xl max-h-[80vh]">
+          <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
               <DialogTitle>Inserir Variável</DialogTitle>
               <p className="text-sm text-text-secondary mt-2">

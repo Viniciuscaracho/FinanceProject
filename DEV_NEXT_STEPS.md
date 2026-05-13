@@ -6,10 +6,16 @@
 - Bundler 2.x
 - Node / pnpm 10+
 - Docker + Docker Compose
+- Android Studio (para build e emulador) ou dispositivo físico com Depuração USB ativa
+- Android SDK (ANDROID_HOME configurado)
+- Java 8+ (para Gradle)
+- Appium Server (`npm install -g appium` + driver `appium driver install uiautomator2`)
 
 ---
 
 ## Como subir o ambiente de desenvolvimento
+
+> **Atalho:** rode `./start-dev.sh` na raiz do projeto — ele sobe backend + frontend e configura o `adb reverse` automaticamente se houver um celular conectado via USB.
 
 ### 1. Infraestrutura (Docker)
 
@@ -57,16 +63,132 @@ pnpm install
 pnpm dev
 ```
 
+### 6. App Android
+
+O `AndroidApp/` é um WebView wrapper que carrega o frontend React.
+A URL carregada muda automaticamente conforme o buildType:
+
+| BuildType | Dispositivo     | URL carregada                        |
+|-----------|-----------------|--------------------------------------|
+| `debug`   | Físico (USB)    | `http://localhost:5173` (adb reverse)|
+| `debug`   | Emulador        | `http://10.0.2.2:5173`               |
+| `release` | Qualquer        | `https://dev.barbermanagement.io`    |
+
+Para alterar a URL de produção, edite `FRONTEND_URL` no `buildType release` em `AndroidApp/app/build.gradle`.
+
+#### Pré-condição: variável de ambiente do SDK
+
+```bash
+export ANDROID_HOME=$HOME/Android/Sdk
+export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator
+```
+
+> Adicione essas linhas ao `~/.zshrc` ou `~/.bashrc` para não precisar repetir.
+
+#### Desenvolvimento com dispositivo físico via USB (recomendado)
+
+```bash
+# 1. No dispositivo: Configurações → Sobre → toque 7x em "Número da versão"
+# 2. Configurações → Sistema → Opções do Desenvolvedor → ative "Depuração USB"
+# 3. Conecte via USB e autorize a depuração quando solicitado
+adb devices
+# deve mostrar: <UDID>  device
+
+# 4. Redirecionar porta do Vite para o celular (feito automaticamente pelo start-dev.sh)
+adb reverse tcp:5173 tcp:5173
+
+# 5. Subir o ambiente de desenvolvimento
+./start-dev.sh
+
+# 6. Compilar e instalar o APK de debug
+cd AndroidApp
+./gradlew assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+O app abrirá `http://localhost:5173` no celular — que o ADB tunela para o Vite no PC.
+O proxy do Vite cuida de redirecionar as chamadas `/api` para o Rails (sem precisar expor a porta 3000 ao celular).
+
+#### Desenvolvimento com emulador
+
+```bash
+# Listar AVDs disponíveis
+$ANDROID_HOME/emulator/emulator -list-avds
+
+# Iniciar o emulador
+$ANDROID_HOME/emulator/emulator -avd <AVD_NAME> &
+
+adb devices
+# deve mostrar: emulator-XXXX  device
+
+cd AndroidApp
+./gradlew assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+#### Build de release (para lançamento)
+
+```bash
+cd AndroidApp
+
+# Gera APK de release (aponta para https://dev.barbermanagement.io)
+./gradlew assembleRelease
+
+# APK gerado em:
+# app/build/outputs/apk/release/app-release-unsigned.apk
+
+# Para Google Play: gerar AAB assinado
+./gradlew bundleRelease
+# AAB em: app/build/outputs/bundle/release/app-release.aab
+```
+
+> Antes de publicar na Play Store é necessário configurar a keystore de assinatura.
+> Adicione em `AndroidApp/app/build.gradle` dentro de `android { }`:
+> ```groovy
+> signingConfigs {
+>     release {
+>         storeFile file("keystore.jks")
+>         storePassword System.getenv("KEYSTORE_PASSWORD")
+>         keyAlias System.getenv("KEY_ALIAS")
+>         keyPassword System.getenv("KEY_PASSWORD")
+>     }
+> }
+> buildTypes {
+>     release { signingConfig signingConfigs.release }
+> }
+> ```
+
+#### Rodar testes Appium (opcional)
+
+```bash
+# Instalar Appium e o driver UiAutomator2 (apenas na primeira vez)
+npm install -g appium
+appium driver install uiautomator2
+
+# Terminal separado — iniciar Appium Server
+appium --port 4723
+
+# Verificar se o ambiente está pronto
+cd AndroidApp
+bash tests/java/check-environment.sh
+
+# Executar todos os testes
+./gradlew test
+```
+
 ---
 
 ## URLs
 
 | Serviço | URL |
 |---|---|
-| Frontend | http://localhost:5173 |
+| Frontend (PC) | http://localhost:5173 |
+| Frontend (celular USB) | http://localhost:5173 — via `adb reverse` |
+| Frontend (staging) | https://dev.barbermanagement.io |
 | Rails API | http://localhost:3000 |
 | Health check | http://localhost:3000/health_check |
 | Mailcatcher (e-mails) | http://localhost:1080 |
+| Appium Server | http://localhost:4723 |
 
 ---
 

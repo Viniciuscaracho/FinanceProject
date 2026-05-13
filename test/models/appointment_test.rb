@@ -5,10 +5,12 @@
 # Table name: appointments
 #
 #  id                           :bigint           not null, primary key
+#  additional_service_ids       :jsonb            not null
 #  billing_notification_sent    :boolean          default(FALSE), not null
 #  billing_notification_sent_at :datetime
 #  end_time                     :datetime
 #  google_meet_link             :string
+#  manage_token                 :string
 #  overdue_notification_sent    :boolean          default(FALSE), not null
 #  overdue_notification_sent_at :datetime
 #  payment_status               :integer
@@ -46,6 +48,7 @@
 #  index_appointments_on_billing_notification_sent         (billing_notification_sent)
 #  index_appointments_on_contact_id                        (contact_id)
 #  index_appointments_on_google_calendar_event_id          (google_calendar_event_id)
+#  index_appointments_on_manage_token                      (manage_token) UNIQUE
 #  index_appointments_on_overdue_notification_sent         (overdue_notification_sent)
 #  index_appointments_on_parent_appointment_id             (parent_appointment_id)
 #  index_appointments_on_payment_status                    (payment_status)
@@ -181,7 +184,7 @@ class AppointmentTest < ActiveSupport::TestCase
 
     appointment.status = :pending
     assert_not appointment.valid?
-    assert_includes appointment.errors[:status], 'Não é possível alterar o status de um agendamento concluído ou cancelado'
+    assert_includes appointment.errors[:status], 'Não é possível alterar o status de um agendamento cancelado'
   end
 
   test "should only allow completed status from confirmed" do
@@ -276,10 +279,10 @@ class AppointmentTest < ActiveSupport::TestCase
       payment_status: :paid
     )
 
-    # Chamar create_commissions múltiplas vezes
-    appointment.create_commissions
-    appointment.create_commissions
-    appointment.create_commissions
+    # Chamar create_commissions múltiplas vezes (método privado acessado via send em testes)
+    appointment.send(:create_commissions)
+    appointment.send(:create_commissions)
+    appointment.send(:create_commissions)
 
     # Deve ter apenas uma comissão
     assert_equal 1, appointment.appointment_commissions.count

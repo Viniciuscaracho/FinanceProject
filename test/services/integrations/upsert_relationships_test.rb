@@ -79,6 +79,7 @@ module Integrations
 
       response = sample_response
       response[:status] = 'inactive'
+      response[:updated_at] = Time.current.iso8601
       result = Integrations::UpsertRelationships.call(integration_store: @integration_store,
                                                       external_entity: 'account_info', external_id: response[:id],
                                                       response:, last_update: response[:updated_at],

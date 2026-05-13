@@ -1,512 +1,445 @@
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  DollarSign,
-  Users,
-  Calendar,
-  Loader2,
-  RefreshCw,
-  TrendingUp,
-  FileText,
-  Percent
-} from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { DollarSign, Users, Calendar, Loader2, RefreshCw, ChevronDown, ChevronUp, Percent } from 'lucide-react'
 import { apiService } from '../lib/api'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { cn } from '@/lib/utils'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend
-} from 'recharts'
-import { BarChart3 } from 'lucide-react'
+import { T, DISPLAY } from '@/lib/tokens'
+
+const fmtBRL = (cents) => {
+  if (typeof cents === 'object' && cents?.cents !== undefined) {
+    const v = cents.cents || 0
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: cents.currency || 'BRL' }).format(v / 100)
+  }
+  const v = cents || 0
+  if (isNaN(v) || !isFinite(v)) return 'R$ 0,00'
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v / 100)
+}
+
+const fmtDate = (d) => {
+  if (!d) return '—'
+  try { return format(parseISO(d), 'dd/MM/yy HH:mm', { locale: ptBR }) }
+  catch { try { return format(new Date(d), 'dd/MM/yy HH:mm', { locale: ptBR }) } catch { return d } }
+}
+
+function Panel({ children, style }) {
+  return (
+    <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, ...style }}>
+      {children}
+    </div>
+  )
+}
+
+function Avatar({ name, size = 36 }) {
+  const initial = (name || '?').charAt(0).toUpperCase()
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: size * 0.25,
+      background: T.chip, color: T.brand,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontWeight: 700, fontSize: size * 0.38, flexShrink: 0,
+    }}>
+      {initial}
+    </div>
+  )
+}
 
 export function Commissions() {
   const isMobile = useIsMobile()
-  
-  // Date filters
+
   const [startDate, setStartDate] = useState(
     format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'yyyy-MM-dd')
   )
   const [endDate, setEndDate] = useState(
     format(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0), 'yyyy-MM-dd')
   )
-
-  // Professional filter
   const [selectedProfessional, setSelectedProfessional] = useState('all')
   const [professionals, setProfessionals] = useState([])
-
-  // Data
   const [commissionsData, setCommissionsData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [expandedProfs, setExpandedProfs] = useState({})
 
-  // Load professionals
   useEffect(() => {
-    const loadProfessionals = async () => {
-      try {
-        const response = await apiService.getProfessionals()
-        setProfessionals(response.professionals || [])
-      } catch (err) {
-        console.error('Error loading professionals:', err)
-      }
-    }
-    loadProfessionals()
+    apiService.getProfessionals()
+      .then(r => setProfessionals(r.professionals || []))
+      .catch(() => {})
   }, [])
 
-  // Load commissions
   const loadCommissions = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true); setError(null)
     try {
       const professionalId = selectedProfessional !== 'all' ? selectedProfessional : null
-      const response = await apiService.getCommissions(startDate, endDate, professionalId)
-      setCommissionsData(response)
+      const r = await apiService.getCommissions(startDate, endDate, professionalId)
+      setCommissionsData(r)
+      // auto-expand if only one professional
+      if (r?.commissions?.length === 1) {
+        setExpandedProfs({ [r.commissions[0].professional.id]: true })
+      }
     } catch (err) {
-      console.error('Error loading commissions:', err)
       setError(err.message || 'Erro ao carregar comissões')
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
-  useEffect(() => {
-    loadCommissions()
-  }, [startDate, endDate, selectedProfessional])
+  useEffect(() => { loadCommissions() }, [startDate, endDate, selectedProfessional])
 
-  const formatCurrency = (cents, currency = 'BRL') => {
-    if (typeof cents === 'object' && cents.cents !== undefined) {
-      const value = cents.cents || 0
-      if (isNaN(value) || !isFinite(value)) return 'R$ 0,00'
-      return cents.formatted || new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: cents.currency || 'BRL'
-      }).format(value / 100)
-    }
-    const value = cents || 0
-    if (isNaN(value) || !isFinite(value)) return 'R$ 0,00'
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: currency
-    }).format(value / 100)
-  }
+  const toggleProf = (id) =>
+    setExpandedProfs(p => ({ ...p, [id]: !p[id] }))
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A'
-    try {
-      return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-    } catch {
-      return dateString
-    }
-  }
+  // Ranking data for horizontal bars
+  const rankingData = useMemo(() => {
+    if (!commissionsData?.commissions?.length) return []
+    const total = commissionsData.commissions.reduce(
+      (s, p) => s + (p.total_commission?.cents || 0), 0
+    )
+    return commissionsData.commissions
+      .map(p => ({
+        id: p.professional.id,
+        name: p.professional.name,
+        amount: p.total_commission?.cents || 0,
+        sessions: p.commissions?.length || 0,
+        pct: total > 0 ? ((p.total_commission?.cents || 0) / total) * 100 : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount)
+  }, [commissionsData])
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
-
-  // Prepare chart data
-  const chartData = commissionsData?.commissions?.map(prof => ({
-    name: prof.professional.name,
-    value: prof.total_commission.cents / 100
-  })) || []
+  const summary = commissionsData?.summary
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, ...DISPLAY }}>
+
+      {/* ══ HERO ═══════════════════════════════════ */}
+      <div style={{
+        background: T.hero, borderRadius: 12,
+        padding: isMobile ? '20px 20px' : '22px 28px',
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+        justifyContent: 'space-between', gap: 16,
+      }}>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+          <p style={{ fontSize: isMobile ? 18 : 21, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
             Comissões
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
-            Gerencie e visualize as comissões dos profissionais
+          </p>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0, marginTop: 2 }}>
+            {summary
+              ? `${format(parseISO(summary.period.start_date), "dd 'de' MMM", { locale: ptBR })} → ${format(parseISO(summary.period.end_date), "dd 'de' MMM yyyy", { locale: ptBR })}`
+              : 'Período selecionado'}
           </p>
         </div>
-        <Button
-          onClick={loadCommissions}
-          disabled={loading}
-          variant="outline"
-          className="w-full sm:w-auto"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Carregando...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Atualizar
-            </>
-          )}
-        </Button>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: isMobile ? 20 : 36 }}>
+          <div>
+            <p style={{ fontSize: isMobile ? 19 : 22, fontWeight: 700, color: T.green, margin: 0, letterSpacing: '-0.02em' }}>
+              {summary ? fmtBRL(summary.total_commissions) : '—'}
+            </p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Total a pagar</p>
+          </div>
+          <div>
+            <p style={{ fontSize: isMobile ? 19 : 22, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
+              {summary?.total_professionals ?? '—'}
+            </p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Profissionais</p>
+          </div>
+          <div>
+            <p style={{ fontSize: isMobile ? 19 : 22, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
+              {summary?.total_appointments ?? '—'}
+            </p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Sessões</p>
+          </div>
+        </div>
       </div>
 
-      {/* Filters */}
-      <Card className="rounded-xl">
-        <CardHeader>
-          <CardTitle className="text-lg">Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className={cn(
-            "grid gap-4",
-            isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-3"
-          )}>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Data Inicial
-              </label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Data Final
-              </label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Profissional
-              </label>
-              <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Todos os profissionais" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os profissionais</SelectItem>
-                  {professionals.map((prof) => (
-                    <SelectItem key={prof.id} value={prof.id.toString()}>
-                      {prof.name || prof.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      {/* ══ FILTROS ════════════════════════════════ */}
+      <Panel style={{ padding: '14px 16px' }}>
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 10,
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 130 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              De
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              style={{
+                border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 10px',
+                fontSize: 13, color: T.text, background: T.bg, fontFamily: 'inherit',
+                outline: 'none',
+              }}
+            />
           </div>
-        </CardContent>
-      </Card>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 130 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Até
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+              style={{
+                border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 10px',
+                fontSize: 13, color: T.text, background: T.bg, fontFamily: 'inherit',
+                outline: 'none',
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 180 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Profissional
+            </label>
+            <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
+              <SelectTrigger style={{ height: 36, fontSize: 13, border: `1px solid ${T.border}`, background: T.bg, borderRadius: 8 }}>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os profissionais</SelectItem>
+                {professionals.map(p => (
+                  <SelectItem key={p.id} value={p.id.toString()}>{p.name || p.email}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <button
+            onClick={loadCommissions}
+            disabled={loading}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontSize: 13, fontWeight: 600, color: T.brand,
+              background: T.chip, border: `1px solid #DDE3F5`,
+              borderRadius: 8, padding: '7px 14px', cursor: 'pointer',
+              fontFamily: 'inherit', marginLeft: 'auto',
+            }}
+          >
+            {loading
+              ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+              : <RefreshCw size={14} />}
+            Atualizar
+          </button>
+        </div>
+      </Panel>
 
-      {/* Error Message */}
+      {/* ══ ERRO ═══════════════════════════════════ */}
       {error && (
-        <Card className="rounded-xl border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
-          <CardContent className="pt-6">
-            <p className="text-red-600 dark:text-red-400">{error}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Summary Cards */}
-      {commissionsData?.summary && (
-        <div className={cn(
-          "grid gap-4",
-          isMobile ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-        )}>
-          <Card className="rounded-xl">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Total de Comissões
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                    {formatCurrency(commissionsData.summary.total_commissions)}
-                  </p>
-                </div>
-                <DollarSign className="h-8 w-8 text-green-600 dark:text-green-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-xl">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Profissionais
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                    {commissionsData.summary.total_professionals}
-                  </p>
-                </div>
-                <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-xl">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Agendamentos
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                    {commissionsData.summary.total_appointments}
-                  </p>
-                </div>
-                <Calendar className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-xl">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Período
-                  </p>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white mt-1">
-                    {format(new Date(commissionsData.summary.period.start_date), 'dd/MM/yyyy')} - {format(new Date(commissionsData.summary.period.end_date), 'dd/MM/yyyy')}
-                  </p>
-                </div>
-                <Calendar className="h-8 w-8 text-orange-600 dark:text-orange-400" />
-              </div>
-            </CardContent>
-          </Card>
+        <div style={{ background: T.red + '12', border: `1px solid ${T.red}30`, borderRadius: 10, padding: '12px 16px', fontSize: 13, color: T.red }}>
+          {error}
         </div>
       )}
 
-      {/* Charts */}
-      {commissionsData?.commissions && commissionsData.commissions.length > 0 && (
-        <div className={cn(
-          "grid gap-6",
-          isMobile ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2"
-        )}>
-          <Card className="rounded-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Comissões por Profissional
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="name" 
-                    angle={-45}
-                    textAnchor="end"
-                    height={100}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip 
-                    formatter={(value) => formatCurrency(value * 100)}
-                    contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc' }}
-                  />
-                  <Bar dataKey="value" fill="#0088FE" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Distribuição de Comissões
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value) => formatCurrency(value * 100)}
-                  />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+      {/* ══ LOADING ════════════════════════════════ */}
+      {loading && !commissionsData && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 48 }}>
+          <Loader2 size={24} style={{ color: T.brand, animation: 'spin 1s linear infinite' }} />
         </div>
       )}
 
-      {/* Commissions List */}
-      {loading ? (
-        <Card className="rounded-xl">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            </div>
-          </CardContent>
-        </Card>
-      ) : commissionsData?.commissions && commissionsData.commissions.length > 0 ? (
-        <div className="space-y-6">
-          {commissionsData.commissions.map((profCommission) => (
-            <Card key={profCommission.professional.id} className="rounded-xl">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">
-                      {profCommission.professional.name}
-                    </CardTitle>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      {profCommission.professional.email}
+      {/* ══ RANKING ════════════════════════════════ */}
+      {rankingData.length > 1 && (
+        <Panel>
+          <div style={{ padding: '16px 20px 12px', borderBottom: `1px solid ${T.border}` }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.muted, margin: 0 }}>
+              Ranking do período
+            </p>
+          </div>
+          <div style={{ padding: '8px 20px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {rankingData.map((p, i) => (
+              <div key={p.id}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, width: 16, textAlign: 'right', flexShrink: 0 }}>
+                    {i + 1}
+                  </span>
+                  <Avatar name={p.name} size={28} />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: T.text, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.name}
+                  </span>
+                  <span style={{ fontSize: 11, color: T.muted, flexShrink: 0 }}>
+                    {p.sessions} sessões
+                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: T.green, flexShrink: 0, minWidth: 90, textAlign: 'right' }}>
+                    {fmtBRL(p.amount)}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 16, flexShrink: 0 }} />
+                  <div style={{ flex: 1, height: 5, background: T.border, borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ width: `${p.pct}%`, height: '100%', background: T.brand, borderRadius: 3, transition: 'width 400ms ease' }} />
+                  </div>
+                  <span style={{ fontSize: 11, color: T.muted, width: 36, textAlign: 'right', flexShrink: 0 }}>
+                    {p.pct.toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      {/* ══ POR PROFISSIONAL ═══════════════════════ */}
+      {!loading && commissionsData?.commissions?.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {commissionsData.commissions.map((profComm) => {
+            const isOpen = !!expandedProfs[profComm.professional.id]
+            const totalCents = profComm.total_commission?.cents || 0
+            const sessions = profComm.commissions?.length || 0
+            return (
+              <Panel key={profComm.professional.id}>
+                {/* Cabeçalho do profissional */}
+                <div
+                  onClick={() => toggleProf(profComm.professional.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '14px 20px', cursor: 'pointer',
+                    borderBottom: isOpen ? `1px solid ${T.border}` : 'none',
+                    transition: 'background 100ms',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <Avatar name={profComm.professional.name} size={40} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0 }}>
+                      {profComm.professional.name}
+                    </p>
+                    <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>
+                      {profComm.professional.email} · {sessions} sessão{sessions !== 1 ? 'ões' : ''}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Total de Comissões
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <p style={{ fontSize: 18, fontWeight: 700, color: T.green, margin: 0, letterSpacing: '-0.02em' }}>
+                      {fmtBRL(totalCents)}
                     </p>
-                    <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                      {formatCurrency(profCommission.total_commission)}
-                    </p>
+                    <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>a pagar</p>
+                  </div>
+                  <div style={{ color: T.muted, flexShrink: 0, marginLeft: 4 }}>
+                    {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {isMobile ? (
-                  // Mobile: Cards Layout
-                  <div className="space-y-4">
-                    {profCommission.commissions.map((commission) => (
-                      <Card key={commission.id} className="bg-gray-50 dark:bg-gray-800">
-                        <CardContent className="p-4">
-                          <div className="space-y-2">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <p className="font-semibold text-gray-900 dark:text-white">
-                                  {commission.service}
-                                </p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                  {commission.client}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-bold text-green-600 dark:text-green-400">
-                                  {formatCurrency(commission.commission_amount)}
-                                </p>
-                              </div>
+
+                {/* Lista de comissões */}
+                {isOpen && (
+                  isMobile ? (
+                    <div style={{ padding: '8px 16px 14px', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {profComm.commissions.map((c, i) => {
+                        const isLast = i === profComm.commissions.length - 1
+                        const isPerc = c.commission_type === 'percentage'
+                        return (
+                          <div
+                            key={c.id || i}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 10,
+                              padding: '9px 0',
+                              borderBottom: isLast ? 'none' : `1px solid ${T.border}`,
+                              borderLeft: `3px solid ${T.green}`,
+                              paddingLeft: 10, marginLeft: -4,
+                            }}
+                          >
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ fontSize: 13, fontWeight: 600, color: T.text, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {c.client}
+                              </p>
+                              <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>
+                                {c.service} · {fmtDate(c.date)}
+                              </p>
                             </div>
-                            <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                              <Badge variant="outline" className="text-xs">
-                                {formatDate(commission.date)}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {commission.commission_type === 'percentage' ? 'Percentual' : 'Fixo'}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {commission.commission_type === 'percentage' 
-                                  ? `${commission.commission_value}%`
-                                  : formatCurrency(commission.commission_value * 100)}
-                              </Badge>
-                            </div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              Valor do agendamento: {formatCurrency(commission.appointment_price)}
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <p style={{ fontSize: 13, fontWeight: 700, color: T.green, margin: 0 }}>
+                                {fmtBRL(c.commission_amount)}
+                              </p>
+                              <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>
+                                {isPerc ? `${c.commission_value}%` : 'Fixo'} de {fmtBRL(c.appointment_price)}
+                              </p>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  // Desktop: Table Layout
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Serviço</TableHead>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Valor Agendamento</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Valor Comissão</TableHead>
-                        <TableHead>Comissão</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {profCommission.commissions.map((commission) => (
-                        <TableRow key={commission.id}>
-                          <TableCell className="font-medium">
-                            {commission.service}
-                          </TableCell>
-                          <TableCell>{commission.client}</TableCell>
-                          <TableCell>{formatDate(commission.date)}</TableCell>
-                          <TableCell>
-                            {formatCurrency(commission.appointment_price)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {commission.commission_type === 'percentage' ? 'Percentual' : 'Fixo'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {commission.commission_type === 'percentage' 
-                              ? `${commission.commission_value}%`
-                              : formatCurrency(commission.commission_value * 100)}
-                          </TableCell>
-                          <TableCell className="font-bold text-green-600 dark:text-green-400">
-                            {formatCurrency(commission.commission_amount)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ padding: '0 0 4px' }}>
+                      <Table>
+                        <TableHeader>
+                          <TableRow style={{ background: T.bg }}>
+                            <TableHead style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Data</TableHead>
+                            <TableHead style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Cliente</TableHead>
+                            <TableHead style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Serviço</TableHead>
+                            <TableHead style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Atendimento</TableHead>
+                            <TableHead style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Taxa</TableHead>
+                            <TableHead style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'right' }}>Comissão</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {profComm.commissions.map((c, i) => {
+                            const isPerc = c.commission_type === 'percentage'
+                            return (
+                              <TableRow
+                                key={c.id || i}
+                                style={{ borderLeft: `3px solid ${T.green}`, transition: 'background 100ms' }}
+                                onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                              >
+                                <TableCell style={{ fontSize: 12, color: T.muted, whiteSpace: 'nowrap', paddingLeft: 20 }}>
+                                  {fmtDate(c.date)}
+                                </TableCell>
+                                <TableCell style={{ fontSize: 13, fontWeight: 600, color: T.text }}>
+                                  {c.client}
+                                </TableCell>
+                                <TableCell style={{ fontSize: 13, color: T.muted }}>
+                                  {c.service}
+                                </TableCell>
+                                <TableCell style={{ fontSize: 13, color: T.muted }}>
+                                  {fmtBRL(c.appointment_price)}
+                                </TableCell>
+                                <TableCell>
+                                  <span style={{
+                                    borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600,
+                                    background: isPerc ? T.chip : T.light,
+                                    color: isPerc ? T.brand : T.muted,
+                                    display: 'inline-flex', alignItems: 'center', gap: 3,
+                                  }}>
+                                    {isPerc ? <Percent size={10} /> : null}
+                                    {isPerc ? `${c.commission_value}%` : 'Fixo'}
+                                  </span>
+                                </TableCell>
+                                <TableCell style={{ fontWeight: 700, color: T.green, textAlign: 'right', fontSize: 14 }}>
+                                  {fmtBRL(c.commission_amount)}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          })}
+                        </TableBody>
+                      </Table>
+
+                      {/* Subtotal */}
+                      <div style={{
+                        display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12,
+                        padding: '10px 20px', borderTop: `1px solid ${T.border}`,
+                        background: T.bg,
+                      }}>
+                        <span style={{ fontSize: 12, color: T.muted }}>{sessions} sessão{sessions !== 1 ? 'ões' : ''}</span>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: T.green }}>
+                          {fmtBRL(totalCents)}
+                        </span>
+                      </div>
+                    </div>
+                  )
                 )}
-              </CardContent>
-            </Card>
-          ))}
+              </Panel>
+            )
+          })}
         </div>
-      ) : (
-        <Card className="rounded-xl">
-          <CardContent className="pt-6">
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-              <p>Nenhuma comissão encontrada para o período selecionado</p>
-            </div>
-          </CardContent>
-        </Card>
       )}
+
+      {/* ══ EMPTY ══════════════════════════════════ */}
+      {!loading && commissionsData && commissionsData.commissions?.length === 0 && (
+        <Panel style={{ padding: '48px 24px', textAlign: 'center' }}>
+          <Percent size={32} style={{ color: T.border, margin: '0 auto 12px' }} />
+          <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>
+            Nenhuma comissão encontrada para o período selecionado.
+          </p>
+        </Panel>
+      )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }
-

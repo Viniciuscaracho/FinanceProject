@@ -9,29 +9,28 @@ module Api
         @user, @account = register_user
         @bank_account = create_bank_account(@account)
         @account_user = @account.account_users.first
-        
-        # Gerar token de autenticação base64
         @auth_token = generate_auth_token(@user)
-        
-        # Configurar horário de trabalho
+
         @account_user.update!(
           schedule: {
-            'monday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
-            'tuesday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
+            'monday'    => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
+            'tuesday'   => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
             'wednesday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
-            'thursday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
-            'friday' => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 }
+            'thursday'  => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 },
+            'friday'    => { 'enabled' => true, 'start_hour' => 9, 'end_hour' => 18 }
           }
         )
-        
+
         @service = create_service(@account, selling_price_cents: 5000)
         @contact = create_contact(@account)
-        
-        # Criar agendamentos com comissões (5 dias atrás, segunda-feira às 10h)
-        past_monday1 = (Time.current - 1.week).beginning_of_week + 1.day
-        start_time1 = past_monday1.beginning_of_day + 10.hours
-        
-        @appointment1 = @account.appointments.create!(
+
+        # Use the 2nd and 4th of the current month at 10h (always in the same month)
+        # Use update_column to bypass working-hours validation (not what we're testing here)
+        start_time1 = Date.current.beginning_of_month + 1.day + 10.hours
+        start_time2 = Date.current.beginning_of_month + 3.days + 10.hours
+
+        @appointment1 = Appointment.new(
+          account: @account,
           account_user: @account_user,
           service: @service,
           contact: @contact,
@@ -42,23 +41,17 @@ module Api
           status: :confirmed,
           payment_status: :paid
         )
-        
-        # Marcar como completed após criar
-        @appointment1.update!(status: :completed)
-        
-        # Criar comissão
+        @appointment1.save!(validate: false)
+        @appointment1.update_column(:status, Appointment::APPOINTMENT_STATUS[:completed])
         @commission1 = @appointment1.appointment_commissions.create!(
           account_user: @account_user,
-          commission_type: 0, # percentage
+          commission_type: 0,
           commission_value: 50.0,
           commission_amount_cents: 2500
         )
-        
-        # Criar segundo agendamento (3 dias atrás, quarta-feira às 10h)
-        past_wednesday = (Time.current - 1.week).beginning_of_week + 3.days
-        start_time2 = past_wednesday.beginning_of_day + 10.hours
-        
-        @appointment2 = @account.appointments.create!(
+
+        @appointment2 = Appointment.new(
+          account: @account,
           account_user: @account_user,
           service: @service,
           contact: @contact,
@@ -69,63 +62,55 @@ module Api
           status: :confirmed,
           payment_status: :paid
         )
-        
-        # Marcar como completed após criar
-        @appointment2.update!(status: :completed)
-        
+        @appointment2.save!(validate: false)
+        @appointment2.update_column(:status, Appointment::APPOINTMENT_STATUS[:completed])
         @commission2 = @appointment2.appointment_commissions.create!(
           account_user: @account_user,
-          commission_type: 0, # percentage
+          commission_type: 0,
           commission_value: 50.0,
           commission_amount_cents: 2500
         )
       end
 
-      # GET /api/v1/commissions
+      test "should not get commissions without token" do
+        get api_v1_commissions_path, headers: { 'Accept' => 'application/json', 'Authorization' => 'Bearer invalid_token' }
+        assert_response :unauthorized
+      end
+
       test "should list commissions" do
-        get api_v1_commissions_path, headers: { 
-          'Accept' => 'application/json',
-          'Authorization' => "Bearer #{@auth_token}"
-        }
-        
+        get api_v1_commissions_path, headers: { 'Accept' => 'application/json', 'Authorization' => "Bearer #{@auth_token}" }
+
         assert_response :success
         json_response = JSON.parse(response.body)
         assert json_response.key?('commissions')
         assert json_response.key?('summary')
-        assert_equal 1, json_response['commissions'].length # 1 profissional
+        assert_equal 1, json_response['commissions'].length
         assert_equal 5000, json_response['summary']['total_commissions']['cents']
       end
 
       test "should filter commissions by date range" do
-        # Ajustar datas para incluir os agendamentos criados
-        start_date = (Time.current - 7.days).to_date
-        end_date = (Time.current - 1.day).to_date
-        
-        get api_v1_commissions_path, 
-            params: { 
-              start_date: start_date.iso8601,
-              end_date: end_date.iso8601
-            }, 
-            headers: { 'Accept' => 'application/json' }
-        
+        start_date = Date.current.beginning_of_month
+        end_date   = Date.current.end_of_month
+
+        get api_v1_commissions_path,
+            params: { start_date: start_date.iso8601, end_date: end_date.iso8601 },
+            headers: { 'Accept' => 'application/json', 'Authorization' => "Bearer #{@auth_token}" }
+
         assert_response :success
         json_response = JSON.parse(response.body)
-        # Deve incluir ambos os agendamentos no período
         appointment_ids = json_response['commissions'].flat_map { |c| c['commissions'].map { |comm| comm['appointment_id'] } }
         assert_includes appointment_ids, @appointment1.id
         assert_includes appointment_ids, @appointment2.id
       end
 
       test "should filter commissions by professional" do
-        # Criar segundo profissional
-        user2, _ = register_user(email: 'professional2@test.com')
+        user2, _account2 = register_user(email: 'professional2@test.com')
         account_user2 = @account.account_users.create!(user: user2, role: :custom)
-        
-        # Criar agendamento para o segundo profissional (2 dias atrás, quinta-feira às 10h)
-        past_thursday = (Time.current - 1.week).beginning_of_week + 4.days
-        start_time3 = past_thursday.beginning_of_day + 10.hours
-        
-        appointment3 = @account.appointments.create!(
+
+        start_time3 = Date.current.beginning_of_month + 5.days + 10.hours
+
+        appointment3 = Appointment.new(
+          account: @account,
           account_user: account_user2,
           service: @service,
           contact: @contact,
@@ -136,38 +121,32 @@ module Api
           status: :confirmed,
           payment_status: :paid
         )
-        
-        # Marcar como completed após criar
-        appointment3.update!(status: :completed)
-        
+        appointment3.save!(validate: false)
+        appointment3.update_column(:status, Appointment::APPOINTMENT_STATUS[:completed])
         appointment3.appointment_commissions.create!(
           account_user: account_user2,
-          commission_type: 0, # percentage
+          commission_type: 0,
           commission_value: 50.0,
           commission_amount_cents: 2500
         )
-        
-        get api_v1_commissions_path, 
-            params: { professional_id: @account_user.id }, 
-            headers: { 'Accept' => 'application/json' }
-        
+
+        get api_v1_commissions_path,
+            params: { professional_id: @account_user.id },
+            headers: { 'Accept' => 'application/json', 'Authorization' => "Bearer #{@auth_token}" }
+
         assert_response :success
         json_response = JSON.parse(response.body)
-        # Deve incluir apenas comissões do primeiro profissional
         assert_equal 1, json_response['commissions'].length
         assert_equal @account_user.id, json_response['commissions'].first['professional']['id']
       end
 
       test "should return summary with correct totals" do
-        get api_v1_commissions_path, headers: { 
-          'Accept' => 'application/json',
-          'Authorization' => "Bearer #{@auth_token}"
-        }
-        
+        get api_v1_commissions_path, headers: { 'Accept' => 'application/json', 'Authorization' => "Bearer #{@auth_token}" }
+
         assert_response :success
         json_response = JSON.parse(response.body)
         summary = json_response['summary']
-        
+
         assert_equal 5000, summary['total_commissions']['cents']
         assert_equal 1, summary['total_professionals']
         assert_equal 2, summary['total_appointments']
@@ -175,22 +154,18 @@ module Api
       end
 
       test "should return bad request for invalid date format" do
-        get api_v1_commissions_path, 
-            params: { start_date: 'invalid-date' }, 
-            headers: { 'Accept' => 'application/json' }
-        
+        get api_v1_commissions_path,
+            params: { start_date: 'invalid-date' },
+            headers: { 'Accept' => 'application/json', 'Authorization' => "Bearer #{@auth_token}" }
+
         assert_response :bad_request
         json_response = JSON.parse(response.body)
         assert_includes json_response['error'], 'Data inválida'
       end
 
-      # GET /api/v1/commissions/summary
       test "should return commissions summary" do
-        get summary_api_v1_commissions_path, headers: { 
-          'Accept' => 'application/json',
-          'Authorization' => "Bearer #{@auth_token}"
-        }
-        
+        get summary_api_v1_commissions_path, headers: { 'Accept' => 'application/json', 'Authorization' => "Bearer #{@auth_token}" }
+
         assert_response :success
         json_response = JSON.parse(response.body)
         assert json_response.key?('summary')
@@ -200,34 +175,22 @@ module Api
       end
 
       test "should filter summary by professional" do
-        get summary_api_v1_commissions_path, 
-            params: { professional_id: @account_user.id }, 
-            headers: { 'Accept' => 'application/json' }
-        
+        get summary_api_v1_commissions_path,
+            params: { professional_id: @account_user.id },
+            headers: { 'Accept' => 'application/json', 'Authorization' => "Bearer #{@auth_token}" }
+
         assert_response :success
         json_response = JSON.parse(response.body)
         assert_equal 1, json_response['summary']['professionals'].length
       end
 
-      test "should return forbidden when not authenticated" do
-        get api_v1_commissions_path, headers: { 
-          'Accept' => 'application/json',
-          'Authorization' => "Bearer #{@auth_token}"
-        }
-        
-        assert_response :unauthorized
-      end
-
       test "should include commission details in response" do
-        get api_v1_commissions_path, headers: { 
-          'Accept' => 'application/json',
-          'Authorization' => "Bearer #{@auth_token}"
-        }
-        
+        get api_v1_commissions_path, headers: { 'Accept' => 'application/json', 'Authorization' => "Bearer #{@auth_token}" }
+
         assert_response :success
         json_response = JSON.parse(response.body)
         commission = json_response['commissions'].first['commissions'].first
-        
+
         assert commission.key?('id')
         assert commission.key?('appointment_id')
         assert commission.key?('service')
@@ -243,4 +206,3 @@ module Api
     end
   end
 end
-

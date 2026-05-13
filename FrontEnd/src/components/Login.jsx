@@ -36,10 +36,11 @@ function PasswordInput({ id, value, onChange, placeholder, autoComplete, require
   );
 }
 
-function SubmitButton({ isLoading, label, loadingLabel }) {
+function SubmitButton({ isLoading, label, loadingLabel, testId }) {
   return (
     <Button
       type="submit"
+      data-testid={testId}
       className="w-full text-white h-11 text-base md:text-sm font-medium shadow-sm min-h-[48px] md:min-h-[44px] touch-manipulation"
       disabled={isLoading}
       style={{ WebkitTapHighlightColor: 'transparent', background: GRADIENT }}
@@ -200,7 +201,7 @@ export function Login() {
                   />
                 </div>
 
-                <SubmitButton isLoading={isLoading} label="Entrar" loadingLabel="Entrando..." />
+                <SubmitButton isLoading={isLoading} label="Entrar" loadingLabel="Entrando..." testId="login-button" />
               </form>
 
               <div className="mt-8 text-center">
@@ -300,7 +301,7 @@ export function Login() {
                 </div>
 
                 <div className="pt-1">
-                  <SubmitButton isLoading={isLoading} label="Criar conta" loadingLabel="Criando conta..." />
+                  <SubmitButton isLoading={isLoading} label="Criar conta" loadingLabel="Criando conta..." testId="register-button" />
                 </div>
               </form>
 

@@ -83,4 +83,6 @@ secrets.yml
 /tests/performance/test-results/
 /tests/performance/playwright-report/
 /tests/performance/lighthouse-reports/
+/tests/performance/.auth/
+/tests/performance/.env.test
 

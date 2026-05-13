@@ -86,20 +86,15 @@ module Api
         end
 
         def rails_blob_url(attachment, only_path: false)
+          helpers = Rails.application.routes.url_helpers
           if only_path
-            Rails.application.routes.url_helpers.rails_blob_path(attachment, only_path: true)
+            helpers.rails_blob_path(attachment, only_path: true)
           else
-            # Usar url_for do Rails para gerar URL completa
-            Rails.application.routes.url_helpers.url_for(attachment)
+            helpers.rails_blob_url(attachment)
           end
         rescue => e
           Rails.logger.error "Error generating blob URL: #{e.message}"
-          # Fallback - tentar service_url se disponível
-          begin
-            attachment.service_url
-          rescue
-            nil
-          end
+          nil
         end
       end
     end

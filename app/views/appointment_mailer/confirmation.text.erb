@@ -14,7 +14,12 @@ Local:        <%= @company_name %>
 
 Link da reunião: <%= @google_meet_link %>
 <% end %>
+<% if @manage_url.present? %>
+
+GERENCIAR AGENDAMENTO (cancele ou reagende até <%= @cancel_reschedule_hours %>h antes):
+<%= @manage_url %>
+<% end %>
 <% if @company_whatsapp.present? %>
 
-Dúvidas ou cancelamentos? Fale pelo WhatsApp: https://wa.me/<%= @company_whatsapp %>
+Dúvidas? Fale pelo WhatsApp: https://wa.me/<%= @company_whatsapp %>
 <% end %>

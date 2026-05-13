@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -59,6 +60,8 @@ import {
   QrCode,
 } from 'lucide-react'
 import { apiService } from '../lib/api'
+import { T, DISPLAY } from '@/lib/tokens'
+import { toast } from 'sonner'
 
 const AUTOMATION_OPTIONS = [
   {
@@ -100,47 +103,48 @@ function AutomacoesPanel({ formData, setAutomation, setFormData }) {
   const needsPix = AUTOMATION_OPTIONS.some(o => o.requiresPix && automations[o.key])
 
   return (
-    <div className="border border-indigo-200 dark:border-indigo-800 rounded-xl overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/30">
+    <div style={{ border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: T.chip }}>
         <span className="text-base">🤖</span>
         <div className="flex-1">
-          <p className="font-semibold text-sm text-indigo-800 dark:text-indigo-200">Automações WhatsApp</p>
-          <p className="text-xs text-indigo-600 dark:text-indigo-400">
+          <p style={{ fontWeight: 600, fontSize: 14, color: T.brand }}>Automações WhatsApp</p>
+          <p style={{ fontSize: 12, color: T.muted }}>
             Mensagens enviadas automaticamente para o cliente via WhatsApp
           </p>
         </div>
         {anyEnabled && (
-          <span className="text-xs font-medium bg-indigo-600 text-white px-2 py-0.5 rounded-full">
+          <span style={{ fontSize: 11, fontWeight: 600, background: T.brand, color: '#fff', padding: '3px 8px', borderRadius: 20 }}>
             {AUTOMATION_OPTIONS.filter(o => automations[o.key]).length} ativa{AUTOMATION_OPTIONS.filter(o => automations[o.key]).length !== 1 ? 's' : ''}
           </span>
         )}
       </div>
 
-      <div className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+      <div style={{ background: T.white }}>
         {AUTOMATION_OPTIONS.map(option => (
           <label
             key={option.key}
-            className="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+            style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px', cursor: 'pointer', borderBottom: `1px solid ${T.border}`, transition: 'background 100ms' }}
+            onMouseEnter={e => e.currentTarget.style.background = T.bg}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
             <input
               type="checkbox"
               checked={automations[option.key] === true}
               onChange={e => setAutomation(option.key, e.target.checked)}
-              className="mt-0.5 rounded border-gray-300 accent-indigo-600 flex-shrink-0"
+              style={{ marginTop: 2, accentColor: T.brand, flexShrink: 0 }}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
+              <p style={{ fontSize: 14, fontWeight: 500, color: T.text }}>
                 {option.icon} {option.label}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{option.description}</p>
+              <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>{option.description}</p>
             </div>
           </label>
         ))}
 
-        {/* Chave PIX — aparece quando lembrete PIX ou cobrança pendente está ativo */}
         {(automations.pix_reminder || automations.billing_notification || automations.overdue) && (
-          <div className="px-4 py-3 bg-amber-50 dark:bg-amber-900/20">
-            <label className="block text-sm font-medium text-amber-800 dark:text-amber-200 mb-1.5">
+          <div style={{ padding: '12px 16px', background: '#FFFBEB' }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#92400E', marginBottom: 6 }}>
               🔑 Chave PIX
             </label>
             <input
@@ -150,7 +154,7 @@ function AutomacoesPanel({ formData, setAutomation, setFormData }) {
               onChange={e => setAutomation('pix_key', e.target.value)}
               className="w-full rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+            <p style={{ fontSize: 12, color: '#B45309', marginTop: 4 }}>
               Incluída nas mensagens de cobrança pendente, lembrete PIX e atraso
             </p>
           </div>
@@ -166,7 +170,7 @@ export function AppointmentLinks() {
   const [services, setServices] = useState([])
   const [professionals, setProfessionals] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isNewLinkOpen, setIsNewLinkOpen] = useState(false)
   const [isEditLinkOpen, setIsEditLinkOpen] = useState(false)
   const [editingLink, setEditingLink] = useState(null)
@@ -215,7 +219,6 @@ export function AppointmentLinks() {
   const loadData = async () => {
     try {
       setLoading(true)
-      setError(null)
       
       const [linksData, servicesData, professionalsData] = await Promise.all([
         apiService.getAppointmentLinks(),
@@ -236,8 +239,7 @@ export function AppointmentLinks() {
       setServices(servicesArray)
       setProfessionals(professionalsArray)
     } catch (err) {
-      console.error('Error loading data:', err)
-      setError(err.message || 'Erro ao carregar dados')
+      toast.error(err.message || 'Erro ao carregar dados')
     } finally {
       setLoading(false)
     }
@@ -265,14 +267,12 @@ export function AppointmentLinks() {
   
   const handleCreate = async () => {
     if (!formData.name || !formData.name.trim()) {
-      setError('Nome é obrigatório')
+      toast.error('Nome é obrigatório')
       return
     }
-    
+
     try {
-      setLoading(true)
-      setError(null)
-      
+      setIsSubmitting(true)
       const linkData = {
         name: formData.name.trim(),
         description: formData.description?.trim() || '',
@@ -290,17 +290,16 @@ export function AppointmentLinks() {
           days_ahead: formData.settings?.days_ahead || (formData.link_type === 'premium' ? 30 : 15)
         }
       }
-      
       await apiService.createAppointmentLink(linkData)
       await loadData()
+      toast.success('Link criado com sucesso!')
       setIsNewLinkOpen(false)
       resetForm()
     } catch (err) {
-      console.error('Error creating link:', err)
       const errorMessage = err.message || err.response?.data?.error || err.response?.data?.errors?.join(', ') || 'Erro ao criar link'
-      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
-      setLoading(false)
+      setIsSubmitting(false)
     }
   }
   
@@ -322,6 +321,7 @@ export function AppointmentLinks() {
         slot_interval_minutes: settings.slot_interval_minutes || 30,
         default_duration_minutes: settings.default_duration_minutes || 60,
         days_ahead: settings.days_ahead || (linkType === 'premium' ? 30 : 15),
+        cancel_reschedule_hours: settings.cancel_reschedule_hours || 24,
         automations: { ...DEFAULT_AUTOMATIONS, ...(settings.automations || {}) }
       }
     })
@@ -330,19 +330,17 @@ export function AppointmentLinks() {
   
   const handleUpdate = async () => {
     if (!formData.name || !formData.name.trim()) {
-      setError('Nome é obrigatório')
+      toast.error('Nome é obrigatório')
       return
     }
-    
+
     if (!editingLink) {
-      setError('Link não encontrado para edição')
+      toast.error('Link não encontrado para edição')
       return
     }
-    
+
     try {
-      setLoading(true)
-      setError(null)
-      
+      setIsSubmitting(true)
       const linkData = {
         name: formData.name.trim(),
         description: formData.description?.trim() || '',
@@ -355,32 +353,27 @@ export function AppointmentLinks() {
           days_ahead: formData.settings?.days_ahead || (formData.link_type === 'premium' ? 30 : 15)
         }
       }
-      
       await apiService.updateAppointmentLink(editingLink.id, linkData)
       await loadData()
+      toast.success('Link atualizado com sucesso!')
       setIsEditLinkOpen(false)
       resetForm()
     } catch (err) {
-      console.error('Error updating link:', err)
       const errorMessage = err.message || err.response?.data?.error || err.response?.data?.errors?.join(', ') || 'Erro ao atualizar link'
-      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
-      setLoading(false)
+      setIsSubmitting(false)
     }
   }
   
   const handleDelete = async (id) => {
     try {
-      setLoading(true)
-      setError(null)
       await apiService.deleteAppointmentLink(id)
       await loadData()
+      toast.success('Link excluído')
     } catch (err) {
-      console.error('Error deleting link:', err)
       const errorMessage = err.message || err.response?.data?.error || err.response?.data?.errors?.join(', ') || 'Erro ao excluir link'
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
+      toast.error(errorMessage)
     }
   }
   
@@ -390,7 +383,6 @@ export function AppointmentLinks() {
       setCopiedLink(url)
       setTimeout(() => setCopiedLink(null), 2000)
     } catch (err) {
-      console.error('Error copying link:', err)
     }
   }
   
@@ -400,47 +392,45 @@ export function AppointmentLinks() {
   
   if (loading && links.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      <div className="space-y-3">
+        <div className="h-8 w-48 bg-gray-100 dark:bg-gray-800 rounded-full animate-pulse" />
+        {[1,2,3].map(i => (
+          <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+        ))}
       </div>
     )
   }
   
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="relative z-10 space-y-6 md:space-y-8 p-4 md:p-6">
-        {/* Header - Bold Typography */}
+    <div data-testid="appointment-links-page" style={{ minHeight: '100vh', background: T.bg, ...DISPLAY }}>
+      <div className="relative z-10 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">
-              <span className="bg-gradient-to-r from-[#5B7A9E] via-[#6B8FA3] to-[#7A9D96] bg-clip-text text-transparent">
-                Links de Agendamento
-              </span>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1" style={{ color: T.text }}>
+              Links de Agendamento
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
+            <p style={{ fontSize: 14, color: T.muted }}>
               Crie e gerencie links públicos para agendamento online
             </p>
           </div>
         <Dialog open={isNewLinkOpen} onOpenChange={(open) => {
           setIsNewLinkOpen(open)
-          if (!open) {
-            resetForm()
-            setError(null)
-          }
+          if (!open) resetForm()
         }}>
           <DialogTrigger asChild>
-            <Button 
+            <Button
+              data-testid="new-link-btn"
               onClick={() => {
                 resetForm()
                 setIsNewLinkOpen(true)
               }}
-              className="bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white border-0"
+              style={{ background: T.brand, color: '#fff', border: 'none', borderRadius: 8 }}
             >
               <Plus className="h-4 w-4 mr-2" />
               Novo Link
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent data-testid="appointment-link-dialog" className="sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>Criar Novo Link de Agendamento</DialogTitle>
               <DialogDescription>
@@ -449,13 +439,7 @@ export function AppointmentLinks() {
               </DialogDescription>
             </DialogHeader>
             
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
-            
-            <div className="space-y-4">
+              <div className="space-y-4">
               <div>
                 <Label htmlFor="name">Nome do Link *</Label>
                 <p className="text-sm text-gray-500 mb-2">
@@ -483,12 +467,12 @@ export function AppointmentLinks() {
                 />
               </div>
               
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">O que o cliente verá?</h4>
-                <p className="text-sm text-blue-800">
+              <div style={{ background: T.chip, border: `1px solid ${T.brand}22`, borderRadius: 8, padding: 16 }}>
+                <h4 style={{ fontWeight: 600, color: T.brand, marginBottom: 8 }}>O que o cliente verá?</h4>
+                <p style={{ fontSize: 14, color: T.text }}>
                   Quando o cliente acessar o link, ele verá uma página onde pode:
                 </p>
-                <ul className="text-sm text-blue-800 mt-2 list-disc list-inside space-y-1">
+                <ul style={{ fontSize: 14, color: T.text, marginTop: 8 }} className="list-disc list-inside space-y-1">
                   <li>Escolher um serviço (se você não limitar abaixo)</li>
                   <li>Escolher um profissional (se você não limitar abaixo)</li>
                   <li>Selecionar data e horário disponível</li>
@@ -692,6 +676,29 @@ export function AppointmentLinks() {
                 </div>
               </div>
               
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-2">Cancelamento e Reagendamento</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  Defina até quantas horas antes do agendamento o cliente pode cancelar ou reagendar pelo link de gerenciamento enviado por WhatsApp e e-mail.
+                </p>
+                <div>
+                  <Label htmlFor="cancel_reschedule_hours">Prazo para cancelar/reagendar (horas antes)</Label>
+                  <p className="text-xs text-gray-500 mb-1">Ex: 24 = o cliente pode cancelar até 24h antes do horário</p>
+                  <Input
+                    id="cancel_reschedule_hours"
+                    type="number"
+                    min="1"
+                    max="720"
+                    value={formData.settings?.cancel_reschedule_hours ?? 24}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      settings: { ...formData.settings, cancel_reschedule_hours: parseInt(e.target.value) || 24 }
+                    })}
+                    className="max-w-[160px]"
+                  />
+                </div>
+              </div>
+
               <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <input
                   type="checkbox"
@@ -716,12 +723,11 @@ export function AppointmentLinks() {
               <Button variant="outline" onClick={() => {
                 setIsNewLinkOpen(false)
                 resetForm()
-                setError(null)
               }}>
                 Cancelar
               </Button>
-              <Button onClick={handleCreate} disabled={loading}>
-                {loading ? (
+              <Button onClick={handleCreate} disabled={isSubmitting}>
+                {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     Criando...
@@ -735,12 +741,6 @@ export function AppointmentLinks() {
         </Dialog>
       </div>
       
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-      
       {links.length === 0 ? (
         <FluidSection
           title="Nenhum link criado ainda"
@@ -751,7 +751,7 @@ export function AppointmentLinks() {
             <Link2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <Button 
               onClick={() => setIsNewLinkOpen(true)}
-              className="bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white border-0"
+              style={{ background: T.brand, color: '#fff', border: 'none', borderRadius: 8 }}
             >
               <Plus className="h-4 w-4 mr-2" />
               Criar Primeiro Link
@@ -768,47 +768,39 @@ export function AppointmentLinks() {
             {/* Mobile: Cards Layout */}
             <div className="block md:hidden space-y-3">
               {links.map((link) => (
-                <div 
+                <div
                   key={link.id}
-                  className="group/item relative"
+                  style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, transition: 'background 100ms' }}
+                  onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                  onMouseLeave={e => e.currentTarget.style.background = T.white}
                 >
-                  <div className="absolute -inset-0.5 rounded-2xl blur opacity-10 group-hover/item:opacity-20 transition duration-300 bg-gradient-to-r from-blue-500 to-indigo-500" />
-                  <div className="relative bg-gradient-to-br from-white/90 to-white/50 dark:from-gray-800/90 dark:to-gray-800/50 backdrop-blur-xl rounded-2xl p-4 border border-white/20 dark:border-gray-700/30 shadow-xl hover:shadow-2xl transition-all duration-200">
+                  <div>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-base text-gray-900 dark:text-white mb-2">
+                        <h3 style={{ fontSize: 14, fontWeight: 600, color: T.text, marginBottom: 6 }}>
                           {link.name}
                         </h3>
                         {link.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                          <p style={{ fontSize: 12, color: T.muted, marginBottom: 8 }}>
                             {link.description}
                           </p>
                         )}
                         <div className="flex flex-wrap gap-2">
-                          <Badge variant={link.active ? 'default' : 'secondary'} className="text-xs">
-                            {link.active ? (
-                              <>
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
-                                Ativo
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="h-3 w-3 mr-1" />
-                                Inativo
-                              </>
-                            )}
-                          </Badge>
+                          <span style={{ borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, background: link.active ? T.green + '18' : T.muted + '18', color: link.active ? T.green : T.muted, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            {link.active ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
+                            {link.active ? 'Ativo' : 'Inativo'}
+                          </span>
                           {link.service && (
-                            <Badge variant="outline" className="text-xs">
-                              <Scissors className="h-3 w-3 mr-1" />
+                            <span style={{ borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, background: T.chip, color: T.brand, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <Scissors size={10} />
                               {link.service.name}
-                            </Badge>
+                            </span>
                           )}
                           {link.professional && (
-                            <Badge variant="outline" className="text-xs">
-                              <User className="h-3 w-3 mr-1" />
+                            <span style={{ borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, background: T.light, color: T.muted, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <User size={10} />
                               {link.professional.name}
-                            </Badge>
+                            </span>
                           )}
                         </div>
                       </div>
@@ -820,6 +812,7 @@ export function AppointmentLinks() {
                           size="sm"
                           onClick={() => handleCopyLink(link.public_url)}
                           className="text-xs flex-1"
+                          style={{ color: T.brand }}
                         >
                           {copiedLink === link.public_url ? (
                             <>
@@ -906,29 +899,23 @@ export function AppointmentLinks() {
                 </TableHeader>
                 <TableBody>
                   {links.map((link) => (
-                    <TableRow key={link.id}>
+                    <TableRow key={link.id} style={{ transition: 'background 100ms' }}
+                      onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
                       <TableCell>
                         <div>
                           <div className="font-medium">{link.name}</div>
                           {link.description && (
-                            <div className="text-sm text-gray-500">{link.description}</div>
+                            <div style={{ fontSize: 12, color: T.muted }}>{link.description}</div>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={link.active ? 'default' : 'secondary'}>
-                          {link.active ? (
-                            <>
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Ativo
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="h-3 w-3 mr-1" />
-                              Inativo
-                            </>
-                          )}
-                        </Badge>
+                        <span style={{ borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, background: link.active ? T.green + '18' : T.muted + '18', color: link.active ? T.green : T.muted, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          {link.active ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
+                          {link.active ? 'Ativo' : 'Inativo'}
+                        </span>
                       </TableCell>
                       <TableCell>
                         {link.service ? (
@@ -958,6 +945,7 @@ export function AppointmentLinks() {
                               size="sm"
                               onClick={() => handleCopyLink(link.public_url)}
                               className="text-xs"
+                              style={{ color: T.brand }}
                             >
                               {copiedLink === link.public_url ? (
                                 <>
@@ -1041,24 +1029,15 @@ export function AppointmentLinks() {
       {/* Edit Dialog */}
       <Dialog open={isEditLinkOpen} onOpenChange={(open) => {
         setIsEditLinkOpen(open)
-        if (!open) {
-          resetForm()
-          setError(null)
-        }
+        if (!open) resetForm()
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent data-testid="edit-link-dialog" className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Editar Link de Agendamento</DialogTitle>
             <DialogDescription>
               Atualize as configurações do link. O link continuará funcionando com as novas configurações.
             </DialogDescription>
           </DialogHeader>
-          
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
           
           <div className="space-y-4">
             <div>
@@ -1284,6 +1263,29 @@ export function AppointmentLinks() {
               </div>
             </div>
             
+            <div className="border-t pt-4">
+              <h4 className="font-semibold mb-2">Cancelamento e Reagendamento</h4>
+              <p className="text-sm text-gray-600 mb-4">
+                Defina até quantas horas antes do agendamento o cliente pode cancelar ou reagendar pelo link de gerenciamento.
+              </p>
+              <div>
+                <Label htmlFor="edit-cancel-hours">Prazo para cancelar/reagendar (horas antes)</Label>
+                <p className="text-xs text-gray-500 mb-1">Ex: 24 = o cliente pode cancelar até 24h antes do horário</p>
+                <Input
+                  id="edit-cancel-hours"
+                  type="number"
+                  min="1"
+                  max="720"
+                  value={formData.settings?.cancel_reschedule_hours ?? 24}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    settings: { ...formData.settings, cancel_reschedule_hours: parseInt(e.target.value) || 24 }
+                  })}
+                  className="max-w-[160px]"
+                />
+              </div>
+            </div>
+
             <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
               <input
                 type="checkbox"
@@ -1308,12 +1310,11 @@ export function AppointmentLinks() {
             <Button variant="outline" onClick={() => {
               setIsEditLinkOpen(false)
               resetForm()
-              setError(null)
             }}>
               Cancelar
             </Button>
-            <Button onClick={handleUpdate} disabled={loading}>
-              {loading ? (
+            <Button onClick={handleUpdate} disabled={isSubmitting}>
+              {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Atualizando...

@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Loader2, Calendar, Clock, User, Phone, Mail, CheckCircle2, ArrowLeft, MessageCircle, Video, Copy, Repeat } from 'lucide-react'
+import { Loader2, Calendar, Clock, User, Phone, Mail, CheckCircle2, ArrowLeft, MessageCircle, Video, Copy, Repeat, ChevronRight } from 'lucide-react'
 import { apiService } from '../lib/api'
 
 const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -150,21 +150,12 @@ export function PublicAppointmentBooking() {
       setLoadingSlots(prev => ({ ...prev, [professionalId]: true }))
       setError(null)
       
-      console.log('🕐 Loading available slots:', {
-        token,
+      
+      const result = await apiService.getPublicAvailableSlots(token, {
         professionalId,
         date: dateStr,
-        serviceId: selectedService?.id
+        serviceId: selectedService?.id,
       })
-      
-      const result = await apiService.getPublicAvailableSlots(
-        token,
-        professionalId,
-        dateStr,
-        selectedService?.id
-      )
-      
-      console.log('✅ Available slots result:', result)
       
       // Armazenar slots no cache
       setProfessionalSlots(prev => ({
@@ -175,7 +166,6 @@ export function PublicAppointmentBooking() {
         }
       }))
     } catch (err) {
-      console.error('❌ Error loading available slots:', err)
       setError(err.message || 'Erro ao carregar horários disponíveis')
       
       // Armazenar array vazio em caso de erro
@@ -192,12 +182,6 @@ export function PublicAppointmentBooking() {
   }
   
   const handleServiceSelect = (serviceId) => {
-    console.log('🔍 Selecting service:', {
-      serviceId,
-      serviceIdType: typeof serviceId,
-      services: services.map(s => ({ id: s.id, idType: typeof s.id, name: s.name })),
-      servicesLength: services.length
-    })
     
     // Tentar encontrar o serviço com diferentes comparações
     let service = services.find(s => s.id === serviceId)
@@ -208,8 +192,6 @@ export function PublicAppointmentBooking() {
       service = services.find(s => Number(s.id) === Number(serviceId))
     }
     
-    console.log('✅ Service found:', service)
-    
     if (service) {
       // Garantir que o serviço tem todas as propriedades necessárias
       const serviceToSet = {
@@ -219,13 +201,10 @@ export function PublicAppointmentBooking() {
         price: service.price,
         duration_minutes: service.duration_minutes
       }
-      console.log('📦 Setting service:', serviceToSet)
       setSelectedService(serviceToSet)
       setStep(2)
       setError(null) // Limpar erros anteriores
-      console.log('✅ Service selected successfully:', serviceToSet.name, 'ID:', serviceToSet.id)
     } else {
-      console.error('❌ Service not found:', serviceId, 'Available IDs:', services.map(s => s.id))
       setError(`Serviço não encontrado. ID buscado: ${serviceId}`)
     }
   }
@@ -317,33 +296,18 @@ export function PublicAppointmentBooking() {
     const trimmedClientPhone = clientPhone?.trim() || ''
     const trimmedMeetLink = googleMeetLink?.trim() || ''
     
-    // Debug: verificar todos os estados
-    console.log('🔍 Validating form:', {
-      selectedService: selectedService,
-      selectedServiceId: selectedService?.id,
-      selectedServiceIdType: typeof selectedService?.id,
-      selectedProfessional: selectedProfessional?.id,
-      selectedSlot: selectedSlot?.start_time,
-      clientName: trimmedClientName,
-      clientPhone: trimmedClientPhone,
-      services: services.map(s => ({ id: s.id, name: s.name }))
-    })
     
     const missingFields = []
     if (!selectedService) {
       missingFields.push('Serviço')
-      console.warn('⚠️ Service missing: selectedService is null/undefined')
     } else if (!selectedService.id) {
       missingFields.push('Serviço')
-      console.warn('⚠️ Service missing: selectedService exists but has no id:', selectedService)
     }
     if (!selectedProfessional || !selectedProfessional.id) {
       missingFields.push('Profissional')
-      console.warn('⚠️ Professional missing:', selectedProfessional)
     }
     if (!selectedSlot || !selectedSlot.start_time) {
       missingFields.push('Data e Horário')
-      console.warn('⚠️ Slot missing:', selectedSlot)
     }
     if (!trimmedClientName) {
       missingFields.push('Nome completo')
@@ -357,7 +321,6 @@ export function PublicAppointmentBooking() {
     
     if (missingFields.length > 0) {
       const errorMsg = `Por favor, preencha os seguintes campos: ${missingFields.join(', ')}`
-      console.error('❌ Validation failed:', errorMsg)
       setError(errorMsg)
       return
     }
@@ -385,13 +348,6 @@ export function PublicAppointmentBooking() {
       setError(null)
       setMeetLinkCopied(false)
       
-      console.log('📝 Submitting appointment:', {
-        service_id: selectedService.id,
-        account_user_id: selectedProfessional.id,
-        start_time: selectedSlot.start_time,
-        client_name: trimmedClientName,
-        whatsapp_number: phoneDigits
-      })
       
       const appointmentData = {
         service_id: selectedService.id,
@@ -422,13 +378,6 @@ export function PublicAppointmentBooking() {
       
       const result = await apiService.createPublicAppointment(token, appointmentData)
       
-      console.log('✅ Appointment result:', result)
-      console.log('📱 WhatsApp number check:', {
-        appointment: result?.appointment,
-        company_whatsapp: result?.appointment?.company_whatsapp,
-        direct_whatsapp: result?.company_whatsapp
-      })
-      
       if (result.success) {
         setAppointmentResult(result)
         setStep(4)
@@ -437,13 +386,6 @@ export function PublicAppointmentBooking() {
         setError(errorMessage)
       }
     } catch (err) {
-      console.error('❌ Error creating appointment:', err)
-      console.error('  Error details:', {
-        message: err.message,
-        status: err.status,
-        data: err.data,
-        errors: err.errors
-      })
       
       // Extrair mensagem de erro de diferentes formatos
       let errorMessage = 'Erro ao criar agendamento';
@@ -727,27 +669,14 @@ export function PublicAppointmentBooking() {
             {/* WhatsApp Button - Integrated Style */}
             {(() => {
               // Tentar encontrar o número de WhatsApp em diferentes lugares da resposta
-              const whatsappNumber = appointmentResult?.appointment?.company_whatsapp || 
+              const whatsappNumber = appointmentResult?.appointment?.company_whatsapp ||
                                      appointmentResult?.company_whatsapp ||
                                      appointmentResult?.appointment?.company_whatsapp_number ||
                                      null
 
               const googleMeetLink = appointmentResult?.google_meet_link || appointmentResult?.appointment?.google_meet_link
-              
-              console.log('🔍 WhatsApp button check:', {
-                appointmentResult,
-                whatsappNumber,
-                hasAppointment: !!appointmentResult?.appointment,
-                appointmentKeys: appointmentResult?.appointment ? Object.keys(appointmentResult.appointment) : [],
-                appointmentWhatsapp: appointmentResult?.appointment?.company_whatsapp,
-                directWhatsapp: appointmentResult?.company_whatsapp
-              })
-              
-              // Se não tiver número, não mostrar o botão
-              if (!whatsappNumber) {
-                console.warn('⚠️ WhatsApp number not found in response')
-                return null
-              }
+
+              if (!whatsappNumber) return null
               
               return (
                 <button
@@ -768,7 +697,6 @@ export function PublicAppointmentBooking() {
                     )
                     
                     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`
-                    console.log('📱 Opening WhatsApp:', whatsappUrl)
                     window.open(whatsappUrl, '_blank')
                   }}
                   className="w-full bg-[#25D366] hover:bg-[#20BA5A] text-white font-medium h-11 rounded-lg flex items-center justify-center gap-2.5 transition-colors duration-200 shadow-sm hover:shadow"
@@ -849,31 +777,31 @@ export function PublicAppointmentBooking() {
         </div>
 
         {companyInfo && Object.keys(companyInfo).length > 0 && (
-          <div className="mb-8 sm:mb-10 bg-indigo-50 border border-indigo-100 rounded-lg p-4 sm:p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-indigo-800 font-semibold mb-1">
-                  Você está agendando com
-                </p>
-                <p className="text-lg sm:text-xl font-semibold text-indigo-900">
-                  {companyInfo.name || 'Nossa empresa'}
-                </p>
-                {companyInfo.email && (
-                  <p className="text-sm text-indigo-800">{companyInfo.email}</p>
-                )}
-              </div>
-
-              <div className="text-sm text-indigo-900 space-y-1 sm:text-right">
-                {(companyInfo.whatsapp_number || companyInfo.cell_phone_number || companyInfo.phone_number) && (
-                  <p className="font-medium">
-                    Contato: {companyInfo.whatsapp_number || companyInfo.cell_phone_number || companyInfo.phone_number}
-                  </p>
-                )}
-                {companyInfo.screen_name && (
-                  <p className="text-indigo-800">{companyInfo.screen_name}</p>
-                )}
-              </div>
+          <div className="mb-8 sm:mb-10 flex items-center gap-4 bg-indigo-50 border border-indigo-100 rounded-xl p-4 sm:p-5">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-bold text-base">
+                {(companyInfo.name || 'E').charAt(0).toUpperCase()}
+              </span>
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-indigo-500 mb-0.5">
+                Você está agendando com
+              </p>
+              <p className="text-base font-bold text-indigo-900 truncate">
+                {companyInfo.name || 'Nossa empresa'}
+              </p>
+              {companyInfo.email && (
+                <p className="text-xs text-indigo-700 mt-0.5">{companyInfo.email}</p>
+              )}
+            </div>
+            {(companyInfo.whatsapp_number || companyInfo.cell_phone_number || companyInfo.phone_number) && (
+              <div className="text-right flex-shrink-0 hidden sm:block">
+                <p className="text-xs text-indigo-500 mb-0.5">Contato</p>
+                <p className="text-sm font-semibold text-indigo-900">
+                  {companyInfo.whatsapp_number || companyInfo.cell_phone_number || companyInfo.phone_number}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -928,22 +856,24 @@ export function PublicAppointmentBooking() {
                    type="button"
                    onClick={(e) => {
                      e.preventDefault()
-                     console.log('🖱️ Service button clicked:', service.id, typeof service.id)
                      handleServiceSelect(service.id)
                    }}
                    className="w-full text-left"
                  >
-                  <div className="w-full flex items-center justify-between px-6 py-5 border-2 border-gray-200 hover:border-indigo-600 bg-white hover:bg-indigo-50 text-gray-800 rounded-xl shadow-sm transition-all duration-200">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{service.name}</h3>
+                  <div className="w-full flex items-center gap-4 px-5 py-4 border-2 border-gray-200 hover:border-indigo-500 bg-white hover:bg-indigo-50/50 rounded-xl shadow-sm transition-all duration-200 group">
+                    <div className="w-11 h-11 rounded-xl bg-indigo-100 group-hover:bg-indigo-200 flex items-center justify-center flex-shrink-0 transition-colors">
+                      <span className="text-indigo-700 font-bold text-base">{service.name.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <h3 className="text-base font-bold text-gray-900">{service.name}</h3>
                       {service.description && (
-                        <p className="text-sm text-gray-600 mb-2">{service.description}</p>
+                        <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">{service.description}</p>
                       )}
-                      <p className="text-lg font-bold text-indigo-600">
+                      <p className="text-sm font-semibold text-emerald-600 mt-1">
                         {service.price?.formatted || 'R$ 0,00'}
                       </p>
                     </div>
-                    <span className="text-indigo-600 font-semibold text-xl ml-4 flex-shrink-0">⌵</span>
+                    <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-indigo-600 flex-shrink-0 transition-colors" />
                   </div>
                 </button>
               ))}
@@ -1181,22 +1111,28 @@ export function PublicAppointmentBooking() {
               Informações do Cliente
             </h2>
                 
-                {/* Debug info - remover depois */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-2 rounded mb-4 text-xs" style={{ backgroundColor: '#fefce8', borderColor: '#fde047', color: '#854d0e' }}>
-                    <p>Debug: Service={selectedService?.id ? 'OK' : 'MISSING'}, 
-                       Professional={selectedProfessional?.id ? 'OK' : 'MISSING'}, 
-                       Slot={selectedSlot?.start_time ? 'OK' : 'MISSING'}</p>
-                  </div>
-                )}
-                
                 {selectedService && selectedSlot && (
-                  <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200" style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb' }}>
-                    <p><strong>Serviço:</strong> {selectedService.name} (ID: {selectedService.id})</p>
-                    <p><strong>Profissional:</strong> {selectedProfessional?.name || 'Não selecionado'}</p>
-                    <p><strong>Data:</strong> {formatDate(new Date(selectedSlot.start_time))}</p>
-                    <p><strong>Horário:</strong> {formatTime(selectedSlot.start_time)}</p>
-                    <p><strong>Valor:</strong> {selectedService.price?.formatted || 'R$ 0,00'}</p>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 space-y-2.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Serviço</span>
+                      <span className="font-semibold text-gray-900">{selectedService.name}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Profissional</span>
+                      <span className="font-semibold text-gray-900">{selectedProfessional?.name || '–'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Data</span>
+                      <span className="font-semibold text-gray-900">{formatDate(new Date(selectedSlot.start_time))}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Horário</span>
+                      <span className="font-semibold text-gray-900">{formatTime(selectedSlot.start_time)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm pt-2 mt-0.5 border-t border-gray-200">
+                      <span className="text-gray-500">Valor</span>
+                      <span className="font-bold text-emerald-600">{selectedService.price?.formatted || 'R$ 0,00'}</span>
+                    </div>
                   </div>
                 )}
 
@@ -1244,39 +1180,7 @@ export function PublicAppointmentBooking() {
                   </div>
                 )}
                 
-                {(!selectedService || !selectedSlot) && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4" style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca', color: '#991b1b' }}>
-                    <p className="font-semibold">Atenção: Algumas informações estão faltando</p>
-                    {!selectedService && (
-                      <div>
-                        <p>• Serviço não selecionado</p>
-                        <p className="text-xs mt-1">Debug: selectedService = {selectedService ? JSON.stringify(selectedService) : 'null/undefined'}</p>
-                        <p className="text-xs">Available services: {services.map(s => s.id).join(', ')}</p>
-                      </div>
-                    )}
-                    {!selectedProfessional && <p>• Profissional não selecionado</p>}
-                    {!selectedSlot && <p>• Data e horário não selecionados</p>}
-                    <Button 
-                      variant="outline" 
-                      className="mt-2"
-                      onClick={() => {
-                        console.log('🔙 Going back - Current state:', {
-                          selectedService,
-                          selectedProfessional,
-                          selectedSlot,
-                          step
-                        })
-                    if (!selectedService) setStep(1)
-                    else setStep(2)
-                      }}
-                    >
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Voltar para corrigir
-                    </Button>
-                  </div>
-                )}
-                
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="bg-white border border-gray-200 rounded-lg p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -1332,54 +1236,43 @@ export function PublicAppointmentBooking() {
                     )}
                   </div>
 
-                  <div>
-                    <Label htmlFor="clientName">Nome completo *</Label>
-                    <Input
-                      id="clientName"
-                      value={clientName}
-                      onChange={(e) => {
-                        setClientName(e.target.value)
-                        setError(null) // Limpar erro ao digitar
-                      }}
-                      required
-                      placeholder="Seu nome completo"
-                      className={!clientName?.trim() ? 'border-red-300' : ''}
-                    />
-                    {!clientName?.trim() && (
-                      <p className="text-xs text-red-500 mt-1">Este campo é obrigatório</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="clientPhone">WhatsApp *</Label>
-                    <Input
-                      id="clientPhone"
-                      value={clientPhone}
-                      onChange={(e) => {
-                        setClientPhone(e.target.value)
-                        setError(null) // Limpar erro ao digitar
-                      }}
-                      required
-                      placeholder="(00) 00000-0000"
-                      className={!clientPhone?.trim() ? 'border-red-300' : ''}
-                    />
-                    {!clientPhone?.trim() && (
-                      <p className="text-xs text-red-500 mt-1">Este campo é obrigatório</p>
-                    )}
-                    {clientPhone?.trim() && clientPhone.replace(/\D/g, '').length < 10 && (
-                      <p className="text-xs text-yellow-600 mt-1">Informe um número válido com DDD</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="clientEmail">E-mail (opcional)</Label>
-                    <Input
-                      id="clientEmail"
-                      type="email"
-                      value={clientEmail}
-                      onChange={(e) => setClientEmail(e.target.value)}
-                      placeholder="seu@email.com"
-                    />
+                  <div className="space-y-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Seus dados</p>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="clientName">Nome completo *</Label>
+                      <Input
+                        id="clientName"
+                        value={clientName}
+                        onChange={(e) => { setClientName(e.target.value); setError(null) }}
+                        required
+                        placeholder="Seu nome completo"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="clientPhone">WhatsApp *</Label>
+                      <Input
+                        id="clientPhone"
+                        value={clientPhone}
+                        onChange={(e) => { setClientPhone(e.target.value); setError(null) }}
+                        required
+                        placeholder="(00) 00000-0000"
+                      />
+                      {clientPhone?.trim() && clientPhone.replace(/\D/g, '').length < 10 && (
+                        <p className="text-xs text-amber-600">Informe um número válido com DDD</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="clientEmail">
+                        E-mail <span className="font-normal text-gray-400">(opcional)</span>
+                      </Label>
+                      <Input
+                        id="clientEmail"
+                        type="email"
+                        value={clientEmail}
+                        onChange={(e) => setClientEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                      />
+                    </div>
                   </div>
                 </div>
                 
@@ -1390,10 +1283,10 @@ export function PublicAppointmentBooking() {
                 )}
                 
                 <div className="mt-6">
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={loading || !clientName?.trim() || !clientPhone?.trim()}
+                  <Button
+                    type="submit"
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-11 font-medium"
+                    disabled={loading}
                   >
                     {loading ? (
                       <>
@@ -1404,11 +1297,6 @@ export function PublicAppointmentBooking() {
                       'Confirmar Agendamento'
                     )}
                   </Button>
-                  {(!clientName?.trim() || !clientPhone?.trim()) && (
-                    <p className="text-xs text-gray-500 text-center mt-2">
-                      Preencha todos os campos obrigatórios para continuar
-                    </p>
-                  )}
                 </div>
           </form>
         )}

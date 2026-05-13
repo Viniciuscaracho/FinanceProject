@@ -12,7 +12,9 @@
 #  discarded_at        :datetime
 #  enabled             :string           default("t"), not null
 #  internal_code       :string
+#  meeting_url         :string
 #  metadata            :jsonb            not null
+#  modality            :integer          default(0), not null
 #  name                :string           not null
 #  offer_type_cd       :integer
 #  selling_price_cents :bigint           default(0), not null
@@ -42,7 +44,14 @@ class Service < Offer
     both: 2
   }.freeze
 
+  MODALITIES = {
+    presencial: 0,
+    online: 1,
+    hybrid: 2
+  }.freeze
+
   as_enum :service_type, SERVICE_TYPES, source: :offer_type_cd, pluralize_scopes: false
+  as_enum :modality, MODALITIES, source: :modality, pluralize_scopes: false
 
   include Services::Searchable
   include Discardable
@@ -57,6 +66,7 @@ class Service < Offer
   validates :cost_price_cents, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 999_999_999_999 }, allow_blank: true
   validates :selling_price_cents, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 999_999_999_999 }, allow_blank: true
   validates :offer_type_cd, allow_blank: true, inclusion: { in: SERVICE_TYPES.values }
+  validates :modality, allow_blank: true, inclusion: { in: MODALITIES.values }
 
   has_one :nfse_config, class_name: 'ServiceNfseConfig', dependent: :destroy, inverse_of: :service
   accepts_nested_attributes_for :nfse_config, allow_destroy: true

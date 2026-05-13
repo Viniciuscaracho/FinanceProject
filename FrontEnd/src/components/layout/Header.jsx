@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Bell, Menu, User, Settings, LogOut, ChevronDown, Wallet, X, TrendingUp, Moon, Sun, Home, RefreshCw, Building2 } from 'lucide-react'
+import { Search, Bell, Menu, User, Settings, LogOut, ChevronDown, Landmark, X, TrendingUp, Moon, Sun, Home, RefreshCw, Building2 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,9 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '../../contexts/AuthContext'
 import { useBankAccount } from '../../contexts/BankAccountContext'
 import { cn } from '@/lib/utils'
+import { T } from '@/lib/tokens'
+
+const BRAND  = '#4C60AA'
 
 export function Header({ onMobileMenuClick, isMobile = false }) {
   const [searchQuery, setSearchQuery] = useState('')
@@ -23,40 +26,25 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
   const [scrolled, setScrolled] = useState(false)
   const { user, logout } = useAuth()
   const { isDarkMode, toggleTheme } = useTheme()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const isHomePage = location.pathname === '/'
-  
-  // Bank account context
-  const { 
-    selectedAccount, 
-    bankAccounts, 
-    selectAccount, 
-    balance, 
-    balanceLoading, 
+  const navigate  = useNavigate()
+  const location  = useLocation()
+
+  const {
+    selectedAccount,
+    bankAccounts,
+    selectAccount,
+    balance,
+    balanceLoading,
     lastUpdated,
     refreshBalance,
-    isLoading: loadingAccounts
+    isLoading: loadingAccounts,
   } = useBankAccount()
 
-  // Detect scroll for dynamic header styling
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10)
-    }
+    const handleScroll = () => setScrolled(window.scrollY > 10)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
-
-  const handleSearchFocus = () => {
-    setIsSearchExpanded(true)
-  }
-
-  const handleSearchBlur = () => {
-    if (!searchQuery) {
-      setIsSearchExpanded(false)
-    }
-  }
 
   const clearSearch = () => {
     setSearchQuery('')
@@ -64,18 +52,10 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
   }
 
   const handleLogout = async () => {
-    // Fazer logout
     await logout()
-    
-    // Limpar storage local e de sessão
     window.localStorage.clear()
     window.sessionStorage.clear()
-    
-    // Redirecionar para login usando replace para limpar o histórico
-    // O replace: true garante que não há como voltar para a página anterior
     navigate('/login', { replace: true })
-    
-    // Forçar scroll para o topo para garantir que a página de login seja visível
     window.scrollTo(0, 0)
   }
 
@@ -84,20 +64,68 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
     return `R$ ${balance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
+  /* ── Caixa widget (trigger reutilizável) ────── */
+  const CaixaWidget = ({ hasAccounts }) => (
+    <div style={{
+      display: 'flex', alignItems: 'center', cursor: hasAccounts ? 'pointer' : 'default',
+      borderRadius: 10, border: `1px solid var(--border)`,
+      background: T.chip,
+      gap: isMobile ? 8 : 10,
+      padding: isMobile ? '6px 10px' : '7px 14px',
+      transition: 'background 120ms',
+    }}
+    onMouseEnter={e => { if (hasAccounts) e.currentTarget.style.background = T.light }}
+    onMouseLeave={e => { e.currentTarget.style.background = T.chip }}
+    >
+      <div style={{
+        width: isMobile ? 28 : 32, height: isMobile ? 28 : 32,
+        borderRadius: 8, background: BRAND,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>
+        <Landmark size={isMobile ? 14 : 16} style={{ color: '#fff' }} />
+      </div>
+
+      {!isMobile && (
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: T.text, margin: 0, lineHeight: 1.3 }}>
+            {selectedAccount?.name || 'Caixa'}
+          </p>
+          <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>
+            Saldo atual
+          </p>
+        </div>
+      )}
+
+      <p style={{
+        fontSize: isMobile ? 13 : 16,
+        fontWeight: 700,
+        color: BRAND,
+        margin: isMobile ? 0 : '0 0 0 4px',
+        fontFamily: "'Space Grotesk', system-ui, sans-serif",
+      }}>
+        {balanceLoading
+          ? <RefreshCw size={14} style={{ display: 'inline', animation: 'spin 1s linear infinite' }} />
+          : formatBalance()}
+      </p>
+
+      {hasAccounts && (
+        <ChevronDown size={isMobile ? 12 : 14} style={{ color: T.muted, flexShrink: 0 }} />
+      )}
+    </div>
+  )
+
   return (
-    <header className={cn(
-      "sticky top-0 z-10 w-full max-w-full overflow-x-hidden",
-      "h-14 sm:h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700",
-      scrolled && "shadow-sm"
-    )}>
+    <header
+      className={cn('sticky top-0 z-10 w-full max-w-full overflow-x-hidden h-14 sm:h-16 border-b', scrolled && 'shadow-sm')}
+      style={{ background: T.white, borderColor: 'var(--border)' }}
+    >
       <div className="w-full h-full px-3 sm:px-4 flex items-center justify-between gap-2 transition-colors duration-200">
-        {/* Left side - Hamburger (mobile) + Wallet */}
+
+        {/* ── Esquerda: hamburger + caixa ── */}
         <div className="flex items-center gap-2 min-w-0">
-          {/* Hamburger button - mobile only */}
           {isMobile && (
             <Button
-              variant="ghost"
-              size="sm"
+              variant="ghost" size="sm"
               onClick={onMobileMenuClick}
               className="h-9 w-9 p-0 flex-shrink-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
               aria-label="Abrir menu"
@@ -109,280 +137,180 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
           {!loadingAccounts && bankAccounts.length > 0 ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                {/* Desktop: full wallet widget | Mobile: compact icon + balance */}
-                <div className={cn(
-                  "flex items-center cursor-pointer rounded-xl border transition-colors",
-                  "border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/20 shadow-sm",
-                  "hover:bg-emerald-50 dark:hover:bg-emerald-900/30",
-                  isMobile ? "gap-2 px-2.5 py-1.5" : "gap-3 px-4 py-2"
-                )}>
-                  <div className={cn(
-                    "flex items-center justify-center rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white flex-shrink-0",
-                    isMobile ? "w-7 h-7" : "w-9 h-9"
-                  )}>
-                    <Wallet className={isMobile ? "w-4 h-4" : "w-5 h-5"} />
-                  </div>
-
-                  {/* Desktop-only labels */}
-                  {!isMobile && (
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-white">{selectedAccount?.name || 'Wallet'}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                        Saldo atual
-                        {lastUpdated && (
-                          <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3" />
-                            Atualizado agora
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-
-                  <p className={cn(
-                    "font-semibold text-emerald-600 dark:text-emerald-400",
-                    isMobile ? "text-sm" : "text-lg ml-4"
-                  )}>
-                    {balanceLoading ? (
-                      <RefreshCw className="h-4 w-4 animate-spin inline" />
-                    ) : formatBalance()}
-                  </p>
-                  <ChevronDown className={cn("text-gray-400 dark:text-gray-500", isMobile ? "h-3 w-3" : "h-4 w-4 ml-2")} />
-                </div>
+                <div><CaixaWidget hasAccounts /></div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                align="start" 
-                className="w-80 sm:w-96 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg shadow-xl"
+              <DropdownMenuContent
+                align="start"
+                className="w-80 sm:w-96 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl shadow-xl"
                 sideOffset={8}
                 noScroll={true}
               >
+                {/* Cabeçalho do dropdown */}
                 <DropdownMenuLabel className="p-0">
-                  <div className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-900/20 border-b border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center space-x-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 bg-emerald-600 dark:bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Wallet className="h-5 w-5 text-white" />
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '14px 16px', borderBottom: '1px solid var(--border)',
+                    background: T.chip,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 38, height: 38, background: BRAND, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Landmark size={18} style={{ color: '#fff' }} />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Selecionar Conta</p>
-                        <p className="text-xs text-gray-700 dark:text-gray-300">Escolha uma conta bancária</p>
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: T.text, margin: 0 }}>Selecionar conta</p>
+                        <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>Conta bancária ativa</p>
                       </div>
                     </div>
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        refreshBalance()
-                      }}
-                      className="h-8 w-8 p-0 flex-shrink-0 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                      variant="ghost" size="sm"
+                      onClick={e => { e.stopPropagation(); refreshBalance() }}
+                      className="h-8 w-8 p-0 flex-shrink-0 rounded-lg"
                       title="Atualizar saldo"
                     >
-                      <RefreshCw className={`h-4 w-4 text-gray-600 dark:text-gray-400 ${balanceLoading ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`h-4 w-4 text-gray-500 ${balanceLoading ? 'animate-spin' : ''}`} />
                     </Button>
                   </div>
                 </DropdownMenuLabel>
+
+                {/* Lista de contas */}
                 <div className="p-2">
-                  {bankAccounts.map((account) => (
-                    <DropdownMenuItem
-                      key={account.id}
-                      className={cn(
-                        "hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors rounded-md p-3 cursor-pointer mb-1",
-                        selectedAccount?.id === account.id && "bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700"
-                      )}
-                      onClick={() => selectAccount(account.id)}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center space-x-3 flex-1 min-w-0">
-                          <div className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                            selectedAccount?.id === account.id
-                              ? "bg-emerald-600 dark:bg-emerald-500"
-                              : "bg-gray-200 dark:bg-gray-700"
-                          )}>
-                            <Wallet className="h-4 w-4 text-white" />
+                  {bankAccounts.map(account => {
+                    const isSelected = selectedAccount?.id === account.id
+                    return (
+                      <DropdownMenuItem
+                        key={account.id}
+                        className="transition-colors rounded-lg p-3 cursor-pointer mb-1"
+                        style={{
+                          background: isSelected ? T.chip : 'transparent',
+                          border: isSelected ? `1px solid var(--border)` : '1px solid transparent',
+                        }}
+                        onClick={() => selectAccount(account.id)}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+                            <div style={{
+                              width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                              background: isSelected ? BRAND : '#E5E7EB',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              <Landmark size={14} style={{ color: isSelected ? '#fff' : '#6B7280' }} />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ fontSize: 13, fontWeight: 600, color: T.text, margin: 0 }} className="truncate">{account.name}</p>
+                              {account.bank_name && (
+                                <p style={{ fontSize: 11, color: T.muted, margin: 0 }} className="truncate">{account.bank_name}</p>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">{account.name}</p>
-                            {account.bank_name && (
-                              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{account.bank_name}</p>
-                            )}
-                          </div>
+                          {isSelected && (
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: BRAND, flexShrink: 0, marginLeft: 8 }} />
+                          )}
                         </div>
-                        {selectedAccount?.id === account.id && (
-                          <div className="w-2 h-2 bg-emerald-600 dark:bg-emerald-400 rounded-full flex-shrink-0 ml-2" />
-                        )}
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
+                      </DropdownMenuItem>
+                    )
+                  })}
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className={cn(
-              "flex items-center rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-900/20 shadow-sm",
-              isMobile ? "gap-2 px-2.5 py-1.5" : "gap-3 px-4 py-2"
-            )}>
-              <div className={cn(
-                "flex items-center justify-center rounded-lg bg-emerald-600 dark:bg-emerald-500 text-white flex-shrink-0",
-                isMobile ? "w-7 h-7" : "w-9 h-9"
-              )}>
-                <Wallet className={isMobile ? "w-4 h-4" : "w-5 h-5"} />
-              </div>
-
-              {!isMobile && (
-                <div>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-white">Wallet</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    Saldo atual
-                    {lastUpdated && (
-                      <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3" />
-                        Atualizado agora
-                      </span>
-                    )}
-                  </p>
-                </div>
-              )}
-
-              <p className={cn(
-                "font-semibold text-emerald-600 dark:text-emerald-400",
-                isMobile ? "text-sm" : "text-lg ml-4"
-              )}>
-                {balanceLoading ? (
-                  <RefreshCw className="h-4 w-4 animate-spin inline" />
-                ) : formatBalance()}
-              </p>
-            </div>
+            <CaixaWidget hasAccounts={false} />
           )}
         </div>
 
-        {/* Right side - Theme Toggle & User */}
+        {/* ── Direita: tema + usuário ─────── */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Theme Toggle Button */}
           <Button
-            variant="ghost"
-            size="sm"
+            variant="ghost" size="sm"
             onClick={toggleTheme}
             className="h-9 w-9 p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
             title={isDarkMode ? 'Alternar para modo claro' : 'Alternar para modo escuro'}
           >
-            {isDarkMode ? (
-              <Sun className="h-5 w-5 text-yellow-500" />
-            ) : (
-              <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-            )}
+            {isDarkMode
+              ? <Sun className="h-5 w-5 text-yellow-500" />
+              : <Moon className="h-5 w-5 text-gray-500" />}
           </Button>
 
-          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              {/* Desktop: avatar + name + email | Mobile: avatar only */}
               <div className={cn(
-                "flex items-center cursor-pointer hover:opacity-80 transition-opacity rounded-lg",
-                isMobile ? "gap-0 px-1 py-1" : "gap-4 px-2 py-1"
+                'flex items-center cursor-pointer hover:opacity-80 transition-opacity rounded-lg',
+                isMobile ? 'gap-0 px-1 py-1' : 'gap-3 px-2 py-1',
               )}>
-                <div className={cn(
-                  "flex items-center justify-center rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white font-semibold flex-shrink-0",
-                  isMobile ? "w-8 h-8 text-sm" : "w-10 h-10"
-                )}>
+                <div
+                  className={cn('flex items-center justify-center rounded-lg text-white font-semibold flex-shrink-0', isMobile ? 'w-8 h-8 text-sm' : 'w-9 h-9')}
+                  style={{ background: BRAND }}
+                >
                   {user?.name?.charAt(0) || 'A'}
                 </div>
-
                 {!isMobile && (
                   <>
                     <div>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-white">{user?.name || 'Admin Exemplo'}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || 'admin@exemplo.com'}</p>
+                      <p className="text-sm font-semibold text-gray-800 dark:text-white">{user?.name || 'Admin'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || ''}</p>
                     </div>
-                    <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
                   </>
                 )}
               </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              align="end" 
+
+            <DropdownMenuContent
+              align="end"
               data-testid="profile-modal"
-              className="w-80 sm:w-96 border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg shadow-xl"
+              className="w-72 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl shadow-xl"
               sideOffset={8}
               noScroll={true}
             >
               <DropdownMenuLabel className="p-0">
-                <div className="flex items-center space-x-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
-                  <div className="w-14 h-14 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold text-xl">
-                      {user?.name?.charAt(0) || 'U'}
-                    </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', background: T.chip, borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 10, background: BRAND, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>{user?.name?.charAt(0) || 'U'}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-bold text-gray-900 dark:text-white truncate">
-                      {user?.name || 'Usuário'}
-                    </p>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 truncate">
-                      {user?.email || 'user@example.com'}
-                    </p>
-                    <div className="flex items-center space-x-2 mt-2 flex-wrap">
-                      <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
-                        Premium
-                      </Badge>
-                      <Badge variant="outline" className="text-xs border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
-                        Admin
-                      </Badge>
-                    </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0 }} className="truncate">{user?.name || 'Usuário'}</p>
+                    <p style={{ fontSize: 12, color: T.muted, margin: 0 }} className="truncate">{user?.email || ''}</p>
                   </div>
                 </div>
               </DropdownMenuLabel>
+
               <div className="p-2">
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   data-testid="profile-menu-item"
-                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors rounded-md p-3 cursor-pointer mb-1 w-full"
-                  onClick={() => {
-                    navigate('/profile')
-                  }}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded-lg p-3 cursor-pointer mb-1 w-full"
+                  onClick={() => navigate('/profile')}
                 >
-                  <User className="mr-3 h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                  <div className="flex-1 min-w-0 overflow-visible">
-                    <p className="font-semibold text-gray-900 dark:text-white truncate">Meu Perfil</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Configurações pessoais</p>
+                  <User className="mr-3 h-4 w-4 text-gray-500 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-gray-900 dark:text-white text-sm">Meu Perfil</p>
+                    <p className="text-xs text-gray-500">Configurações pessoais</p>
                   </div>
                 </DropdownMenuItem>
+
                 {(user?.account_admin || user?.account_owner) && (
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     data-testid="company-settings-menu-item"
-                    className="hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors rounded-md p-3 cursor-pointer mb-1 w-full"
-                    onClick={() => {
-                      navigate('/company-settings')
-                    }}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded-lg p-3 cursor-pointer mb-1 w-full"
+                    onClick={() => navigate('/company-settings')}
                   >
-                    <Building2 className="mr-3 h-5 w-5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
-                    <div className="flex-1 min-w-0 overflow-visible">
-                      <p className="font-semibold text-gray-900 dark:text-white truncate">Configurações da Empresa</p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Apenas para administradores</p>
+                    <Building2 className="mr-3 h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white text-sm">Configurações</p>
+                      <p className="text-xs text-gray-500">Empresa e preferências</p>
                     </div>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem 
-                  data-testid="settings-menu-item"
-                  className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-md p-3 cursor-pointer mb-1 w-full"
-                  onClick={() => {
-                    navigate('/settings')
-                  }}
-                >
-                  <Settings className="mr-3 h-5 w-5 text-gray-600 dark:text-gray-400 flex-shrink-0" />
-                  <div className="flex-1 min-w-0 overflow-visible">
-                    <p className="font-semibold text-gray-900 dark:text-white truncate">Preferências</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">Configurações do sistema</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="my-2 bg-gray-200 dark:bg-gray-700" />
-                <DropdownMenuItem 
+
+                <DropdownMenuSeparator className="my-2 bg-gray-100 dark:bg-gray-700" />
+
+                <DropdownMenuItem
                   data-testid="logout-menu-item"
-                  className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-md p-3 cursor-pointer w-full"
+                  className="text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-lg p-3 cursor-pointer w-full"
                   onClick={handleLogout}
                 >
-                  <LogOut className="mr-3 h-5 w-5 flex-shrink-0" />
-                  <div className="flex-1 min-w-0 overflow-visible">
-                    <p className="font-semibold truncate">Sair</p>
-                    <p className="text-xs text-red-500 dark:text-red-400 truncate">Encerrar sessão</p>
+                  <LogOut className="mr-3 h-4 w-4 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-sm">Sair</p>
+                    <p className="text-xs text-red-400">Encerrar sessão</p>
                   </div>
                 </DropdownMenuItem>
               </div>
@@ -390,7 +318,7 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
           </DropdownMenu>
         </div>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </header>
   )
 }
-

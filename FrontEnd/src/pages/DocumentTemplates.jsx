@@ -27,6 +27,7 @@ import {
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { apiService } from '@/lib/api'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { toast } from 'sonner'
 
 const DOCUMENT_TYPES = {
   receipt: {
@@ -110,7 +111,6 @@ export function DocumentTemplates() {
         setTotalPages(1)
       }
     } catch (err) {
-      console.error('Error loading templates:', err)
       setError('Erro ao carregar templates de documentos')
       setTemplates([])
     } finally {
@@ -119,13 +119,9 @@ export function DocumentTemplates() {
   }
 
   const handleDelete = async (templateId) => {
-    if (!window.confirm('Tem certeza que deseja excluir este template?')) {
-      return
-    }
-
     try {
       const docType = DOCUMENT_TYPES[activeTab]
-      
+
       switch (docType.endpoint) {
         case 'receipt':
           await apiService.deleteReceiptTemplate(templateId)
@@ -140,12 +136,12 @@ export function DocumentTemplates() {
           await apiService.deleteProfessionalDocumentTemplate(templateId)
           break
       }
-      
+
+      toast.success('Template excluído com sucesso!')
       loadTemplates()
     } catch (err) {
-      console.error('Error deleting template:', err)
       const errorMessage = err.data?.error || err.message || 'Erro ao excluir template'
-      alert(errorMessage)
+      toast.error(errorMessage)
     }
   }
 
@@ -162,7 +158,7 @@ export function DocumentTemplates() {
 
   return (
     <div className="relative min-h-screen bg-surface">
-      <div className="relative z-10 w-full max-w-full min-w-0 px-3 py-4 sm:px-6 sm:py-6 md:px-10 md:py-8 space-y-4 sm:space-y-6 md:space-y-8">
+      <div className="relative z-10 w-full max-w-full min-w-0 space-y-3">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
@@ -214,8 +210,14 @@ export function DocumentTemplates() {
                 <TabsContent key={key} value={key} className="m-0">
                   <div className="p-6">
                     {loading ? (
-                      <div className="flex items-center justify-center py-12">
-                        <Loader2 className="h-8 w-8 animate-spin text-accent" />
+                      <div className="space-y-3 animate-pulse py-4">
+                        {[1,2,3].map(i => (
+                          <div key={i} className="flex items-center gap-4 px-2 py-3">
+                            <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded-full w-1/4" />
+                            <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded-full w-2/5" />
+                            <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded-full w-1/6 ml-auto" />
+                          </div>
+                        ))}
                       </div>
                     ) : templates.length === 0 ? (
                       <div className="text-center py-12">

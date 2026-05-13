@@ -86,8 +86,8 @@ class ContactTest < ActiveSupport::TestCase
     birth_date = Faker::Date.birthday(min_age: 18, max_age: 65)
     description = Faker::Lorem.paragraph
     contact_type = :undefined_contact
-    document_1 = Faker::IDNumber.brazilian_citizen_number
-    document_2 = Faker::IDNumber.brazilian_citizen_number
+    document_1 = Faker::IdNumber.brazilian_citizen_number
+    document_2 = Faker::IdNumber.brazilian_citizen_number
     phone_number = Faker::PhoneNumber.phone_number
 
     contact = @account.contacts.create!(
@@ -104,8 +104,8 @@ class ContactTest < ActiveSupport::TestCase
     name = Faker::Name.name
     birth_date = Faker::Date.birthday(min_age: 18, max_age: 65)
     description = Faker::Lorem.paragraph
-    document_1 = Faker::IDNumber.brazilian_citizen_number
-    document_2 = Faker::IDNumber.brazilian_citizen_number
+    document_1 = Faker::IdNumber.brazilian_citizen_number
+    document_2 = Faker::IdNumber.brazilian_citizen_number
     phone_number = Faker::PhoneNumber.phone_number
     contact_type = :customer
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +17,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -55,6 +57,7 @@ import {
 import { apiService } from '../lib/api'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
+import { T, DISPLAY } from '@/lib/tokens'
 
 const stateLabels = {
   waiting: 'Aguardando',
@@ -63,11 +66,11 @@ const stateLabels = {
   failed: 'Falhou'
 }
 
-const stateColors = {
-  waiting: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
-  in_progress: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  done: 'bg-green-500/10 text-green-600 dark:text-green-400',
-  failed: 'bg-red-500/10 text-red-600 dark:text-red-400'
+const stateColorMap = {
+  waiting:     { color: '#F59E0B', bg: '#F59E0B18' },
+  in_progress: { color: '#4C60AA', bg: '#4C60AA18' },
+  done:        { color: '#10B981', bg: '#10B98118' },
+  failed:      { color: '#EF4444', bg: '#EF444418' },
 }
 
 const sourceLabels = {
@@ -109,7 +112,6 @@ export function Imports() {
       setTotalPages(response.meta?.total_pages || 1)
       setTotalCount(response.meta?.total_count || 0)
     } catch (err) {
-      console.error('Erro ao buscar importações:', err)
       setError(err.message || 'Erro ao carregar importações')
     } finally {
       setLoading(false)
@@ -161,7 +163,6 @@ export function Imports() {
       setUploadSource('xlsx_default')
       await fetchImports()
     } catch (err) {
-      console.error('Erro ao fazer upload:', err)
       setError(err.message || 'Erro ao fazer upload do arquivo')
     } finally {
       setUploading(false)
@@ -177,7 +178,6 @@ export function Imports() {
       await apiService.deleteImport(id)
       await fetchImports()
     } catch (err) {
-      console.error('Erro ao remover importação:', err)
       setError(err.message || 'Erro ao remover importação')
     }
   }
@@ -187,7 +187,6 @@ export function Imports() {
       await apiService.discardImport(id)
       await fetchImports()
     } catch (err) {
-      console.error('Erro ao arquivar importação:', err)
       setError(err.message || 'Erro ao arquivar importação')
     }
   }
@@ -197,7 +196,6 @@ export function Imports() {
       await apiService.undiscardImport(id)
       await fetchImports()
     } catch (err) {
-      console.error('Erro ao restaurar importação:', err)
       setError(err.message || 'Erro ao restaurar importação')
     }
   }
@@ -230,32 +228,32 @@ export function Imports() {
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="relative z-10 space-y-6 md:space-y-8 p-4 md:p-6">
-        {/* Header - Bold Typography */}
+    <div data-testid="imports-page" style={{ minHeight: '100vh', background: T.bg, ...DISPLAY }}>
+      <div className="relative z-10 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">
-              <span className="bg-gradient-to-r from-[#5B7A9E] via-[#6B8FA3] to-[#7A9D96] bg-clip-text text-transparent">
-                Importações
-              </span>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1" style={{ color: T.text }}>
+              Importações
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
+            <p style={{ fontSize: 14, color: T.muted }}>
               Gerencie suas importações de arquivos
             </p>
           </div>
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
           <DialogTrigger asChild>
-            <Button 
-              className="w-full md:w-auto bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white border-0"
+            <Button
+              data-testid="new-import-btn"
+              className="w-full md:w-auto"
+              style={{ background: T.brand, color: '#fff', border: 'none', borderRadius: 8 }}
             >
               <Upload className="h-4 w-4 mr-2" />
               Nova Importação
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent data-testid="import-dialog" className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Nova Importação</DialogTitle>
+              <DialogDescription>Selecione a origem e envie o arquivo para importar seus dados.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -415,7 +413,10 @@ export function Imports() {
                 </TableHeader>
                 <TableBody>
                   {imports.map((importItem) => (
-                    <TableRow key={importItem.id}>
+                    <TableRow key={importItem.id} style={{ transition: 'background 100ms' }}
+                      onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
                       <TableCell className="font-medium">
                         {importItem.file_name || 'Sem arquivo'}
                       </TableCell>
@@ -423,12 +424,15 @@ export function Imports() {
                         {sourceLabels[importItem.source] || importItem.source}
                       </TableCell>
                       <TableCell>
-                        <Badge className={cn(stateColors[importItem.state])}>
-                          <span className="flex items-center gap-1">
-                            {getStateIcon(importItem.state)}
-                            {stateLabels[importItem.state] || importItem.state}
-                          </span>
-                        </Badge>
+                        {(() => {
+                          const sc = stateColorMap[importItem.state] || { color: '#6B6B6B', bg: '#6B6B6B18' }
+                          return (
+                            <span style={{ borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, background: sc.bg, color: sc.color, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              {getStateIcon(importItem.state)}
+                              {stateLabels[importItem.state] || importItem.state}
+                            </span>
+                          )
+                        })()}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 min-w-[100px]">

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef, startTransition } from 'react'
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isSameMonth, isSameDay, isToday, parseISO, getDaysInMonth, addDays, startOfDay, setHours, setMinutes } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, User, Phone, FileText } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, User, Phone, FileText, Check, X, AlertCircle, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -21,33 +21,83 @@ import {
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { apiService } from '@/lib/api'
-import { normalizeAppointments, normalizeStatus } from '@/utils/appointmentUtils'
+import { normalizeAppointments, normalizeStatus, STATUS_CONFIG } from '@/utils/appointmentUtils'
 import { formatCurrency } from '@/utils/format'
 import { ConsultationModal } from './ConsultationModal'
 import { useAppointments } from '@/hooks/useAppointments'
+import { MiniCalendar } from './MiniCalendar'
+import { T, DISPLAY } from '@/lib/tokens'
+import { openWhatsApp, WA_TEMPLATES, getAppointmentPhone } from '@/lib/whatsapp'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
+
+const STATUS_COLORS = {
+  pending:   { color: '#F59E0B', label: 'Pendente'   },
+  confirmed: { color: '#4C60AA', label: 'Confirmado' },
+  completed: { color: '#10B981', label: 'Concluído'  },
+  canceled:  { color: '#D1D5DB', label: 'Cancelado'  },
+  no_show:   { color: '#D1D5DB', label: 'Não veio'   },
+}
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
-// Cores dos indicadores de status (estilo landing page)
+// Capacidade diária de referência para a barra de progresso da view semanal
+const DAILY_CAPACITY = 8
+
+// Statuses que não ocupam slot (excluídos da contagem de capacidade)
+const INACTIVE_STATUSES = new Set(['canceled', 'no_show'])
+
+// Cores dos indicadores de status no calendário mensal
 const STATUS_DOT_COLORS = {
-  pending: 'bg-yellow-400',
-  confirmed: 'bg-green-500',
-  completed: 'bg-blue-600',
-  canceled: 'bg-red-500',
-  no_show: 'bg-gray-400'
+  pending:   'bg-amber-400',
+  confirmed: 'bg-[#4C60AA]',
+  completed: 'bg-[#10B981]',
+  canceled:  'bg-gray-300',
+  no_show:   'bg-gray-300',
 }
 
-export function AppointmentsCalendar() {
+// Indicador visual de status (anel + ícone) usado nos cards da view diária
+function StatusDot({ status }) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending
+  const iconCls = cn('flex-shrink-0', cfg.iconColor)
+
+  let inner
+  if (status === 'completed') {
+    inner = <Check className={cn(iconCls, 'size-2.5')} strokeWidth={3} />
+  } else if (status === 'canceled') {
+    inner = <X className={cn(iconCls, 'size-2.5')} strokeWidth={3} />
+  } else if (status === 'no_show') {
+    inner = <AlertCircle className={cn(iconCls, 'size-2.5')} strokeWidth={2.5} />
+  } else {
+    inner = <div className={cn('size-1.5 rounded-full', cfg.dot)} />
+  }
+
+  return (
+    <div className={cn(
+      'size-4 rounded-full flex items-center justify-center',
+      cfg.ring,
+      cfg.pulse && 'animate-pulse',
+    )}>
+      {inner}
+    </div>
+  )
+}
+
+export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone }) {
+  const isMobile = useIsMobile()
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [viewMode, setViewMode] = useState('month') // 'month' | 'day'
+  const [viewMode, setViewMode] = useState('month') // 'month' | 'week' | 'day'
   const [selectedProfessional, setSelectedProfessional] = useState('all')
   const [professionals, setProfessionals] = useState([])
   const [selectedDay, setSelectedDay] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [expandedAppointmentId, setExpandedAppointmentId] = useState(null)
+  const [mobileSheetApt, setMobileSheetApt] = useState(null)
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false)
   const [selectedAppointmentForConsultation, setSelectedAppointmentForConsultation] = useState(null)
-  
+  const [highlightedAptId, setHighlightedAptId] = useState(null)
+  const highlightTimerRef = useRef(null)
+
   // Refs para scroll horizontal
   const scrollContainerRef = useRef(null)
   const isUserInteractingRef = useRef(false)
@@ -80,7 +130,6 @@ export function AppointmentsCalendar() {
         const data = await apiService.getAppointmentProfessionals()
         setProfessionals(Array.isArray(data) ? data : [])
       } catch (error) {
-        console.error('Erro ao carregar profissionais:', error)
       }
     }
     loadProfessionals()
@@ -94,6 +143,41 @@ export function AppointmentsCalendar() {
     }))
   }, [selectedProfessional, setAppointmentFilters])
 
+  // Ao receber um agendamento recém-criado: trocar para day view e navegar até a data
+  useEffect(() => {
+    if (!newlyCreatedAppointment?.start_time) return
+    const appointmentDate = parseISO(newlyCreatedAppointment.start_time)
+    startTransition(() => {
+      setViewMode('day')
+      setCurrentDate(appointmentDate)
+    })
+  }, [newlyCreatedAppointment])
+
+  // Após o refetch trazer o novo agendamento, scrollar e destacar o card
+  useEffect(() => {
+    if (!newlyCreatedAppointment?.id || viewMode !== 'day') return
+    const isInList = allAppointments.some(
+      (apt) => String(apt.id) === String(newlyCreatedAppointment.id)
+    )
+    if (!isInList) return
+
+    const timer = setTimeout(() => {
+      const el = document.querySelector(
+        `[data-apt-id="${newlyCreatedAppointment.id}"]`
+      )
+      if (!el) return
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current)
+      setHighlightedAptId(String(newlyCreatedAppointment.id))
+      highlightTimerRef.current = setTimeout(() => {
+        setHighlightedAptId(null)
+        onHighlightDone?.()
+      }, 3000)
+    }, 120)
+
+    return () => clearTimeout(timer)
+  }, [allAppointments, viewMode, newlyCreatedAppointment, onHighlightDone])
+
   // Carregar mês quando currentDate mudar (otimizado para fluidez)
   useEffect(() => {
     if (!loadMonth) return
@@ -102,7 +186,6 @@ export function AppointmentsCalendar() {
     startTransition(() => {
       // Carregar mês atual imediatamente (prioridade)
       loadMonth(currentDate).catch(err => {
-        console.error('Erro ao carregar mês:', err)
       })
     })
     
@@ -149,6 +232,26 @@ export function AppointmentsCalendar() {
       setCurrentDate(new Date())
     })
   }, [])
+
+  const goToPrevious = useCallback(() => {
+    startTransition(() => {
+      setCurrentDate(prev =>
+        viewMode === 'week' ? addDays(prev, -7) :
+        viewMode === 'day'  ? addDays(prev, -1) :
+        subMonths(prev, 1)
+      )
+    })
+  }, [viewMode])
+
+  const goToNext = useCallback(() => {
+    startTransition(() => {
+      setCurrentDate(prev =>
+        viewMode === 'week' ? addDays(prev, 7) :
+        viewMode === 'day'  ? addDays(prev, 1) :
+        addMonths(prev, 1)
+      )
+    })
+  }, [viewMode])
 
   // Centralizar scroll no mês atual quando meses mudarem (otimizado para fluidez)
   useEffect(() => {
@@ -346,23 +449,35 @@ export function AppointmentsCalendar() {
     setExpandedAppointmentId(null) // Resetar expansão ao abrir novo dia
   }
 
-  // Handler para expandir/colapsar agendamento
-  const handleToggleExpand = (appointmentId) => {
-    setExpandedAppointmentId(prev => prev === appointmentId ? null : appointmentId)
+  // Handler para expandir/colapsar agendamento (desktop) ou abrir sheet (mobile)
+  const handleToggleExpand = (apt) => {
+    if (isMobile) {
+      setMobileSheetApt(apt)
+    } else {
+      setExpandedAppointmentId(prev => prev === apt.id ? null : apt.id)
+    }
   }
 
   // Handler para atualizar status do agendamento
   const handleUpdateStatus = async (appointmentId, newStatus) => {
     try {
       await apiService.updateAppointment(appointmentId, { status: newStatus })
-      // Recarregar mês atual (o hook gerencia o cache)
-      if (loadMonth) {
-        await loadMonth(currentDate)
-      }
+      if (loadMonth) await loadMonth(currentDate)
     } catch (error) {
-      console.error('Erro ao atualizar status:', error)
     }
   }
+
+  // Handler para reagendar por drag & drop
+  const handleReschedule = useCallback(async (aptId, newStartISO, newEndISO) => {
+    try {
+      await apiService.updateAppointment(aptId, {
+        start_time: newStartISO,
+        end_time: newEndISO,
+      })
+      if (loadMonth) await loadMonth(currentDate)
+    } catch (error) {
+    }
+  }, [loadMonth, currentDate])
 
   const selectedProfessionalName = useMemo(() => {
     if (selectedProfessional === 'all') return null
@@ -394,7 +509,7 @@ export function AppointmentsCalendar() {
                   <div className="flex items-center gap-2">
                     {selectedProfessionalName && (
                       <div className="flex items-center gap-2">
-                        <div className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
+                        <div className="h-6 w-6 rounded-full flex items-center justify-center text-white text-xs font-medium" style={{ background: T.brand }}>
                           {selectedProfessionalName.charAt(0).toUpperCase()}
                         </div>
                         <span>{selectedProfessionalName}</span>
@@ -409,7 +524,7 @@ export function AppointmentsCalendar() {
               {professionals.map((prof) => (
                 <SelectItem key={prof.id} value={prof.id?.toString()}>
                   <div className="flex items-center gap-2">
-                    <div className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-medium">
+                    <div className="h-6 w-6 rounded-full flex items-center justify-center text-white text-xs font-medium" style={{ background: T.brand }}>
                       {(prof.name || prof.first_name || 'P').charAt(0).toUpperCase()}
                     </div>
                     <span>{prof.name || prof.first_name || 'Profissional'}</span>
@@ -425,6 +540,20 @@ export function AppointmentsCalendar() {
         </div>
       </div>
 
+      {/* Layout de duas colunas: mini-cal + calendário principal */}
+      <div className="flex gap-6 items-start">
+        {/* Mini-calendário lateral */}
+        <aside className="hidden lg:block w-60 flex-shrink-0 sticky top-6">
+          <MiniCalendar
+            currentDate={currentDate}
+            appointments={allAppointments}
+            onDateSelect={(day) => startTransition(() => setCurrentDate(day))}
+          />
+        </aside>
+
+        {/* Calendário principal */}
+        <div className="flex-1 min-w-0 space-y-6">
+
       {/* Header do Calendário */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -432,16 +561,16 @@ export function AppointmentsCalendar() {
             <Button
               variant="outline"
               size="icon"
-              onClick={goToPreviousMonth}
+              onClick={goToPrevious}
               className="size-9 rounded-full border-neutral-200"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            
+
             <Button
               variant="outline"
               size="icon"
-              onClick={goToNextMonth}
+              onClick={goToNext}
               className="size-9 rounded-full border-neutral-200"
             >
               <ChevronRight className="h-4 w-4" />
@@ -449,9 +578,17 @@ export function AppointmentsCalendar() {
           </div>
           
           <div className="min-w-[150px]">
-            <h2 className="text-xl font-bold text-neutral-900 dark:text-white capitalize">
-              {format(currentDate, "MMMM", { locale: ptBR })}
-            </h2>
+            {viewMode === 'week' ? (
+              <h2 className="text-xl font-bold text-neutral-900 dark:text-white">
+                {format(startOfWeek(currentDate, { weekStartsOn: 1 }), "d MMM", { locale: ptBR })}
+                {' – '}
+                {format(addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6), "d MMM", { locale: ptBR })}
+              </h2>
+            ) : (
+              <h2 className="text-xl font-bold text-neutral-900 dark:text-white capitalize">
+                {format(currentDate, "MMMM", { locale: ptBR })}
+              </h2>
+            )}
             <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
               {format(currentDate, "yyyy")}
             </p>
@@ -460,13 +597,14 @@ export function AppointmentsCalendar() {
           <Button
             variant="ghost"
             onClick={goToToday}
-            className="text-xs font-bold uppercase tracking-wider text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            className="text-xs font-bold uppercase tracking-wider"
+            style={{ color: T.brand }}
           >
             Hoje
           </Button>
         </div>
 
-        {/* Toggle Mês/Dia */}
+        {/* Toggle Mês/Semana/Dia */}
         <div className="flex items-center gap-1 bg-neutral-100 dark:bg-gray-800 rounded-xl p-1 border border-neutral-200 dark:border-gray-700">
           <Button
             variant="ghost"
@@ -474,12 +612,27 @@ export function AppointmentsCalendar() {
             onClick={() => setViewMode('month')}
             className={cn(
               "rounded-lg text-xs font-bold uppercase tracking-wider px-4",
-              viewMode === 'month' 
-                ? "bg-white dark:bg-gray-700 shadow-sm text-blue-600" 
+              viewMode === 'month'
+                ? "bg-white dark:bg-gray-700 shadow-sm"
                 : "text-neutral-500 hover:text-neutral-700"
             )}
+            style={viewMode === 'month' ? { color: T.brand } : {}}
           >
             Mês
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setViewMode('week')}
+            className={cn(
+              "rounded-lg text-xs font-bold uppercase tracking-wider px-4",
+              viewMode === 'week'
+                ? "bg-white dark:bg-gray-700 shadow-sm"
+                : "text-neutral-500 hover:text-neutral-700"
+            )}
+            style={viewMode === 'week' ? { color: T.brand } : {}}
+          >
+            Semana
           </Button>
           <Button
             variant="ghost"
@@ -487,10 +640,11 @@ export function AppointmentsCalendar() {
             onClick={() => setViewMode('day')}
             className={cn(
               "rounded-lg text-xs font-bold uppercase tracking-wider px-4",
-              viewMode === 'day' 
-                ? "bg-white dark:bg-gray-700 shadow-sm text-blue-600" 
+              viewMode === 'day'
+                ? "bg-white dark:bg-gray-700 shadow-sm"
                 : "text-neutral-500 hover:text-neutral-700"
             )}
+            style={viewMode === 'day' ? { color: T.brand } : {}}
           >
             Dia
           </Button>
@@ -559,25 +713,29 @@ export function AppointmentsCalendar() {
                         className={cn(
                           "min-h-[84px] flex flex-col p-2 relative cursor-pointer group transition-colors duration-150",
                           load === 'empty' && "bg-white dark:bg-gray-900 hover:bg-neutral-50 dark:hover:bg-gray-800/60",
-                          load === 'low'   && "bg-blue-50/40 dark:bg-blue-900/10 hover:bg-blue-50/80",
-                          load === 'mid'   && "bg-blue-50/70 dark:bg-blue-900/20 hover:bg-blue-100/60",
-                          load === 'high'  && "bg-blue-100/80 dark:bg-blue-900/30 hover:bg-blue-100",
-                          cell.isToday && "ring-2 ring-inset ring-blue-500 z-10",
+                          load === 'low'   && "bg-[#EEF2FA]/30 hover:bg-[#EEF2FA]/60",
+                          load === 'mid'   && "bg-[#EEF2FA]/55 hover:bg-[#EEF2FA]/80",
+                          load === 'high'  && "bg-[#EEF2FA]/80 hover:bg-[#EEF2FA]",
+                          cell.isToday && "z-10",
                           !cell.isCurrentMonth && "opacity-30"
                         )}
+                        style={cell.isToday ? { boxShadow: `inset 0 0 0 2px ${T.brand}` } : {}}
                       >
                         {/* Número do dia */}
-                        <span className={cn(
-                          "text-sm font-semibold leading-none self-start",
-                          load === 'empty' ? "text-neutral-300 dark:text-gray-600" : "text-neutral-700 dark:text-gray-200",
-                          cell.isToday && "flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white font-bold text-xs"
-                        )}>
+                        <span
+                          className={cn(
+                            "text-sm font-semibold leading-none self-start",
+                            load === 'empty' ? "text-neutral-300 dark:text-gray-600" : "text-neutral-700 dark:text-gray-200",
+                            cell.isToday && "flex items-center justify-center w-6 h-6 rounded-full text-white font-bold text-xs"
+                          )}
+                          style={cell.isToday ? { background: T.brand } : {}}
+                        >
                           {cell.dayNumber}
                         </span>
 
                         {/* Badge de quantidade */}
                         {cell.appointmentCount > 0 && (
-                          <span className="absolute top-2 right-2 text-[10px] font-bold leading-none bg-blue-500 text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                          <span className="absolute top-2 right-2 text-[10px] font-bold leading-none text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center" style={{ background: T.brand }}>
                             {cell.appointmentCount}
                           </span>
                         )}
@@ -589,7 +747,8 @@ export function AppointmentsCalendar() {
                               Array.from({ length: Math.min(count, 3) }).map((_, i) => (
                                 <div
                                   key={`${status}-${i}`}
-                                  className={cn("h-1 flex-1 rounded-full", STATUS_DOT_COLORS[status] || 'bg-gray-400')}
+                                  className="h-1 flex-1 rounded-full"
+                                  style={{ background: STATUS_COLORS[status]?.color || '#9CA3AF' }}
                                 />
                               ))
                             )}
@@ -612,14 +771,17 @@ export function AppointmentsCalendar() {
         </div>
       )}
 
-      {/* Visualização Diária */}
-      {viewMode === 'day' && (
-        <DayView 
+      {/* Visualização Semanal */}
+      {viewMode === 'week' && (
+        <WeekView
           currentDate={currentDate}
           appointments={appointments}
-          professionals={professionals}
-          selectedProfessional={selectedProfessional}
-          onDateChange={setCurrentDate}
+          onReschedule={handleReschedule}
+          onDayClick={(day) => {
+            setSelectedDay(day)
+            setIsModalOpen(true)
+            setExpandedAppointmentId(null)
+          }}
           onAppointmentClick={(apt) => {
             setSelectedDay(parseISO(apt.start_time))
             setIsModalOpen(true)
@@ -628,21 +790,42 @@ export function AppointmentsCalendar() {
         />
       )}
 
+      {/* Visualização Diária */}
+      {viewMode === 'day' && (
+        <DayView
+          currentDate={currentDate}
+          appointments={appointments}
+          professionals={professionals}
+          selectedProfessional={selectedProfessional}
+          onDateChange={setCurrentDate}
+          highlightedAptId={highlightedAptId}
+          onReschedule={handleReschedule}
+          onAppointmentClick={(apt) => {
+            setSelectedDay(parseISO(apt.start_time))
+            setIsModalOpen(true)
+            setExpandedAppointmentId(null)
+          }}
+        />
+      )}
+
+        </div>{/* /flex-1 calendário principal */}
+      </div>{/* /flex gap-6 layout */}
+
       {/* Modal Central - Agendamentos do Dia */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-[520px] max-h-[80vh] p-0 flex flex-col overflow-hidden [&>button]:top-6 [&>button]:right-6 [&>button]:z-10 rounded-[2rem] border-none shadow-2xl">
+        <DialogContent className="sm:max-w-[520px] p-0 flex flex-col overflow-hidden [&>button]:top-6 [&>button]:right-6 [&>button]:z-10 rounded-[2rem] border-none shadow-2xl">
           {/* Header Fixo (estilo landing page) */}
           <DialogHeader className="px-8 pt-8 pb-6 border-b border-neutral-100 dark:border-gray-800 flex-shrink-0 bg-white dark:bg-[#1A1C1E] sticky top-0 z-10">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">
+                <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: T.brand }}>
                   Agenda do dia
                 </p>
                 <DialogTitle className="text-2xl font-bold text-neutral-900 dark:text-white capitalize">
                   {selectedDay && format(selectedDay, "d 'de' MMMM", { locale: ptBR })}
                 </DialogTitle>
               </div>
-              <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+              <div className="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider" style={{ background: T.chip, color: T.brand }}>
                 {selectedDayAppointments.length} Total
               </div>
             </div>
@@ -666,63 +849,80 @@ export function AppointmentsCalendar() {
                   const isExpanded = expandedAppointmentId === apt.id
                   const price = formatCurrency(apt.price?.cents || apt.price_cents || 0, apt.price?.currency || apt.price_currency || 'BRL')
 
+                  const statusColor = STATUS_COLORS[status]?.color || '#9CA3AF'
+                  const initials = clientName.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+
                   return (
                     <div
                       key={apt.id}
                       className={cn(
                         "group flex flex-col rounded-2xl transition-all duration-200 border",
                         isExpanded
-                          ? "bg-blue-50/50 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900/50 shadow-sm"
-                          : "hover:bg-neutral-50 dark:hover:bg-gray-800 border-transparent hover:border-neutral-100 dark:hover:border-gray-700"
+                          ? "border-[#4C60AA]/20 shadow-sm"
+                          : "border-transparent hover:border-neutral-100 dark:hover:border-gray-700"
                       )}
+                      style={{
+                        borderLeft: `3px solid ${statusColor}`,
+                        background: isExpanded ? T.chip : 'transparent',
+                        transition: 'background 100ms',
+                      }}
+                      onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.background = T.bg }}
+                      onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.background = 'transparent' }}
                     >
                       {/* Linha principal — clicável para expandir status actions */}
                       <div
                         className="flex items-center gap-3 p-4 cursor-pointer"
-                        onClick={() => handleToggleExpand(apt.id)}
+                        onClick={() => handleToggleExpand(apt)}
                       >
-                        {/* Horário */}
-                        <div className="text-center min-w-[40px]">
-                          <span className={cn(
-                            "text-[11px] font-bold block",
-                            status === 'completed' ? 'text-neutral-400' : 'text-blue-600'
-                          )}>
-                            {startTime}
-                          </span>
+                        {/* Initials avatar */}
+                        <div
+                          className="flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold"
+                          style={{ width: 30, height: 30, background: statusColor + '20', color: statusColor }}
+                        >
+                          {initials}
                         </div>
 
-                        {/* Info */}
+                        {/* Horário + Info */}
                         <div className="flex-1 min-w-0">
-                          <p className={cn(
-                            "text-sm font-bold truncate",
-                            status === 'completed' ? 'text-neutral-400 line-through' : 'text-neutral-900 dark:text-gray-100'
-                          )}>
-                            {clientName}
-                          </p>
-                          <p className="text-[11px] text-neutral-500 truncate">{serviceName}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-bold" style={{ color: statusColor }}>
+                              {startTime}
+                            </span>
+                            <p className={cn(
+                              "text-sm font-bold truncate",
+                              status === 'canceled' ? 'text-neutral-400 line-through' :
+                              status === 'completed' ? 'text-neutral-400 line-through' :
+                              'text-neutral-900 dark:text-gray-100'
+                            )}>
+                              {clientName}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-[11px] text-neutral-500 truncate">{serviceName}</p>
+                            <span
+                              className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5"
+                              style={{ borderRadius: 20, background: statusColor + '18', color: statusColor }}
+                            >
+                              {STATUS_COLORS[status]?.label || status}
+                            </span>
+                          </div>
                         </div>
 
-                        {/* Status dot */}
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {status === 'completed' ? (
-                            <div className="size-4 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                              <div className="size-1.5 rounded-full bg-emerald-600" />
-                            </div>
-                          ) : status === 'confirmed' ? (
-                            <div className="size-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                              <div className="size-1.5 rounded-full bg-blue-600" />
-                            </div>
-                          ) : status === 'pending' ? (
-                            <div className="size-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center animate-pulse">
-                              <div className="size-1.5 rounded-full bg-yellow-600" />
-                            </div>
-                          ) : (
-                            <div className="size-4 rounded-full bg-neutral-100 dark:bg-gray-700 flex items-center justify-center">
-                              <div className="size-1.5 rounded-full bg-neutral-300 dark:bg-gray-500" />
-                            </div>
+                        {/* Ações rápidas — sempre visíveis */}
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {getAppointmentPhone(apt) && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openWhatsApp(getAppointmentPhone(apt), WA_TEMPLATES.confirmation(apt))
+                              }}
+                              className="h-7 w-7 rounded-lg flex items-center justify-center transition-colors"
+                              style={{ background: '#25D36618', color: '#25D366' }}
+                              title="Avisar via WhatsApp"
+                            >
+                              <MessageCircle className="size-3.5" />
+                            </button>
                           )}
-
-                          {/* Botão de anotações — sempre visível */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
@@ -730,11 +930,8 @@ export function AppointmentsCalendar() {
                               setIsConsultationModalOpen(true)
                               setExpandedAppointmentId(null)
                             }}
-                            className={cn(
-                              "h-7 w-7 rounded-lg flex items-center justify-center transition-colors",
-                              "bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40",
-                              "text-blue-600 dark:text-blue-400"
-                            )}
+                            className="h-7 w-7 rounded-lg flex items-center justify-center transition-colors"
+                            style={{ background: T.chip, color: T.brand }}
                             title="Anotações da sessão"
                           >
                             <FileText className="size-3.5" />
@@ -748,7 +945,7 @@ export function AppointmentsCalendar() {
                           className="px-4 pb-4 space-y-2 animate-in fade-in duration-150"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="flex items-center gap-1.5 px-1 text-[11px] text-neutral-500 font-medium border-t border-blue-100/50 dark:border-blue-900/20 pt-3">
+                          <div className="flex items-center gap-1.5 px-1 text-[11px] text-neutral-500 font-medium border-t border-neutral-100 dark:border-gray-800 pt-3">
                             <User className="size-3" />
                             <span>{professionalName}</span>
                             <span className="mx-1 text-neutral-300">·</span>
@@ -756,11 +953,23 @@ export function AppointmentsCalendar() {
                           </div>
 
                           <div className="flex gap-2">
+                            {getAppointmentPhone(apt) && (
+                              <Button
+                                size="sm"
+                                onClick={() => openWhatsApp(getAppointmentPhone(apt), WA_TEMPLATES.confirmation(apt))}
+                                className="h-8 text-[10px] font-bold uppercase tracking-wider px-3"
+                                style={{ background: '#25D36618', color: '#25D366', borderRadius: 8, border: '1px solid #25D36630' }}
+                              >
+                                <MessageCircle className="size-3 mr-1.5" />
+                                Avisar
+                              </Button>
+                            )}
                             {status === 'pending' && (
                               <Button
                                 size="sm"
                                 onClick={() => { handleUpdateStatus(apt.id, 'confirmed'); setExpandedAppointmentId(null) }}
-                                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase tracking-wider h-8"
+                                className="flex-1 text-[10px] font-bold uppercase tracking-wider h-8"
+                                style={{ background: T.brand, color: '#fff', borderRadius: 8 }}
                               >
                                 Confirmar
                               </Button>
@@ -769,7 +978,8 @@ export function AppointmentsCalendar() {
                               <Button
                                 size="sm"
                                 onClick={() => { handleUpdateStatus(apt.id, 'completed'); setExpandedAppointmentId(null) }}
-                                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-wider h-8"
+                                className="flex-1 text-[10px] font-bold uppercase tracking-wider h-8"
+                                style={{ background: T.green, color: '#fff', borderRadius: 8 }}
                               >
                                 Concluir
                               </Button>
@@ -792,179 +1002,508 @@ export function AppointmentsCalendar() {
         open={isConsultationModalOpen}
         onOpenChange={setIsConsultationModalOpen}
       />
+
+      {/* Bottom Sheet de ações rápidas — Mobile */}
+      <Sheet open={!!mobileSheetApt} onOpenChange={(o) => { if (!o) setMobileSheetApt(null) }}>
+        <SheetContent side="bottom" style={{ borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '0 0 env(safe-area-inset-bottom)' }}>
+          {mobileSheetApt && (() => {
+            const apt    = mobileSheetApt
+            const status = normalizeStatus(apt.status)
+            const sc     = STATUS_COLORS[status] ?? { color: '#9CA3AF', label: status }
+            const clientName    = apt?.client?.name || apt?.contact?.name || apt?.whatsapp_number || 'Cliente'
+            const serviceName   = apt?.service?.name || 'Serviço'
+            const startTime     = apt.start_time ? format(parseISO(apt.start_time), 'HH:mm') : ''
+            const price         = formatCurrency(apt.price?.cents || apt.price_cents || 0, apt.price?.currency || apt.price_currency || 'BRL')
+            const phone         = getAppointmentPhone(apt)
+            const close         = () => setMobileSheetApt(null)
+
+            return (
+              <div style={{ padding: '20px 20px 28px' }}>
+                {/* Handle */}
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border)', margin: '0 auto 20px' }} />
+
+                {/* Client info */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${T.border}` }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: sc.color + '20', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: sc.color }}>
+                      {clientName.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: T.text, margin: 0 }}>{clientName}</p>
+                    <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>{serviceName} · {startTime} · {price}</p>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: sc.color, background: sc.color + '18', borderRadius: 20, padding: '4px 10px', flexShrink: 0 }}>
+                    {sc.label}
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {phone && (
+                    <button
+                      onClick={() => { openWhatsApp(phone, WA_TEMPLATES.confirmation(apt)); close() }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 14,
+                        padding: '14px 16px', borderRadius: 14,
+                        background: '#25D36618', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                        WebkitTapHighlightColor: 'transparent',
+                      }}
+                    >
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: '#25D36628', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <MessageCircle size={20} style={{ color: '#25D366' }} />
+                      </div>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: '#1d7a3f' }}>Avisar via WhatsApp</span>
+                    </button>
+                  )}
+
+                  {status === 'pending' && (
+                    <button
+                      onClick={() => { handleUpdateStatus(apt.id, 'confirmed'); close() }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 14,
+                        padding: '14px 16px', borderRadius: 14,
+                        background: T.chip, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                        WebkitTapHighlightColor: 'transparent',
+                      }}
+                    >
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: T.brand + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Check size={20} style={{ color: T.brand }} />
+                      </div>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: T.text }}>Confirmar agendamento</span>
+                    </button>
+                  )}
+
+                  {status === 'confirmed' && (
+                    <button
+                      onClick={() => { handleUpdateStatus(apt.id, 'completed'); close() }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 14,
+                        padding: '14px 16px', borderRadius: 14,
+                        background: T.green + '10', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                        WebkitTapHighlightColor: 'transparent',
+                      }}
+                    >
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: T.green + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Check size={20} style={{ color: T.green }} />
+                      </div>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: T.text }}>Concluir atendimento</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => { close(); setSelectedAppointmentForConsultation(apt); setIsConsultationModalOpen(true) }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      padding: '14px 16px', borderRadius: 14,
+                      background: T.chip, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: T.brand + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <FileText size={20} style={{ color: T.brand }} />
+                    </div>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: T.text }}>Anotações da sessão</span>
+                  </button>
+                </div>
+              </div>
+            )
+          })()}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }
 
-// Componente de Visualização Diária
-function DayView({ currentDate, appointments, professionals, selectedProfessional, onDateChange, onAppointmentClick }) {
-  // Filtrar agendamentos do dia selecionado (ordenados por horário)
-  const dayAppointments = useMemo(() => {
-    const filtered = appointments.filter(apt => {
-      if (!apt.start_time) return false
-      const aptDate = parseISO(apt.start_time)
-      return isSameDay(aptDate, currentDate)
-    })
-    
-    // Ordenar por horário de início
-    return filtered.sort((a, b) => {
-      const timeA = parseISO(a.start_time).getTime()
-      const timeB = parseISO(b.start_time).getTime()
-      return timeA - timeB
-    })
-  }, [appointments, currentDate])
+// Componente de Visualização Diária (grade completa de horários com drag & drop)
+function DayView({ currentDate, appointments, professionals, selectedProfessional, onDateChange, onAppointmentClick, highlightedAptId, onReschedule }) {
+  const [isDragging, setIsDragging] = useState(false)
+  const [draggedAptId, setDraggedAptId] = useState(null)
+  const [dragOverSlot, setDragOverSlot] = useState(null)
+  const gridRef = useRef(null)
 
-  // Filtrar por profissional se selecionado (mantém ordem por horário)
   const filteredAppointments = useMemo(() => {
-    if (selectedProfessional === 'all') return dayAppointments
-    // Filtrar mantendo a ordem original (já ordenada por horário)
-    return dayAppointments.filter(apt => {
+    const dayApts = appointments
+      .filter(apt => apt.start_time && isSameDay(parseISO(apt.start_time), currentDate))
+      .sort((a, b) => parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime())
+    if (selectedProfessional === 'all') return dayApts
+    return dayApts.filter(apt => {
       const profId = apt.professional?.id?.toString() || apt.account_user_id?.toString()
       return profId === selectedProfessional.toString()
     })
-  }, [dayAppointments, selectedProfessional])
+  }, [appointments, currentDate, selectedProfessional])
 
-  // Agrupar agendamentos por horário (agrupar em slots de 30 minutos)
-  const appointmentsByHour = useMemo(() => {
+  const appointmentsBySlot = useMemo(() => {
     const grouped = {}
     filteredAppointments.forEach(apt => {
-      if (!apt.start_time) return
-      const aptDate = parseISO(apt.start_time)
-      const hour = aptDate.getHours()
-      const minute = aptDate.getMinutes()
-      // Arredondar para o slot de 30 minutos mais próximo
-      const roundedMinute = minute < 30 ? 0 : 30
-      const timeKey = `${hour.toString().padStart(2, '0')}:${roundedMinute.toString().padStart(2, '0')}`
-      
-      if (!grouped[timeKey]) {
-        grouped[timeKey] = []
-      }
-      grouped[timeKey].push(apt)
+      const d = parseISO(apt.start_time)
+      const h = d.getHours()
+      const m = d.getMinutes() < 30 ? 0 : 30
+      const key = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      grouped[key] = grouped[key] ? [...grouped[key], apt] : [apt]
     })
-    
-    // Ordenar por horário (já ordenado, mas garantir ordem dentro de cada slot)
-    return Object.keys(grouped)
-      .sort()
-      .reduce((acc, time) => {
-        // Ordenar agendamentos dentro de cada slot por horário de início
-        acc[time] = grouped[time].sort((a, b) => {
-          const aTime = parseISO(a.start_time).getTime()
-          const bTime = parseISO(b.start_time).getTime()
-          return aTime - bTime
-        })
-        return acc
-      }, {})
+    return grouped
   }, [filteredAppointments])
 
-  // Gerar slots de horário (6h às 23h)
+  // Slots de 30 min de 6h às 23h
   const timeSlots = useMemo(() => {
     const slots = []
-    for (let hour = 6; hour <= 23; hour++) {
-      slots.push(`${hour.toString().padStart(2, '0')}:00`)
-      if (hour < 23) {
-        slots.push(`${hour.toString().padStart(2, '0')}:30`)
-      }
+    for (let h = 6; h <= 23; h++) {
+      slots.push(`${String(h).padStart(2, '0')}:00`)
+      if (h < 23) slots.push(`${String(h).padStart(2, '0')}:30`)
     }
     return slots
   }, [])
 
-  // Agrupar profissionais para visualização em colunas (se houver muitos)
-  const shouldShowByProfessional = professionals.length > 0 && professionals.length <= 8
+  // Scroll automático ao primeiro agendamento (ou 08:00) ao mudar de dia
+  useEffect(() => {
+    const grid = gridRef.current
+    if (!grid) return
+    const first = filteredAppointments[0]
+    const targetH = first?.start_time ? parseISO(first.start_time).getHours() : 8
+    const slotKey = `${String(Math.max(targetH - 1, 6)).padStart(2, '0')}:00`
+    const el = grid.querySelector(`[data-slot="${slotKey}"]`)
+    if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' })
+  }, [currentDate]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDragStart = (e, apt) => {
+    e.dataTransfer.setData('text/plain', String(apt.id))
+    e.dataTransfer.effectAllowed = 'move'
+    setIsDragging(true)
+    setDraggedAptId(String(apt.id))
+  }
+
+  const handleDragEnd = () => {
+    setIsDragging(false)
+    setDraggedAptId(null)
+    setDragOverSlot(null)
+  }
+
+  const handleSlotDrop = (e, slotTime) => {
+    e.preventDefault()
+    const aptId = e.dataTransfer.getData('text/plain')
+    const apt = appointments.find(a => String(a.id) === aptId)
+    if (!apt?.start_time) { handleDragEnd(); return }
+
+    const origStart = parseISO(apt.start_time)
+    const origEnd = apt.end_time ? parseISO(apt.end_time) : null
+    const durationMs = origEnd ? origEnd.getTime() - origStart.getTime() : 60 * 60 * 1000
+
+    const [h, m] = slotTime.split(':').map(Number)
+    const origSlotM = origStart.getMinutes() < 30 ? 0 : 30
+    if (isSameDay(origStart, currentDate) && origStart.getHours() === h && origSlotM === m) {
+      handleDragEnd(); return
+    }
+
+    const newStart = new Date(currentDate)
+    newStart.setHours(h, m, 0, 0)
+    const newEnd = new Date(newStart.getTime() + durationMs)
+
+    handleDragEnd()
+    onReschedule?.(aptId, newStart.toISOString(), newEnd.toISOString())
+  }
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-3xl border border-neutral-200 dark:border-gray-800 overflow-hidden shadow-sm">
       {/* Header do dia */}
-      <div className="px-8 py-6 border-b border-neutral-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <div className="px-8 py-6 border-b border-neutral-100 dark:border-gray-800">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">Visão Diária</p>
+            <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: T.brand }}>Visão Diária</p>
             <h3 className="text-xl font-bold text-neutral-900 dark:text-white capitalize">
               {format(currentDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
             </h3>
           </div>
           <div className="flex items-center gap-2">
-            <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider mr-2">
+            <div className="text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider mr-2" style={{ background: T.chip, color: T.brand }}>
               {filteredAppointments.length} Total
             </div>
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-8 rounded-full border-neutral-200"
-              onClick={() => onDateChange(addDays(currentDate, -1))}
-            >
+            <Button variant="outline" size="icon" className="size-8 rounded-full border-neutral-200" onClick={() => onDateChange(addDays(currentDate, -1))}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-8 rounded-full border-neutral-200"
-              onClick={() => onDateChange(addDays(currentDate, 1))}
-            >
+            <Button variant="outline" size="icon" className="size-8 rounded-full border-neutral-200" onClick={() => onDateChange(addDays(currentDate, 1))}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="p-8">
-        {filteredAppointments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-neutral-300">
-            <CalendarIcon className="h-16 w-16 mb-4 opacity-20" />
-            <p className="text-sm font-bold uppercase tracking-widest">Nenhum agendamento</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {Object.entries(appointmentsByHour).map(([timeSlot, slotAppointments]) => (
-              <div key={timeSlot} className="flex gap-6">
-                {/* Coluna de horário */}
-                <div className="w-16 flex-shrink-0 pt-4">
-                  <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider text-right">
-                    {timeSlot}
-                  </div>
+      {/* Grade de horários */}
+      <div ref={gridRef} className="overflow-y-auto max-h-[580px]">
+        <div className="px-6 py-2">
+          {timeSlots.map(slot => {
+            const isHour = slot.endsWith(':00')
+            const slotApts = appointmentsBySlot[slot] || []
+            const isDropTarget = isDragging && dragOverSlot === slot
+
+            return (
+              <div
+                key={slot}
+                data-slot={slot}
+                className={cn(
+                  'flex gap-4 transition-colors duration-100',
+                  isDropTarget && 'bg-blue-50 dark:bg-blue-900/20 rounded-xl'
+                )}
+                onDragOver={e => { e.preventDefault(); setDragOverSlot(slot) }}
+                onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverSlot(null) }}
+                onDrop={e => handleSlotDrop(e, slot)}
+              >
+                {/* Label de horário */}
+                <div className="w-14 flex-shrink-0 text-right pt-[10px]">
+                  {isHour ? (
+                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.brand }}>{slot}</span>
+                  ) : (
+                    <span className="text-[9px] text-neutral-300 dark:text-gray-700">{slot}</span>
+                  )}
                 </div>
 
-                {/* Coluna de agendamentos */}
-                <div className="flex-1 space-y-3">
-                  {slotAppointments.map(apt => (
-                    <div 
+                {/* Conteúdo do slot */}
+                <div className={cn(
+                  'flex-1 border-t min-h-[36px] py-1 space-y-2',
+                  isHour
+                    ? 'border-neutral-100 dark:border-gray-800'
+                    : 'border-dashed border-neutral-100/60 dark:border-gray-800/40'
+                )}>
+                  {slotApts.map(apt => {
+                    const aptStatus = normalizeStatus(apt.status)
+                    const aptStatusColor = STATUS_COLORS[aptStatus]?.color || '#9CA3AF'
+                    const aptClientName = apt?.client?.name || apt?.contact?.name || 'Cliente'
+                    const aptInitials = aptClientName.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+                    return (
+                    <div
                       key={apt.id}
-                      className="group flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 border border-transparent hover:border-neutral-100 dark:hover:border-gray-700 hover:bg-neutral-50 dark:hover:bg-gray-800 cursor-pointer"
-                      onClick={() => onAppointmentClick(apt)}
+                      draggable
+                      onDragStart={e => handleDragStart(e, apt)}
+                      onDragEnd={handleDragEnd}
+                      data-apt-id={apt.id}
+                      className={cn(
+                        'group flex items-center gap-3 p-3 rounded-2xl transition-all duration-200 border border-transparent cursor-grab active:cursor-grabbing select-none',
+                        String(apt.id) === String(highlightedAptId) && 'apt-highlight',
+                        isDragging && draggedAptId === String(apt.id) && 'opacity-40'
+                      )}
+                      style={{ borderLeft: `3px solid ${aptStatusColor}`, transition: 'background 100ms' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = T.bg }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                      onClick={() => !isDragging && onAppointmentClick(apt)}
                     >
+                      <div
+                        className="flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold"
+                        style={{ width: 30, height: 30, background: aptStatusColor + '20', color: aptStatusColor }}
+                      >
+                        {aptInitials}
+                      </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-bold text-neutral-900 dark:text-gray-100">
-                            {apt?.client?.name || apt?.contact?.name || 'Cliente'}
+                            {aptClientName}
                           </p>
                           <span className="text-[10px] font-bold text-neutral-500">
                             {formatCurrency(apt.price?.cents || apt.price_cents || 0, apt.price?.currency || apt.price_currency || 'BRL')}
                           </span>
                         </div>
-                        <p className="text-[11px] text-neutral-500">{apt?.service?.name || 'Serviço'}</p>
-                      </div>
-
-                      <div className="flex flex-col items-center">
-                        {normalizeStatus(apt.status) === 'completed' ? (
-                          <div className="size-4 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                            <div className="size-1.5 rounded-full bg-emerald-600" />
-                          </div>
-                        ) : normalizeStatus(apt.status) === 'confirmed' ? (
-                          <div className="size-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                            <div className="size-1.5 rounded-full bg-blue-600" />
-                          </div>
-                        ) : (
-                          <div className="size-4 rounded-full bg-neutral-100 dark:bg-gray-700 flex items-center justify-center">
-                            <div className="size-1.5 rounded-full bg-neutral-300 dark:bg-gray-500" />
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-[11px] text-neutral-500">{apt?.service?.name || 'Serviço'}</p>
+                          <span
+                            className="text-[10px] font-semibold px-1.5 py-0.5"
+                            style={{ borderRadius: 20, background: aptStatusColor + '18', color: aptStatusColor }}
+                          >
+                            {STATUS_COLORS[aptStatus]?.label || aptStatus}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  )})}
+
+                  {/* Indicador de soltar para slots vazios */}
+                  {isDropTarget && slotApts.length === 0 && (
+                    <div className="h-9 rounded-xl border-2 border-dashed flex items-center justify-center" style={{ borderColor: T.brand + '80' }}>
+                      <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.brand }}>Soltar aqui</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Barra de capacidade para o cabeçalho da view semanal
+function CapacityBar({ count, capacity }) {
+  const pct = capacity > 0 ? Math.min((count / capacity) * 100, 100) : 0
+  const colorClass =
+    pct >= 100 ? 'bg-red-500' :
+    pct >= 75  ? 'bg-amber-400' :
+    'bg-emerald-500'
+
+  return (
+    <div className="mt-1.5">
+      <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-neutral-400 mb-0.5">
+        <span>{count}/{capacity}</span>
+        {pct >= 100 && <span className="text-red-500">Lotado</span>}
+      </div>
+      <div className="h-1 w-full bg-neutral-100 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div
+          className={cn('h-full rounded-full transition-all duration-300', colorClass)}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
+// Card compacto para a view semanal (com suporte a drag)
+function WeekAppointmentCard({ apt, onDragStart, onDragEnd, isDragging, onClick }) {
+  const status = normalizeStatus(apt.status)
+  const startTime = apt.start_time ? format(parseISO(apt.start_time), 'HH:mm') : ''
+  const clientName = apt?.client?.name || apt?.contact?.name || 'Cliente'
+
+  const cardStyle = Object.fromEntries(
+    Object.entries(STATUS_CONFIG).map(([s, c]) => [
+      s,
+      cn(c.border, c.card, c.dim && 'opacity-60'),
+    ])
+  )
+
+  return (
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      className={cn(
+        'px-2 py-1.5 rounded-lg border-l-2 transition-all select-none cursor-grab active:cursor-grabbing',
+        isDragging ? 'opacity-40' : 'hover:brightness-95',
+        cardStyle[status] || cardStyle.pending
+      )}
+      onClick={onClick}
+    >
+      <p className="text-[9px] font-bold text-neutral-400">{startTime}</p>
+      <p className="text-[11px] font-semibold text-neutral-800 dark:text-gray-200 truncate leading-tight">
+        {clientName}
+      </p>
+    </div>
+  )
+}
+
+// View semanal com 7 colunas, barra de capacidade e drag & drop
+function WeekView({ currentDate, appointments, onDayClick, onAppointmentClick, onReschedule }) {
+  const [dragOverDayKey, setDragOverDayKey] = useState(null)
+  const [draggedAptId, setDraggedAptId] = useState(null)
+
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 })
+
+  const days = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
+    [weekStart]
+  )
+
+  const aptsByDay = useMemo(() => {
+    return days.map(day => {
+      const dayApts = appointments
+        .filter(apt => apt.start_time && isSameDay(parseISO(apt.start_time), day))
+        .sort((a, b) => parseISO(a.start_time) - parseISO(b.start_time))
+      const activeCount = dayApts.filter(
+        apt => !INACTIVE_STATUSES.has(normalizeStatus(apt.status))
+      ).length
+      return { day, apts: dayApts, activeCount }
+    })
+  }, [days, appointments])
+
+  const handleDragStart = (e, apt) => {
+    e.dataTransfer.setData('text/plain', String(apt.id))
+    e.dataTransfer.effectAllowed = 'move'
+    setDraggedAptId(String(apt.id))
+  }
+
+  const handleDragEnd = () => {
+    setDraggedAptId(null)
+    setDragOverDayKey(null)
+  }
+
+  const handleDrop = (e, targetDay) => {
+    e.preventDefault()
+    const aptId = e.dataTransfer.getData('text/plain')
+    const apt = appointments.find(a => String(a.id) === aptId)
+    if (!apt?.start_time) { handleDragEnd(); return }
+
+    const origStart = parseISO(apt.start_time)
+    if (isSameDay(origStart, targetDay)) { handleDragEnd(); return }
+
+    const origEnd = apt.end_time ? parseISO(apt.end_time) : null
+    const durationMs = origEnd ? origEnd.getTime() - origStart.getTime() : 60 * 60 * 1000
+
+    const newStart = new Date(targetDay)
+    newStart.setHours(origStart.getHours(), origStart.getMinutes(), 0, 0)
+    const newEnd = new Date(newStart.getTime() + durationMs)
+
+    handleDragEnd()
+    onReschedule?.(aptId, newStart.toISOString(), newEnd.toISOString())
+  }
+
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-neutral-200 dark:border-gray-800 overflow-hidden shadow-sm">
+      <div className="grid grid-cols-7 divide-x divide-neutral-100 dark:divide-gray-800">
+        {aptsByDay.map(({ day, apts, activeCount }) => {
+          const dayKey = day.toISOString()
+          const isDropTarget = dragOverDayKey === dayKey && draggedAptId !== null
+
+          return (
+            <div
+              key={dayKey}
+              className={cn(
+                'flex flex-col min-h-[320px] transition-colors duration-100',
+                isDropTarget && 'bg-blue-50/60 dark:bg-blue-900/10'
+              )}
+              onDragOver={e => { e.preventDefault(); setDragOverDayKey(dayKey) }}
+              onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverDayKey(null) }}
+              onDrop={e => handleDrop(e, day)}
+            >
+              {/* Cabeçalho com capacidade */}
+              <div
+                className={cn(
+                  'px-3 py-3 border-b border-neutral-100 dark:border-gray-800 cursor-pointer hover:bg-neutral-50 dark:hover:bg-gray-800/50 transition-colors',
+                  isDropTarget && 'bg-[#EEF2FA]/70'
+                )}
+                style={isToday(day) ? { background: T.chip } : {}}
+                onClick={() => onDayClick(day)}
+              >
+                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: isToday(day) ? T.brand : undefined }}>
+                  {format(day, 'EEE', { locale: ptBR })}
+                </p>
+                <p className="text-lg font-bold leading-none mt-0.5" style={{ color: isToday(day) ? T.brand : undefined }}>
+                  {format(day, 'd')}
+                </p>
+                <CapacityBar count={activeCount} capacity={DAILY_CAPACITY} />
+              </div>
+
+              {/* Cards */}
+              <div className="flex-1 p-2 space-y-1.5 overflow-y-auto max-h-[240px]">
+                {apts.map(apt => (
+                  <WeekAppointmentCard
+                    key={apt.id}
+                    apt={apt}
+                    onDragStart={e => handleDragStart(e, apt)}
+                    onDragEnd={handleDragEnd}
+                    isDragging={draggedAptId === String(apt.id)}
+                    onClick={() => onAppointmentClick(apt)}
+                  />
+                ))}
+
+                {isDropTarget && (
+                  <div className="h-9 rounded-lg border-2 border-dashed flex items-center justify-center" style={{ borderColor: T.brand + '80' }}>
+                    <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: T.brand }}>Reagendar aqui</span>
+                  </div>
+                )}
+
+                {apts.length === 0 && !isDropTarget && (
+                  <p className="text-center text-[10px] text-neutral-200 dark:text-gray-700 pt-6 font-medium select-none">—</p>
+                )}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -988,7 +1527,7 @@ function AppointmentCard({ appointment, onClick }) {
       <div className="text-center min-w-[45px]">
         <span className={cn(
           "text-[10px] font-bold block",
-          status === 'completed' ? 'text-neutral-400' : 'text-blue-600'
+          STATUS_CONFIG[status]?.iconColor || 'text-blue-600'
         )}>
           {startTime}
         </span>
@@ -998,7 +1537,9 @@ function AppointmentCard({ appointment, onClick }) {
         <div className="flex items-center justify-between">
           <p className={cn(
             "text-sm font-bold",
-            status === 'completed' ? 'text-neutral-400 line-through' : 'text-neutral-900 dark:text-gray-100'
+            status === 'canceled' ? 'text-red-400 line-through' :
+            status === 'completed' ? 'text-neutral-400 line-through' :
+            'text-neutral-900 dark:text-gray-100'
           )}>
             {clientName}
           </p>
@@ -1008,23 +1549,7 @@ function AppointmentCard({ appointment, onClick }) {
       </div>
 
       <div className="flex flex-col items-center">
-        {status === 'completed' ? (
-          <div className="size-4 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-            <div className="size-1.5 rounded-full bg-emerald-600" />
-          </div>
-        ) : status === 'confirmed' ? (
-          <div className="size-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-            <div className="size-1.5 rounded-full bg-blue-600" />
-          </div>
-        ) : status === 'pending' ? (
-          <div className="size-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center animate-pulse">
-            <div className="size-1.5 rounded-full bg-yellow-600" />
-          </div>
-        ) : (
-          <div className="size-4 rounded-full bg-neutral-100 dark:bg-gray-700 flex items-center justify-center">
-            <div className="size-1.5 rounded-full bg-neutral-300 dark:bg-gray-500" />
-          </div>
-        )}
+        <StatusDot status={status} />
       </div>
     </div>
   )

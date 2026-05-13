@@ -62,7 +62,8 @@ module Api
         params.require(:service).permit(
           :name, :description, :unit,
           :cost_price_cents, :selling_price_cents,
-          :currency, :internal_code
+          :currency, :internal_code,
+          :modality, :meeting_url
         )
       end
 
@@ -72,6 +73,8 @@ module Api
           name: service.name,
           description: service.description,
           unit: service.unit,
+          modality: Service::MODALITIES.key(service.modality || 0)&.to_s || 'presencial',
+          meeting_url: service.meeting_url,
           cost_price: {
             cents: service.cost_price_cents,
             currency: service.currency,

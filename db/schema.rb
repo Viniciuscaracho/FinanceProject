@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_02_230401) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_08_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -89,9 +89,14 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_02_230401) do
     t.datetime "google_token_expires_at"
     t.string "google_calendar_id", default: "primary"
     t.boolean "google_calendar_connected", default: false, null: false
+    t.boolean "directory_visible", default: false, null: false
+    t.string "profession_category"
+    t.text "directory_description"
     t.index ["company_id"], name: "index_accounts_on_company_id"
+    t.index ["directory_visible"], name: "index_accounts_on_directory_visible"
     t.index ["discarded_at"], name: "index_accounts_on_discarded_at"
     t.index ["owner_id"], name: "index_accounts_on_owner_id"
+    t.index ["profession_category"], name: "index_accounts_on_profession_category"
     t.index ["referral_code_id"], name: "index_accounts_on_referral_code_id"
     t.index ["related_to_id"], name: "index_accounts_on_related_to_id"
     t.index ["subscription_id"], name: "index_accounts_on_subscription_id"
@@ -153,6 +158,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_02_230401) do
     t.datetime "updated_at", null: false
     t.string "address_number"
     t.string "ibge_city_code"
+    t.decimal "latitude", precision: 10, scale: 7
+    t.decimal "longitude", precision: 10, scale: 7
     t.index ["addressable_type", "addressable_id"], name: "index_addresses_on_addressable"
   end
 
@@ -261,6 +268,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_02_230401) do
     t.datetime "pix_reminder_sent_at"
     t.boolean "overdue_notification_sent", default: false, null: false
     t.datetime "overdue_notification_sent_at"
+    t.jsonb "additional_service_ids", default: [], null: false
+    t.string "manage_token"
     t.index ["account_id", "account_user_id", "status", "start_time"], name: "index_appointments_on_account_professional_status_time"
     t.index ["account_id", "start_time", "status"], name: "index_appointments_on_account_time_status"
     t.index ["account_id"], name: "index_appointments_on_account_id"
@@ -269,6 +278,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_02_230401) do
     t.index ["billing_notification_sent"], name: "index_appointments_on_billing_notification_sent"
     t.index ["contact_id"], name: "index_appointments_on_contact_id"
     t.index ["google_calendar_event_id"], name: "index_appointments_on_google_calendar_event_id"
+    t.index ["manage_token"], name: "index_appointments_on_manage_token", unique: true
     t.index ["overdue_notification_sent"], name: "index_appointments_on_overdue_notification_sent"
     t.index ["parent_appointment_id"], name: "index_appointments_on_parent_appointment_id"
     t.index ["payment_status"], name: "index_appointments_on_payment_status"
@@ -635,6 +645,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_02_230401) do
     t.integer "offer_type_cd"
     t.bigint "selling_price_cents", default: 0, null: false
     t.bigint "cost_price_cents", default: 0, null: false
+    t.integer "modality", default: 0, null: false
+    t.string "meeting_url"
     t.index ["account_id", "discarded_at"], name: "index_offers_on_account_id_and_discarded_at"
     t.index ["account_id", "enabled"], name: "index_offers_on_account_id_and_enabled"
     t.index ["account_id", "internal_code"], name: "index_offers_on_account_id_and_internal_code"

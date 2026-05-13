@@ -51,8 +51,16 @@
 </div>
 <% end %>
 
+<% if @manage_url.present? %>
+<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+  <p style="margin:0 0 6px;font-size:14px;color:#15803d;font-weight:600;">⚙️ Gerenciar agendamento</p>
+  <p style="margin:0 0 10px;font-size:13px;color:#166534;">Cancele ou reagende com até <%= @cancel_reschedule_hours %>h de antecedência:</p>
+  <a href="<%= @manage_url %>" style="display:inline-block;background:#16a34a;color:#fff;text-decoration:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:500;word-break:break-all;">Acessar link de gerenciamento</a>
+</div>
+<% end %>
+
 <p class="note">
-  Dúvidas ou precisar cancelar? Entre em contato pelo WhatsApp
+  Dúvidas? Entre em contato pelo WhatsApp
   <% if @company_whatsapp.present? %>
     <a href="https://wa.me/<%= @company_whatsapp %>" style="color:#2563eb;">clicando aqui</a>.
   <% else %>

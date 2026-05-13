@@ -32,7 +32,6 @@ export function BankAccountProvider({ children }) {
   // Função para atualizar saldo com base na conta selecionada
   const updateBalanceFromAccount = useCallback((account) => {
     if (!account) {
-      console.log('⚠️ Conta não encontrada')
       setBalance(0)
       return
     }
@@ -46,11 +45,6 @@ export function BankAccountProvider({ children }) {
       accountBalance = account.balance
     }
     
-    console.log('💰 Atualizando saldo:', {
-      balance_cents: account.balance_cents,
-      balance: account.balance,
-      calculated: accountBalance
-    })
     
     setBalance(accountBalance)
     setLastUpdated(new Date())
@@ -59,13 +53,6 @@ export function BankAccountProvider({ children }) {
   // Atualizar saldo quando a conta selecionada mudar ou quando os dados de bank accounts forem atualizados
   useEffect(() => {
     if (selectedAccount && bankAccounts.length > 0) {
-      console.log('💳 Dados da conta recebidos:', {
-        id: selectedAccount.id,
-        name: selectedAccount.name,
-        balance_cents: selectedAccount.balance_cents,
-        balance: selectedAccount.balance,
-        raw: selectedAccount
-      })
       updateBalanceFromAccount(selectedAccount)
     } else if (bankAccounts.length === 0) {
       setBalance(0)
@@ -94,7 +81,6 @@ export function BankAccountProvider({ children }) {
         }
       }
     } catch (error) {
-      console.error('Erro ao atualizar saldo:', error)
     } finally {
       setBalanceLoading(false)
     }

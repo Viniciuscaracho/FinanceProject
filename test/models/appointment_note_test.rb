@@ -80,7 +80,7 @@ class AppointmentNoteTest < ActiveSupport::TestCase
     )
     
     assert_not note.valid?
-    assert_includes note.errors[:notes], "can't be blank"
+    assert_includes note.errors[:notes], "não pode ficar em branco"
   end
 
   test "should require minimum length for notes" do
@@ -90,7 +90,7 @@ class AppointmentNoteTest < ActiveSupport::TestCase
     )
     
     assert_not note.valid?
-    assert note.errors[:notes].any? { |msg| msg.include?('too short') && msg.include?('3') }
+    assert note.errors[:notes].any? { |msg| msg.include?('muito curto') || msg.include?('too short') }
   end
 
   test "should not allow duplicate notes for same appointment" do

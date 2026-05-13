@@ -35,7 +35,28 @@ module Api
       private
 
       def valid_webhook?
-        true
+        # Meta/WhatsApp Cloud API: X-Hub-Signature-256: sha256=<hmac>
+        if (hub_sig = request.headers['X-Hub-Signature-256']).present?
+          app_secret = ENV['WHATSAPP_APP_SECRET']
+          return false if app_secret.blank?
+
+          expected = OpenSSL::HMAC.hexdigest('SHA256', app_secret, request.raw_post)
+          received = hub_sig.delete_prefix('sha256=')
+          return ActiveSupport::SecurityUtils.secure_compare(expected, received)
+        end
+
+        # Twilio: X-Twilio-Signature
+        if (twilio_sig = request.headers['X-Twilio-Signature']).present?
+          auth_token = ENV['TWILIO_AUTH_TOKEN']
+          return false if auth_token.blank?
+
+          validator = Twilio::Security::RequestValidator.new(auth_token)
+          return validator.validate(request.original_url, request.POST, twilio_sig)
+        end
+
+        false
+      rescue StandardError
+        false
       end
 
       def extract_message_data
@@ -84,7 +105,7 @@ module Api
       end
 
       def verify_token
-        ENV['WHATSAPP_VERIFY_TOKEN'] || 'default_verify_token'
+        ENV.fetch('WHATSAPP_VERIFY_TOKEN') { raise 'WHATSAPP_VERIFY_TOKEN not configured' }
       end
     end
   end

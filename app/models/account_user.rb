@@ -155,7 +155,7 @@ class AccountUser < ApplicationRecord
     end_hour_value = day_config[:end_hour] || day_config['end_hour']
     
     {
-      enabled: enabled_value != false && enabled_value != 'false',
+      enabled: enabled_value == true || enabled_value == 'true',
       start_hour: start_hour_value || 9,
       end_hour: end_hour_value || 18
     }

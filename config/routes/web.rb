@@ -25,9 +25,7 @@ namespace :api do
     post 'auth/supabase_login', to: 'auth#supabase_login'
     get 'auth/me', to: 'auth#me'
     post 'auth/logout', to: 'auth#logout'
-    get 'auth/test_user', to: 'auth#test_user'
-    get 'auth/debug_user', to: 'auth#debug_user'
-    get 'auth/test_logs', to: 'auth#test_logs'
+
   end
 end
 
@@ -45,6 +43,11 @@ get '/oauth/callback', to: 'application#oauth_callback'
 get '/agendar/:token', to: 'public/appointment_booking#show', as: :public_appointment_booking
 post '/agendar/:token/book', to: 'public/appointment_booking#create', as: :public_appointment_booking_create
 get '/agendamento/sucesso', to: 'public/appointment_booking#success', as: :appointment_booking_success
+
+# Client appointment self-management (cancel / reschedule)
+get  '/agendar/gerenciar/:manage_token',            to: 'public/appointment_manage#show',      as: :appointment_manage
+post '/agendar/gerenciar/:manage_token/cancel',     to: 'public/appointment_manage#cancel',    as: :appointment_manage_cancel
+post '/agendar/gerenciar/:manage_token/reschedule', to: 'public/appointment_manage#reschedule', as: :appointment_manage_reschedule
 
 unauthenticated :user do
   get '/users', to: redirect('/users/sign_up')

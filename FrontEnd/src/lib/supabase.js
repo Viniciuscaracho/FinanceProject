@@ -8,8 +8,6 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 const isSupabaseConfigured = supabaseUrl && supabaseAnonKey
 
 if (!isSupabaseConfigured) {
-  console.warn('⚠️ Supabase não configurado. Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no arquivo .env')
-  console.warn('⚠️ Funcionalidades do Supabase estarão desabilitadas até a configuração')
 }
 
 // Criar cliente Supabase apenas se estiver configurado
@@ -25,7 +23,6 @@ if (isSupabaseConfigured) {
       }
     })
   } catch (error) {
-    console.error('Erro ao criar cliente Supabase:', error)
   }
 } else {
   // Criar um objeto mock para evitar erros quando Supabase não está configurado
@@ -82,12 +79,10 @@ export const getCurrentUser = async () => {
   try {
     const { data: { user }, error } = await supabase.auth.getUser()
     if (error) {
-      console.error('Erro ao obter usuário:', error)
       return null
     }
     return user
   } catch (error) {
-    console.error('Erro ao obter usuário:', error)
     return null
   }
 }
@@ -101,12 +96,10 @@ export const getCurrentSession = async () => {
   try {
     const { data: { session }, error } = await supabase.auth.getSession()
     if (error) {
-      console.error('Erro ao obter sessão:', error)
       return null
     }
     return session
   } catch (error) {
-    console.error('Erro ao obter sessão:', error)
     return null
   }
 }

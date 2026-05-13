@@ -110,7 +110,6 @@ export function AppointmentReports() {
       const response = await apiService.getAppointmentProfessionals()
       setProfessionals(Array.isArray(response) ? response : [])
     } catch (err) {
-      console.error('Error loading professionals:', err)
     }
   }
 
@@ -134,7 +133,6 @@ export function AppointmentReports() {
       setSummary(summaryResponse?.summary || null)
       setByProfessional(byProfessionalResponse?.report || [])
     } catch (err) {
-      console.error('Error loading reports:', err)
       const errorMessage = err?.response?.data?.error || err?.message || 'Erro ao carregar relatórios. Verifique sua conexão e tente novamente.'
       setError(errorMessage)
       setSummary(null)
@@ -245,7 +243,6 @@ export function AppointmentReports() {
       
       URL.revokeObjectURL(url)
     } catch (err) {
-      console.error('Error exporting CSV:', err)
       setError('Erro ao exportar relatório. Tente novamente.')
     } finally {
       setExporting(false)
@@ -283,7 +280,7 @@ export function AppointmentReports() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="relative z-10 space-y-6 md:space-y-8 p-4 md:p-6 w-full max-w-[calc(100vw-2rem)] sm:max-w-md md:max-w-2xl lg:max-w-3xl mx-auto">
+      <div className="relative z-10 space-y-3 w-full max-w-[calc(100vw-2rem)] sm:max-w-md md:max-w-2xl lg:max-w-3xl mx-auto">
         {/* Header - Bold Typography */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
@@ -292,7 +289,7 @@ export function AppointmentReports() {
                 Relatórios de Agendamentos
               </span>
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
               Análise de serviços, comissões e repasses
             </p>
           </div>

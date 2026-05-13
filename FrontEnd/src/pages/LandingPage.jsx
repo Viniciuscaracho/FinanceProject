@@ -1,685 +1,677 @@
-import { useState, useEffect } from 'react'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts'
-import { motion } from 'framer-motion'
-import { useIsMobile } from '@/hooks/use-mobile'
+import { useState, useEffect, useRef } from 'react'
+import { motion, useInView } from 'framer-motion'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
-import { 
-  Instagram, 
-  Facebook, 
-  Twitter, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Star, 
-  ChevronRight,
-  CheckCircle2
-} from 'lucide-react'
-import { FreeFinancialTool } from '@/components/design/FreeFinancialTool'
+} from '@/components/ui/accordion'
+import { Check, ArrowRight, Instagram, Twitter, Mail } from 'lucide-react'
 import FinanceDashboard from '@/components/design/FinanceDashboard'
 
-export function LandingPage() {
-  const isMobile = useIsMobile()
-  const [scrollY, setScrollY] = useState(0)
-  const [showStickyHeader, setShowStickyHeader] = useState(false)
+/* ─── Tokens ─────────────────────────────────────────────────
+   Aplicados como inline style onde dark mode não deve interferir.
+   Tailwind usado apenas para layout e spacing.
+──────────────────────────────────────────────────────────── */
+const T = {
+  bg:      '#F9F8F5',   // off-white quente
+  white:   '#FFFFFF',
+  dark:    '#0E0E0E',   // quase-preto, não slate-900
+  brand:   '#4C60AA',
+  text:    '#111111',
+  muted:   '#6B6B6B',
+  border:  '#E3E2DF',
+  light:   '#EFEFEC',
+}
 
-  // SEO e Metadados
-  useEffect(() => {
-    document.title = "Orbi | Gestão de Agenda para Profissionais"
-    const metaDescription = document.querySelector('meta[name="description"]')
-    if (metaDescription) {
-      metaDescription.setAttribute("content", "Agenda inteligente, controle financeiro e gestão de comissões para advogados, professores de idiomas e personal trainers. Teste grátis por 14 dias.")
-    }
-  }, [])
+/* ─── Tipografia: Space Grotesk do index.html ────────────── */
+const DISPLAY = { fontFamily: "'Space Grotesk', system-ui, sans-serif" }
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY)
-      setShowStickyHeader(window.scrollY > 300)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+/* ─── Sub-componentes de produto ─────────────────────────── */
 
-  // Dados para os gráficos
-  const monthlyData = [
-    { name: 'Jan', receitas: 4200, despesas: 2400 },
-    { name: 'Fev', receitas: 3800, despesas: 2200 },
-    { name: 'Mar', receitas: 4500, despesas: 2800 },
-    { name: 'Abr', receitas: 5200, despesas: 3000 },
-    { name: 'Mai', receitas: 4800, despesas: 2600 },
-    { name: 'Jun', receitas: 5500, despesas: 3200 },
-  ]
+const AGENDA = [
+  { time: '09:00', name: 'Rafael Mendes',  tag: 'Consultoria Jurídica', price: 'R$ 350', done: true  },
+  { time: '11:00', name: 'Patrícia Lima',  tag: 'Treino Funcional',     price: 'R$ 90',  active: true },
+  { time: '14:00', name: 'Bruno Alves',    tag: 'Aula de Espanhol',     price: 'R$ 110' },
+  { time: '15:30', name: 'Camila Torres',  tag: 'Avaliação Física',     price: 'R$ 150' },
+  { time: '17:00', name: 'Diego Souza',    tag: 'Contrato Imobiliário', price: 'R$ 480' },
+]
 
-  const categoryData = [
-    { name: 'Consultas', value: 45, color: '#3F5B8A' },
-    { name: 'Aulas',     value: 30, color: '#5B7AA8' },
-    { name: 'Treinos',   value: 15, color: '#7A9D96' },
-    { name: 'Outros',    value: 10, color: '#D4A574' },
-  ]
-
-  const commissionData = [
-    { name: 'Ana',    comissao: 1250, servicos: 28, percentual: '40%' },
-    { name: 'Carlos', comissao: 980,  servicos: 22, percentual: '35%' },
-    { name: 'Bianca', comissao: 1450, servicos: 35, percentual: '50%' },
-  ]
-
+function AppPreview() {
   return (
-    <>
-    <main className="bg-white text-slate-900 selection:bg-[#3F5B8A] selection:text-white">
-      
-      {/* STICKY HEADER COM CTA */}
-      <div
-        className={`fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200 transition-all duration-300 ${
-          showStickyHeader ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-            Orbi
-          </span>
-          <a
-            href="#signup"
-            className="px-4 py-2 bg-[#3F5B8A] text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-[#34495E] transition whitespace-nowrap flex-shrink-0"
-          >
-            Começar Agora
-          </a>
+    <div style={{ background: T.white, borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.10)' }}>
+      {/* browser chrome */}
+      <div style={{ background: T.light, borderBottom: `1px solid ${T.border}`, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 5 }}>
+          {['#FC6058','#FEC02F','#2ACA44'].map(c => <span key={c} style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'block' }} />)}
+        </div>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 6, padding: '3px 16px', fontSize: 11, color: T.muted, width: 180, textAlign: 'center' }}>
+            app.orbi.com.br
+          </div>
         </div>
       </div>
 
-      {/* ================= HERO VISUAL ================= */}
-      <section className="w-full bg-[#F8FAFC] py-20 sm:py-32">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          
-          {/* LEFT */}
-          <div className="text-center lg:text-left space-y-8">
-            <h1 className="text-4xl lg:text-6xl font-bold text-[#1A1C1E] leading-tight tracking-tight">
-              Sua agenda organizada,
-              <br className="hidden sm:block" />
-              <span className="text-[#3F5B8A]"> suas finanças no controle</span>
-            </h1>
-
-            <p className="text-lg text-slate-600 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              Para advogados, professores de idiomas e personal trainers que querem parar de perder tempo com planilhas. <span className="text-[#1A1C1E] font-semibold">Simples, rápido e feito para você.</span>
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-              <a 
-                href="#free-tool"
-                className="w-full sm:w-auto px-8 py-4 rounded-lg bg-[#3F5B8A] text-white font-semibold hover:bg-[#34495E] transition-all shadow-sm text-center"
-              >
-                Testar simulador grátis
-              </a>
-
-              <a 
-                href="#signup"
-                className="w-full sm:w-auto px-8 py-4 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition-all bg-white font-semibold text-center"
-              >
-                Criar minha conta
-              </a>
+      {/* app */}
+      <div style={{ display: 'flex', height: 400 }}>
+        {/* sidebar */}
+        <div style={{ width: 52, background: '#0E1117', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 16, gap: 12 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: T.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: '#fff', ...DISPLAY }}>O</div>
+          <div style={{ width: 1, background: '#ffffff18', height: 1, width: '60%', marginTop: 4 }} />
+          {[
+            <path key="cal" d="M8 2v3M16 2v3M3 8h18M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" strokeWidth="1.5" strokeLinecap="round" />,
+            <path key="dol" d="M12 2v20M17 5H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6" strokeWidth="1.5" strokeLinecap="round" />,
+            <path key="usr" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeWidth="1.5" strokeLinecap="round" />,
+          ].map((path, i) => (
+            <div key={i} style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: i === 0 ? '#ffffff14' : 'transparent' }}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke={i === 0 ? '#fff' : '#ffffff50'}>{path}</svg>
             </div>
-          </div>
+          ))}
+        </div>
 
-          {/* RIGHT - PREVIEW (SIMULADOR REAL) */}
-          <div className="relative w-full max-w-5xl mx-auto lg:mx-0" id="free-tool">
-            <div className="relative bg-white rounded-2xl shadow-xl border border-slate-200 p-2 sm:p-4 transition-all hover:shadow-2xl">
-              <div className="bg-slate-50/30 rounded-xl p-2 sm:p-4 border border-slate-100">
-                <FreeFinancialTool />
+        {/* main */}
+        <div style={{ flex: 1, padding: 20, overflowY: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+            <div>
+              <p style={{ fontSize: 11, color: T.muted, marginBottom: 2, ...DISPLAY }}>Segunda-feira, 19 Dez</p>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: T.text, margin: 0, ...DISPLAY }}>Agenda de hoje</h3>
+            </div>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ fontSize: 17, fontWeight: 700, color: T.text, margin: 0, lineHeight: 1, ...DISPLAY }}>8</p>
+                <p style={{ fontSize: 10, color: T.muted, margin: '2px 0 0' }}>atendimentos</p>
+              </div>
+              <div style={{ width: 1, background: T.border }} />
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#16a34a', margin: 0, lineHeight: 1, ...DISPLAY }}>R$ 1.180</p>
+                <p style={{ fontSize: 10, color: T.muted, margin: '2px 0 0' }}>previsto</p>
               </div>
             </div>
           </div>
 
-        </div>
-      </section>
-
-
-      {/* ================= CALENDÁRIO VISUAL ================= */}
-      <section className="py-16 sm:py-24 bg-slate-50 border-t border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="mb-10 text-center sm:text-left"
-          >
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-neutral-900 tracking-tight">
-              Agenda visual e organizada
-            </h2>
-            <p className="text-base text-neutral-600">
-              Veja todos os agendamentos do mês e os compromissos do dia em um só lugar com interface de alta fidelidade.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-8">
-            {/* Calendário */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="lg:col-span-3 bg-white border border-neutral-200 rounded-3xl p-5 sm:p-6 shadow-sm"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-lg font-bold text-neutral-900">Dezembro</h3>
-                  <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">2025</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {AGENDA.map(apt => (
+              <div key={apt.name} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 10px', borderRadius: 10,
+                background: apt.active ? '#EEF2FA' : 'transparent',
+                border: apt.active ? `1px solid #C7D4EE` : '1px solid transparent',
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 700, width: 36, flexShrink: 0, color: apt.done ? '#BDBDBD' : apt.active ? T.brand : T.muted, ...DISPLAY }}>{apt.time}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: apt.done ? '#BDBDBD' : T.text, margin: 0, textDecoration: apt.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...DISPLAY }}>{apt.name}</p>
+                  <p style={{ fontSize: 10, color: apt.done ? '#DCDCDC' : T.muted, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{apt.tag}</p>
                 </div>
-                <div className="flex gap-2">
-                  <div className="size-7 rounded-full border border-neutral-100 flex items-center justify-center text-neutral-400 cursor-not-allowed">
-                    <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
-                  </div>
-                  <div className="size-7 rounded-full border border-neutral-100 flex items-center justify-center text-neutral-400 cursor-not-allowed">
-                    <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
-                  </div>
-                </div>
+                <span style={{ fontSize: 11, fontWeight: 600, color: apt.done ? '#BDBDBD' : '#374151', flexShrink: 0 }}>{apt.price}</span>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: apt.done ? '#6ee7b7' : apt.active ? T.brand : T.border }} />
               </div>
+            ))}
+          </div>
 
-              <div className="grid grid-cols-7 gap-1 mb-2">
-                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
-                  <div key={day} className="text-center text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-400 py-1">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              
-              <div className="grid grid-cols-7 gap-1.5">
-                {/* Dias vazios do mês anterior (ex: Dez 2025 começa na segunda-feira) */}
-                <div className="aspect-square flex items-center justify-center text-[10px] text-neutral-300">30</div>
-                
-                {[
-                  { d: 1, c: 4, type: 'full' }, { d: 2, c: 2, type: 'partial' }, { d: 3, c: 5, type: 'full' }, 
-                  { d: 4, c: 0 }, { d: 5, c: 8, type: 'full' }, { d: 6, c: 3, type: 'partial' }, { d: 7, c: 0 },
-                  { d: 8, c: 6, type: 'full' }, { d: 9, c: 1, type: 'low' }, { d: 10, c: 4, type: 'full' }, 
-                  { d: 11, c: 2, type: 'low' }, { d: 12, c: 7, type: 'full' }, { d: 13, c: 10, type: 'full' }, { d: 14, c: 0 },
-                  { d: 15, c: 5, type: 'full' }, { d: 16, c: 3, type: 'low' }, { d: 17, c: 4, type: 'full' }, 
-                  { d: 18, c: 0 }, { d: 19, c: 12, type: 'full', today: true }, { d: 20, c: 15, type: 'full' }, { d: 21, c: 0 },
-                  { d: 22, c: 4, type: 'low' }, { d: 23, c: 2, type: 'low' }, { d: 24, c: 1, type: 'low' }, 
-                  { d: 25, c: 0 }, { d: 26, c: 5, type: 'full' }, { d: 27, c: 8, type: 'full' }, { d: 28, c: 0 },
-                  { d: 29, c: 3, type: 'low' }, { d: 30, c: 6, type: 'full' }, { d: 31, c: 4, type: 'full' }
-                ].map((date) => (
-                  <div
-                    key={date.d}
-                    className={`aspect-square rounded-lg border flex flex-col items-center justify-center relative transition-all duration-300 hover:scale-105 group cursor-default ${
-                      date.today 
-                        ? 'ring-2 ring-blue-500 ring-offset-2' 
-                        : ''
-                    } ${
-                      date.c > 0
-                        ? 'bg-white border-neutral-200 shadow-sm'
-                        : 'bg-neutral-50 border-transparent text-neutral-300'
-                    }`}
-                  >
-                    <span className={`text-[11px] font-bold ${date.c > 0 ? 'text-neutral-900' : 'text-neutral-400'}`}>
-                      {date.d}
-                    </span>
-                    
-                    {date.c > 0 && (
-                      <div className="absolute bottom-1 flex gap-0.5">
-                        {Array.from({ length: Math.min(date.c, 3) }).map((_, i) => (
-                          <div key={i} className={`size-0.5 rounded-full ${date.c > 6 ? 'bg-blue-600' : 'bg-blue-300'}`} />
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Popover simulado no hover */}
-                    {date.c > 0 && (
-                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#0F172A] text-white text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-xl">
-                        {date.c} agendamentos
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Lista de hoje */}
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="lg:col-span-2 bg-white border border-neutral-200 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">Próximos</p>
-                  <h3 className="text-xl font-bold text-neutral-900">Hoje, 19 Dez</h3>
-                </div>
-                <div className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-full">
-                  12 Total
-                </div>
-              </div>
-
-              <div className="space-y-3 flex-1">
-                {[
-                  { time: '08:00', client: 'Fernanda Costa', service: 'Aula de Inglês', price: 'R$ 120', status: 'done' },
-                  { time: '09:30', client: 'Rafael Mendes', service: 'Consultoria Jurídica', price: 'R$ 350', status: 'done' },
-                  { time: '11:00', client: 'Patrícia Lima', service: 'Treino Funcional', price: 'R$ 90', status: 'current' },
-                  { time: '14:00', client: 'Bruno Alves', service: 'Aula de Espanhol', price: 'R$ 110', status: 'pending' },
-                  { time: '15:30', client: 'Camila Torres', service: 'Avaliação Física', price: 'R$ 150', status: 'pending' },
-                  { time: '17:00', client: 'Diego Souza', service: 'Contrato Imobiliário', price: 'R$ 480', status: 'pending' },
-                ].map((apt, i) => (
-                  <div 
-                    key={apt.client} 
-                    className={`group flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 border ${
-                      apt.status === 'current' 
-                        ? 'bg-blue-50/50 border-blue-100' 
-                        : 'hover:bg-neutral-50 border-transparent hover:border-neutral-100'
-                    }`}
-                  >
-                    <div className="text-center min-w-[45px]">
-                      <span className={`text-[10px] font-bold block ${apt.status === 'done' ? 'text-neutral-400' : 'text-blue-600'}`}>
-                        {apt.time}
-                      </span>
-                    </div>
-
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className={`text-sm font-bold ${apt.status === 'done' ? 'text-neutral-400 line-through' : 'text-neutral-900'}`}>
-                          {apt.client}
-                        </p>
-                        <span className="text-[10px] font-bold text-neutral-500">{apt.price}</span>
-                      </div>
-                      <p className="text-[11px] text-neutral-500">{apt.service}</p>
-                    </div>
-
-                    <div className="flex flex-col items-center">
-                      {apt.status === 'done' ? (
-                        <div className="size-4 rounded-full bg-emerald-100 flex items-center justify-center">
-                          <div className="size-1.5 rounded-full bg-emerald-600" />
-                        </div>
-                      ) : apt.status === 'current' ? (
-                        <div className="size-4 rounded-full bg-blue-100 flex items-center justify-center animate-pulse">
-                          <div className="size-1.5 rounded-full bg-blue-600" />
-                        </div>
-                      ) : (
-                        <div className="size-4 rounded-full bg-neutral-100 flex items-center justify-center">
-                          <div className="size-1.5 rounded-full bg-neutral-300" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <button className="w-full mt-6 py-3 bg-neutral-50 text-neutral-600 rounded-xl text-xs font-bold hover:bg-neutral-100 transition-colors">
-                Ver agenda completa
-              </button>
-            </motion.div>
+          <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: T.muted, marginBottom: 6 }}>
+              <span>2 de 8 concluídos</span><span>25%</span>
+            </div>
+            <div style={{ height: 4, background: T.light, borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ width: '25%', height: '100%', background: '#6ee7b7', borderRadius: 4 }} />
+            </div>
           </div>
         </div>
-      </section>
+      </div>
+    </div>
+  )
+}
 
-      {/* ================= COMISSÕES VISUAL ================= */}
-      <section className="py-16 sm:py-24 bg-white border-t border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mb-10 text-center sm:text-left"
-          >
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-slate-900 tracking-tight">
-              Comissões calculadas automaticamente
-            </h2>
-            <p className="text-base text-slate-600">
-              O sistema calcula a comissão de cada profissional por serviço realizado de forma justa e transparente.
-            </p>
-          </motion.div>
+function BookingUI() {
+  return (
+    <div style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.border}`, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}>
+      <div style={{ background: T.brand, padding: '20px 24px' }}>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', margin: '0 0 3px', ...DISPLAY }}>Studio Andrade</p>
+        <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', margin: 0, ...DISPLAY }}>Agendar atendimento</p>
+      </div>
+      <div style={{ padding: 24 }}>
+        <p style={{ fontSize: 11, fontWeight: 600, color: T.muted, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Escolha o serviço</p>
+        {[
+          { name: 'Corte + Barba', price: 'R$ 55', min: '60min', active: true },
+          { name: 'Corte Simples',  price: 'R$ 35', min: '30min' },
+          { name: 'Barba',          price: 'R$ 25', min: '20min' },
+        ].map(s => (
+          <div key={s.name} style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '10px 14px', borderRadius: 10, marginBottom: 6, cursor: 'pointer',
+            border: `1px solid ${s.active ? T.brand : T.border}`,
+            background: s.active ? '#EEF2FA' : T.white,
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: s.active ? T.brand : T.text, ...DISPLAY }}>{s.name}</span>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <span style={{ fontSize: 11, color: T.muted }}>{s.min}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: s.active ? T.brand : T.muted, ...DISPLAY }}>{s.price}</span>
+            </div>
+          </div>
+        ))}
+        <p style={{ fontSize: 11, fontWeight: 600, color: T.muted, margin: '18px 0 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Horários disponíveis</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+          {['09:00','09:30','10:00','11:00','14:00','14:30','15:00','16:00'].map((t, i) => (
+            <div key={t} style={{
+              textAlign: 'center', padding: '8px 4px', borderRadius: 8,
+              fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              border: `1px solid ${i === 2 ? T.brand : T.border}`,
+              background: i === 2 ? T.brand : T.white,
+              color: i === 2 ? '#fff' : T.text,
+              ...DISPLAY,
+            }}>{t}</div>
+          ))}
+        </div>
+        <button style={{ width: '100%', marginTop: 18, padding: '12px 0', background: T.brand, color: '#fff', borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', ...DISPLAY }}>
+          Confirmar agendamento
+        </button>
+      </div>
+    </div>
+  )
+}
 
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.98 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="bg-slate-50 border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
-              {commissionData.map((prof, i) => (
-                <div key={i} className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex flex-col mb-3">
-                    <span className="text-slate-400 text-[9px] font-bold uppercase tracking-[0.2em] mb-1">{prof.name}</span>
-                    <span className="text-xl font-bold text-slate-900">
-                      <span className="text-xs font-medium text-slate-400 mr-1">R$</span>
-                      {prof.comissao.toLocaleString('pt-BR')}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded uppercase tracking-wider">{prof.servicos} serviços</span>
-                    <span className="text-[10px] font-bold text-[#3F5B8A] uppercase tracking-wider">{prof.percentual} comissão</span>
-                  </div>
+/* Week view for dark section */
+const WEEK = [
+  { day: 'Seg', n: [{ h: '09:00', l: 'Rafael M.' }, { h: '14:00', l: 'Ana L.' }] },
+  { day: 'Ter', n: [{ h: '10:00', l: 'Patrícia' }] },
+  { day: 'Qua', n: [{ h: '08:00', l: 'Bruno A.' }, { h: '11:00', l: 'Camila' }, { h: '15:30', l: 'Diego S.' }] },
+  { day: 'Qui', n: [{ h: '09:30', l: 'Fernanda' }, { h: '13:00', l: 'Lucas R.' }] },
+  { day: 'Sex', n: [{ h: '11:00', l: 'Marina' }] },
+]
+
+function WeekUI() {
+  return (
+    <div style={{ background: '#18181B', borderRadius: 14, overflow: 'hidden', border: '1px solid #2A2A2D' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid #2A2A2D', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <p style={{ fontSize: 10, color: '#666', margin: 0, ...DISPLAY }}>Dezembro 2025</p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: 0, ...DISPLAY }}>Semana atual</p>
+        </div>
+        <div style={{ display: 'flex', gap: 2, background: '#111', borderRadius: 8, padding: 3 }}>
+          {['Dia','Semana','Mês'].map((v, i) => (
+            <button key={v} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, background: i === 1 ? '#2A2A2D' : 'transparent', color: i === 1 ? '#fff' : '#555', ...DISPLAY }}>{v}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1, background: '#111', padding: 1 }}>
+        {WEEK.map(col => (
+          <div key={col.day} style={{ background: '#18181B' }}>
+            <div style={{ padding: '10px 8px 6px', borderBottom: '1px solid #222' }}>
+              <p style={{ fontSize: 10, color: '#555', textAlign: 'center', margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', ...DISPLAY }}>{col.day}</p>
+            </div>
+            <div style={{ padding: 6, minHeight: 160, display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {col.n.map(apt => (
+                <div key={apt.h} style={{ background: T.brand + '25', border: `1px solid ${T.brand}55`, borderRadius: 7, padding: '6px 8px' }}>
+                  <p style={{ fontSize: 9, color: '#7A95C0', fontWeight: 700, margin: '0 0 2px', ...DISPLAY }}>{apt.h}</p>
+                  <p style={{ fontSize: 10, color: '#A8C0E0', fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{apt.l}</p>
                 </div>
               ))}
             </div>
-            <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Total a pagar em comissões</span>
-              <span className="text-3xl font-bold text-slate-900 tracking-tight">
-                <span className="text-sm font-medium text-slate-400 mr-1">R$</span>
-                {commissionData.reduce((sum, p) => sum + p.comissao, 0).toLocaleString('pt-BR')}
-              </span>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-
-      {/* ================= GESTÃO PROFISSIONAL (Demonstração) ================= */}
-      <section className="py-24 bg-white border-y border-slate-200 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center max-w-3xl mx-auto mb-16"
-          >
-            <h2 className="text-3xl sm:text-4xl font-bold mb-6 text-[#1A1C1E] tracking-tight">Tudo o que você precisa para crescer</h2>
-            <p className="text-lg text-slate-600 leading-relaxed">
-              Vá além do básico. Tenha uma visão 360º do seu negócio com métricas avançadas, 
-              controle de estoque, fluxo de caixa e gestão de equipe em um só lugar.
-            </p>
-          </motion.div>
-          
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.98 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="relative"
-          >
-            <div className="absolute -inset-4 bg-slate-50 rounded-[2.5rem] -z-10 blur-2xl opacity-60"></div>
-            <FinanceDashboard />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ================= PREÇO VISUAL ================= */}
-      <section className="py-20 sm:py-24 bg-[#0F172A] relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent opacity-50" />
-        
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-xs sm:text-sm font-bold text-blue-400 mb-6 uppercase tracking-[0.3em]">
-              Preço Único e Simples
-            </h2>
-            <div className="flex items-baseline justify-center gap-2 mb-4">
-              <span className="text-xl font-medium text-neutral-400">R$</span>
-              <span className="text-6xl sm:text-7xl font-bold text-white tracking-tighter">19</span>
-              <span className="text-lg font-medium text-neutral-400">/mês</span>
-            </div>
-            <p className="text-base text-neutral-400 mb-8 max-w-sm mx-auto leading-relaxed">
-              Acesso total a todas as funcionalidades. Sem taxas escondidas, sem contratos abusivos.
-            </p>
-            <a
-              href="#signup"
-              className="inline-block px-8 py-3.5 bg-white text-[#0F172A] rounded-xl text-base font-bold hover:bg-neutral-100 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-white/5"
-            >
-              Começar agora
-            </a>
-            <p className="mt-6 text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Cancela quando quiser • 14 dias grátis</p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ================= DEPOIMENTOS ================= */}
-      <section className="py-20 bg-neutral-50 border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-3 tracking-tight">O que dizem nossos parceiros</h2>
-            <p className="text-base text-neutral-600">Histórias reais de quem transformou a gestão do seu trabalho</p>
           </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+/* ─── AnimatedSection ────────────────────────────────────── */
+
+function AnimatedSection({ children, className, delay = 0, style }) {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: '-60px 0px' })
+
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      style={style}
+      initial={{ opacity: 0, y: 32 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+/* ─── Main ───────────────────────────────────────────────── */
+
+export function LandingPage() {
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    document.title = 'Orbi — Agenda e Financeiro para Profissionais'
+  }, [])
+
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 40)
+    window.addEventListener('scroll', fn, { passive: true })
+    return () => window.removeEventListener('scroll', fn)
+  }, [])
+
+  return (
+    <div style={{ ...DISPLAY }}>
+
+      {/* ── Nav ──────────────────────────────────────────── */}
+      <header style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+        transition: 'background 0.2s, border-color 0.2s',
+        background: scrolled ? 'rgba(249,248,245,0.92)' : 'transparent',
+        borderBottom: `1px solid ${scrolled ? T.border : 'transparent'}`,
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
+      }}>
+        <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 17, fontWeight: 700, color: T.text, letterSpacing: '-0.02em' }}>Orbi</span>
+          <a href="#cta" style={{
+            fontSize: 13, fontWeight: 600, color: T.white, background: T.text,
+            padding: '8px 18px', borderRadius: 8, textDecoration: 'none',
+            transition: 'background 0.15s',
+          }}>
+            Começar grátis
+          </a>
+        </div>
+      </header>
+
+      {/* ══════════════════════════════════════════════════
+          HERO — editorial, assimétrico
+      ══════════════════════════════════════════════════ */}
+      <section style={{ background: T.bg, minHeight: '100dvh', display: 'flex', alignItems: 'center', paddingTop: 60 }}>
+        <div className="max-w-6xl mx-auto px-6 sm:px-10 w-full" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-[45fr_55fr] gap-12 lg:gap-16 items-center">
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <p style={{ fontSize: 12, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1.25rem' }}>
+                Para psicólogos e profissionais de saúde
+              </p>
+
+              <h1 style={{
+                fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+                fontWeight: 700,
+                color: T.text,
+                lineHeight: 1.08,
+                letterSpacing: '-0.03em',
+                marginBottom: '1.5rem',
+              }}>
+                Tudo que você precisa<br />
+                para organizar seus<br />
+                <em style={{ fontStyle: 'normal', color: T.brand }}>atendimentos.</em>
+              </h1>
+
+              <p style={{ fontSize: '1.05rem', color: T.muted, lineHeight: 1.7, maxWidth: '46ch', marginBottom: '2rem' }}>
+                Agenda online, pagamentos, lembretes, documentos e presença no Descobrir —
+                num único sistema feito para quem atende por hora marcada.
+              </p>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <a href="#cta" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  padding: '12px 24px', background: T.text, color: T.white,
+                  borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none',
+                  transition: 'background 0.15s',
+                }}>
+                  Criar conta grátis <ArrowRight size={14} />
+                </a>
+                <a href="#produto" style={{ fontSize: 13, color: T.muted, textDecoration: 'none', fontWeight: 500 }}>
+                  Ver como funciona ↓
+                </a>
+              </div>
+
+              <p style={{ fontSize: 12, color: '#999', marginTop: '1rem' }}>
+                14 dias grátis · sem cartão · cancele quando quiser
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <AppPreview />
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          NÚMEROS — densidade alta, sem cards, só tipografia
+      ══════════════════════════════════════════════════ */}
+      <section style={{ background: T.white, borderTop: `1px solid ${T.border}` }}>
+        <div className="max-w-6xl mx-auto px-6 sm:px-10">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
             {[
-              {
-                name: "Dra. Mariana Fonseca",
-                role: "Advogada — Direito de Família",
-                text: "Antes eu controlava honorários e comissões da minha sócia em planilha. Agora tudo é automático. Economizo 3 horas por semana só no fechamento do mês.",
-                rating: 5
-              },
-              {
-                name: "Felipe Andrade",
-                role: "Professor de Inglês e Espanhol",
-                text: "O link de agendamento que envio para os alunos mudou tudo. Praticamente zerei as faltas sem aviso. O controle de recebimentos ficou muito mais simples.",
-                rating: 5
-              },
-              {
-                name: "Camila Rocha",
-                role: "Personal Trainer",
-                text: "Consigo ver minha agenda da semana, controlar o que cada aluno me deve e ainda acompanhar minhas metas financeiras. É tudo que eu precisava num lugar só.",
-                rating: 5
-              }
-            ].map((testimonial, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm"
-              >
-                <div className="flex gap-1 mb-3">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="size-3 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-neutral-600 text-sm leading-relaxed mb-6">"{testimonial.text}"</p>
-                <div>
-                  <p className="font-bold text-neutral-900 text-sm">{testimonial.name}</p>
-                  <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">{testimonial.role}</p>
-                </div>
-              </motion.div>
+              { n: '3h',        label: 'por semana economizadas',      sub: 'em gestão administrativa' },
+              { n: '0 faltas',  label: 'com lembretes automáticos',    sub: 'via WhatsApp antes da sessão' },
+              { n: '14 dias',   label: 'de teste sem compromisso',     sub: 'sem cartão de crédito' },
+            ].map((item, i) => (
+              <AnimatedSection key={i} delay={i * 0.08}>
+              <div style={{
+                padding: '2.5rem 2rem',
+                borderRight: i < 2 ? `1px solid ${T.border}` : 'none',
+              }}>
+                <p style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.04em', margin: '0 0 6px', lineHeight: 1 }}>{item.n}</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: T.text, margin: '0 0 4px' }}>{item.label}</p>
+                <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>{item.sub}</p>
+              </div>
+              </AnimatedSection>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ================= FAQ ================= */}
-      <section className="py-20 bg-white">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-3 tracking-tight">Dúvidas Frequentes</h2>
-            <p className="text-sm text-neutral-600">Tudo o que você precisa saber para começar</p>
-          </div>
+      {/* ══════════════════════════════════════════════════
+          FEATURES — composições variadas
+      ══════════════════════════════════════════════════ */}
+      <div id="produto">
 
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="item-1">
-              <AccordionTrigger className="text-sm font-bold text-neutral-800 py-4">Como funciona o simulador gratuito?</AccordionTrigger>
-              <AccordionContent className="text-sm text-neutral-500 leading-relaxed">
-                O simulador é uma ferramenta de uso local. Seus dados não são salvos em nosso banco de dados, servindo apenas para uma organização rápida no seu navegador. Você pode gerar PDFs de seus relatórios a qualquer momento.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-2">
-              <AccordionTrigger className="text-sm font-bold text-neutral-800 py-4">Preciso de cartão de crédito para testar?</AccordionTrigger>
-              <AccordionContent className="text-sm text-neutral-500 leading-relaxed">
-                Não! Você pode criar sua conta e usar todas as funcionalidades profissionais por 14 dias sem precisar cadastrar nenhum cartão.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-3">
-              <AccordionTrigger className="text-sm font-bold text-neutral-800 py-4">O sistema funciona no celular?</AccordionTrigger>
-              <AccordionContent className="text-sm text-neutral-500 leading-relaxed">
-                Sim! O sistema é totalmente responsivo e funciona perfeitamente em smartphones, tablets e computadores, sem precisar instalar nada.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-4">
-              <AccordionTrigger className="text-sm font-bold text-neutral-800 py-4">Como é feito o suporte?</AccordionTrigger>
-              <AccordionContent className="text-sm text-neutral-500 leading-relaxed">
-                Oferecemos suporte via WhatsApp e e-mail para todos os nossos assinantes, garantindo que você nunca fique na mão.
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+        {/* — Feature 1: Agendamento — 35/65, produto vai à borda */}
+        <section style={{ background: T.bg, borderTop: `1px solid ${T.border}` }}>
+          <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-start">
+              <AnimatedSection style={{ paddingTop: '1rem' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Agendamento</p>
+                <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
+                  Um link.<br />O cliente agenda<br />sozinho.
+                </h2>
+                <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, marginBottom: '1.5rem', maxWidth: '40ch' }}>
+                  Compartilhe no Instagram, WhatsApp ou site. O paciente escolhe sessão e horário disponível — e recebe confirmação automática sem você precisar responder nada.
+                </p>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[
+                    'Disponível 24h por dia, 7 dias por semana',
+                    'Lembrete por WhatsApp antes da consulta',
+                    'Paciente cancela ou reagenda pelo próprio link',
+                  ].map(item => (
+                    <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#444', lineHeight: 1.5 }}>
+                      <Check size={14} color="#16a34a" style={{ flexShrink: 0, marginTop: 3 }} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </AnimatedSection>
+              <AnimatedSection delay={0.1}><BookingUI /></AnimatedSection>
+            </div>
+          </div>
+        </section>
+
+        {/* — Feature 2: Agenda visual — fundo escuro, composição invertida */}
+        <section style={{ background: T.dark, borderTop: `1px solid #1f1f1f` }}>
+          <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-12 lg:gap-20 items-start">
+              <AnimatedSection><WeekUI /></AnimatedSection>
+              <AnimatedSection delay={0.1} style={{ paddingTop: '1rem' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Agenda</p>
+                <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
+                  A semana<br />inteira de<br />um olhar.
+                </h2>
+                <p style={{ fontSize: '0.975rem', color: '#888', lineHeight: 1.75, marginBottom: '1.5rem', maxWidth: '38ch' }}>
+                  Vista diária, semanal e mensal. Horários bloqueiam automaticamente no link público quando ocupados. Sua agenda, sem buracos.
+                </p>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[
+                    'Vista diária, semanal e mensal',
+                    'Google Meet gerado automaticamente',
+                    'Notas de atendimento por sessão',
+                  ].map(item => (
+                    <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#777', lineHeight: 1.5 }}>
+                      <Check size={14} color={T.brand} style={{ flexShrink: 0, marginTop: 3 }} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </AnimatedSection>
+            </div>
+          </div>
+        </section>
+
+        {/* — Feature 3: Financeiro — texto no topo, dashboard abaixo */}
+        <section style={{ background: T.white, borderTop: `1px solid ${T.border}` }}>
+          <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20" style={{ marginBottom: '3.5rem' }}>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Financeiro</p>
+                <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, margin: 0 }}>
+                  Do agendamento ao<br />fechamento. Sem planilha.
+                </h2>
+              </div>
+              <div style={{ paddingTop: '0.25rem' }}>
+                <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, maxWidth: '48ch' }}>
+                  Cada sessão vira automaticamente uma entrada financeira. Honorários, pagamentos recebidos e inadimplências organizados em tempo real —
+                  o fechamento do mês leva menos de dois minutos.
+                </p>
+              </div>
+            </div>
+
+            <AnimatedSection delay={0.05} style={{ borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+              <FinanceDashboard />
+            </AnimatedSection>
+          </div>
+        </section>
+      </div>
+
+      {/* ══════════════════════════════════════════════════
+          DEPOIMENTOS — pull quote editorial (sem cards iguais)
+      ══════════════════════════════════════════════════ */}
+      <section style={{ background: T.dark, borderTop: `1px solid #1f1f1f`, padding: '6rem 0' }}>
+        <div className="max-w-6xl mx-auto px-6 sm:px-10">
+
+          {/* Pull quote principal */}
+          <AnimatedSection style={{ maxWidth: '52ch', marginBottom: '5rem' }}>
+            <p style={{
+              fontSize: 'clamp(1.5rem, 3vw, 2.25rem)',
+              fontWeight: 700,
+              color: '#fff',
+              lineHeight: 1.3,
+              letterSpacing: '-0.025em',
+              marginBottom: '1.5rem',
+            }}>
+              "Antes eu controlava honorários e comissões da minha sócia em planilha. Agora tudo é automático. Economizo 3 horas por semana só no fechamento do mês."
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 32, height: 1, background: '#333' }} />
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#aaa', margin: 0 }}>Dra. Mariana Fonseca</p>
+                <p style={{ fontSize: 12, color: '#555', margin: 0 }}>Advogada, Direito de Família</p>
+              </div>
+            </div>
+          </AnimatedSection>
+
+          {/* Duas citações menores */}
+          <AnimatedSection delay={0.1} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', borderTop: '1px solid #1f1f1f', paddingTop: '3rem' }} className="grid-cols-1 sm:grid-cols-2">
+            {[
+              { text: 'O link de agendamento praticamente zerou as faltas sem aviso. O controle do que cada aluno me deve ficou muito mais simples.', name: 'Felipe Andrade', role: 'Professor de idiomas' },
+              { text: 'Vejo minha agenda da semana, controlo o que cada aluno me deve e acompanho minhas metas financeiras no mesmo lugar.', name: 'Camila Rocha', role: 'Personal trainer' },
+            ].map((t, i) => (
+              <div key={i}>
+                <p style={{ fontSize: '1rem', color: '#777', lineHeight: 1.7, marginBottom: '1rem', fontWeight: 400 }}>"{t.text}"</p>
+                <p style={{ fontSize: 13, color: '#555', margin: 0 }}>— {t.name}, <em style={{ fontStyle: 'normal', color: '#444' }}>{t.role}</em></p>
+              </div>
+            ))}
+          </AnimatedSection>
         </div>
       </section>
 
-      {/* ================= CTA FINAL COM FORMULÁRIO ================= */}
-      <section id="signup" className="py-20 sm:py-28 bg-[#F6F5F2] border-y border-neutral-200">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-16 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-3xl sm:text-4xl font-bold mb-5 tracking-tight text-neutral-900 leading-[1.1]">
-                Pronto para organizar sua agenda profissional?
+      {/* ══════════════════════════════════════════════════
+          PRICING — sem card centralizado, assimétrico
+      ══════════════════════════════════════════════════ */}
+      <section style={{ background: T.white, borderTop: `1px solid ${T.border}`, padding: '6rem 0' }}>
+        <div className="max-w-6xl mx-auto px-6 sm:px-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-16 items-start">
+
+            <AnimatedSection>
+            <div>
+              <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.5rem' }}>
+                Um plano.<br />Tudo incluído.
               </h2>
-              <p className="text-base text-neutral-600 mb-8 max-w-md">
-                Junte-se a advogados, professores e personal trainers que já simplificaram sua gestão e aumentaram seus lucros.
+              <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, maxWidth: '44ch', marginBottom: '2rem' }}>
+                Sem tiers, sem funcionalidades escondidas no plano premium. R$ 19 por mês e você tem acesso a tudo desde o primeiro dia.
               </p>
-              
-              <div className="space-y-3.5">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 24px' }}>
                 {[
-                  'Gestão financeira simplificada',
-                  'Agendamento online 24/7',
-                  'Cálculo automático de comissões',
-                  'Relatórios detalhados'
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="size-4 rounded-full bg-emerald-100 flex items-center justify-center">
-                      <div className="size-1.5 rounded-full bg-emerald-600" />
-                    </div>
-                    <span className="text-neutral-700 text-sm font-semibold tracking-tight">{item}</span>
+                  'Agenda online ilimitada',
+                  'Link de agendamento público',
+                  'Lembretes por WhatsApp',
+                  'Controle financeiro completo',
+                  'Notas de atendimento por sessão',
+                  'Google Meet automático',
+                  'Documentos profissionais',
+                  'Perfil no Descobrir',
+                ].map(f => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 13, color: '#333' }}>
+                    <Check size={13} color="#16a34a" style={{ flexShrink: 0 }} />
+                    {f}
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
+            </AnimatedSection>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="bg-white border border-neutral-200 rounded-[2rem] p-6 sm:p-10 shadow-xl shadow-blue-900/5 relative"
-            >
-              <div className="absolute top-0 right-10 -translate-y-1/2 bg-blue-600 text-white text-[9px] font-bold uppercase tracking-[0.2em] px-3 py-1 rounded-full shadow-lg">
-                Oferta Limitada
+            <AnimatedSection delay={0.1}>
+            <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 14, padding: '2.5rem 2rem' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                  <span style={{ fontSize: 14, color: T.muted, fontWeight: 500 }}>R$</span>
+                  <span style={{ fontSize: 52, fontWeight: 700, color: T.text, letterSpacing: '-0.04em', lineHeight: 1 }}>19</span>
+                  <span style={{ fontSize: 14, color: T.muted, fontWeight: 500 }}>/mês</span>
+                </div>
+                <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>ou R$ 190/ano — 2 meses grátis</p>
               </div>
-              <form 
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  window.location.href = '/login'
-                }}
-                className="space-y-4"
-              >
-                <div>
-                  <label className="text-[9px] font-bold text-neutral-400 uppercase ml-1 mb-2 block tracking-[0.2em]">Nome Completo</label>
-                  <input
-                    type="text"
-                    placeholder="Como devemos te chamar?"
-                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-[9px] font-bold text-neutral-400 uppercase ml-1 mb-2 block tracking-[0.2em]">Seu melhor Email</label>
-                  <input
-                    type="email"
-                    placeholder="exemplo@email.com"
-                    className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full px-6 py-4 bg-[#0F172A] text-white rounded-xl text-sm font-bold hover:bg-[#1E293B] transition-all hover:shadow-lg active:scale-[0.98] mt-2 uppercase tracking-widest"
-                >
-                  Criar conta grátis
-                </button>
-                <p className="text-center text-[10px] text-neutral-400 mt-6 leading-relaxed font-medium uppercase tracking-wider">
-                  Cancela quando quiser • 14 dias grátis
-                </p>
-              </form>
-            </motion.div>
+              <a href="#cta" style={{
+                display: 'block', width: '100%', padding: '13px 0',
+                background: T.text, color: T.white, borderRadius: 10,
+                fontSize: 14, fontWeight: 600, textDecoration: 'none',
+                textAlign: 'center', marginBottom: '1rem',
+                transition: 'background 0.15s',
+              }}>
+                Começar 14 dias grátis
+              </a>
+              <p style={{ fontSize: 11, color: '#999', textAlign: 'center', margin: 0 }}>
+                Sem cartão de crédito necessário
+              </p>
+            </div>
+            </AnimatedSection>
           </div>
         </div>
       </section>
-    </main>
-    
-    {/* ================= FOOTER ESTRUTURADO ================= */}
-    <footer className="bg-white text-neutral-900 pt-20 pb-10 border-t border-neutral-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-          <div className="space-y-6">
-            <h3 className="text-lg font-bold tracking-tight">Orbi</h3>
-            <p className="text-neutral-500 text-sm leading-relaxed max-w-xs">
-              A plataforma de gestão para profissionais independentes. Simplifique sua rotina e foque no que você faz de melhor.
-            </p>
-            <div className="flex gap-3">
-              <a href="#" className="p-2 bg-neutral-50 border border-neutral-100 rounded-lg hover:bg-neutral-100 transition-colors text-neutral-400 hover:text-neutral-900" aria-label="Instagram">
-                <Instagram className="size-4" />
-              </a>
-              <a href="#" className="p-2 bg-neutral-50 border border-neutral-100 rounded-lg hover:bg-neutral-100 transition-colors text-neutral-400 hover:text-neutral-900" aria-label="Facebook">
-                <Facebook className="size-4" />
-              </a>
-              <a href="#" className="p-2 bg-neutral-50 border border-neutral-100 rounded-lg hover:bg-neutral-100 transition-colors text-neutral-400 hover:text-neutral-900" aria-label="Twitter">
-                <Twitter className="size-4" />
-              </a>
+
+      {/* ══════════════════════════════════════════════════
+          FAQ — limpo, sem decoração
+      ══════════════════════════════════════════════════ */}
+      <section style={{ background: T.bg, borderTop: `1px solid ${T.border}`, padding: '5rem 0' }}>
+        <div className="max-w-2xl mx-auto px-6 sm:px-10">
+          <AnimatedSection>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: T.text, letterSpacing: '-0.025em', marginBottom: '2.5rem' }}>
+            Perguntas frequentes
+          </h2>
+          <Accordion type="single" collapsible>
+            {[
+              { q: 'Preciso de cartão de crédito para testar?', a: 'Não. Você usa tudo por 14 dias sem precisar cadastrar nenhum cartão. Só pedimos dados de pagamento se quiser continuar depois.' },
+              { q: 'Funciona para qualquer profissional de saúde?', a: 'Sim. Psicólogos, psiquiatras, fisioterapeutas, nutricionistas, fonoaudiólogos, médicos — qualquer profissional que atende por hora marcada.' },
+              { q: 'Posso ter mais de um profissional na mesma conta?', a: 'Sim. Cadastre sua equipe, configure comissões individualmente e acompanhe a agenda e financeiro de cada um separadamente.' },
+              { q: 'O sistema funciona no celular?', a: 'Sim, é totalmente responsivo. Funciona em smartphones, tablets e computadores sem instalar nada.' },
+              { q: 'Posso cancelar quando quiser?', a: 'Sim. Sem multa e sem fidelidade. Cancele pela própria plataforma a qualquer momento.' },
+            ].map((item, i) => (
+              <AccordionItem key={i} value={`q${i}`} style={{ borderBottom: `1px solid ${T.border}` }}>
+                <AccordionTrigger style={{ fontSize: 14, fontWeight: 600, color: T.text, padding: '1.1rem 0', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}>
+                  {item.q}
+                </AccordionTrigger>
+                <AccordionContent style={{ fontSize: 14, color: T.muted, lineHeight: 1.7, paddingBottom: '1.1rem' }}>
+                  {item.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          CTA — mínimo, direto
+      ══════════════════════════════════════════════════ */}
+      <section id="cta" style={{ background: T.brand, padding: '5rem 0' }}>
+        <div className="max-w-2xl mx-auto px-6 sm:px-10 text-center">
+          <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1rem' }}>
+            Comece a organizar seus atendimentos hoje.
+          </h2>
+          <p style={{ fontSize: '0.975rem', color: 'rgba(255,255,255,0.65)', marginBottom: '2rem' }}>
+            14 dias grátis. Sem cartão. Cancele quando quiser.
+          </p>
+          <form onSubmit={e => { e.preventDefault(); window.location.href = '/login' }}
+            style={{ display: 'flex', gap: 8, maxWidth: 420, margin: '0 auto', flexWrap: 'wrap' }}>
+            <input
+              type="email"
+              required
+              placeholder="seu@email.com"
+              style={{
+                flex: 1, minWidth: 200, padding: '12px 16px',
+                background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)',
+                borderRadius: 10, fontSize: 14, color: '#fff',
+                outline: 'none', ...DISPLAY,
+              }}
+            />
+            <button type="submit" style={{
+              padding: '12px 22px', background: '#fff', color: T.brand,
+              border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700,
+              cursor: 'pointer', whiteSpace: 'nowrap', ...DISPLAY,
+              transition: 'background 0.15s',
+            }}>
+              Criar conta grátis
+            </button>
+          </form>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: '1rem' }}>
+            Ao criar sua conta você concorda com os Termos de Uso e Política de Privacidade.
+          </p>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          FOOTER — dois níveis, minimal
+      ══════════════════════════════════════════════════ */}
+      <footer style={{ background: T.white, borderTop: `1px solid ${T.border}` }}>
+        <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ padding: '3rem 0 1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '2rem', marginBottom: '3rem' }}>
+            <div style={{ maxWidth: 280 }}>
+              <p style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 8 }}>Orbi</p>
+              <p style={{ fontSize: 13, color: T.muted, lineHeight: 1.6, margin: '0 0 1rem' }}>
+                Gestão de agenda e financeiro para profissionais que atendem clientes.
+              </p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                {[Instagram, Twitter, Mail].map((Icon, i) => (
+                  <a key={i} href="#" style={{ color: '#bbb', transition: 'color 0.15s' }}>
+                    <Icon size={16} />
+                  </a>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '4rem', flexWrap: 'wrap' }}>
+              {[
+                { title: 'Produto', links: ['Agendamento', 'Financeiro', 'Comissões', 'Relatórios'] },
+                { title: 'Empresa', links: ['Sobre', 'Preços', 'Termos', 'Privacidade'] },
+              ].map(col => (
+                <div key={col.title}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>{col.title}</p>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {col.links.map(l => (
+                      <li key={l}><a href="#" style={{ fontSize: 13, color: T.muted, textDecoration: 'none' }}>{l}</a></li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
           </div>
-          
-          <div>
-            <h4 className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.3em] mb-6">Produto</h4>
-            <ul className="space-y-4 text-sm text-neutral-500">
-              <li><a href="#free-tool" className="hover:text-neutral-900 transition-colors font-medium">Simulador Financeiro</a></li>
-              <li><a href="#signup" className="hover:text-neutral-900 transition-colors font-medium">Gestão de Comissões</a></li>
-              <li><a href="#signup" className="hover:text-neutral-900 transition-colors font-medium">Agenda Online</a></li>
-              <li><a href="#signup" className="hover:text-neutral-900 transition-colors font-medium">Relatórios Avançados</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.3em] mb-6">Institucional</h4>
-            <ul className="space-y-4 text-sm text-neutral-500">
-              <li><a href="#" className="hover:text-neutral-900 transition-colors font-medium">Sobre nós</a></li>
-              <li><a href="#" className="hover:text-neutral-900 transition-colors font-medium">Planos e Preços</a></li>
-              <li><a href="#" className="hover:text-neutral-900 transition-colors font-medium">Termos de Uso</a></li>
-              <li><a href="#" className="hover:text-neutral-900 transition-colors font-medium">Privacidade</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-[9px] font-bold text-neutral-400 uppercase tracking-[0.3em] mb-6">Contato</h4>
-            <ul className="space-y-4 text-sm text-neutral-500">
-              <li className="flex items-center gap-3">
-                <Mail className="size-4 text-neutral-400" />
-                <span>suporte@orbi.app</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Phone className="size-4 text-neutral-400" />
-                <span>(11) 99999-9999</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <MapPin className="size-4 text-neutral-400" />
-                <span>São Paulo, SP</span>
-              </li>
-            </ul>
+          <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <p style={{ fontSize: 12, color: '#bbb', margin: 0 }}>© 2025 Orbi. Todos os direitos reservados.</p>
+            <div style={{ display: 'flex', gap: '1.5rem' }}>
+              {['Segurança', 'Status'].map(l => (
+                <a key={l} href="#" style={{ fontSize: 12, color: '#bbb', textDecoration: 'none' }}>{l}</a>
+              ))}
+            </div>
           </div>
         </div>
-
-        <div className="pt-10 border-t border-neutral-100 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-neutral-500 text-[10px] font-bold uppercase tracking-widest">
-            © 2025 Orbi. Todos os direitos reservados.
-          </p>
-          <div className="flex gap-8 text-[10px] font-bold uppercase tracking-widest text-neutral-400">
-            <a href="#" className="hover:text-neutral-900 transition-colors">Segurança</a>
-            <a href="#" className="hover:text-neutral-900 transition-colors">Status</a>
-          </div>
-        </div>
-      </div>
-    </footer>
-  </>
-  );
+      </footer>
+    </div>
+  )
 }

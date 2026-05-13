@@ -11,7 +11,7 @@ module Api
         professional_id = params[:professional_id]
 
         appointments = Current.account.appointments
-                              .confirmed
+                              .where(status: [Appointment::APPOINTMENT_STATUS[:confirmed], Appointment::APPOINTMENT_STATUS[:completed]])
                               .by_date_range(start_date.beginning_of_day, end_date.end_of_day)
 
         appointments = appointments.by_professional(professional_id) if professional_id.present?
@@ -95,7 +95,7 @@ module Api
         professional_id = params[:professional_id]
 
         appointments = Current.account.appointments
-                              .confirmed
+                              .where(status: [Appointment::APPOINTMENT_STATUS[:confirmed], Appointment::APPOINTMENT_STATUS[:completed]])
                               .by_date_range(start_date.beginning_of_day, end_date.end_of_day)
 
         appointments = appointments.by_professional(professional_id) if professional_id.present?

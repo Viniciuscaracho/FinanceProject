@@ -100,12 +100,6 @@ export function useReport(reportId, params = {}, options = {}) {
         
         // Log para debug
         if (import.meta.env.DEV) {
-          console.log('📊 Report Response:', {
-            reportId,
-            hasReport: !!response.report,
-            hasData: !!response.report?.data,
-            hasDirectData: !!response.data
-          })
         }
         
         // Extrair dados do relatório - tentar múltiplas estruturas
@@ -130,9 +124,7 @@ export function useReport(reportId, params = {}, options = {}) {
           error: errorMessage,
           status: errorStatus,
           data: error.data
-        };
-        console.error('❌ Error fetching report:', errorDetails);
-        console.error('❌ Error fetching report (JSON):', JSON.stringify(errorDetails, null, 2));
+        };;;
         
         // Criar erro com mais informações
         const enhancedError = new Error(errorMessage)

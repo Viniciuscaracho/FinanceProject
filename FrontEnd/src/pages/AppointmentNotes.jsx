@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,6 +24,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -52,19 +54,25 @@ import {
   RefreshCw,
   CheckCircle2,
   Circle,
-  ListTodo
+  ListTodo,
+  ChevronRight,
+  Scissors,
 } from 'lucide-react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { apiService } from '@/lib/api'
+import { STATUS_COLORS, STATUS_LABELS } from '@/utils/appointmentUtils'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { T, DISPLAY } from '@/lib/tokens'
+import { toast } from 'sonner'
 
 export function AppointmentNotes() {
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const [appointments, setAppointments] = useState([])
   const [filteredAppointments, setFilteredAppointments] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -73,6 +81,8 @@ export function AppointmentNotes() {
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentNote, setCurrentNote] = useState(null)
+  const [newTaskDescription, setNewTaskDescription] = useState('')
+  const [pendingTasksFromPrevious, setPendingTasksFromPrevious] = useState([])
 
   useEffect(() => {
     loadAppointments()
@@ -85,7 +95,6 @@ export function AppointmentNotes() {
   const loadAppointments = async () => {
     try {
       setLoading(true)
-      setError(null)
       const response = await apiService.getAppointments()
       const appointmentsData = response.appointments || response || []
       setAppointments(appointmentsData)
@@ -103,8 +112,7 @@ export function AppointmentNotes() {
       }
       setAppointments([...appointmentsData])
     } catch (err) {
-      console.error('Error loading appointments:', err)
-      setError('Erro ao carregar agendamentos')
+      toast.error('Erro ao carregar agendamentos')
     } finally {
       setLoading(false)
     }
@@ -159,7 +167,6 @@ export function AppointmentNotes() {
       const appointmentData = await apiService.getAppointment(appointment.id)
       setPendingTasksFromPrevious(appointmentData.previous_session_pending_tasks || [])
     } catch (err) {
-      console.error('Error loading pending tasks:', err)
       setPendingTasksFromPrevious([])
     }
     
@@ -174,17 +181,12 @@ export function AppointmentNotes() {
   }
 
   const handleSave = async () => {
-    if (!selectedAppointment || !notes.trim()) {
-      return
-    }
+    if (!selectedAppointment || !notes.trim()) return
 
     try {
       setIsSubmitting(true)
-      setError(null)
-
       let note
       if (currentNote) {
-        // Atualizar anotação existente
         const response = await apiService.updateAppointmentNote(
           selectedAppointment.id,
           currentNote.id,
@@ -192,30 +194,26 @@ export function AppointmentNotes() {
         )
         note = response.note
       } else {
-        // Criar nova anotação
         const response = await apiService.createAppointmentNote(selectedAppointment.id, { notes })
         note = response.note
       }
 
-      // Adicionar nova tarefa se houver
       if (newTaskDescription.trim() && note) {
         await apiService.addPatientTask(selectedAppointment.id, note.id, newTaskDescription.trim())
       }
 
+      toast.success('Anotação salva com sucesso!')
       handleCloseDialog()
       loadAppointments()
     } catch (err) {
-      console.error('Error saving note:', err)
-      setError(err.message || 'Erro ao salvar anotação')
+      toast.error(err.message || 'Erro ao salvar anotação')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleAddTask = async () => {
-    if (!selectedAppointment || !currentNote || !newTaskDescription.trim()) {
-      return
-    }
+    if (!selectedAppointment || !currentNote || !newTaskDescription.trim()) return
 
     try {
       setIsSubmitting(true)
@@ -228,17 +226,14 @@ export function AppointmentNotes() {
       setNewTaskDescription('')
       loadAppointments()
     } catch (err) {
-      console.error('Error adding task:', err)
-      setError(err.message || 'Erro ao adicionar tarefa')
+      toast.error(err.message || 'Erro ao adicionar tarefa')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleCompleteTask = async (taskId) => {
-    if (!selectedAppointment || !currentNote) {
-      return
-    }
+    if (!selectedAppointment || !currentNote) return
 
     try {
       setIsSubmitting(true)
@@ -250,17 +245,14 @@ export function AppointmentNotes() {
       setCurrentNote(response.note)
       loadAppointments()
     } catch (err) {
-      console.error('Error completing task:', err)
-      setError(err.message || 'Erro ao marcar tarefa como concluída')
+      toast.error(err.message || 'Erro ao marcar tarefa como concluída')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleRemoveTask = async (taskId) => {
-    if (!selectedAppointment || !currentNote) {
-      return
-    }
+    if (!selectedAppointment || !currentNote) return
 
     try {
       setIsSubmitting(true)
@@ -272,8 +264,7 @@ export function AppointmentNotes() {
       setCurrentNote(response.note)
       loadAppointments()
     } catch (err) {
-      console.error('Error removing task:', err)
-      setError(err.message || 'Erro ao remover tarefa')
+      toast.error(err.message || 'Erro ao remover tarefa')
     } finally {
       setIsSubmitting(false)
     }
@@ -284,14 +275,13 @@ export function AppointmentNotes() {
 
     try {
       setIsSubmitting(true)
-      setError(null)
       await apiService.deleteAppointmentNote(selectedAppointment.id, currentNote.id)
+      toast.success('Anotação excluída')
       handleCloseDialog()
       setIsDeleteDialogOpen(false)
       loadAppointments()
     } catch (err) {
-      console.error('Error deleting note:', err)
-      setError(err.message || 'Erro ao excluir anotação')
+      toast.error(err.message || 'Erro ao excluir anotação')
     } finally {
       setIsSubmitting(false)
     }
@@ -306,40 +296,37 @@ export function AppointmentNotes() {
     }
   }
 
-  const getStatusBadge = (status) => {
-    const statusMap = {
-      0: { label: 'Pendente', variant: 'secondary' },
-      1: { label: 'Confirmado', variant: 'default' },
-      2: { label: 'Concluído', variant: 'default' },
-      3: { label: 'Cancelado', variant: 'destructive' },
-      4: { label: 'Não compareceu', variant: 'outline' }
+  const getStatusBadge = (rawStatus) => {
+    const numericMap = { 0: 'pending', 1: 'confirmed', 2: 'completed', 3: 'canceled', 4: 'no_show' }
+    const key = typeof rawStatus === 'number' ? (numericMap[rawStatus] ?? 'pending') : (rawStatus || 'pending')
+    const colorMap = {
+      pending:   { color: T.amber, bg: T.amber + '18' },
+      confirmed: { color: T.brand, bg: T.brand + '18' },
+      completed: { color: T.green, bg: T.green + '18' },
+      canceled:  { color: T.red,   bg: T.red + '18' },
+      no_show:   { color: T.muted, bg: T.muted + '18' },
     }
-    const statusInfo = statusMap[status] || { label: 'Desconhecido', variant: 'secondary' }
-    return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+    const c = colorMap[key] || { color: T.muted, bg: T.muted + '18' }
+    return (
+      <span style={{ borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, background: c.bg, color: c.color }}>
+        {STATUS_LABELS[key] || 'Desconhecido'}
+      </span>
+    )
   }
 
   return (
-    <div className="relative min-h-screen bg-surface">
-      <div className="relative z-10 w-full max-w-full min-w-0 px-3 py-4 sm:px-6 sm:py-6 md:px-10 md:py-8 space-y-4 sm:space-y-6 md:space-y-8">
-        {/* Header */}
+    <div data-testid="appointment-notes-page" style={{ minHeight: '100vh', background: T.bg, ...DISPLAY }}>
+      <div className="relative z-10 w-full max-w-full min-w-0 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 text-text-primary">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1" style={{ color: T.text }}>
               Anotações de Sessões
             </h1>
-            <p className="text-lg text-text-secondary">
+            <p style={{ fontSize: 14, color: T.muted }}>
               Gerencie anotações de sessões para nutricionistas, psicólogos e outros profissionais de saúde
             </p>
           </div>
         </div>
-
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Erro</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
 
         {/* Filtros */}
         <Card>
@@ -384,19 +371,19 @@ export function AppointmentNotes() {
 
         {/* Lista de Agendamentos */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <StickyNote className="h-5 w-5" />
               Agendamentos ({filteredAppointments.length})
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className={isMobile ? "p-0" : undefined}>
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-accent" />
+                <Loader2 className="h-8 w-8 animate-spin" style={{ color: T.brand }} />
               </div>
             ) : filteredAppointments.length === 0 ? (
-              <div className="text-center py-12">
+              <div className="text-center py-12 px-4">
                 <FileText className="h-12 w-12 mx-auto text-text-tertiary mb-4" />
                 <p className="text-text-secondary">
                   {searchTerm || statusFilter !== 'all'
@@ -404,7 +391,81 @@ export function AppointmentNotes() {
                     : 'Nenhum agendamento encontrado.'}
                 </p>
               </div>
+            ) : isMobile ? (
+              /* Mobile: card list */
+              <div className="divide-y divide-border">
+                {filteredAppointments.map((appointment) => {
+                  const hasNote = !!appointment.note
+                  const client = appointment.contact?.name || appointment.whatsapp_number || 'Sem cliente'
+                  const service = appointment.service?.name || '-'
+                  const notePreview = hasNote
+                    ? appointment.note.notes.substring(0, 60) + (appointment.note.notes.length > 60 ? '…' : '')
+                    : null
+
+                  return (
+                    <button
+                      key={appointment.id}
+                      className="w-full text-left px-4 py-3 active:bg-muted/60 transition-colors"
+                      style={{ WebkitTapHighlightColor: 'transparent' }}
+                      onClick={() => handleOpenDialog(appointment, appointment.note)}
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Ícone de status nota */}
+                        <div style={{ marginTop: 2, width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: hasNote ? T.chip : T.light }}>
+                          {hasNote
+                            ? <StickyNote className="h-4 w-4" style={{ color: T.brand }} />
+                            : <Plus className="h-4 w-4" style={{ color: T.muted }} />
+                          }
+                        </div>
+
+                        {/* Conteúdo */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-semibold text-sm text-foreground truncate">{client}</span>
+                            {getStatusBadge(appointment.status)}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
+                            <Scissors className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{service}</span>
+                            <span className="mx-0.5">·</span>
+                            <Calendar className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{formatDate(appointment.start_time)}</span>
+                          </div>
+                          {notePreview ? (
+                            <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                              {notePreview}
+                            </p>
+                          ) : (
+                            <p className="mt-1.5 text-xs text-muted-foreground italic">
+                              Toque para adicionar anotação
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
+                          {hasNote && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedAppointment(appointment)
+                                setCurrentNote(appointment.note)
+                                setIsDeleteDialogOpen(true)
+                              }}
+                              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive active:bg-destructive/10 transition-colors"
+                              style={{ WebkitTapHighlightColor: 'transparent' }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
             ) : (
+              /* Desktop: tabela */
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -418,41 +479,32 @@ export function AppointmentNotes() {
                 </TableHeader>
                 <TableBody>
                   {filteredAppointments.map((appointment) => (
-                    <TableRow key={appointment.id}>
+                    <TableRow key={appointment.id} style={{ transition: 'background 100ms' }}
+                      onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-text-tertiary" />
-                          <span className="text-sm">
-                            {formatDate(appointment.start_time)}
-                          </span>
+                          <span className="text-sm">{formatDate(appointment.start_time)}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-text-tertiary" />
-                          <span>
-                            {appointment.contact?.name || appointment.whatsapp_number || '-'}
-                          </span>
+                          <span>{appointment.contact?.name || appointment.whatsapp_number || '-'}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {appointment.service?.name || '-'}
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(appointment.status)}
-                      </TableCell>
+                      <TableCell>{appointment.service?.name || '-'}</TableCell>
+                      <TableCell>{getStatusBadge(appointment.status)}</TableCell>
                       <TableCell>
                         {appointment.note ? (
-                          <div className="max-w-xs">
-                            <p className="text-sm text-text-secondary truncate">
-                              {appointment.note.notes.substring(0, 50)}
-                              {appointment.note.notes.length > 50 ? '...' : ''}
-                            </p>
-                          </div>
+                          <p className="text-sm text-text-secondary truncate max-w-xs">
+                            {appointment.note.notes.substring(0, 50)}
+                            {appointment.note.notes.length > 50 ? '...' : ''}
+                          </p>
                         ) : (
-                          <span className="text-sm text-text-tertiary italic">
-                            Sem anotação
-                          </span>
+                          <span className="text-sm text-text-tertiary italic">Sem anotação</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
@@ -462,11 +514,7 @@ export function AppointmentNotes() {
                             size="sm"
                             onClick={() => handleOpenDialog(appointment, appointment.note)}
                           >
-                            {appointment.note ? (
-                              <Edit className="h-4 w-4" />
-                            ) : (
-                              <Plus className="h-4 w-4" />
-                            )}
+                            {appointment.note ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                           </Button>
                           {appointment.note && (
                             <Button
@@ -493,11 +541,14 @@ export function AppointmentNotes() {
 
         {/* Dialog para criar/editar anotação */}
         <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent data-testid="appointment-note-dialog" className="sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>
                 {currentNote ? 'Editar Anotação' : 'Nova Anotação'}
               </DialogTitle>
+              <DialogDescription>
+                {currentNote ? 'Atualize o conteúdo desta anotação.' : 'Registre observações importantes sobre o atendimento.'}
+              </DialogDescription>
             </DialogHeader>
             {selectedAppointment && (
               <div className="space-y-4">
@@ -664,7 +715,7 @@ export function AppointmentNotes() {
 
         {/* Dialog de confirmação de exclusão */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
+          <AlertDialogContent data-testid="delete-note-dialog">
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
               <AlertDialogDescription>

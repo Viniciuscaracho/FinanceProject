@@ -1,383 +1,248 @@
-import { useState, useEffect } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { 
-  Home, 
-  CreditCard, 
-  Users, 
-  BarChart3, 
-  Upload, 
-  FileText, 
-  Menu,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-  TrendingUp,
-  Calendar,
-  DollarSign,
-  Scissors,
-  Clock,
-  Link2,
-  Crown,
-  Shield,
-  Percent,
-  FileEdit,
-  StickyNote
+import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import {
+  Home, CreditCard, Users, BarChart3, Upload, FileText,
+  X, ChevronLeft, ChevronRight, ChevronDown,
+  Calendar, Scissors, Clock, Link2, Crown, Shield, Percent, FileEdit, Globe,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useAuth } from '../../contexts/AuthContext'
 
-// Função auxiliar para obter cor do ícone baseado no modo escuro
-const getIconColor = (color, isDarkMode, isActive) => {
-  if (isActive) {
-    return isDarkMode ? 'text-indigo-300' : 'text-white'
-  }
-  if (isDarkMode) {
-    // Mapear cores -600 para versões mais claras no modo escuro
-    const colorMap = {
-      'text-blue-600': 'text-blue-400',
-      'text-green-600': 'text-green-400',
-      'text-[#5B7A9E]': 'text-[#6B8FA3]',
-      'text-teal-600': 'text-teal-400',
-      'text-emerald-600': 'text-emerald-400',
-      'text-indigo-600': 'text-indigo-400',
-      'text-[#5B7A9E]': 'text-[#6B8FA3]',
-      'text-amber-600': 'text-amber-400',
-      'text-orange-600': 'text-orange-400',
-    }
-    return colorMap[color] || 'text-gray-400'
-  }
-  return color
-}
+const BRAND = '#4C60AA'
 
-const menuItems = [
-  { 
-    icon: Home, 
-    label: 'Página inicial', 
-    path: '/', 
-    color: 'text-blue-600',
-    badge: '4'
+/* ─── Estrutura de navegação em grupos ────────── */
+const NAV = [
+  {
+    label: null,
+    items: [
+      { icon: Home,       label: 'Início',       path: '/' },
+      { icon: Calendar,   label: 'Agendamentos', path: '/appointments' },
+      { icon: Users,      label: 'Clientes',     path: '/contacts' },
+      { icon: CreditCard, label: 'Transações',   path: '/transactions' },
+      { icon: Globe,      label: 'Vitrine',      path: '/vitrine' },
+    ],
   },
-  { 
-    icon: CreditCard, 
-    label: 'Transações', 
-    path: '/transactions', 
-    color: 'text-green-600',
-    badge: '5'
+  {
+    label: 'Configurar',
+    collapsible: true,
+    storageKey: 'orbi_config_nav',
+    items: [
+      { icon: Link2,    label: 'Links',          path: '/appointment-links' },
+      { icon: Users,    label: 'Profissionais',  path: '/professionals' },
+      { icon: Scissors, label: 'Serviços',       path: '/services' },
+      { icon: Clock,    label: 'Horários',       path: '/working-hours' },
+      { icon: FileEdit, label: 'Documentos',     path: '/document-templates' },
+    ],
   },
-  { 
-    icon: Users, 
-    label: 'Contatos', 
-    path: '/contacts', 
-    color: 'text-[#5B7A9E]',
-    badge: '5'
+  {
+    label: 'Avançado',
+    collapsible: true,
+    storageKey: 'orbi_advanced_nav',
+    items: [
+      { icon: BarChart3, label: 'Relatórios',  path: '/reports' },
+      { icon: Percent,   label: 'Comissões',   path: '/commissions' },
+      { icon: Upload,    label: 'Importações', path: '/imports' },
+      { icon: FileText,  label: 'Conciliações', path: '/reconciliations' },
+    ],
   },
-  { 
-    icon: Calendar, 
-    label: 'Agendamentos', 
-    path: '/appointments', 
-    color: 'text-teal-600',
-    badge: '0'
-  },
-  { 
-    icon: Link2, 
-    label: 'Links de Agendamento', 
-    path: '/appointment-links', 
-    color: 'text-cyan-600',
-    badge: '0'
-  },
-  { 
-    icon: Users, 
-    label: 'Profissionais', 
-    path: '/professionals', 
-    color: 'text-indigo-600',
-    badge: '0'
-  },
-  { 
-    icon: Scissors, 
-    label: 'Serviços', 
-    path: '/services', 
-    color: 'text-[#5B7A9E]',
-    badge: '0'
-  },
-  { 
-    icon: Clock, 
-    label: 'Horários', 
-    path: '/working-hours', 
-    color: 'text-amber-600',
-    badge: '0'
-  },
-  { 
-    icon: BarChart3, 
-    label: 'Relatórios Financeiros', 
-    path: '/reports', 
-    color: 'text-orange-600',
-    badge: '7'
-  },
-  { 
-    icon: FileEdit, 
-    label: 'Modelos de Documentos', 
-    path: '/document-templates', 
-    color: 'text-violet-600',
-    badge: '0'
-  },
-  { 
-    icon: Percent, 
-    label: 'Comissões', 
-    path: '/commissions', 
-    color: 'text-emerald-600',
-    badge: '0'
-  },
-  { 
-    icon: Upload, 
-    label: 'Importações', 
-    path: '/imports', 
-    color: 'text-[#5B7A9E]',
-    badge: '8'
-  },
-  { 
-    icon: FileText, 
-    label: 'Conciliações (OFX)', 
-    path: '/reconciliations', 
-    color: 'text-indigo-600',
-    badge: '2'
-  },
-  { 
-    icon: Crown, 
-    label: 'Assinatura', 
-    path: '/subscription', 
-    color: 'text-yellow-600',
-    badge: '0'
-  },
-  { 
-    icon: Shield, 
-    label: 'Admin', 
-    path: '/admin', 
-    color: 'text-purple-600',
-    badge: '0',
-    adminOnly: true
+  {
+    label: null,
+    items: [
+      { icon: Crown,  label: 'Assinatura', path: '/subscription' },
+      { icon: Shield, label: 'Admin',      path: '/admin', adminOnly: true },
+    ],
   },
 ]
 
 export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen }) {
   const location = useLocation()
-  const navigate = useNavigate()
+  const navigate  = useNavigate()
   const { isDarkMode } = useTheme()
-  const { user } = useAuth()
-  const [progressWidth, setProgressWidth] = useState(0)
-  
-  // Verificar se o usuário é admin (conta com admin: true)
-  const isAdmin = user?.account?.admin === true
+  const { user }  = useAuth()
+  const isAdmin   = user?.account?.admin === true
 
-  // Animate progress bar on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setProgressWidth(75)
-    }, 500)
-    return () => clearTimeout(timer)
-  }, [])
+  // Persistir estado de cada grupo colapsável { storageKey → bool }
+  const [openSections, setOpenSections] = useState(() => {
+    const result = {}
+    NAV.forEach(s => {
+      if (s.collapsible && s.storageKey) {
+        try { result[s.storageKey] = JSON.parse(localStorage.getItem(s.storageKey) ?? 'false') }
+        catch { result[s.storageKey] = false }
+      }
+    })
+    return result
+  })
+
+  const toggleSection = (storageKey) => {
+    setOpenSections(prev => {
+      const next = { ...prev, [storageKey]: !prev[storageKey] }
+      localStorage.setItem(storageKey, JSON.stringify(next[storageKey]))
+      return next
+    })
+  }
 
   const toggleSidebar = () => {
-    if (isMobile) {
-      setIsMobileOpen(false)
-    } else {
-      // Toggle sempre funciona - o Layout gerencia o estado
-      if (typeof setIsCollapsed === 'function') {
-        setIsCollapsed()
-      }
-    }
+    if (isMobile) setIsMobileOpen(false)
+    else if (typeof setIsCollapsed === 'function') setIsCollapsed()
+  }
+
+  const bg        = isDarkMode ? '#161616' : '#FFFFFF'
+  const border    = isDarkMode ? '#242424' : '#E3E2DF'
+  const headerBg  = isDarkMode ? '#1A1A1A' : '#F9F8F5'
+  const iconDim   = isDarkMode ? '#4A4A4A' : '#AEAEAD'
+  const textDim   = isDarkMode ? '#5A5A5A' : '#8A8A88'
+  const labelClr  = isDarkMode ? '#333333' : '#C8C7C4'
+  const hoverBg   = isDarkMode ? '#1F1F1F' : '#F5F5F2'
+
+  const collapsed = isCollapsed && !isMobile
+
+  const handleNav = (path) => {
+    navigate(path)
+    if (isMobile) setIsMobileOpen(false)
+  }
+
+  const isActive = (path) => location.pathname === path
+
+  const NavItem = ({ item }) => {
+    const Icon   = item.icon
+    const active = isActive(item.path)
+    return (
+      <div
+        onClick={() => handleNav(item.path)}
+        title={collapsed ? item.label : undefined}
+        style={{
+          display: 'flex', alignItems: 'center',
+          gap: collapsed ? 0 : 9,
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          padding: collapsed ? '9px 0' : '7px 10px',
+          borderRadius: 8, cursor: 'pointer',
+          background: active ? BRAND : 'transparent',
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: 'manipulation', userSelect: 'none',
+          transition: 'background 120ms ease',
+        }}
+        onMouseEnter={e => { if (!active) e.currentTarget.style.background = hoverBg }}
+        onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
+      >
+        <Icon size={15} style={{ color: active ? '#fff' : iconDim, flexShrink: 0 }} />
+        {!collapsed && (
+          <span style={{ fontSize: 13, fontWeight: 500, color: active ? '#fff' : textDim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {item.label}
+          </span>
+        )}
+      </div>
+    )
   }
 
   return (
-    <div className={cn(
-      "h-full flex flex-col transition-all duration-300 ease-in-out preserve-colors",
-      isDarkMode
-        ? "bg-gray-800 border-r border-gray-700"
-        : "bg-white border-r border-gray-200",
-      isMobile
-        ? "w-full max-w-sm"
-        : isCollapsed
-          ? "w-14"
-          : "w-48"
-    )}>
-      {/* Header */}
-      <div className={cn(
-        "flex items-center justify-between border-b transition-colors duration-200",
-        "px-3 py-2",
-        isDarkMode 
-          ? "border-gray-700 bg-gray-800/50" 
-          : "border-gray-200 bg-gray-50"
-      )}>
-        {(!isCollapsed || isMobile) && (
-          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 bg-[var(--brand-primary)] rounded-[var(--radius-sm)] flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-xs sm:text-sm">P</span>
+    <div style={{
+      height: '100%', display: 'flex', flexDirection: 'column',
+      background: bg, borderRight: `1px solid ${border}`,
+      width: '100%', flexShrink: 0,
+    }}>
+
+      {/* ── Header ─────────────────────────────── */}
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        justifyContent: collapsed ? 'center' : 'space-between',
+        padding: '10px 10px',
+        borderBottom: `1px solid ${border}`,
+        background: headerBg, flexShrink: 0,
+      }}>
+        {!collapsed && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+            <div style={{
+              width: 28, height: 28, background: BRAND, borderRadius: 7,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <span style={{ color: '#fff', fontWeight: 800, fontSize: 13 }}>O</span>
             </div>
-            <div className="min-w-0 flex-1">
-              <span className={cn(
-                "font-bold block leading-tight text-sm",
-                isDarkMode ? "text-gray-100" : "text-gray-900",
-                "truncate"
-              )}>
-                Orbi
-              </span>
-              <p className={cn(
-                "text-[10px] leading-tight mt-0.5",
-                isDarkMode ? "text-gray-400" : "text-gray-500",
-                "truncate"
-              )}>
-                Gestão Profissional
-              </p>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: isDarkMode ? '#fff' : '#111', margin: 0, letterSpacing: '-0.02em' }}>Orbi</p>
+              <p style={{ fontSize: 10, color: iconDim, margin: 0 }}>Gestão Profissional</p>
             </div>
           </div>
         )}
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleSidebar}
-          className={cn(
-            "p-1.5 h-auto transition-colors rounded-md",
-            isDarkMode 
-              ? "hover:bg-gray-700 text-gray-300 hover:text-gray-100" 
-              : "hover:bg-gray-200 text-gray-600"
-          )}
-        >
-          {isMobile ? (
-            <X className="h-4 w-4 lg:h-5 lg:w-5" />
-          ) : isCollapsed ? (
-            <ChevronRight className="h-4 w-4 lg:h-5 lg:w-5" />
-          ) : (
-            <ChevronLeft className="h-4 w-4 lg:h-5 lg:w-5" />
-          )}
-        </Button>
+        <button onClick={toggleSidebar} style={{
+          padding: 6, border: 'none', borderRadius: 6, cursor: 'pointer',
+          background: 'transparent', color: iconDim,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, minHeight: 0, minWidth: 0,
+        }}>
+          {isMobile ? <X size={15} /> : collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
       </div>
 
-      {/* Navigation */}
-      <nav className={cn(
-        "flex-1 overflow-y-auto overflow-x-hidden transition-colors duration-200",
-        isDarkMode ? "bg-gray-800" : "bg-gray-100",
-        "p-2 space-y-1"
-      )}>
-        {menuItems.filter((item) => {
-          // Filtrar itens admin-only se o usuário não for admin
-          if (item.adminOnly && !isAdmin) {
-            return false
-          }
-          return true
-        }).map((item) => {
-          const Icon = item.icon
-          const isActive = location.pathname === item.path
-          
-          return (
-            <div
-              key={item.path}
-              onClick={() => {
-                navigate(item.path);
-                if (isMobile) {
-                  setIsMobileOpen(false);
-                }
-              }}
-              className={cn(
-                "group flex items-center transition-colors duration-150 relative preserve-colors cursor-pointer",
-                "px-3 py-2 rounded-md",
-                "space-x-3",
-                isDarkMode
-                  ? isActive
-                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                    : "text-gray-300 hover:bg-gray-700 hover:text-gray-100"
-                  : isActive
-                    ? "bg-indigo-500 text-white hover:bg-indigo-600"
-                    : "text-gray-700 hover:bg-gray-200 hover:text-gray-900",
-                isCollapsed && !isMobile && "justify-center space-x-0 px-2"
-              )}
-              title={isCollapsed && !isMobile ? item.label : undefined}
-              style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
-            >
-              <Icon className={cn(
-                "flex-shrink-0 h-4 w-4 preserve-colors",
-                getIconColor(item.color, isDarkMode, isActive)
-              )} />
+      {/* ── Navigation ─────────────────────────── */}
+      <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 6, display: 'flex', flexDirection: 'column', gap: 0 }}>
 
-              {(!isCollapsed || isMobile) && (
-                <span className={cn(
-                  "font-medium preserve-colors truncate text-sm",
-                  isDarkMode
-                    ? isActive ? "text-white" : "text-gray-300"
-                    : isActive ? "text-white" : "text-gray-700"
-                )}>
-                  {item.label}
-                </span>
+        {NAV.map((section, si) => {
+          const visibleItems = section.items.filter(item => !item.adminOnly || isAdmin)
+          if (!visibleItems.length) return null
+
+          // Auto-show collapsible section if a child is currently active
+          const hasActive = visibleItems.some(i => isActive(i.path))
+          const isCollapsibleSection = section.collapsible && section.storageKey
+          const sectionOpen = !isCollapsibleSection || openSections[section.storageKey] || hasActive
+          const showItems = sectionOpen
+
+          return (
+            <div key={si} style={{ marginBottom: si < NAV.length - 1 ? 4 : 0 }}>
+
+              {/* Section label + toggle (only when expanded) */}
+              {!collapsed && section.label && (
+                isCollapsibleSection ? (
+                  <button
+                    onClick={() => toggleSection(section.storageKey)}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      width: '100%', padding: '8px 10px 4px',
+                      border: 'none', background: 'transparent', cursor: 'pointer',
+                      color: labelClr, fontFamily: 'inherit',
+                    }}
+                  >
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      {section.label}
+                    </span>
+                    <ChevronDown
+                      size={12}
+                      style={{ color: labelClr, transition: 'transform 200ms ease', transform: showItems ? 'rotate(180deg)' : 'none' }}
+                    />
+                  </button>
+                ) : (
+                  <p style={{
+                    fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+                    letterSpacing: '0.08em', color: labelClr,
+                    padding: '8px 10px 4px', margin: 0,
+                  }}>
+                    {section.label}
+                  </p>
+                )
+              )}
+
+              {/* Items */}
+              {(!isCollapsibleSection || showItems) && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {visibleItems.map(item => <NavItem key={item.path} item={item} />)}
+                </div>
+              )}
+
+              {/* Separator entre grupos */}
+              {si < NAV.length - 1 && !collapsed && (
+                <div style={{ height: 1, background: border, margin: '8px 10px 4px' }} />
               )}
             </div>
           )
         })}
       </nav>
 
-      {/* Footer */}
-      {(!isCollapsed || isMobile) && (
-        <div className={cn(
-          "p-3 border-t transition-colors duration-200",
-          isDarkMode ? "border-gray-700" : "border-gray-200"
-        )}>
-          <div className={cn(
-            "rounded-lg p-2 border transition-colors duration-200",
-            isDarkMode
-              ? "bg-blue-900/30 border-blue-800/50"
-              : "bg-blue-50 border-blue-100"
-          )}>
-            <div className="flex items-center space-x-1.5 sm:space-x-2 mb-1.5 sm:mb-2">
-              <Sparkles className={cn(
-                "h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0",
-                isDarkMode ? "text-blue-400" : "text-blue-600"
-              )} />
-              <p className={cn(
-                "text-[10px] sm:text-xs lg:text-sm font-semibold",
-                isDarkMode ? "text-blue-400" : "text-blue-700"
-              )}>
-                Período de Avaliação
-              </p>
-            </div>
-            <p className={cn(
-              "text-[10px] sm:text-xs mb-1.5 sm:mb-2",
-              isDarkMode ? "text-blue-300" : "text-blue-600"
-            )}>
-              430 dias restantes
-            </p>
-            <div className={cn(
-              "w-full rounded-full transition-colors duration-200",
-              "h-1.5 sm:h-2",
-              isDarkMode ? "bg-blue-900/50" : "bg-blue-200"
-            )}>
-              <div 
-                className={cn(
-                  "bg-[var(--brand-accent)] rounded-[var(--radius-sm)] transition-colors duration-100",
-                  "h-1.5 sm:h-2"
-                )}
-                style={{ width: `${progressWidth}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between mt-1.5 sm:mt-2">
-              <span className={cn(
-                "text-[10px] sm:text-xs",
-                isDarkMode ? "text-gray-400" : "text-gray-600"
-              )}>
-                75% utilizado
-              </span>
-              <div className={cn(
-                "flex items-center space-x-1",
-                isDarkMode ? "text-green-400" : "text-green-600"
-              )}>
-                <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                <span className="font-semibold text-[10px] sm:text-xs">Excelente!</span>
-              </div>
-            </div>
-          </div>
+      {/* ── Footer ─────────────────────────────── */}
+      {!collapsed && (
+        <div style={{ padding: '10px 12px', borderTop: `1px solid ${border}`, flexShrink: 0 }}>
+          <p style={{ fontSize: 11, color: iconDim, margin: 0, textAlign: 'center', letterSpacing: '0.02em' }}>
+            Período de avaliação
+          </p>
         </div>
       )}
     </div>
   )
 }
-

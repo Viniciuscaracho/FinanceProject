@@ -80,8 +80,9 @@ function TableRow({
       data-slot="table-row"
       className={cn(
         "h-[52px] border-b border-border",
-        "hover:bg-surface-elevated/50",
+        "hover:bg-gray-50 dark:hover:bg-gray-800/60",
         "data-[state=selected]:bg-surface-elevated",
+        "data-[clickable=true]:cursor-pointer",
         "transition-colors duration-140",
         className
       )}

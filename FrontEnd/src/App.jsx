@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
+import { HelmetProvider } from 'react-helmet-async'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { BankAccountProvider } from './contexts/BankAccountContext'
@@ -8,9 +9,10 @@ import { queryClient } from './lib/queryClient'
 import { Layout } from './components/layout/Layout'
 import { Login } from './components/Login'
 import { Toaster } from './components/ui/sonner'
+import { ModalProvider } from './components/ui/enhanced-modal'
 import ErrorBoundary from './components/ErrorBoundary'
 import { PageSkeleton } from './components/Skeleton'
-import { LandingPage, PublicAppointmentBooking, protectedRoutes } from './config/routes'
+import { LandingPage, PublicAppointmentBooking, AppointmentManage, PublicDiscover, PublicProfessionalProfile, protectedRoutes } from './config/routes'
 import './App.css'
 
 function ProtectedRoute({ children }) {
@@ -48,7 +50,10 @@ function AppContent() {
       <Routes>
         <Route path="/landing" element={<LandingPage />} />
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
+        <Route path="/descobrir" element={<PublicDiscover />} />
+        <Route path="/descobrir/:id" element={<PublicProfessionalProfile />} />
         <Route path="/agendar/:token" element={<PublicAppointmentBooking />} />
+        <Route path="/agendar/gerenciar/:manage_token" element={<AppointmentManage />} />
 
         {protectedRoutes.map(({ path, element: Page }) => (
           <Route
@@ -72,18 +77,22 @@ function AppContent() {
 
 function App() {
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <AuthProvider>
-            <BankAccountProvider>
-              <AppContent />
-              <Toaster />
-            </BankAccountProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <HelmetProvider>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <AuthProvider>
+              <BankAccountProvider>
+                <ModalProvider>
+                  <AppContent />
+                  <Toaster />
+                </ModalProvider>
+              </BankAccountProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </HelmetProvider>
   )
 }
 

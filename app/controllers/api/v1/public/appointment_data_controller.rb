@@ -61,13 +61,15 @@ module Api
           slot_duration  = service&.metadata&.dig('duration_minutes')&.to_i ||
                            settings['default_duration_minutes']&.to_i || 60
 
-          cache_key = "available_slots:#{account.id}:#{professional_id}:#{date}:#{service_id}"
+          exclude_id = params[:exclude_appointment_id]&.to_i.presence
+
+          cache_key = "available_slots:#{account.id}:#{professional_id}:#{date}:#{service_id}:#{exclude_id}"
           slots = begin
             Rails.cache.fetch(cache_key, expires_in: 1.minute) do
-              generate_available_slots(account, professional_id, date, start_hour, end_hour, slot_interval, slot_duration)
+              generate_available_slots(account, professional_id, date, start_hour, end_hour, slot_interval, slot_duration, exclude_id)
             end
           rescue StandardError
-            generate_available_slots(account, professional_id, date, start_hour, end_hour, slot_interval, slot_duration)
+            generate_available_slots(account, professional_id, date, start_hour, end_hour, slot_interval, slot_duration, exclude_id)
           end
 
           render json: {
@@ -158,15 +160,17 @@ module Api
           }
         end
 
-        def generate_available_slots(account, professional_id, date, start_hour, end_hour, slot_interval, slot_duration)
+        def generate_available_slots(account, professional_id, date, start_hour, end_hour, slot_interval, slot_duration, exclude_id = nil)
           start_time = date.beginning_of_day + start_hour.hours
           end_time   = date.beginning_of_day + end_hour.hours
 
-          conflicting_times = Appointment
+          query = Appointment
             .where(account_id: account.id, account_user_id: professional_id)
             .where.not(status: Appointment::APPOINTMENT_STATUS[:canceled])
             .where('start_time < ? AND end_time > ?', end_time, start_time)
-            .pluck(:start_time, :end_time)
+          query = query.where.not(id: exclude_id) if exclude_id
+
+          conflicting_times = query.pluck(:start_time, :end_time)
 
           available_slots = []
           current_time    = start_time

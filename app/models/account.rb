@@ -19,6 +19,8 @@
 #  current_period_ends_at                               :datetime
 #  current_period_starts_at                             :datetime
 #  default_currency                                     :string(3)        default("BRL")
+#  directory_description                                :text
+#  directory_visible                                    :boolean          default(FALSE), not null
 #  discarded_at                                         :datetime
 #  free                                                 :boolean          default(FALSE), not null
 #  google_access_token                                  :string
@@ -29,6 +31,7 @@
 #  max_storage_size_in_bytes                            :bigint           default(5368709120), not null
 #  preferences                                          :jsonb            not null
 #  processor_plan_name                                  :string
+#  profession_category                                  :string
 #  relation_type_cd(Relation type)                      :integer
 #  subscription_status                                  :string           default("incomplete")
 #  suspended                                            :boolean          default(FALSE), not null
@@ -48,12 +51,14 @@
 #
 # Indexes
 #
-#  index_accounts_on_company_id        (company_id)
-#  index_accounts_on_discarded_at      (discarded_at)
-#  index_accounts_on_owner_id          (owner_id)
-#  index_accounts_on_referral_code_id  (referral_code_id)
-#  index_accounts_on_related_to_id     (related_to_id)
-#  index_accounts_on_subscription_id   (subscription_id)
+#  index_accounts_on_company_id           (company_id)
+#  index_accounts_on_directory_visible    (directory_visible)
+#  index_accounts_on_discarded_at         (discarded_at)
+#  index_accounts_on_owner_id             (owner_id)
+#  index_accounts_on_profession_category  (profession_category)
+#  index_accounts_on_referral_code_id     (referral_code_id)
+#  index_accounts_on_related_to_id        (related_to_id)
+#  index_accounts_on_subscription_id      (subscription_id)
 #
 # Foreign Keys
 #

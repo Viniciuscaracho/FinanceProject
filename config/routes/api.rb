@@ -14,6 +14,11 @@ namespace :api, defaults: { format: 'json' } do
       get 'appointment_data/:token/available_slots', to: 'appointment_data#available_slots'
       get 'appointment_data/:token/config', to: 'appointment_data#link_config'
       get 'appointment_data/:token/full', to: 'appointment_data#full'
+
+      # Vitrine pública — descobrir profissionais
+      get  'discover',             to: 'discover#index'
+      get  'discover/categories',  to: 'discover#categories'
+      get  'discover/:id',         to: 'discover#show'
     end
     
     # Auth routes
@@ -21,7 +26,6 @@ namespace :api, defaults: { format: 'json' } do
     post 'auth/login_simple', to: 'auth#login_simple'
     post 'auth/logout', to: 'auth#logout'
     get 'auth/me', to: 'auth#me'
-    post 'auth/create_test_user', to: 'auth#create_test_user'
     post 'auth/register', to: 'auth#register'
     get 'oauth/google_oauth_url', to: 'public#google_oauth_url'
     get 'auth/google_oauth_callback', to: 'auth#google_oauth_callback'
@@ -37,8 +41,6 @@ namespace :api, defaults: { format: 'json' } do
     
     resources :transactions, only: %i[index show create update destroy] do
       collection do
-        get :test
-        get :public_test
         get :check_recurrence_expiry
         post :extend_recurrence
       end
@@ -67,7 +69,10 @@ namespace :api, defaults: { format: 'json' } do
     resources :users, only: %i[index show update]
     
     # Account settings (somente para admins da conta)
-    resource :account_settings, only: %i[show update]
+    resource :account_settings, only: %i[show update] do
+      patch :upload_logo,  on: :member
+      patch :upload_cover, on: :member
+    end
     
     # WhatsApp Configuration
     resource :whatsapp_config, only: %i[show create update] do
@@ -163,6 +168,7 @@ namespace :api, defaults: { format: 'json' } do
         get :billing_portal
         post :cancel
         post :reactivate
+        post :sync
       end
     end
     

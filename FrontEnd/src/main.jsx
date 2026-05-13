@@ -26,14 +26,18 @@ if (!rootElement) {
     )
   } catch (error) {
     console.error('Erro ao renderizar aplicação:', error)
-    rootElement.innerHTML = `
-      <div style="padding: 20px; text-align: center; font-family: sans-serif;">
-        <h1 style="color: red;">Erro ao carregar aplicação</h1>
-        <p>${error.message}</p>
-        <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-          Recarregar Página
-        </button>
-      </div>
-    `
+    const wrapper = document.createElement('div')
+    wrapper.style.cssText = 'padding:20px;text-align:center;font-family:sans-serif'
+    const title = document.createElement('h1')
+    title.style.color = 'red'
+    title.textContent = 'Erro ao carregar aplicação'
+    const msg = document.createElement('p')
+    msg.textContent = error.message
+    const btn = document.createElement('button')
+    btn.style.cssText = 'margin-top:20px;padding:10px 20px;background:#007bff;color:white;border:none;border-radius:4px;cursor:pointer'
+    btn.textContent = 'Recarregar Página'
+    btn.onclick = () => window.location.reload()
+    wrapper.append(title, msg, btn)
+    rootElement.replaceChildren(wrapper)
   }
 }

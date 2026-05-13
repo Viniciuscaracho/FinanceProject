@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { format, addDays, addWeeks, addMonths } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
 import { Button } from '@/components/ui/button'
@@ -23,16 +23,65 @@ import {
 } from '@/components/ui/responsive-dialog'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon, Loader2, Clock, User, Scissors, Phone, DollarSign, AlertCircle, RefreshCw } from 'lucide-react'
+import { CalendarIcon, Loader2, Clock, User, Scissors, Phone, DollarSign, AlertCircle, AlertTriangle, RefreshCw, ExternalLink, Plus, X, Video, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/contexts/AuthContext'
 import { STATUS_LABELS, PAYMENT_STATUS_LABELS } from '@/utils/appointmentUtils'
 import {
   formatWhatsAppNumber,
   isValidWhatsAppNumber,
   validateDateTimeRange,
-  calculateEndTime
+  calculateEndTime,
+  findOverlappingAppointment,
 } from '@/utils/appointmentUtils'
 import { formatCurrency } from '@/utils/format'
+
+function ServiceRow({ services, value, onChange, onRemove, removable, hasError, placeholder }) {
+  const selected = services.find(s => s.id.toString() === value)
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1">
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger className={cn(
+            "h-11",
+            hasError && "border-red-500 focus:border-red-500 focus:ring-red-500"
+          )}>
+            <SelectValue placeholder={placeholder || "Selecione o serviço"} />
+          </SelectTrigger>
+          <SelectContent>
+            {services.map((service) => (
+              <SelectItem key={service.id} value={service.id.toString()}>
+                <div className="flex items-center justify-between w-full gap-3">
+                  <span>{service.name}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {formatCurrency(service.selling_price_cents || 0)}
+                    {service.metadata?.duration_minutes && ` · ${service.metadata.duration_minutes}min`}
+                  </span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {selected && (
+        <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
+          {selected.metadata?.duration_minutes ? `${selected.metadata.duration_minutes}min` : '60min'}
+        </span>
+      )}
+      {removable && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-red-500"
+          onClick={onRemove}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  )
+}
 
 const RECURRENCE_FREQUENCIES = [
   { value: 'daily',      label: 'Diária' },
@@ -74,11 +123,20 @@ export function AppointmentForm({
   initialDate,
   professionals,
   services,
+  appointments,
   onSubmit,
   isSubmitting
 }) {
   const isMobile = useIsMobile()
+  const { user } = useAuth()
   const isEdit = !!appointment
+
+  const defaultProfessionalId = useMemo(() => {
+    if (user?.role === 'custom' && user?.account_user_id) {
+      return user.account_user_id.toString()
+    }
+    return ''
+  }, [user])
 
   const [formData, setFormData] = useState({
     account_user_id: '',
@@ -95,12 +153,59 @@ export function AppointmentForm({
     payment_status: 'pending'
   })
 
+  const [additionalServiceIds, setAdditionalServiceIds] = useState([])
   const [errors, setErrors] = useState({})
   const [recurrence, setRecurrence] = useState({
     enabled: false,
     frequency: 'weekly',
     occurrences: 4,
   })
+
+  // Todos os serviços selecionados (principal + adicionais)
+  const selectedServices = useMemo(() => {
+    const ids = [formData.service_id, ...additionalServiceIds].filter(Boolean)
+    return ids.map(id => services.find(s => s.id.toString() === id)).filter(Boolean)
+  }, [formData.service_id, additionalServiceIds, services])
+
+  const totalDurationMinutes = useMemo(
+    () => selectedServices.reduce((sum, s) => sum + (s?.metadata?.duration_minutes || 60), 0),
+    [selectedServices]
+  )
+
+  const totalPriceCents = useMemo(
+    () => selectedServices.reduce((sum, s) => sum + (s?.selling_price_cents || 0), 0),
+    [selectedServices]
+  )
+
+  const selectedProfessionalHasNoSchedule = useMemo(() => {
+    if (!formData.account_user_id) return false
+    const prof = professionals.find(p => p.id.toString() === formData.account_user_id)
+    if (!prof) return false
+    const schedule = prof.schedule
+    if (!schedule || typeof schedule !== 'object') return true
+    return !Object.values(schedule).some(day => day?.enabled === true)
+  }, [formData.account_user_id, professionals])
+
+  // Detecta sobreposição de horário em tempo real
+  const overlapWarning = useMemo(() => {
+    return findOverlappingAppointment(
+      appointments,
+      formData.account_user_id,
+      formData.start_date,
+      formData.start_time,
+      formData.end_date,
+      formData.end_time,
+      appointment?.id
+    )
+  }, [
+    appointments,
+    formData.account_user_id,
+    formData.start_date,
+    formData.start_time,
+    formData.end_date,
+    formData.end_time,
+    appointment?.id,
+  ])
 
   // Carregar dados do appointment quando editar ou quando initialDate mudar
   useEffect(() => {
@@ -139,11 +244,14 @@ export function AppointmentForm({
         status: appointment.status || 'pending',
         payment_status: appointment.payment_status || 'pending'
       })
+      setAdditionalServiceIds(
+        (appointment.additional_service_ids || []).map(id => id.toString())
+      )
     } else {
       // Se houver initialDate, usar ela, senão resetar
       const startDate = initialDate ? new Date(initialDate) : undefined
       setFormData({
-        account_user_id: '',
+        account_user_id: defaultProfessionalId,
         service_id: '',
         contact_id: '',
         start_date: startDate,
@@ -156,28 +264,43 @@ export function AppointmentForm({
         status: 'pending',
         payment_status: 'pending'
       })
+      setAdditionalServiceIds([])
     }
     setErrors({})
     setRecurrence({ enabled: false, frequency: 'weekly', occurrences: 4 })
-  }, [appointment, initialDate, open])
+  }, [appointment, initialDate, open, defaultProfessionalId])
 
-  // Atualizar preço quando serviço é selecionado
-  const handleServiceChange = (serviceId) => {
-    const service = services.find(s => s.id.toString() === serviceId)
-    setFormData(prev => ({
-      ...prev,
-      service_id: serviceId,
-      price_cents: service?.selling_price_cents ? (service.selling_price_cents / 100).toString() : prev.price_cents
-    }))
+  const handlePrimaryServiceChange = (serviceId) => {
+    setFormData(prev => ({ ...prev, service_id: serviceId }))
   }
 
-  // Calcular end_time quando start_time ou serviço mudar
+  const handleAdditionalServiceChange = (index, serviceId) => {
+    setAdditionalServiceIds(prev => {
+      const next = [...prev]
+      next[index] = serviceId
+      return next
+    })
+  }
+
+  const handleAddService = () => {
+    setAdditionalServiceIds(prev => [...prev, ''])
+  }
+
+  const handleRemoveService = (index) => {
+    setAdditionalServiceIds(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // Sincronizar preço total quando serviços mudam (apenas criação)
+  useEffect(() => {
+    if (!isEdit && totalPriceCents > 0) {
+      setFormData(prev => ({ ...prev, price_cents: (totalPriceCents / 100).toString() }))
+    }
+  }, [totalPriceCents, isEdit])
+
+  // Calcular end_time a partir da duração total dos serviços
   useEffect(() => {
     if (formData.start_date && formData.start_time && formData.service_id && !isEdit) {
-      const service = services.find(s => s.id.toString() === formData.service_id)
-      const duration = service?.metadata?.duration_minutes || 60
-      const calculated = calculateEndTime(formData.start_date, formData.start_time, duration)
-      
+      const calculated = calculateEndTime(formData.start_date, formData.start_time, totalDurationMinutes)
       if (calculated) {
         setFormData(prev => ({
           ...prev,
@@ -186,7 +309,7 @@ export function AppointmentForm({
         }))
       }
     }
-  }, [formData.start_date, formData.start_time, formData.service_id, isEdit, services])
+  }, [formData.start_date, formData.start_time, formData.service_id, totalDurationMinutes, isEdit])
 
   // Sincronizar data de fim com data de início quando for o mesmo dia
   useEffect(() => {
@@ -296,6 +419,11 @@ export function AppointmentForm({
       }
     }
 
+    // Bloquear sobreposição de horário
+    if (overlapWarning) {
+      newErrors.overlap = true
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -309,6 +437,11 @@ export function AppointmentForm({
 
     const submitData = { ...formData }
 
+    // Serviços adicionais (IDs numéricos, sem vazios)
+    submitData.additional_service_ids = additionalServiceIds
+      .filter(Boolean)
+      .map(id => parseInt(id, 10))
+
     // Converter preço para centavos
     if (submitData.price_cents) {
       submitData.price_cents = Math.round(parseFloat(submitData.price_cents) * 100)
@@ -321,7 +454,7 @@ export function AppointmentForm({
       date.setHours(parseInt(hours), parseInt(minutes), 0, 0)
       submitData.start_time = date.toISOString()
     }
-    
+
     if (submitData.end_date) {
       const date = new Date(submitData.end_date)
       const [hours = '00', minutes = '00'] = (submitData.end_time || '00:00').split(':')
@@ -333,9 +466,9 @@ export function AppointmentForm({
     delete submitData.start_date
     delete submitData.end_date
 
-    // Remover campos vazios
+    // Remover campos vazios (exceto additional_service_ids que pode ser [])
     Object.keys(submitData).forEach(key => {
-      if (submitData[key] === '' || submitData[key] === null || submitData[key] === undefined) {
+      if (key !== 'additional_service_ids' && (submitData[key] === '' || submitData[key] === null || submitData[key] === undefined)) {
         delete submitData[key]
       }
     })
@@ -353,7 +486,8 @@ export function AppointmentForm({
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent 
+      <ResponsiveDialogContent
+        data-testid="appointment-form-dialog"
         className={cn(
           "max-w-2xl",
           isMobile && "max-w-full"
@@ -377,12 +511,65 @@ export function AppointmentForm({
             )}>
             {errors.dateRange && (
               <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200 text-sm flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
+                <AlertCircle className="h-4 w-4 shrink-0" />
                 {errors.dateRange}
               </div>
             )}
 
-            {/* Seção: Profissional e Serviço */}
+            {overlapWarning && (() => {
+              const ovClient = overlapWarning.client?.name || overlapWarning.client?.whatsapp_number || 'outro cliente'
+              const ovStart = overlapWarning.start_time ? format(new Date(overlapWarning.start_time), 'HH:mm') : ''
+              const ovEnd   = overlapWarning.end_time   ? format(new Date(overlapWarning.end_time),   'HH:mm') : ''
+              const isError = !!errors.overlap
+              return (
+                <div className={cn(
+                  "p-3 rounded-lg border text-sm",
+                  isError
+                    ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200"
+                    : "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-200"
+                )}>
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-medium">
+                        {isError ? 'Conflito de horário — corrija antes de salvar' : 'Conflito de horário detectado'}
+                      </p>
+                      <p className={cn(
+                        "mt-0.5",
+                        isError ? "text-red-700 dark:text-red-300" : "text-amber-700 dark:text-amber-300"
+                      )}>
+                        Este profissional já tem um agendamento com{' '}
+                        <strong>{ovClient}</strong>{' '}
+                        {ovStart && ovEnd && <>das <strong>{ovStart}</strong> às <strong>{ovEnd}</strong></>}.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {selectedProfessionalHasNoSchedule && (
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg text-amber-800 dark:text-amber-200 text-sm">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium">Profissional sem horários configurados</p>
+                    <p className="mt-0.5 text-amber-700 dark:text-amber-300">
+                      Configure os horários de atendimento antes de criar agendamentos.{' '}
+                      <a
+                        href="/working-hours"
+                        className="underline font-medium hover:text-amber-900 dark:hover:text-amber-100 inline-flex items-center gap-1"
+                      >
+                        Configurar horários
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Seção: Profissional e Serviço(s) */}
             <div className={cn("space-y-4", isMobile && "space-y-3")}>
               <h3 className={cn(
                 "text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2",
@@ -391,80 +578,138 @@ export function AppointmentForm({
                 <Scissors className={cn("h-4 w-4", isMobile && "h-3 w-3")} />
                 Informações do Serviço
               </h3>
-              <div className={cn(
-                "grid grid-cols-1 gap-4",
-                !isMobile && "sm:grid-cols-2"
-              )}>
-                <div className="space-y-2">
-                  <Label htmlFor="professional" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Profissional *
-                  </Label>
-                  <Select
-                    value={formData.account_user_id}
-                    onValueChange={(value) => setFormData({ ...formData, account_user_id: value })}
-                    required
-                  >
-                    <SelectTrigger className={cn(
-                      "h-11",
-                      errors.account_user_id && "border-red-500 focus:border-red-500 focus:ring-red-500"
-                    )}>
-                      <SelectValue placeholder="Selecione o profissional" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {professionals.map((prof) => (
-                        <SelectItem key={prof.id} value={prof.id.toString()}>
-                          {prof.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.account_user_id && (
-                    <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.account_user_id}
-                    </p>
-                  )}
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="service" className="flex items-center gap-2">
-                    <Scissors className="h-4 w-4" />
-                    Serviço *
-                  </Label>
-                  <Select
-                    value={formData.service_id}
-                    onValueChange={handleServiceChange}
-                    required
-                  >
-                    <SelectTrigger className={cn(
-                      "h-11",
-                      errors.service_id && "border-red-500 focus:border-red-500 focus:ring-red-500"
-                    )}>
-                      <SelectValue placeholder="Selecione o serviço" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {services.map((service) => (
-                        <SelectItem key={service.id} value={service.id.toString()}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{service.name}</span>
-                            <span className="text-xs text-muted-foreground ml-2">
-                              {formatCurrency(service.selling_price_cents || 0)}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.service_id && (
-                    <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {errors.service_id}
-                    </p>
-                  )}
-                </div>
+              {/* Profissional */}
+              <div className="space-y-2">
+                <Label htmlFor="professional" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Profissional *
+                </Label>
+                <Select
+                  value={formData.account_user_id}
+                  onValueChange={(value) => setFormData({ ...formData, account_user_id: value })}
+                  required
+                >
+                  <SelectTrigger className={cn(
+                    "h-11",
+                    errors.account_user_id && "border-red-500 focus:border-red-500 focus:ring-red-500"
+                  )}>
+                    <SelectValue placeholder="Selecione o profissional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {professionals.map((prof) => (
+                      <SelectItem key={prof.id} value={prof.id.toString()}>
+                        {prof.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.account_user_id && (
+                  <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.account_user_id}
+                  </p>
+                )}
+              </div>
+
+              {/* Serviços — lista dinâmica */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Scissors className="h-4 w-4" />
+                  Serviço(s) *
+                </Label>
+
+                {/* Serviço principal */}
+                <ServiceRow
+                  services={services}
+                  value={formData.service_id}
+                  onChange={handlePrimaryServiceChange}
+                  hasError={!!errors.service_id}
+                  placeholder="Selecione o serviço"
+                  removable={false}
+                />
+                {errors.service_id && (
+                  <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {errors.service_id}
+                  </p>
+                )}
+
+                {/* Serviços adicionais */}
+                {additionalServiceIds.map((svcId, idx) => (
+                  <ServiceRow
+                    key={idx}
+                    services={services}
+                    value={svcId}
+                    onChange={(id) => handleAdditionalServiceChange(idx, id)}
+                    onRemove={() => handleRemoveService(idx)}
+                    removable
+                    placeholder="Selecione o serviço adicional"
+                  />
+                ))}
+
+                {/* Botão adicionar serviço */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-9 border-dashed text-muted-foreground hover:text-foreground"
+                  onClick={handleAddService}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar serviço
+                </Button>
+
+                {/* Resumo combo */}
+                {selectedServices.length > 1 && (
+                  <div className="flex items-center justify-between rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 px-3 py-2 text-xs text-blue-700 dark:text-blue-300">
+                    <span>
+                      <strong>{selectedServices.length} serviços</strong>
+                      {' · '}
+                      {totalDurationMinutes >= 60
+                        ? `${Math.floor(totalDurationMinutes / 60)}h${totalDurationMinutes % 60 > 0 ? ` ${totalDurationMinutes % 60}min` : ''}`
+                        : `${totalDurationMinutes}min`}
+                    </span>
+                    <span className="font-semibold">
+                      {formatCurrency(totalPriceCents)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Link de videochamada quando serviço é online */}
+            {(() => {
+              const primaryService = services.find(s => s.id.toString() === formData.service_id)
+              if (!primaryService) return null
+              const isOnline = primaryService.modality === 'online' || primaryService.modality === 'hybrid'
+              const meetingUrl = primaryService.meeting_url
+              return isOnline ? (
+                <div className="flex items-start gap-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3">
+                  <Video className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      {primaryService.modality === 'hybrid' ? 'Atendimento Híbrido' : 'Atendimento Online'}
+                    </p>
+                    {meetingUrl ? (
+                      <a
+                        href={meetingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 dark:text-blue-400 underline truncate block mt-0.5 hover:text-blue-800 dark:hover:text-blue-200"
+                      >
+                        {meetingUrl}
+                        <ExternalLink className="inline-block ml-1 h-3 w-3" />
+                      </a>
+                    ) : (
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+                        Nenhum link configurado para este serviço
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : null
+            })()}
 
             {/* Seção: Data e Horário */}
             <div className={cn("space-y-4", isMobile && "space-y-3")}>
@@ -996,16 +1241,18 @@ export function AppointmentForm({
           <ResponsiveDialogFooter className={cn(
             isMobile && "flex-col gap-2 sticky bottom-0 bg-background pt-4 border-t"
           )}>
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              data-testid="cancel-appointment-btn"
+              type="button"
+              variant="outline"
               onClick={() => onOpenChange(false)}
               className={cn(isMobile && "w-full")}
             >
               Cancelar
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              data-testid="save-appointment-btn"
+              type="submit"
               disabled={isSubmitting}
               className={cn(isMobile && "w-full")}
             >

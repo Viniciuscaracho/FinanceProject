@@ -49,12 +49,11 @@ module Transactions
       end
 
       def self.apply_paid_filter(transactions, paid)
-        # Garantir que paid seja um array
         paid_array = Array(paid)
-        if paid_array.any?
-          transactions.by_paid(paid: paid_array)
-        else
+        if paid_array.empty?
           transactions
+        else
+          transactions.by_paid(paid: paid_array)
         end
       end
 

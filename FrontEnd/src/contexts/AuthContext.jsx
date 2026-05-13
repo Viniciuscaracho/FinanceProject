@@ -53,8 +53,7 @@ export const AuthProvider = ({ children }) => {
             if (response.success) {
               setUser(response.user);
             }
-          } catch (error) {
-            console.error('Erro ao fazer login no backend:', error);
+          } catch (error) {;
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
@@ -83,40 +82,32 @@ export const AuthProvider = ({ children }) => {
                 setLoading(false);
                 return;
               }
-            } catch (error) {
-              console.error('Erro ao fazer login no backend:', error);
+            } catch (error) {;
               // Continuar para verificar token local
             }
           }
-        } catch (error) {
-          console.error('Erro ao verificar sessão Supabase:', error);
+        } catch (error) {;
           // Continuar para verificar token local
         }
       }
       
       // Fallback: verificar token local
       const token = localStorage.getItem('auth_token');
-      if (token) {
-        console.log('🔑 Token encontrado no localStorage, verificando autenticação...');
+      if (token) {;
         try {
           const response = await apiService.getCurrentUser();
           if (response.user) {
-            setUser(response.user);
-            console.log('✅ Usuário autenticado:', response.user.email);
+            setUser(response.user);;
           }
-        } catch (error) {
-          console.error('❌ Erro ao verificar autenticação:', error);
+        } catch (error) {;
           // Se o token estiver inválido ou houver erro de conexão, limpar
-          if (error.status === 401 || error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-            console.log('Token inválido ou erro de conexão, limpando...');
+          if (error.status === 401 || error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {;
             apiService.clearToken();
           }
         }
-      } else {
-        console.log('⚠️ Nenhum token encontrado');
+      } else {;
       }
-    } catch (error) {
-      console.error('Auth check failed:', error);
+    } catch (error) {;
       // Não limpar token em caso de erro genérico, apenas logar
       setError(error.message || 'Erro ao verificar autenticação');
     } finally {
@@ -150,40 +141,31 @@ export const AuthProvider = ({ children }) => {
       if (response.success) {
         // Garantir que o token está sendo salvo
         if (response.token) {
-          apiService.setToken(response.token);
-          console.log('Token salvo após login:', response.token.substring(0, 20) + '...');
+          apiService.setToken(response.token);;
         }
         setUser(response.user);
         return { success: true };
       } else {
         const errorMessage = response.error || response.message || 'Login falhou';
-        setError(errorMessage);
-        console.error('Login failed:', { response, errorMessage });
+        setError(errorMessage);;
         return { success: false, error: errorMessage };
       }
     } catch (error) {
       const errorMessage = error.message || error.data?.message || error.data?.error || 'Erro ao fazer login';
-      setError(errorMessage);
-      console.error('Login error:', { 
-        error, 
-        message: errorMessage,
-        status: error.status,
-        data: error.data 
-      });
+      setError(errorMessage);;
       return { success: false, error: errorMessage };
     }
   };
 
   const logout = async () => {
     try {
-      // Fazer logout do Supabase (apenas se configurado)
+      // Logout do backend primeiro (enquanto o token ainda existe no localStorage)
+      await apiService.logout();
+      // Depois o Supabase (dispara SIGNED_OUT que chama clearToken via listener)
       if (isSupabaseAvailable) {
         await supabase.auth.signOut();
       }
-      // Fazer logout do backend
-      await apiService.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch (error) {;
     } finally {
       setUser(null);
       setError(null);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import DOMPurify from 'dompurify'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -36,6 +37,8 @@ import {
   Trash2,
   Download,
   AlertCircle,
+  Video,
+  ExternalLink,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -43,13 +46,14 @@ import { apiService } from '@/lib/api'
 import { formatCurrency } from '@/utils/format'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { T, DISPLAY } from '@/lib/tokens'
 
 const STATUS_CONFIG = {
-  pending:   { label: 'Pendente',   color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-  confirmed: { label: 'Confirmado', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  completed: { label: 'Concluído',  color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  canceled:  { label: 'Cancelado',  color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  no_show:   { label: 'Não compareceu', color: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
+  pending:   { label: 'Pendente',       color: '#F59E0B' },
+  confirmed: { label: 'Confirmado',     color: '#4C60AA' },
+  completed: { label: 'Concluído',      color: '#10B981' },
+  canceled:  { label: 'Cancelado',      color: '#D1D5DB' },
+  no_show:   { label: 'Não compareceu', color: '#D1D5DB' },
 }
 
 function getFileExt(filename = '') {
@@ -232,7 +236,6 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
         position: 'bottom-right'
       })
     } catch (error) {
-      console.error('Erro ao salvar anotação:', error)
       toast.error('Erro ao salvar anotação automaticamente')
     } finally {
       setIsSaving(false)
@@ -271,7 +274,6 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
       cacheInvalidate(appointment.id)
       toast.success('Anotação salva com sucesso!')
     } catch (error) {
-      console.error('Erro ao salvar anotação:', error)
       toast.error(error.message || 'Erro ao salvar anotação')
     } finally {
       setIsSaving(false)
@@ -284,7 +286,6 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
       const response = await apiService.getProfessionalDocumentTemplatesForAppointment(appointment.id)
       setTemplates(response.templates || [])
     } catch (error) {
-      console.error('Erro ao carregar templates:', error)
       toast.error('Erro ao carregar templates de documentos')
     }
   }
@@ -318,7 +319,6 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
         toast.error(response.error || 'Erro ao gerar documento')
       }
     } catch (error) {
-      console.error('Erro ao gerar documento:', error)
       toast.error(error.message || 'Erro ao gerar documento')
     } finally {
       setIsGeneratingDocument(false)
@@ -367,7 +367,6 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
         fileInputRef.current.value = ''
       }
     } catch (error) {
-      console.error('Erro ao fazer upload:', error)
       toast.error(error.message || 'Erro ao fazer upload dos anexos')
     } finally {
       setIsUploadingAttachment(false)
@@ -384,7 +383,6 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
       setAttachments(attachments.filter(att => att.id !== attachmentId))
       toast.success('Anexo removido com sucesso!')
     } catch (error) {
-      console.error('Erro ao remover anexo:', error)
       toast.error(error.message || 'Erro ao remover anexo')
     }
   }
@@ -438,7 +436,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-2xl p-0 flex flex-col overflow-hidden">
+      <SheetContent data-testid="consultation-modal" className="w-full sm:max-w-2xl p-0 flex flex-col overflow-hidden">
         {/* ── Header ── */}
         <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 dark:from-gray-950 dark:to-gray-900 px-6 pt-6 pb-5 flex-shrink-0">
           <button
@@ -457,17 +455,20 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
 
           <div className="flex items-center gap-4">
             {/* Avatar */}
-            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+            <div className="h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg" style={{ background: T.brand }}>
               <span className="text-white text-xl font-bold">{initials}</span>
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-0.5">Sessão do cliente</p>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: T.chip }}>Sessão do cliente</p>
               <h2 className="text-xl font-bold text-white truncate">{clientName}</h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-sm text-gray-300">{serviceName}</span>
                 <span className="text-gray-600">·</span>
-                <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full", statusCfg.color)}>
+                <span
+                  className="text-xs font-semibold px-2 py-0.5"
+                  style={{ borderRadius: 20, background: statusCfg.color + '28', color: statusCfg.color === '#D1D5DB' ? '#6B6B6B' : '#fff' }}
+                >
                   {statusCfg.label}
                 </span>
               </div>
@@ -502,6 +503,14 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                 {formatCurrency(appointment.price?.cents || 0, appointment.price?.currency || 'BRL')}
               </span>
             </div>
+            {appointment.service?.modality && appointment.service.modality !== 'presencial' && (
+              <div className="flex items-center gap-1.5 bg-blue-500/20 rounded-lg px-3 py-1.5">
+                <Video className="h-3.5 w-3.5 text-blue-300" />
+                <span className="text-xs text-blue-200 font-medium">
+                  {appointment.service.modality === 'online' ? 'Online' : 'Híbrido'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -512,7 +521,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-blue-500" />
+                <FileText className="h-4 w-4" style={{ color: T.brand }} />
                 <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Anotações da Sessão</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -538,8 +547,13 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
             </div>
 
             {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="h-7 w-7 animate-spin text-blue-500" />
+              <div className="p-5 space-y-3 animate-pulse">
+                <div className="h-3.5 bg-gray-100 dark:bg-gray-800 rounded-full w-full" />
+                <div className="h-3.5 bg-gray-100 dark:bg-gray-800 rounded-full w-5/6" />
+                <div className="h-3.5 bg-gray-100 dark:bg-gray-800 rounded-full w-3/4" />
+                <div className="h-3.5 bg-gray-100 dark:bg-gray-800 rounded-full w-full" />
+                <div className="h-3.5 bg-gray-100 dark:bg-gray-800 rounded-full w-2/3" />
+                <div className="h-3.5 bg-gray-100 dark:bg-gray-800 rounded-full w-4/5" />
               </div>
             ) : (
               <Textarea
@@ -558,11 +572,11 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2">
-                <Paperclip className="h-4 w-4 text-blue-500" />
+                <Paperclip className="h-4 w-4" style={{ color: T.brand }} />
                 <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                   Anexos
                   {attachments.length > 0 && (
-                    <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-bold px-1.5 py-0.5 rounded-full">
+                    <span className="ml-2 text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ background: T.chip, color: T.brand }}>
                       {attachments.length}
                     </span>
                   )}
@@ -581,7 +595,8 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadingAttachment}
-                className="h-8 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 gap-1.5"
+                className="h-8 text-xs font-semibold gap-1.5"
+                style={{ color: T.brand }}
               >
                 {isUploadingAttachment ? (
                   <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Enviando…</>
@@ -592,8 +607,16 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
             </div>
 
             {isLoadingAttachments ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {[1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-3 px-4 py-3 animate-pulse">
+                    <div className="h-9 w-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full w-3/4" />
+                      <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full w-1/4" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : attachments.length > 0 ? (
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -642,16 +665,30 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
 
         {/* ── Footer ── */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex-shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleOpenDocumentDialog}
-            disabled={isSaving || !currentNote}
-            className="gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-          >
-            <GraduationCap className="h-4 w-4" />
-            <span className="hidden sm:inline">Gerar Documento</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenDocumentDialog}
+              disabled={isSaving}
+              className="gap-2"
+            >
+              <GraduationCap className="h-4 w-4" />
+              Gerar Documento
+            </Button>
+            {appointment.service?.meeting_url && (appointment.service?.modality === 'online' || appointment.service?.modality === 'hybrid') && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.open(appointment.service.meeting_url, '_blank', 'noopener,noreferrer')}
+                className="gap-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+              >
+                <Video className="h-4 w-4" />
+                <span className="hidden sm:inline">Entrar na call</span>
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -665,7 +702,8 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
               size="sm"
               onClick={handleManualSave}
               disabled={isSaving || !notes.trim() || notes.trim().length < 3 || !hasUnsavedChanges}
-              className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+              className="gap-2"
+              style={{ background: T.brand, color: '#fff', borderRadius: 8 }}
             >
               {isSaving ? (
                 <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Salvando…</>
@@ -679,7 +717,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
 
       {/* Dialog para Gerar Documento Profissional */}
       <Dialog open={isDocumentDialogOpen} onOpenChange={setIsDocumentDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent data-testid="consultation-document-dialog" className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5" />
@@ -726,7 +764,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
               <div className="border rounded-lg p-4 bg-white">
                 <div
                   className="prose max-w-none"
-                  dangerouslySetInnerHTML={{ __html: generatedDocument }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(generatedDocument) }}
                 />
               </div>
             </div>

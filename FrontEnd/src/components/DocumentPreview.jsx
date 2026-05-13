@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import DOMPurify from 'dompurify'
 import { cn } from '@/lib/utils'
 import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
@@ -15,7 +16,7 @@ export function DocumentPreview({
 
   useEffect(() => {
     if (previewRef.current && content) {
-      previewRef.current.innerHTML = content
+      previewRef.current.innerHTML = DOMPurify.sanitize(content)
     }
   }, [content, showHeader])
 

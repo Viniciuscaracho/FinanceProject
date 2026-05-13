@@ -74,6 +74,7 @@ class Company < Person
   has_one :account, inverse_of: :company, dependent: :restrict_with_error
   has_one :nfse_config, class_name: 'CompanyNfseConfig', dependent: :destroy
   has_one_attached :logo
+  has_one_attached :cover_image
   has_one_attached :cert_file
 
   # Nested Attributes

@@ -73,5 +73,7 @@ class ApplicationRecord < ActiveRecord::Base
 
   def to_webhook_data
     render_jbuilder_api_v1
+  rescue ActionView::MissingTemplate
+    attributes.as_json
   end
 end

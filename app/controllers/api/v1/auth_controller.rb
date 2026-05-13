@@ -3,9 +3,9 @@
 module Api
   module V1
     class AuthController < Api::V1::ApplicationController
-      skip_before_action :authenticate_user!, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :test_user, :debug_user, :test_logs, :create_test_user, :register]
-      skip_before_action :set_current_account, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :test_user, :debug_user, :test_logs, :create_test_user, :register]
-      skip_before_action :create_or_refresh_session, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :test_user, :debug_user, :test_logs, :create_test_user, :register]
+      skip_before_action :authenticate_user!, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register]
+      skip_before_action :set_current_account, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register]
+      skip_before_action :create_or_refresh_session, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register]
       before_action :set_user, only: [:me, :logout]
       before_action :force_json_format
 
@@ -141,11 +141,6 @@ module Api
         render json: { success: true, message: 'Logout realizado com sucesso' }
       end
 
-      def test_user
-        user = User.find_by(email: 'admin@financialproject.com')
-        render json: { direct_id: user.id, user_data: user_data(user), user_inspect: user.inspect }
-      end
-
       def login_simple
         user = User.find_by(email: params[:email])
 
@@ -166,26 +161,6 @@ module Api
       rescue => e
         return if performed?
         render json: { success: false, error: 'Erro ao processar login', message: e.message }, status: :internal_server_error
-      end
-
-      def debug_user
-        sql = "SELECT id, email FROM users WHERE email = 'admin@financialproject.com'"
-        result = ActiveRecord::Base.connection.execute(sql)
-        user = User.find_by(email: 'admin@financialproject.com')
-        user2 = User.where(email: 'admin@financialproject.com').first
-        user_data_result = user_data(user) if user
-
-        render json: {
-          sql_result: result.to_a,
-          find_by_id: user&.id,
-          where_id: user2&.id,
-          user_data_id: user_data_result&.dig(:id),
-          json_result: user_data_result.to_json
-        }
-      end
-
-      def test_logs
-        render json: { message: "Logs funcionando", timestamp: Time.current }
       end
 
       def register
@@ -226,30 +201,6 @@ module Api
         render json: { success: false, error: e.record.errors.full_messages.first || 'Erro ao criar conta' }, status: :unprocessable_entity
       rescue => e
         render json: { success: false, error: 'Erro interno ao criar conta' }, status: :internal_server_error
-      end
-
-      def create_test_user
-        existing_user = User.find_by(email: 'admin@barbermanagement.io')
-
-        if existing_user
-          return render json: { success: true, message: 'Usuário admin já existe', email: 'admin@barbermanagement.io', password: 'password123' }
-        end
-
-        account = Account.create!(name: "Conta Principal", account_type: 'personal', default_currency: 'BRL')
-
-        user = User.create!(
-          email: 'admin@barbermanagement.io',
-          password: 'password123',
-          password_confirmation: 'password123',
-          first_name: 'Admin',
-          last_name: 'BarberManagement'
-        )
-
-        user.accounts << account
-
-        render json: { success: true, message: 'Usuário admin criado com sucesso', email: 'admin@barbermanagement.io', password: 'password123' }
-      rescue => e
-        render json: { success: false, error: 'Erro ao criar usuário de teste', details: e.message }, status: :unprocessable_entity
       end
 
       private
@@ -299,6 +250,8 @@ module Api
           admin: user.admin? || false,
           account_admin: is_account_admin,
           account_owner: is_account_owner,
+          account_user_id: account_user&.id,
+          role: account_user&.role,
           account: account_data
         }
       rescue => e

@@ -112,7 +112,7 @@ export function FreeFinancialTool() {
                 <Input 
                   type="number"
                   placeholder="0,00" 
-                  className="bg-slate-50 pl-9 h-10 border-slate-200 focus:ring-1 focus:ring-[#3F5B8A]/20 focus:border-[#3F5B8A] text-sm font-bold text-slate-900 rounded-lg"
+                  className="bg-slate-50 pl-9 h-10 border-slate-200 focus:ring-1 focus:ring-[#4C60AA]/20 focus:border-[#4C60AA] text-sm font-bold text-slate-900 rounded-lg"
                   value={initialBalance || ''}
                   onChange={(e) => setInitialBalance(parseFloat(e.target.value) || 0)}
                 />
@@ -140,7 +140,7 @@ export function FreeFinancialTool() {
                     <Input 
                       id="trans-desc"
                       placeholder="Descrição" 
-                      className="bg-slate-50 h-10 border-slate-200 text-sm focus:ring-1 focus:ring-[#3F5B8A]/20 focus:border-[#3F5B8A] font-medium text-slate-900 placeholder:text-slate-400 rounded-lg transition-all"
+                      className="bg-slate-50 h-10 border-slate-200 text-sm focus:ring-1 focus:ring-[#4C60AA]/20 focus:border-[#4C60AA] font-medium text-slate-900 placeholder:text-slate-400 rounded-lg transition-all"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       onKeyDown={(e) => handleKeyPress(e)}
@@ -152,7 +152,7 @@ export function FreeFinancialTool() {
                       id="trans-amount"
                       type="number"
                       placeholder="0,00" 
-                      className="bg-slate-50 pl-9 h-10 border-slate-200 text-sm focus:ring-1 focus:ring-[#3F5B8A]/20 focus:border-[#3F5B8A] font-bold text-slate-900 rounded-lg transition-all"
+                      className="bg-slate-50 pl-9 h-10 border-slate-200 text-sm focus:ring-1 focus:ring-[#4C60AA]/20 focus:border-[#4C60AA] font-bold text-slate-900 rounded-lg transition-all"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       onKeyDown={(e) => handleKeyPress(e)}
@@ -163,7 +163,7 @@ export function FreeFinancialTool() {
                 <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
                   <div className="flex-1 w-full">
                     <Select value={category} onValueChange={setCategory}>
-                      <SelectTrigger className="bg-slate-50 h-10 border-slate-200 text-xs focus:ring-1 focus:ring-[#3F5B8A]/20 focus:border-[#3F5B8A] font-medium text-slate-900 rounded-lg">
+                      <SelectTrigger className="bg-slate-50 h-10 border-slate-200 text-xs focus:ring-1 focus:ring-[#4C60AA]/20 focus:border-[#4C60AA] font-medium text-slate-900 rounded-lg">
                         <SelectValue placeholder="Categoria" />
                       </SelectTrigger>
                       <SelectContent>
@@ -185,7 +185,7 @@ export function FreeFinancialTool() {
                   <div className="flex gap-2 w-full sm:w-auto">
                     <Button 
                       onClick={() => addTransaction('income')} 
-                      className="flex-1 sm:flex-none h-10 px-4 rounded-lg bg-[#3F5B8A] text-white hover:bg-[#34495E] gap-2 text-xs font-bold uppercase tracking-wider shadow-sm transition-all active:scale-95"
+                      className="flex-1 sm:flex-none h-10 px-4 rounded-lg bg-[#4C60AA] text-white hover:bg-[#34495E] gap-2 text-xs font-bold uppercase tracking-wider shadow-sm transition-all active:scale-95"
                     >
                       <Plus className="size-3.5" />
                       Receita
@@ -223,7 +223,7 @@ export function FreeFinancialTool() {
               className="h-full"
             >
               <Card className={`rounded-xl border-slate-200 bg-white shadow-sm overflow-hidden h-full transition-all 
-                ${item.highlight ? 'border-l-4 border-l-[#3F5B8A]' : ''} 
+                ${item.highlight ? 'border-l-4 border-l-[#4C60AA]' : ''} 
                 ${item.color === 'blue' ? 'hover:border-blue-200' : ''}
                 ${item.color === 'rose' ? 'hover:border-rose-200' : ''}
                 ${item.color === 'teal' ? 'hover:border-teal-200' : ''}
@@ -232,13 +232,13 @@ export function FreeFinancialTool() {
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.label}</p>
                     <item.icon className={`size-3.5 ${
-                      item.color === 'blue' ? 'text-[#3F5B8A]' : 
+                      item.color === 'blue' ? 'text-[#4C60AA]' : 
                       item.color === 'rose' ? 'text-rose-500' : 
                       'text-teal-600'
                     }`} />
                   </div>
                   <p className={`text-2xl font-bold tracking-tight ${
-                    item.label === 'Entradas' ? 'text-[#3F5B8A]' : 
+                    item.label === 'Entradas' ? 'text-[#4C60AA]' : 
                     item.label === 'Saídas' ? 'text-rose-600' : 
                     (item.value < 0 ? 'text-rose-600' : 'text-slate-900')
                   }`}>
@@ -257,7 +257,7 @@ export function FreeFinancialTool() {
         <CardContent className="p-0 sm:p-6">
           <div className="flex items-center justify-between p-5 sm:p-0 mb-4 no-print">
             <h2 className="text-[10px] font-bold text-slate-500 flex items-center gap-2 uppercase tracking-widest">
-              <FileText className="size-3.5 text-[#3F5B8A]" />
+              <FileText className="size-3.5 text-[#4C60AA]" />
               Fluxo de Caixa
             </h2>
             <Button variant="outline" size="sm" onClick={handlePrint} className="h-8 gap-2 text-[9px] font-bold uppercase tracking-widest border-slate-200 hover:bg-slate-50 rounded-lg px-3 transition-all text-slate-600">
@@ -291,13 +291,13 @@ export function FreeFinancialTool() {
                       <td className="px-4 py-3 font-semibold text-slate-900">{t.description}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                          t.type === 'income' ? 'bg-blue-50 text-[#3F5B8A]' : 'bg-rose-50 text-rose-600'
+                          t.type === 'income' ? 'bg-blue-50 text-[#4C60AA]' : 'bg-rose-50 text-rose-600'
                         }`}>
                           {t.category}
                         </span>
                       </td>
                       <td className={`px-4 py-3 text-right font-bold ${
-                        t.type === 'income' ? 'text-[#3F5B8A]' : 'text-rose-600'
+                        t.type === 'income' ? 'text-[#4C60AA]' : 'text-rose-600'
                       }`}>
                         {t.type === 'income' ? '+' : '-'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </td>

@@ -1,12 +1,24 @@
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { 
-  Home, 
-  CreditCard, 
-  Users, 
+import {
+  Home,
+  CreditCard,
+  Users,
   Calendar,
   BarChart3,
   MoreHorizontal,
-  Crown
+  Crown,
+  Scissors,
+  Clock,
+  Link2,
+  Percent,
+  StickyNote,
+  Settings,
+  Plus,
+  CalendarPlus,
+  UserPlus,
+  Wallet,
+  Globe,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -17,241 +29,292 @@ import {
 } from '@/components/ui/sheet'
 
 const bottomNavItems = [
-  { 
-    icon: Home, 
-    label: 'Início', 
-    path: '/',
+  { icon: Home,       label: 'Início',    path: '/' },
+  { icon: Calendar,   label: 'Agenda',    path: '/appointments' },
+  { icon: CreditCard, label: 'Finanças',  path: '/transactions' },
+]
+
+const moreMenuGroups = [
+  {
+    title: 'Minha Presença',
+    items: [
+      { icon: Globe, label: 'Vitrine', path: '/vitrine' },
+    ],
   },
-  { 
-    icon: CreditCard, 
-    label: 'Transações', 
-    path: '/transactions',
+  {
+    title: 'Cadastros',
+    items: [
+      { icon: Users,    label: 'Contatos',       path: '/contacts' },
+      { icon: Users,    label: 'Profissionais',  path: '/professionals' },
+      { icon: Scissors, label: 'Serviços',        path: '/services' },
+    ],
   },
-  { 
-    icon: Calendar, 
-    label: 'Agendamentos', 
-    path: '/appointments',
+  {
+    title: 'Agenda',
+    items: [
+      { icon: Clock,      label: 'Horários',        path: '/working-hours' },
+      { icon: Link2,      label: 'Links de Agend.', path: '/appointment-links' },
+      { icon: StickyNote, label: 'Anotações',       path: '/appointment-notes' },
+      { icon: Percent,    label: 'Comissões',        path: '/commissions' },
+    ],
   },
-  { 
-    icon: Users, 
-    label: 'Contatos', 
-    path: '/contacts',
+  {
+    title: 'Financeiro',
+    items: [
+      { icon: BarChart3, label: 'Relatórios', path: '/reports' },
+    ],
+  },
+  {
+    title: 'Sistema',
+    items: [
+      { icon: Settings, label: 'Configurações', path: '/settings' },
+      { icon: Crown,    label: 'Assinatura',     path: '/subscription' },
+    ],
   },
 ]
 
-const moreMenuItems = [
-  { 
-    icon: Users, 
-    label: 'Profissionais', 
-    path: '/professionals',
-  },
-  { 
-    icon: Home, 
-    label: 'Serviços', 
-    path: '/services',
-  },
-  { 
-    icon: Home, 
-    label: 'Horários', 
-    path: '/working-hours',
-  },
-  { 
-    icon: BarChart3, 
-    label: 'Relatórios Financeiros', 
-    path: '/reports',
-  },
-  { 
-    icon: Crown, 
-    label: 'Assinatura', 
-    path: '/subscription',
-  },
+const quickActions = [
+  { icon: CalendarPlus, label: 'Novo agendamento', path: '/appointments', state: { openNew: true } },
+  { icon: Wallet,       label: 'Nova transação',   path: '/transactions', state: { openNew: true } },
+  { icon: UserPlus,     label: 'Novo contato',      path: '/contacts',     state: { openNew: true } },
 ]
+
+const moreMenuPaths = moreMenuGroups.flatMap(g => g.items.map(i => i.path))
 
 export function BottomNavigation() {
   const location = useLocation()
   const navigate = useNavigate()
   const { isDarkMode } = useTheme()
+  const [quickOpen, setQuickOpen] = useState(false)
 
-  const handleNavigation = (path) => {
-    navigate(path)
-    // Scroll to top on navigation
+  const handleNavigation = (path, state) => {
+    navigate(path, state ? { state } : undefined)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const navBg    = isDarkMode ? '#161616' : '#ffffff'
+  const navBord  = isDarkMode ? '#242424' : '#E3E2DF'
+  const active   = '#4C60AA'
+  const inactive = isDarkMode ? '#4A4A4A' : '#AEAEAD'
+
   return (
     <>
-      {/* Bottom Navigation Bar */}
-      <nav 
-        className={cn(
-          "fixed bottom-0 left-0 right-0 z-50",
-          "border-t",
-          "w-full max-w-full overflow-x-hidden",
-          isDarkMode 
-            ? "bg-gray-900 border-gray-700" 
-            : "bg-white border-gray-200",
-          "safe-area-inset-bottom", // Para iPhone com notch
-          "border-t-2"
-        )}
-        style={{ 
+      <nav
+        style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+          background: navBg, borderTop: `1.5px solid ${navBord}`,
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
-        <div className="flex items-center justify-around h-16 px-1 sm:px-2 w-full max-w-full min-w-0">
-          {bottomNavItems.map((item) => {
+        <div style={{ display: 'flex', alignItems: 'center', height: 60, paddingLeft: 4, paddingRight: 4 }}>
+
+          {/* Left nav items */}
+          {bottomNavItems.slice(0, 2).map((item) => {
             const Icon = item.icon
             const isActive = location.pathname === item.path
-            
             return (
               <button
                 key={item.path}
                 onClick={() => handleNavigation(item.path)}
-                className={cn(
-                  "flex flex-col items-center justify-center",
-                  "flex-1 h-full min-w-0",
-                  "transition-colors duration-100",
-                  "touch-manipulation", // Melhora resposta touch
-                  "overflow-hidden",
-                  isActive
-                    ? isDarkMode
-                      ? "text-blue-400"
-                      : "text-blue-600"
-                    : isDarkMode
-                      ? "text-gray-400"
-                      : "text-gray-600"
-                )}
-                aria-label={item.label}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
+                style={{
+                  flex: 1, height: '100%', display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', gap: 3,
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: isActive ? active : inactive,
+                  WebkitTapHighlightColor: 'transparent',
+                }}
               >
-                <div className={cn(
-                  "relative mb-1 flex-shrink-0"
-                )}>
-                  <Icon className={cn(
-                    "h-5 w-5 sm:h-6 sm:w-6 transition-colors duration-100"
-                  )} />
+                <div style={{ position: 'relative' }}>
+                  <Icon style={{ width: 22, height: 22 }} />
                   {isActive && (
-                    <span 
-                      className={cn(
-                        "absolute -bottom-1 left-1/2 -translate-x-1/2",
-                        "w-1 h-1 rounded-full",
-                        isDarkMode ? "bg-blue-400" : "bg-blue-600"
-                      )} 
-                    />
+                    <span style={{
+                      position: 'absolute', bottom: -3, left: '50%', transform: 'translateX(-50%)',
+                      width: 4, height: 4, borderRadius: '50%', background: active,
+                    }} />
                   )}
                 </div>
-                <span className={cn(
-                  "text-[10px] sm:text-xs font-medium truncate w-full px-0.5",
-                  isActive && "font-semibold"
-                )}>
+                <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, letterSpacing: '-0.01em' }}>
                   {item.label}
                 </span>
               </button>
             )
           })}
-          
-          {/* More Menu */}
+
+          {/* Centro: botão "+" */}
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
+              <SheetTrigger asChild>
+                <button
+                  style={{
+                    width: 48, height: 48, borderRadius: '50%',
+                    background: active, border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 14px rgba(76,96,170,0.45)',
+                    WebkitTapHighlightColor: 'transparent',
+                    transform: quickOpen ? 'rotate(45deg)' : 'rotate(0deg)',
+                    transition: 'transform 200ms ease',
+                  }}
+                  aria-label="Ações rápidas"
+                >
+                  <Plus style={{ width: 22, height: 22, color: '#fff' }} />
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="bottom"
+                style={{
+                  background: navBg, borderColor: navBord,
+                  borderTopLeftRadius: 20, borderTopRightRadius: 20,
+                  padding: '20px 20px 32px',
+                }}
+              >
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: navBord, margin: '0 auto 20px' }} />
+                <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: inactive, marginBottom: 12 }}>
+                  Criar novo
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {quickActions.map((a) => {
+                    const Icon = a.icon
+                    return (
+                      <button
+                        key={a.label}
+                        onClick={() => { setQuickOpen(false); handleNavigation(a.path, a.state) }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 14,
+                          padding: '13px 14px', borderRadius: 14,
+                          background: isDarkMode ? '#1F1F1F' : '#F5F5F2',
+                          border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                          WebkitTapHighlightColor: 'transparent',
+                        }}
+                      >
+                        <div style={{
+                          width: 38, height: 38, borderRadius: 10,
+                          background: active + '18', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <Icon style={{ width: 18, height: 18, color: active }} />
+                        </div>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: isDarkMode ? '#E0E0E0' : '#1A1A1A' }}>
+                          {a.label}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          {/* Right nav items */}
+          {bottomNavItems.slice(2).map((item) => {
+            const Icon = item.icon
+            const isActive = location.pathname === item.path
+            return (
+              <button
+                key={item.path}
+                onClick={() => handleNavigation(item.path)}
+                style={{
+                  flex: 1, height: '100%', display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', gap: 3,
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: isActive ? active : inactive,
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                <div style={{ position: 'relative' }}>
+                  <Icon style={{ width: 22, height: 22 }} />
+                  {isActive && (
+                    <span style={{
+                      position: 'absolute', bottom: -3, left: '50%', transform: 'translateX(-50%)',
+                      width: 4, height: 4, borderRadius: '50%', background: active,
+                    }} />
+                  )}
+                </div>
+                <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, letterSpacing: '-0.01em' }}>
+                  {item.label}
+                </span>
+              </button>
+            )
+          })}
+
+          {/* Mais */}
           <Sheet>
             <SheetTrigger asChild>
               <button
-                className={cn(
-                  "flex flex-col items-center justify-center",
-                  "flex-1 h-full",
-                  "transition-colors duration-100",
-                  "min-w-0",
-                  "touch-manipulation",
-                  location.pathname.startsWith('/professionals') ||
-                  location.pathname.startsWith('/services') ||
-                  location.pathname.startsWith('/working-hours') ||
-                  location.pathname.startsWith('/reports') ||
-                  location.pathname.startsWith('/subscription')
-                    ? isDarkMode
-                      ? "text-blue-400"
-                      : "text-blue-600"
-                    : isDarkMode
-                      ? "text-gray-400"
-                      : "text-gray-600"
-                )}
+                style={{
+                  flex: 1, height: '100%', display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', gap: 3,
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: moreMenuPaths.some(p => location.pathname.startsWith(p)) ? active : inactive,
+                  WebkitTapHighlightColor: 'transparent',
+                }}
                 aria-label="Mais opções"
-                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <MoreHorizontal className="h-6 w-6" />
-                <span className={cn(
-                  "text-xs font-medium truncate max-w-full",
-                  (location.pathname.startsWith('/professionals') ||
-                  location.pathname.startsWith('/services') ||
-                  location.pathname.startsWith('/working-hours') ||
-                  location.pathname.startsWith('/reports') ||
-                  location.pathname.startsWith('/subscription')) && "font-semibold"
-                )}>
-                  Mais
-                </span>
+                <div style={{ position: 'relative' }}>
+                  <MoreHorizontal style={{ width: 22, height: 22 }} />
+                  {moreMenuPaths.some(p => location.pathname.startsWith(p)) && (
+                    <span style={{
+                      position: 'absolute', bottom: -3, left: '50%', transform: 'translateX(-50%)',
+                      width: 4, height: 4, borderRadius: '50%', background: active,
+                    }} />
+                  )}
+                </div>
+                <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: '-0.01em' }}>Mais</span>
               </button>
             </SheetTrigger>
-            <SheetContent 
+            <SheetContent
               side="bottom"
-              className={cn(
-                "h-[80vh] rounded-t-[var(--radius-sm)]",
-                isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
-              )}
+              style={{
+                background: navBg, borderColor: navBord,
+                borderTopLeftRadius: 20, borderTopRightRadius: 20,
+                maxHeight: '70vh', overflowY: 'auto',
+              }}
             >
-              <div className="space-y-2 mt-4">
-                <h3 className={cn(
-                  "text-lg font-bold px-4 mb-4",
-                  isDarkMode ? "text-gray-100" : "text-gray-900"
-                )}>
-                  Mais Opções
-                </h3>
-                {moreMenuItems.map((item) => {
-                  const Icon = item.icon
-                  const isActive = location.pathname === item.path
-                  
-                  return (
-                    <button
-                      key={item.path}
-                      onClick={() => {
-                        handleNavigation(item.path)
-                        // Close sheet after navigation
-                        setTimeout(() => {
-                          document.querySelector('[data-state="open"]')?.click()
-                        }, 100)
-                      }}
-                      className={cn(
-                        "w-full flex items-center space-x-4 px-4 py-4",
-                        "rounded-[var(--radius-sm)] transition-colors duration-100",
-                        "touch-manipulation",
-                        isActive
-                          ? isDarkMode
-                            ? "bg-blue-900/40 text-blue-400"
-                            : "bg-blue-50 text-blue-700"
-                          : isDarkMode
-                            ? "hover:bg-gray-800 text-gray-300"
-                            : "hover:bg-gray-50 text-gray-700"
-                      )}
-                      style={{ WebkitTapHighlightColor: 'transparent' }}
-                    >
-                      <Icon className={cn(
-                        "h-5 w-5 flex-shrink-0"
-                      )} />
-                      <span className={cn(
-                        "font-medium text-left flex-1",
-                        isActive && "font-semibold"
-                      )}>
-                        {item.label}
-                      </span>
-                    </button>
-                  )
-                })}
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: navBord, margin: '12px auto 20px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '0 4px 24px' }}>
+                {moreMenuGroups.map((group) => (
+                  <div key={group.title}>
+                    <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: inactive, marginBottom: 4, paddingLeft: 12 }}>
+                      {group.title}
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {group.items.map((item) => {
+                        const Icon = item.icon
+                        const isActive = location.pathname === item.path
+                        return (
+                          <button
+                            key={item.path}
+                            onClick={() => handleNavigation(item.path)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 12,
+                              padding: '11px 12px', borderRadius: 12,
+                              background: isActive ? (isDarkMode ? '#1F2D40' : '#EEF2FA') : 'transparent',
+                              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                              color: isActive ? active : (isDarkMode ? '#5A5A5A' : '#6B6B6B'),
+                              WebkitTapHighlightColor: 'transparent',
+                            }}
+                          >
+                            <div style={{
+                              width: 36, height: 36, borderRadius: 10,
+                              background: isActive ? (isDarkMode ? '#1F2D40' : '#EEF2FA') : (isDarkMode ? '#1F1F1F' : '#F5F5F2'),
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              <Icon style={{ width: 18, height: 18 }} />
+                            </div>
+                            <span style={{ fontSize: 14, fontWeight: isActive ? 700 : 500 }}>{item.label}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </SheetContent>
           </Sheet>
+
         </div>
       </nav>
-      
-      {/* Spacer para o conteúdo não ficar embaixo da bottom nav */}
-      <div 
-        className="h-16 safe-area-inset-bottom"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      />
+
+      {/* Spacer */}
+      <div style={{ height: `calc(60px + env(safe-area-inset-bottom))` }} />
     </>
   )
 }
-

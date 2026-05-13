@@ -45,7 +45,7 @@ export const PAYMENT_STATUS_MAP = {
 
 // Labels para status
 export const STATUS_LABELS = {
-  pending: 'Aguardando Pagamento',
+  pending: 'Pendente',
   confirmed: 'Confirmado',
   completed: 'Concluído',
   canceled: 'Cancelado',
@@ -61,7 +61,7 @@ export const PAYMENT_STATUS_LABELS = {
 
 // Ordered option arrays — use these instead of Object.entries(STATUS_LABELS)
 export const STATUS_OPTIONS = [
-  { value: 'pending', label: 'Aguardando Pagamento' },
+  { value: 'pending', label: 'Pendente' },
   { value: 'confirmed', label: 'Confirmado' },
   { value: 'completed', label: 'Concluído' },
   { value: 'canceled', label: 'Cancelado' },
@@ -75,13 +75,67 @@ export const PAYMENT_STATUS_OPTIONS = [
   { value: 'refunded', label: 'Reembolsado' },
 ]
 
-// Cores para status
+// Cores para status (badges / tooltips)
 export const STATUS_COLORS = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  confirmed: 'bg-green-100 text-green-800',
-  completed: 'bg-blue-100 text-blue-800',
-  canceled: 'bg-red-100 text-red-800',
-  no_show: 'bg-gray-100 text-gray-800'
+  pending:   'bg-gray-100 text-gray-700 dark:bg-gray-800/60 dark:text-gray-300',
+  confirmed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  completed: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+  canceled:  'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 line-through',
+  no_show:   'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+}
+
+// Config visual completa por status — single source of truth para cores
+export const STATUS_CONFIG = {
+  pending: {
+    hex:    '#9ca3af',
+    dot:    'bg-gray-400',
+    ring:   'bg-gray-100 dark:bg-gray-800/60',
+    iconColor: 'text-gray-500',
+    border: 'border-l-gray-400',
+    card:   'bg-gray-50/60 dark:bg-gray-900/10',
+    pulse:  true,
+    dim:    false,
+  },
+  confirmed: {
+    hex:    '#3b82f6',
+    dot:    'bg-blue-500',
+    ring:   'bg-blue-100 dark:bg-blue-900/30',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    border: 'border-l-blue-500',
+    card:   'bg-blue-50/60 dark:bg-blue-900/10',
+    pulse:  false,
+    dim:    false,
+  },
+  completed: {
+    hex:    '#10b981',
+    dot:    'bg-emerald-500',
+    ring:   'bg-emerald-100 dark:bg-emerald-900/30',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    border: 'border-l-emerald-500',
+    card:   'bg-emerald-50/60 dark:bg-emerald-900/10',
+    pulse:  false,
+    dim:    false,
+  },
+  canceled: {
+    hex:    '#ef4444',
+    dot:    'bg-red-500',
+    ring:   'bg-red-100 dark:bg-red-900/30',
+    iconColor: 'text-red-500 dark:text-red-400',
+    border: 'border-l-red-400',
+    card:   'bg-red-50/40 dark:bg-red-900/10',
+    pulse:  false,
+    dim:    true,
+  },
+  no_show: {
+    hex:    '#f97316',
+    dot:    'bg-orange-400',
+    ring:   'bg-orange-100 dark:bg-orange-900/30',
+    iconColor: 'text-orange-500 dark:text-orange-400',
+    border: 'border-l-orange-400',
+    card:   'bg-orange-50/40 dark:bg-orange-900/10',
+    pulse:  false,
+    dim:    true,
+  },
 }
 
 export const PAYMENT_STATUS_COLORS = {
@@ -205,6 +259,54 @@ export function validateDateTimeRange(startDate, startTime, endDate, endTime) {
   }
 
   return { valid: true }
+}
+
+/**
+ * Retorna o primeiro appointment que sobrepõe o intervalo informado para um profissional.
+ * Ignora appointments cancelados/no_show e o próprio registro em modo de edição.
+ */
+export function findOverlappingAppointment(
+  appointments,
+  professionalId,
+  startDate,
+  startTime,
+  endDate,
+  endTime,
+  excludeId
+) {
+  if (!professionalId || !startDate || !startTime || !endDate || !endTime) return null
+  if (!Array.isArray(appointments) || appointments.length === 0) return null
+
+  const [sh, sm] = startTime.split(':').map(Number)
+  const [eh, em] = endTime.split(':').map(Number)
+
+  const newStart = new Date(startDate)
+  newStart.setHours(sh, sm, 0, 0)
+
+  const newEnd = new Date(endDate)
+  newEnd.setHours(eh, em, 0, 0)
+
+  if (newEnd <= newStart) return null
+
+  const SKIP = new Set(['canceled', 'no_show'])
+
+  return (
+    appointments.find((apt) => {
+      if (excludeId != null && String(apt.id) === String(excludeId)) return false
+      if (SKIP.has(apt.status)) return false
+
+      const profId = String(apt.professional?.id ?? apt.account_user_id ?? '')
+      if (profId !== String(professionalId)) return false
+
+      if (!apt.start_time || !apt.end_time) return false
+
+      const aptStart = new Date(apt.start_time)
+      const aptEnd = new Date(apt.end_time)
+
+      // dois intervalos se sobrepõem se start1 < end2 && start2 < end1
+      return newStart < aptEnd && aptStart < newEnd
+    }) ?? null
+  )
 }
 
 /**

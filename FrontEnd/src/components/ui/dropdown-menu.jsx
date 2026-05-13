@@ -69,7 +69,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "relative flex cursor-default items-center gap-4 rounded-md px-3 py-2 text-sm w-full min-w-0",
+        "relative flex cursor-pointer items-center gap-4 rounded-md px-3 py-2 text-sm w-full min-w-0",
         "outline-none select-none transition-colors duration-140",
         "text-gray-900 dark:text-white",
         "focus:bg-blue-50 dark:focus:bg-blue-900/30 focus:text-gray-900 dark:focus:text-white",

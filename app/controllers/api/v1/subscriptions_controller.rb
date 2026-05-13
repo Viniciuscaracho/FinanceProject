@@ -6,8 +6,23 @@ module Api
       before_action :set_account
 
       def index
-        subscription = @account.subscription || @account.last_active_subscription || @account.last_subscription
+        subscription = @account.last_active_subscription
+
+        if subscription.nil? && @account.processor_customer_id.present?
+          subscription = sync_from_stripe
+        end
+
+        subscription ||= @account.subscription || @account.last_subscription
         render json: subscription_json(subscription)
+      end
+
+      def sync
+        subscription = sync_from_stripe
+        subscription ||= @account.subscription || @account.last_subscription
+        render json: subscription_json(subscription)
+      rescue StandardError => e
+        Rails.logger.error "Error syncing subscription: #{e.message}"
+        render json: { error: 'Erro ao sincronizar assinatura', message: e.message }, status: :internal_server_error
       end
 
       def plans
@@ -164,6 +179,29 @@ module Api
       def set_account
         @account = Current.account
         return render json: { error: 'Account not found' }, status: :forbidden unless @account
+      end
+
+      def sync_from_stripe
+        return nil unless @account.processor_customer_id.present?
+
+        active_sub = nil
+        BarberManagement::Stripe::Client.with_api_key do
+          ::Stripe::Subscription.list(customer: @account.processor_customer_id, limit: 10).each do |stripe_sub|
+            sub = @account.subscriptions.find_or_initialize_by(processor_id: stripe_sub.id)
+            sub.sync!(stripe_sub)
+            active_sub = sub if stripe_sub.status.in?(%w[active trialing]) && active_sub.nil?
+          end
+
+          if active_sub
+            @account.assign_subscription_attributes(active_sub)
+            @account.without_auditing { @account.save! } if @account.changed?
+          end
+        end
+
+        active_sub
+      rescue StandardError => e
+        Rails.logger.error "sync_from_stripe error: #{e.message}"
+        nil
       end
 
       def subscription_json(subscription)

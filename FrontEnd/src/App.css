@@ -64,12 +64,12 @@
   --radius: var(--radius-md);
   
   /* Brand Colors - Identidade Visual */
-  --brand-primary: #3F5B8A; /* Ícones principais, valores e montantes */
+  --brand-primary: #4C60AA; /* Ícones principais, valores e montantes */
   --brand-secondary: #6C4F85; /* Elementos secundários */
   --brand-accent: #1E88E5; /* Ações importantes, CTAs */
   
   /* Paleta Funcional */
-  --surface: #F3F4F6; /* Fundo principal - bg-gray-100 */
+  --surface: #F5F5F2; /* Fundo principal - warm neutral */
   --surface-elevated: #FFFFFF; /* Cards e elementos elevados */
   --border: #E5E7EB; /* Bordas - border-gray-200 */
   --text-primary: #1A1C1E; /* Texto principal */
@@ -84,6 +84,10 @@
   --accent: var(--brand-accent);
   --danger: var(--danger);
   
+  /* Extra surface tokens used by design system */
+  --surface-subtle: #EFEFEC;
+  --chip: #EEF2FA;
+
   /* Shadows - subtle shadows for card depth */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
@@ -101,7 +105,7 @@
   --space-12: 48px;
   --space-16: 64px; /* Novo - espaçamentos grandes */
   
-  /* Tipografia - Inter, 16-22px base */
+  /* Tipografia - Space Grotesk, 16-22px base */
   --font-display: 44px; /* 44-56 */
   --font-h1: 32px;
   --font-h2: 28px;
@@ -150,6 +154,8 @@
   /* Dark Mode - Mantendo identidade visual */
   --surface: #0F1419;
   --surface-elevated: #1A1C1E;
+  --surface-subtle: #1E2330;
+  --chip: #1A2540;
   --border: #2D3748;
   --text-primary: #FFFFFF;
   --text-secondary: #A0AEC0;
@@ -204,7 +210,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size: var(--font-body);
     line-height: var(--line-height-normal);
     letter-spacing: -0.01em;
@@ -265,12 +271,6 @@
     letter-spacing: -0.02em;
   }
   
-  /* Tipografia: Inter para texto geral */
-  p, span, div, a, button, input, textarea, select, label,
-  .font-body,
-  [class*="text"] {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  }
 }
 
 /* Custom styles for table text wrapping */
@@ -490,11 +490,6 @@ h1, h2, h3, h4, h5, h6,
   letter-spacing: -0.02em;
 }
 
-p, span, div, a, button, input, textarea, select, label, li,
-.text-body,
-.font-body {
-  font-family: 'Inter', sans-serif;
-}
 
 /* ============================================
    REGRAS DE USO DE CORES - IDENTIDADE VISUAL

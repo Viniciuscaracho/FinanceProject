@@ -13,6 +13,8 @@
 #  country          :string
 #  district         :string
 #  ibge_city_code   :string
+#  latitude         :decimal(10, 7)
+#  longitude        :decimal(10, 7)
 #  postcode         :string
 #  state            :string
 #  created_at       :datetime         not null

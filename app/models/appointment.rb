@@ -5,10 +5,12 @@
 # Table name: appointments
 #
 #  id                           :bigint           not null, primary key
+#  additional_service_ids       :jsonb            not null
 #  billing_notification_sent    :boolean          default(FALSE), not null
 #  billing_notification_sent_at :datetime
 #  end_time                     :datetime
 #  google_meet_link             :string
+#  manage_token                 :string
 #  overdue_notification_sent    :boolean          default(FALSE), not null
 #  overdue_notification_sent_at :datetime
 #  payment_status               :integer
@@ -46,6 +48,7 @@
 #  index_appointments_on_billing_notification_sent         (billing_notification_sent)
 #  index_appointments_on_contact_id                        (contact_id)
 #  index_appointments_on_google_calendar_event_id          (google_calendar_event_id)
+#  index_appointments_on_manage_token                      (manage_token) UNIQUE
 #  index_appointments_on_overdue_notification_sent         (overdue_notification_sent)
 #  index_appointments_on_parent_appointment_id             (parent_appointment_id)
 #  index_appointments_on_payment_status                    (payment_status)
@@ -105,7 +108,7 @@ class Appointment < ApplicationRecord
   validate :end_time_after_start_time
   validate :no_overlapping_appointments
   validate :within_professional_working_hours
-  validate :valid_status_transition
+  validate :valid_status_transition, on: :update
 
   scope :pending_payment, -> { where(status: APPOINTMENT_STATUS[:pending], payment_status: PAYMENT_STATUS[:pending]) }
   scope :confirmed, -> { where(status: APPOINTMENT_STATUS[:confirmed]) }
@@ -122,6 +125,7 @@ class Appointment < ApplicationRecord
 
   before_validation :ensure_contact_from_whatsapp, on: :create, if: -> { whatsapp_number.present? && contact_id.blank? }
   before_create :calculate_end_time_if_missing
+  before_create :generate_manage_token
   after_update :sync_transaction_on_payment_status_change
   after_update :sync_transaction_on_status_change
   after_update :send_whatsapp_on_confirmation
@@ -129,7 +133,31 @@ class Appointment < ApplicationRecord
   after_create :create_audit_transaction_if_unpaid
   after_create :schedule_google_calendar_sync
   after_create :send_confirmation_email
+  after_create :send_whatsapp_booking_receipt
   after_update :schedule_google_calendar_sync_on_change
+
+  # ── Client self-service ───────────────────────────────────────────────────
+
+  def can_be_managed?
+    return false unless manage_token.present?
+    return false unless appointment_link.present?
+    return false unless status.in?([:pending, :confirmed])
+    return false if start_time.blank?
+
+    hours = (appointment_link.settings&.dig('cancel_reschedule_hours')&.to_i || 24).clamp(1, 720)
+    Time.current < start_time - hours.hours
+  end
+
+  def manage_url
+    return nil unless manage_token.present?
+    "#{ENV.fetch('FRONTEND_URL', 'http://localhost:5173')}/agendar/gerenciar/#{manage_token}"
+  end
+
+  def manage_window_deadline
+    return nil unless appointment_link.present? && start_time.present?
+    hours = (appointment_link.settings&.dig('cancel_reschedule_hours')&.to_i || 24).clamp(1, 720)
+    start_time - hours.hours
+  end
 
   def confirm_payment!
     update!(status: :confirmed, payment_status: :paid)
@@ -273,6 +301,8 @@ class Appointment < ApplicationRecord
       unless status_was == :confirmed
         errors.add(:status, 'Apenas agendamentos confirmados podem ser marcados como não compareceu')
       end
+    when :pending
+      errors.add(:status, 'Não é possível retornar um agendamento ao status pendente')
     end
   end
 
@@ -600,6 +630,22 @@ class Appointment < ApplicationRecord
     AppointmentMailer.confirmation(self).deliver_later
   rescue => e
     Rails.logger.error "Erro ao enviar e-mail de confirmação: #{e.message}"
+  end
+
+  def send_whatsapp_booking_receipt
+    return unless appointment_link_id.present?
+    return unless whatsapp_number.present?
+
+    Appointments::SendWhatsappBookingReceipt.call(appointment: self)
+  rescue => e
+    Rails.logger.error "Erro ao enviar WhatsApp de confirmação de agendamento: #{e.message}"
+  end
+
+  def generate_manage_token
+    self.manage_token = loop do
+      token = SecureRandom.urlsafe_base64(32)
+      break token unless Appointment.exists?(manage_token: token)
+    end
   end
 end
 

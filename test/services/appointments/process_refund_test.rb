@@ -59,9 +59,9 @@ module Appointments
       ::Stripe::Refund.stubs(:create).returns(refund_mock)
       BarberManagement::Stripe::Client.stubs(:configured?).returns(true)
       BarberManagement::Stripe::Client.stubs(:with_api_key).yields
-      
+
       result = ProcessRefund.call(appointment: @appointment)
-      
+
       assert result.success?
       assert_equal "re_test_123", result.refund_id
       assert_equal :refunded, @appointment.reload.payment_status
@@ -100,7 +100,7 @@ module Appointments
       ::Stripe::PaymentIntent.stubs(:retrieve).returns(payment_intent_mock)
       BarberManagement::Stripe::Client.stubs(:configured?).returns(true)
       BarberManagement::Stripe::Client.stubs(:with_api_key).yields
-      
+
       result = ProcessRefund.call(appointment: @appointment)
       
       assert result.success?

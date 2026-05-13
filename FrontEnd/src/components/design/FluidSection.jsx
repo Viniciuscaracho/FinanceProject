@@ -1,41 +1,26 @@
 import { cn } from '@/lib/utils'
 
-export function FluidSection({
-  children,
-  className,
-  title,
-  subtitle,
-  icon: Icon,
-  ...props
-}) {
+export function FluidSection({ children, className, title, subtitle, icon: Icon, ...props }) {
   return (
     <div className={cn("relative", className)} {...props}>
       <div className={cn(
-        "bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm",
+        "bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700",
         "transition-colors duration-100"
       )}>
         {(title || Icon) && (
-          <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-2">
-              {Icon && (
-                <Icon className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-              )}
-              <div>
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 leading-none">
-                  {title}
-                </p>
-                {subtitle && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>
-                )}
-              </div>
-            </div>
+          <div className="px-4 pt-4 pb-1">
+            <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+              {title}
+            </p>
+            {subtitle && (
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{subtitle}</p>
+            )}
           </div>
         )}
-        <div className="p-3">
+        <div className="p-4">
           {children}
         </div>
       </div>
     </div>
   )
 }
-

@@ -85,23 +85,19 @@ module BarberManagement
       end
 
       def ensure_customer_exists(account, user)
-        # Se já tem customer_id, verificar se existe no Stripe
         if account.processor_customer_id.present?
           begin
             customer = ::Stripe::Customer.retrieve(account.processor_customer_id)
-            # Verificar se o customer pertence ao BarberManagement
-            if customer.metadata['source'] == 'barber_management' || 
-               customer.metadata['project'] == 'BarberManagement' ||
-               customer.deleted.nil? # Customer existe e não foi deletado
+            if customer[:deleted]
+              Rails.logger.warn "BarberManagement::Stripe: Customer #{account.processor_customer_id} foi deletado no Stripe, criando novo"
+              account.update(processor_customer_id: nil)
+            else
               Rails.logger.info "BarberManagement::Stripe: Usando customer existente: #{customer.id}"
               return customer.id
-            else
-              Rails.logger.warn "BarberManagement::Stripe: Customer existe mas não pertence ao BarberManagement, criando novo"
             end
           rescue ::Stripe::InvalidRequestError => e
             if e.message.include?('No such customer')
               Rails.logger.warn "BarberManagement::Stripe: Customer #{account.processor_customer_id} não existe no Stripe, criando novo"
-              # Limpar o customer_id inválido
               account.update(processor_customer_id: nil)
             else
               raise e

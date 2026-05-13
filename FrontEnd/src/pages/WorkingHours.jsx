@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
+
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -31,6 +33,7 @@ import { apiService } from '../lib/api'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
 import { FluidSection } from '@/components/design'
+import { T, DISPLAY } from '@/lib/tokens'
 
 const DAYS_OF_WEEK = [
   { value: 'monday',    label: 'Segunda-feira' },
@@ -151,33 +154,31 @@ export function WorkingHours() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-500" />
-          <p className="text-gray-600">Carregando...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" style={{ color: T.brand }} />
+          <p style={{ color: T.muted }}>Carregando...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="relative z-10 space-y-6 md:space-y-8 p-4 md:p-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <div style={{ minHeight: '100vh', background: T.bg, ...DISPLAY }}>
+      <div className="relative z-10 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1">
-              <span className="bg-gradient-to-r from-[#5B7A9E] via-[#6B8FA3] to-[#7A9D96] bg-clip-text text-transparent">
-                Horários de Trabalho
-              </span>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-0.5" style={{ color: T.text }}>
+              Horários de Trabalho
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
-              Configure os horários de disponibilidade de cada profissional
+            <p style={{ fontSize: 14, color: T.muted }}>
+              Configure os horários de cada profissional
             </p>
           </div>
           {selectedProfessional && (
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white border-0"
+              className="hidden sm:flex"
+              style={{ background: T.brand, color: '#fff', border: 'none', borderRadius: 8 }}
             >
               {saving ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>
@@ -224,79 +225,101 @@ export function WorkingHours() {
           >
             <>
               {/* Mobile Cards */}
-              <div className="block md:hidden space-y-3">
+              <div className="block md:hidden space-y-2">
                 {DAYS_OF_WEEK.map((day) => {
                   const d = workingHours[day.value]
                   return (
                     <Card
                       key={day.value}
-                      className={cn(
-                        'hover:shadow-md transition-shadow',
-                        d.enabled ? 'border-green-200' : 'border-gray-200 opacity-60'
-                      )}
+                      style={{
+                        transition: 'all 200ms',
+                        borderColor: d.enabled ? T.green + '60' : T.border,
+                        opacity: d.enabled ? 1 : 0.65
+                      }}
                     >
                       <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100">{day.label}</h3>
-                            <div className="flex flex-wrap items-center gap-2 mt-2">
-                              <Badge variant={d.enabled ? 'default' : 'secondary'} className="text-xs">
-                                {d.enabled ? 'Ativo' : 'Inativo'}
-                              </Badge>
-                              {d.enabled && d.has_break && (
-                                <Badge variant="outline" className="text-xs">Com Intervalo</Badge>
-                              )}
+                        {/* Cabeçalho do dia */}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                              <h3 style={{ fontWeight: 600, fontSize: 16, color: d.enabled ? T.text : T.muted }}>
+                                {day.label}
+                              </h3>
+                              <span style={{ borderRadius: 20, padding: '2px 7px', fontSize: 11, fontWeight: 600, background: d.enabled ? T.green + '18' : T.muted + '18', color: d.enabled ? T.green : T.muted }}>
+                                {d.enabled ? 'Aberto' : 'Fechado'}
+                              </span>
                             </div>
+                            {d.enabled && (
+                              <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>
+                                {d.start_time} – {d.end_time}
+                                {d.has_break && ` · Intervalo ${d.break_start}–${d.break_end}`}
+                              </p>
+                            )}
                           </div>
-                          <label className="ml-4 flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={d.enabled}
-                              onChange={(e) => handleDayChange(day.value, 'enabled', e.target.checked)}
-                              className="w-5 h-5 text-green-600 rounded"
-                            />
-                          </label>
+                          <Switch
+                            checked={d.enabled}
+                            onCheckedChange={(checked) => handleDayChange(day.value, 'enabled', checked)}
+                          />
                         </div>
 
-                        {d.enabled ? (
-                          <>
-                            <div className="grid grid-cols-2 gap-3 text-sm pt-3 border-t mb-3">
+                        {d.enabled && (
+                          <div className="mt-4 space-y-3 pt-3" style={{ borderTop: `1px solid ${T.border}` }}>
+                            {/* Horários de trabalho */}
+                            <div className="grid grid-cols-2 gap-3">
                               <div>
-                                <Label className="text-xs text-gray-600 mb-1 block">Início</Label>
-                                <Input type="time" value={d.start_time}
-                                  onChange={(e) => handleDayChange(day.value, 'start_time', e.target.value)} />
+                                <Label className="text-xs text-gray-500 mb-1 block">Entrada</Label>
+                                <Input
+                                  type="time"
+                                  value={d.start_time}
+                                  onChange={(e) => handleDayChange(day.value, 'start_time', e.target.value)}
+                                  className="h-10 text-sm"
+                                />
                               </div>
                               <div>
-                                <Label className="text-xs text-gray-600 mb-1 block">Fim</Label>
-                                <Input type="time" value={d.end_time}
-                                  onChange={(e) => handleDayChange(day.value, 'end_time', e.target.value)} />
+                                <Label className="text-xs text-gray-500 mb-1 block">Saída</Label>
+                                <Input
+                                  type="time"
+                                  value={d.end_time}
+                                  onChange={(e) => handleDayChange(day.value, 'end_time', e.target.value)}
+                                  className="h-10 text-sm"
+                                />
                               </div>
                             </div>
-                            <div className="pt-3 border-t">
-                              <div className="flex items-center justify-between mb-3">
-                                <Label className="text-sm font-medium text-gray-700">Tem intervalo?</Label>
-                                <input type="checkbox" checked={d.has_break}
-                                  onChange={(e) => handleDayChange(day.value, 'has_break', e.target.checked)}
-                                  className="w-4 h-4 text-green-600 rounded" />
-                              </div>
-                              {d.has_break && (
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                    <Label className="text-xs text-gray-600 mb-1 block">Início Intervalo</Label>
-                                    <Input type="time" value={d.break_start}
-                                      onChange={(e) => handleDayChange(day.value, 'break_start', e.target.value)} />
-                                  </div>
-                                  <div>
-                                    <Label className="text-xs text-gray-600 mb-1 block">Fim Intervalo</Label>
-                                    <Input type="time" value={d.break_end}
-                                      onChange={(e) => handleDayChange(day.value, 'break_end', e.target.value)} />
-                                  </div>
+
+                            {/* Toggle intervalo */}
+                            <div className="flex items-center justify-between py-1">
+                              <Label style={{ fontSize: 13, color: T.muted, cursor: 'pointer' }}>
+                                Intervalo / almoço
+                              </Label>
+                              <Switch
+                                checked={d.has_break}
+                                onCheckedChange={(checked) => handleDayChange(day.value, 'has_break', checked)}
+                              />
+                            </div>
+
+                            {d.has_break && (
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <Label className="text-xs text-gray-500 mb-1 block">Início pausa</Label>
+                                  <Input
+                                    type="time"
+                                    value={d.break_start}
+                                    onChange={(e) => handleDayChange(day.value, 'break_start', e.target.value)}
+                                    className="h-10 text-sm"
+                                  />
                                 </div>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="text-center py-4 text-gray-400 text-sm">Dia desativado</div>
+                                <div>
+                                  <Label className="text-xs text-gray-500 mb-1 block">Fim pausa</Label>
+                                  <Input
+                                    type="time"
+                                    value={d.break_end}
+                                    onChange={(e) => handleDayChange(day.value, 'break_end', e.target.value)}
+                                    className="h-10 text-sm"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </CardContent>
                     </Card>
@@ -322,7 +345,10 @@ export function WorkingHours() {
                     {DAYS_OF_WEEK.map((day) => {
                       const d = workingHours[day.value]
                       return (
-                        <TableRow key={day.value}>
+                        <TableRow key={day.value} style={{ transition: 'background 100ms' }}
+                          onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
                           <TableCell className="font-medium">{day.label}</TableCell>
                           <TableCell>
                             <input type="checkbox" checked={d.enabled}
@@ -382,6 +408,23 @@ export function WorkingHours() {
           </FluidSection>
         )}
       </div>
+
+      {/* Botão salvar sticky — apenas mobile */}
+      {selectedProfessional && (
+        <div className="block sm:hidden mobile-sticky-footer">
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            style={{ background: T.brand, color: '#fff', border: 'none', borderRadius: 8, width: '100%', height: 48, fontSize: 16, fontWeight: 600 }}
+          >
+            {saving ? (
+              <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Salvando...</>
+            ) : (
+              <><Save className="w-5 h-5 mr-2" />Salvar Horários</>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

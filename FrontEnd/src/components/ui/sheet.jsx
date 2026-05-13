@@ -85,7 +85,7 @@ function SheetHeader({
   return (
     <div
       data-slot="sheet-header"
-      className={cn("flex flex-col gap-3 p-6", className)}
+      className={cn("flex flex-col gap-1.5 p-6 pb-4 border-b border-gray-200 dark:border-gray-700", className)}
       {...props} />
   );
 }
@@ -97,7 +97,7 @@ function SheetFooter({
   return (
     <div
       data-slot="sheet-footer"
-      className={cn("mt-auto flex flex-col gap-2 p-4", className)}
+      className={cn("mt-auto flex flex-col-reverse gap-3 p-4 sm:flex-row sm:justify-end border-t border-gray-200 dark:border-gray-700", className)}
       {...props} />
   );
 }
@@ -109,7 +109,7 @@ function SheetTitle({
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn("text-foreground font-semibold", className)}
+      className={cn("text-lg font-bold leading-tight text-gray-900 dark:text-white", className)}
       {...props} />
   );
 }
@@ -121,7 +121,7 @@ function SheetDescription({
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-sm text-gray-600 dark:text-gray-300 leading-relaxed", className)}
       {...props} />
   );
 }

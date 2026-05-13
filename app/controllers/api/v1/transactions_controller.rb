@@ -4,9 +4,6 @@ module Api
   module V1
     class TransactionsController < ApplicationController
       before_action :set_transaction, only: [:show, :update, :destroy]
-      skip_before_action :authenticate_user!, only: [:public_test]
-      skip_before_action :set_current_account, only: [:public_test]
-
       def index
         @transactions = Current.account.transactions
           .includes(:category, :cost_center, :contact, :bank_account)
@@ -21,11 +18,8 @@ module Api
           @transactions = @transactions.where(transaction_type_cd: transaction_type_cd) if transaction_type_cd
         end
 
-        date_column = case params[:date_type]
-                      when 'competency' then 'competency_date'
-                      when 'payment'    then 'COALESCE(paid_at, due_date)'
-                      else 'due_date'
-                      end
+        date_column = { 'competency' => 'competency_date', 'payment' => 'COALESCE(paid_at, due_date)' }
+                        .fetch(params[:date_type].to_s, 'due_date')
 
         if params[:start_date].present?
           start_date = Date.parse(params[:start_date]) rescue nil
@@ -248,23 +242,6 @@ module Api
         end
 
         head :no_content
-      end
-
-      def test
-        render json: {
-          message: "API funcionando!",
-          timestamp: Time.current,
-          account: Current.account&.id,
-          transactions_count: Current.account&.transactions&.count || 0
-        }
-      end
-
-      def public_test
-        render json: {
-          message: "API pública funcionando!",
-          timestamp: Time.current,
-          status: "OK"
-        }
       end
 
       def check_recurrence_expiry

@@ -17,6 +17,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -36,10 +37,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { 
-  Plus, 
-  Search, 
-  Filter, 
+import {
+  Plus,
+  Search,
+  Filter,
   Download,
   TrendingUp,
   TrendingDown,
@@ -50,12 +51,13 @@ import {
   Loader2,
   AlertCircle,
   ChevronDown,
-  Wallet,
+  Landmark,
   ArrowUpCircle,
   ArrowDownCircle,
   CheckCircle2,
   Circle,
-  X
+  X,
+  MessageCircle
 } from 'lucide-react'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
@@ -69,6 +71,9 @@ import { Wizard } from '@/components/ui/wizard'
 import { Skeleton, SkeletonCard, SkeletonList, SkeletonTable } from '@/components/ui/skeleton'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { T, DISPLAY } from '@/lib/tokens'
+import { openWhatsApp, WA_TEMPLATES, getContactPhone } from '@/lib/whatsapp'
+import { toast } from 'sonner'
 
 const convertDateToISO = (dateString) => {
   if (!dateString) return ''
@@ -272,6 +277,9 @@ export function Transactions() {
   const [editingPaymentPlan, setEditingPaymentPlan] = useState(null)
   const [installmentsData, setInstallmentsData] = useState([])
   const [loadingInstallments, setLoadingInstallments] = useState(false)
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
+  const [isCreatingContact, setIsCreatingContact] = useState(false)
+  const [isCreatingCostCenter, setIsCreatingCostCenter] = useState(false)
 
   // Form state for new transaction
   const [formData, setFormData] = useState({
@@ -352,7 +360,6 @@ export function Transactions() {
           setExpiringRecurrences([])
         }
       } catch (error) {
-        console.error('Erro ao verificar recorrências:', error)
       }
     }
 
@@ -398,19 +405,18 @@ export function Transactions() {
   }, [transactions])
 
   const handleQuickAdd = () => {
-    // Validações básicas
     if (!quickAddData.description || quickAddData.description.trim() === '') {
-      alert('Por favor, preencha a descrição da transação')
+      toast.error('Preencha a descrição da transação')
       return
     }
-    
+
     if (!quickAddData.amount_cents || parseFloat(quickAddData.amount_cents) <= 0) {
-      alert('Por favor, informe um valor válido maior que zero')
+      toast.error('Informe um valor válido maior que zero')
       return
     }
-    
+
     if (!quickAddData.due_date) {
-      alert('Por favor, informe a data de vencimento')
+      toast.error('Informe a data de vencimento')
       return
     }
     
@@ -436,8 +442,6 @@ export function Transactions() {
       }
     }
 
-    console.log('📤 Enviando transação rápida:', transactionData)
-    
     createTransaction.mutate(transactionData, {
       onSuccess: () => {
         setQuickAddData({
@@ -448,39 +452,33 @@ export function Transactions() {
           transaction_type_cd: 0
         })
         setIsQuickAddOpen(false)
-        // Focar no campo de descrição para próximo lançamento rápido
-        setTimeout(() => {
-          const descInput = document.getElementById('quick-description')
-          descInput?.focus()
-        }, 100)
+        toast.success('Transação criada com sucesso!')
       },
       onError: (error) => {
-        console.error('Error creating transaction:', error)
-        const errorMessage = error?.data?.errors?.join?.('\n') || 
-                            error?.data?.error || 
-                            error?.message || 
+        const errorMessage = error?.data?.errors?.join?.('\n') ||
+                            error?.data?.error ||
+                            error?.message ||
                             'Erro ao criar transação. Verifique os dados e tente novamente.'
-        alert(errorMessage)
+        toast.error(errorMessage)
       }
     })
   }
 
   const handleCreateTransaction = () => {
-    // Validações básicas
-      if (!formData.description || formData.description.trim() === '') {
-        alert('Por favor, preencha a descrição da transação')
-        return
-      }
-      
-      if (!formData.amount_cents || parseFloat(formData.amount_cents) <= 0) {
-        alert('Por favor, informe um valor válido maior que zero')
-        return
-      }
-      
-      if (!formData.due_date) {
-        alert('Por favor, informe a data de vencimento')
-        return
-      }
+    if (!formData.description || formData.description.trim() === '') {
+      toast.error('Preencha a descrição da transação')
+      return
+    }
+
+    if (!formData.amount_cents || parseFloat(formData.amount_cents) <= 0) {
+      toast.error('Informe um valor válido maior que zero')
+      return
+    }
+
+    if (!formData.due_date) {
+      toast.error('Informe a data de vencimento')
+      return
+    }
       
       const amountInCents = Math.round(parseFloat(formData.amount_cents) * 100)
       const dueDate = convertDateToISO(formData.due_date)
@@ -538,38 +536,29 @@ export function Transactions() {
         transactionData.transaction.amount_cents = amountInCents
       }
 
-      console.log('📤 Enviando transação:', transactionData)
-      
-      // Usar mutate em vez de mutateAsync para melhor UX (não bloquear UI)
       createTransaction.mutate(transactionData, {
         onSuccess: (data) => {
-          // Se foi criado com parcelas, oferecer opção de editar
           if (data.installments && data.installments.length > 0) {
-            const shouldEdit = confirm(
-              `Transação criada com ${data.installments.length} parcelas!\n\nDeseja editar as parcelas agora?`
-            )
-            
-            if (shouldEdit) {
-              // Preparar dados para edição
-              const installments = data.installments.map(inst => ({
-                id: inst.id,
-                installment_number: inst.installment_number,
-                amount_cents: (inst.amount_cents / 100).toFixed(2),
-                due_date: formatDateForInput(inst.due_date),
-                paid: inst.paid,
-                paid_at: inst.paid_at ? formatDateForInput(inst.paid_at) : '',
-                description: inst.description || inst.name || '',
-                name: inst.name || '',
-                category_id: inst.category_id,
-                cost_center_id: inst.cost_center_id,
-                contact_id: inst.contact_id,
-                bank_account_id: inst.bank_account_id
-              }))
-              
-              setInstallmentsData(installments)
-              setEditingPaymentPlan(data.transaction.payment_plan_id)
-              setShowEditInstallmentsDialog(true)
-            }
+            toast.success(`Transação criada com ${data.installments.length} parcelas!`)
+            const installments = data.installments.map(inst => ({
+              id: inst.id,
+              installment_number: inst.installment_number,
+              amount_cents: (inst.amount_cents / 100).toFixed(2),
+              due_date: formatDateForInput(inst.due_date),
+              paid: inst.paid,
+              paid_at: inst.paid_at ? formatDateForInput(inst.paid_at) : '',
+              description: inst.description || inst.name || '',
+              name: inst.name || '',
+              category_id: inst.category_id,
+              cost_center_id: inst.cost_center_id,
+              contact_id: inst.contact_id,
+              bank_account_id: inst.bank_account_id
+            }))
+            setInstallmentsData(installments)
+            setEditingPaymentPlan(data.transaction.payment_plan_id)
+            setShowEditInstallmentsDialog(true)
+          } else {
+            toast.success('Transação criada com sucesso!')
           }
           
           setFormData({
@@ -597,13 +586,11 @@ export function Transactions() {
           setIsNewTransactionOpen(false)
         },
         onError: (error) => {
-          console.error('Error creating transaction:', error)
-          // Mostrar mensagem de erro mais detalhada
-          const errorMessage = error?.data?.errors?.join?.('\n') || 
-                              error?.data?.error || 
-                              error?.message || 
+          const errorMessage = error?.data?.errors?.join?.('\n') ||
+                              error?.data?.error ||
+                              error?.message ||
                               'Erro ao criar transação. Verifique os dados e tente novamente.'
-          alert(errorMessage)
+          toast.error(errorMessage)
         }
       })
   }
@@ -636,19 +623,18 @@ export function Transactions() {
 
   const handleUpdateTransaction = async () => {
     try {
-      // Validações básicas
       if (!editFormData.description || editFormData.description.trim() === '') {
-        alert('Por favor, preencha a descrição da transação')
+        toast.error('Preencha a descrição da transação')
         return
       }
-      
+
       if (!editFormData.amount_cents || parseFloat(editFormData.amount_cents) <= 0) {
-        alert('Por favor, informe um valor válido maior que zero')
+        toast.error('Informe um valor válido maior que zero')
         return
       }
-      
+
       if (!editFormData.due_date) {
-        alert('Por favor, informe a data de vencimento')
+        toast.error('Informe a data de vencimento')
         return
       }
       
@@ -687,9 +673,9 @@ export function Transactions() {
         paid: editFormData.paid || false
       }
 
-      console.log('📤 Atualizando transação:', transactionData)
       await updateTransaction.mutateAsync({ id: editingTransaction.id, data: transactionData })
-      
+      toast.success('Transação atualizada com sucesso!')
+
       setEditFormData({
         description: '',
         amount_cents: '',
@@ -709,128 +695,107 @@ export function Transactions() {
       setIsEditTransactionOpen(false)
       
     } catch (error) {
-      console.error('Error updating transaction:', error)
-      // Mostrar mensagem de erro mais detalhada
-      const errorMessage = error?.data?.errors?.join?.('\n') || 
-                          error?.data?.error || 
-                          error?.message || 
+      const errorMessage = error?.data?.errors?.join?.('\n') ||
+                          error?.data?.error ||
+                          error?.message ||
                           'Erro ao atualizar transação. Verifique os dados e tente novamente.'
-      alert(errorMessage)
+      toast.error(errorMessage)
     }
   }
 
   const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast.error('Nome da categoria é obrigatório')
+      return
+    }
+
+    checkDuplicate(newCategoryName, categories, 'categoria')
+
+    setIsCreatingCategory(true)
     try {
-      if (!newCategoryName.trim()) {
-        setError('Nome da categoria é obrigatório')
-        return
-      }
-
-      const hasDuplicate = checkDuplicate(newCategoryName, categories, 'categoria')
-      
-      if (hasDuplicate && !confirm(duplicateWarning)) {
-        return
-      }
-
-      setLoading(true)
-      const response = await apiService.createCategory({ name: newCategoryName.trim() })
-      
-      setCategories([...categories, response.category])
+      await apiService.createCategory({ name: newCategoryName.trim() })
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      toast.success(`Categoria "${newCategoryName.trim()}" criada!`)
       setNewCategoryName('')
       setIsAddCategoryOpen(false)
       setDuplicateWarning('')
-      
     } catch (error) {
-      console.error('Error creating category:', error)
-      setError('Erro ao criar categoria')
+      const msg = error?.data?.errors?.join?.('\n') || error?.data?.error || error?.message || 'Erro ao criar categoria'
+      toast.error(msg)
     } finally {
-      setLoading(false)
+      setIsCreatingCategory(false)
     }
   }
 
   const handleCreateContact = async () => {
+    if (!newContactName.trim()) {
+      toast.error('Nome do contato é obrigatório')
+      return
+    }
+
+    checkDuplicate(newContactName, contacts, 'contato')
+
+    setIsCreatingContact(true)
     try {
-      if (!newContactName.trim()) {
-        setError('Nome do contato é obrigatório')
-        return
-      }
-
-      const hasDuplicate = checkDuplicate(newContactName, contacts, 'contato')
-      
-      if (hasDuplicate && !confirm(duplicateWarning)) {
-        return
-      }
-
-      setLoading(true)
-      const response = await apiService.createContact({ name: newContactName.trim() })
-      
-      setContacts([...contacts, response.contact])
+      await apiService.createContact({ name: newContactName.trim() })
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
+      toast.success(`Contato "${newContactName.trim()}" criado!`)
       setNewContactName('')
       setIsAddContactOpen(false)
       setDuplicateWarning('')
-      
     } catch (error) {
-      console.error('Error creating contact:', error)
-      setError('Erro ao criar contato')
+      const msg = error?.data?.errors?.join?.('\n') || error?.data?.error || error?.message || 'Erro ao criar contato'
+      toast.error(msg)
     } finally {
-      setLoading(false)
+      setIsCreatingContact(false)
     }
   }
 
   const handleCreateCostCenter = async () => {
+    if (!newCostCenterName.trim()) {
+      toast.error('Nome do centro de custo é obrigatório')
+      return
+    }
+
+    checkDuplicate(newCostCenterName, costCenters, 'centro de custo')
+
+    setIsCreatingCostCenter(true)
     try {
-      if (!newCostCenterName.trim()) {
-        setError('Nome do centro de custo é obrigatório')
-        return
-      }
-
-      const hasDuplicate = checkDuplicate(newCostCenterName, costCenters, 'centro de custo')
-      
-      if (hasDuplicate && !confirm(duplicateWarning)) {
-        return
-      }
-
-      setLoading(true)
-      const response = await apiService.createCostCenter({ name: newCostCenterName.trim() })
-      
-      setCostCenters([...costCenters, response.cost_center])
+      await apiService.createCostCenter({ name: newCostCenterName.trim() })
+      queryClient.invalidateQueries({ queryKey: ['cost_centers'] })
+      toast.success(`Centro de custo "${newCostCenterName.trim()}" criado!`)
       setNewCostCenterName('')
       setIsAddCostCenterOpen(false)
       setDuplicateWarning('')
-      
     } catch (error) {
-      console.error('Error creating cost center:', error)
-      setError('Erro ao criar centro de custo')
+      const msg = error?.data?.errors?.join?.('\n') || error?.data?.error || error?.message || 'Erro ao criar centro de custo'
+      toast.error(msg)
     } finally {
-      setLoading(false)
+      setIsCreatingCostCenter(false)
     }
   }
 
   const handleDeleteTransaction = async (id) => {
-    if (!confirm('Tem certeza que deseja excluir esta transação?')) {
-      return
-    }
-
     try {
       await deleteTransaction.mutateAsync(id)
+      toast.success('Transação excluída')
     } catch (error) {
-      console.error('Error deleting transaction:', error)
+      const msg = error?.data?.errors?.join?.('\n') || error?.data?.error || error?.message || 'Erro ao excluir transação'
+      toast.error(msg)
     }
   }
 
   const handleEditInstallments = async (transaction) => {
     if (!transaction.payment_plan_id) {
-      alert('Esta transação não possui parcelas para editar')
+      toast.error('Esta transação não possui parcelas para editar')
       return
     }
 
     setLoadingInstallments(true)
     setEditingPaymentPlan(transaction.payment_plan_id)
-    
+
     try {
       const response = await apiService.getPaymentPlanInstallments(transaction.payment_plan_id)
-      
-      // Preparar dados para edição
       const installments = response.installments.map(inst => ({
         id: inst.id,
         installment_number: inst.installment_number,
@@ -845,12 +810,10 @@ export function Transactions() {
         contact_id: inst.contact_id,
         bank_account_id: inst.bank_account_id
       }))
-      
       setInstallmentsData(installments)
       setShowEditInstallmentsDialog(true)
     } catch (error) {
-      console.error('Erro ao carregar parcelas:', error)
-      alert('Erro ao carregar parcelas. Tente novamente.')
+      toast.error('Erro ao carregar parcelas. Tente novamente.')
     } finally {
       setLoadingInstallments(false)
     }
@@ -885,15 +848,13 @@ export function Transactions() {
       setShowEditInstallmentsDialog(false)
       setEditingPaymentPlan(null)
       setInstallmentsData([])
-      
-      alert('Parcelas atualizadas com sucesso!')
+      toast.success('Parcelas atualizadas com sucesso!')
     } catch (error) {
-      console.error('Erro ao atualizar parcelas:', error)
-      const errorMessage = error?.data?.errors?.join?.('\n') || 
-                          error?.data?.error || 
-                          error?.message || 
+      const errorMessage = error?.data?.errors?.join?.('\n') ||
+                          error?.data?.error ||
+                          error?.message ||
                           'Erro ao atualizar parcelas. Verifique os dados e tente novamente.'
-      alert(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setLoadingInstallments(false)
     }
@@ -929,12 +890,11 @@ export function Transactions() {
         }
       })
     } catch (error) {
-      console.error('Error toggling paid status:', error)
-      const errorMessage = error?.data?.errors?.join?.('\n') || 
-                          error?.data?.error || 
-                          error?.message || 
+      const errorMessage = error?.data?.errors?.join?.('\n') ||
+                          error?.data?.error ||
+                          error?.message ||
                           'Erro ao alterar status da transação'
-      alert(errorMessage)
+      toast.error(errorMessage)
     }
   }
 
@@ -1107,7 +1067,6 @@ export function Transactions() {
       window.URL.revokeObjectURL(url)
       
     } catch (error) {
-      console.error('Error exporting CSV:', error)
     }
   }
 
@@ -1137,16 +1096,16 @@ export function Transactions() {
     return methods[method] || 'Indefinido'
   }
 
-  const getTransactionTypeColor = (type) => {
-    const colors = {
-      0: 'bg-surface-elevated text-accent border-border',
-      1: 'bg-surface-elevated text-danger border-border',
-      2: 'bg-surface-elevated text-text-primary border-border',
-      3: 'bg-surface-elevated text-accent border-border',
-      4: 'bg-surface-elevated text-text-primary border-border',
-      5: 'bg-surface-elevated text-text-secondary border-border'
+  const getTransactionTypeStyle = (type) => {
+    const styles = {
+      0: { color: T.green,  background: T.green  + '18' },
+      1: { color: T.red,    background: T.red    + '18' },
+      2: { color: T.muted,  background: T.light },
+      3: { color: T.brand,  background: T.chip },
+      4: { color: T.muted,  background: T.light },
+      5: { color: T.muted,  background: T.light },
     }
-    return colors[type] || 'bg-surface-elevated text-text-secondary border-border'
+    return styles[type] || { color: T.muted, background: T.light }
   }
 
   // Os dados já vêm filtrados do backend, mas mantemos o filtro local como fallback
@@ -1173,7 +1132,7 @@ export function Transactions() {
   }, [transactions, selectedFilter, searchQuery])
 
   const filterOptions = [
-    { label: 'Todos', value: 'all', count: totalCount, icon: Wallet },
+    { label: 'Todos', value: 'all', count: totalCount, icon: Landmark },
     { label: 'Receitas', value: '0', count: transactions.filter(t => t.transaction_type_cd === 0).length, icon: TrendingUp },
     { label: 'Despesas', value: '1', count: transactions.filter(t => t.transaction_type_cd >= 1 && t.transaction_type_cd <= 4).length, icon: TrendingDown },
     { label: 'Transferências', value: '5', count: transactions.filter(t => t.transaction_type_cd === 5).length, icon: ArrowUpDown },
@@ -1182,7 +1141,7 @@ export function Transactions() {
   if (loading && transactions.length === 0) {
     return (
       <div className="relative min-h-screen bg-surface">
-        <div className="relative z-10 w-full max-w-full min-w-0 px-3 py-4 sm:px-6 sm:py-6 md:px-10 md:py-8">
+        <div className="relative z-10 w-full max-w-full min-w-0 space-y-3">
           {/* Header Skeleton */}
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
@@ -1224,38 +1183,32 @@ export function Transactions() {
   const isLoading = loading || createTransaction.isPending || updateTransaction.isPending || deleteTransaction.isPending
 
   return (
-    <div className="relative min-h-screen bg-surface">
-      <div className="relative z-10 w-full max-w-full min-w-0 px-3 py-4 sm:px-6 sm:py-6 md:px-10 md:py-8">
-        {/* Header - Minimalista */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 w-full max-w-full mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold mb-2 leading-tight text-text-primary">
-              Transações
-            </h1>
-            <p className="text-sm text-text-secondary">
-              Gerencie suas receitas e despesas
-            </p>
-          </div>
+    <div data-testid="transactions-page" className="relative min-h-screen bg-surface">
+      <div className="relative z-10 w-full max-w-full min-w-0">
+        {/* Header compacto */}
+        <div className="flex items-center justify-between gap-3 w-full max-w-full mb-3">
+          <h1 className="text-lg sm:text-xl font-bold leading-tight text-text-primary">
+            Transações
+          </h1>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
-            <Button 
+            <Button
               variant={showFilters ? "default" : "outline"}
-              size="sm" 
-              className="hidden sm:flex backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-white/20"
+              size="sm"
+              className="h-8 px-2 hidden sm:flex"
               onClick={() => setShowFilters(!showFilters)}
             >
-              <Filter className="w-4 h-4 mr-2" />
-              {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+              <Filter className="w-3.5 h-3.5 mr-1.5" />
+              Filtros
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="hidden sm:flex backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-white/20"
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-2 hidden sm:flex"
               onClick={handleExportCSV}
               disabled={isLoading || transactions.length === 0}
             >
-              <Download className="w-4 h-4 mr-2" />
-              Exportar
+              <Download className="w-3.5 h-3.5" />
             </Button>
             
             <Dialog open={isQuickAddOpen} onOpenChange={(open) => {
@@ -1272,14 +1225,15 @@ export function Transactions() {
               }
             }}>
               <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white border-0">
+                <Button data-testid="new-transaction-btn" className="w-full sm:w-auto border-0" style={{ background: T.brand, color: '#fff' }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Nova Transação
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent data-testid="transaction-dialog" className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Nova Transação</DialogTitle>
+                  <DialogDescription>Registre uma receita ou despesa rapidamente.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -1373,9 +1327,10 @@ export function Transactions() {
                   </div>
                   
                   <div className="flex gap-2 pt-2">
-                    <Button 
+                    <Button
                       onClick={handleQuickAdd}
-                      className="flex-1 bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white"
+                      className="flex-1"
+                      style={{ background: T.brand, color: '#fff' }}
                       disabled={createTransaction.isPending}
                     >
                       {createTransaction.isPending ? (
@@ -1486,9 +1441,10 @@ export function Transactions() {
                 })
               }
             }}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="sm:max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Nova Transação</DialogTitle>
+                <DialogDescription>Preencha os dados completos da transação financeira.</DialogDescription>
               </DialogHeader>
               <Wizard
                 initialStep={0}
@@ -1865,8 +1821,8 @@ export function Transactions() {
                             {/* Mensagem informativa apenas para parcelamento */}
                             {paymentPlan.type === 'installment' && (
                               <div className="space-y-2 sm:space-y-3 sm:col-span-2">
-                                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                                  <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
+                                <div className="p-3 rounded-lg" style={{ background: T.chip, border: `1px solid ${T.brand}40` }}>
+                                  <p className="text-sm mb-2" style={{ color: T.brand }}>
                                     Você pode ajustar o número de parcelas conforme necessário. O valor será recalculado automaticamente.
                                   </p>
                                   <div className="flex items-center gap-2">
@@ -1994,8 +1950,8 @@ export function Transactions() {
         </div>
       </div>
 
-      {/* Summary Cards - Stripe Style */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-3 gap-3 mb-3">
         <StatCard
           title="Receitas"
           value={formatCurrency(summary.revenue)}
@@ -2009,15 +1965,13 @@ export function Transactions() {
         <StatCard
           title="Saldo"
           value={formatCurrency(summary.balance)}
-          icon={Wallet}
+          icon={Landmark}
         />
       </div>
 
-      {/* Search and Filters - Stripe Style */}
+      {/* Search and Filters */}
       <FluidSection
-        title="Buscar e Filtrar"
-        subtitle="Encontre as transações que você precisa"
-        className="mb-6"
+        className="mb-3"
       >
         <div className="space-y-4">
           <div className="relative">
@@ -2030,29 +1984,31 @@ export function Transactions() {
             />
           </div>
 
-          {/* Filter Pills - sempre visíveis em mobile, controláveis em desktop */}
-          {(showFilters || isMobile) && (
-            <div className="flex flex-wrap gap-3">
-              {filterOptions.map((filter) => {
-                const Icon = filter.icon
-                return (
-                  <Button
-                    key={filter.value}
-                    variant={selectedFilter === filter.value ? 'default' : 'secondary'}
-                    size="sm"
-                    onClick={() => setSelectedFilter(filter.value)}
-                    className="flex items-center gap-2"
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{filter.label}</span>
-                    <Badge variant="secondary" className="ml-1">
-                      {filter.count}
-                    </Badge>
-                  </Button>
-                )
-              })}
-            </div>
-          )}
+          {/* Filter Pills — sempre visíveis */}
+          <div className="flex flex-wrap gap-2">
+            {filterOptions.map((filter) => {
+              const Icon = filter.icon
+              const isActive = selectedFilter === filter.value
+              return (
+                <Button
+                  key={filter.value}
+                  size="sm"
+                  onClick={() => setSelectedFilter(filter.value)}
+                  className="flex items-center gap-1.5 border-0 h-8 px-3 text-xs"
+                  style={isActive
+                    ? { background: T.brand, color: '#fff' }
+                    : { background: T.chip, color: T.brand }
+                  }
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{filter.label}</span>
+                  <Badge variant="secondary" className="ml-0.5 text-[10px] px-1.5 py-0">
+                    {filter.count}
+                  </Badge>
+                </Button>
+              )
+            })}
+          </div>
 
           {/* Painel de Filtros Avançados - Minimalista dentro do FluidSection */}
           {(showFilters || isMobile) && (
@@ -2073,7 +2029,7 @@ export function Transactions() {
                           setStartDate(maskedValue)
                         }}
                         maxLength={10}
-                        className="w-28 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-28 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-[#4C60AA] focus:border-[#4C60AA]"
                       />
                       <span className="text-gray-400 text-xs">-</span>
                       <Input
@@ -2086,7 +2042,7 @@ export function Transactions() {
                           setEndDate(maskedValue)
                         }}
                         maxLength={10}
-                        className="w-28 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-28 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-[#4C60AA] focus:border-[#4C60AA]"
                       />
                     </div>
                   </div>
@@ -2103,7 +2059,7 @@ export function Transactions() {
                         }
                       }}
                     >
-                      <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-blue-500">
+                      <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-[#4C60AA]">
                         <SelectValue placeholder="Todas" />
                       </SelectTrigger>
                       <SelectContent>
@@ -2129,7 +2085,7 @@ export function Transactions() {
                         }
                       }}
                     >
-                      <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-blue-500">
+                      <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-[#4C60AA]">
                         <SelectValue placeholder="Todas" />
                       </SelectTrigger>
                       <SelectContent>
@@ -2213,7 +2169,7 @@ export function Transactions() {
                           }
                         }}
                       >
-                        <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-blue-500">
+                        <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-[#4C60AA]">
                           <SelectValue placeholder="Todos" />
                         </SelectTrigger>
                         <SelectContent>
@@ -2239,7 +2195,7 @@ export function Transactions() {
                           }
                         }}
                       >
-                        <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-blue-500">
+                        <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-[#4C60AA]">
                           <SelectValue placeholder="Todos" />
                         </SelectTrigger>
                         <SelectContent>
@@ -2265,7 +2221,7 @@ export function Transactions() {
                           }
                         }}
                       >
-                        <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-blue-500">
+                        <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-[#4C60AA]">
                           <SelectValue placeholder="Todos" />
                         </SelectTrigger>
                         <SelectContent>
@@ -2293,7 +2249,7 @@ export function Transactions() {
                           }
                         }}
                       >
-                        <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-blue-500">
+                        <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-[#4C60AA]">
                           <SelectValue placeholder="Todos" />
                         </SelectTrigger>
                         <SelectContent>
@@ -2317,7 +2273,7 @@ export function Transactions() {
                           }
                         }}
                       >
-                        <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-blue-500">
+                        <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-[#4C60AA]">
                           <SelectValue placeholder="Todas" />
                         </SelectTrigger>
                         <SelectContent>
@@ -2337,7 +2293,7 @@ export function Transactions() {
                         value={dateType}
                         onValueChange={setDateType}
                       >
-                        <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-blue-500">
+                        <SelectTrigger className="w-36 h-8 text-xs border-gray-300 focus:ring-1 focus:ring-[#4C60AA]">
                           <SelectValue placeholder="Por pagamento" />
                         </SelectTrigger>
                         <SelectContent>
@@ -2390,8 +2346,11 @@ export function Transactions() {
                   isLast && "serial-position-last"
                 )}
               >
-                <div 
+                <div
                   className="bg-surface-elevated rounded-[var(--radius-lg)] p-6 border border-border shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-all duration-140 cursor-pointer"
+                  style={{ borderLeft: `3px solid ${isRevenue ? T.green : '#E5E7EB'}`, transition: 'background 100ms' }}
+                  onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                  onMouseLeave={e => e.currentTarget.style.background = ''}
                   onClick={() => handleEditTransaction(transaction)}
                 >
                   <div className="flex items-start justify-between mb-4">
@@ -2401,27 +2360,37 @@ export function Transactions() {
                       </h3>
                       <div className="flex flex-wrap items-center gap-2 mt-3">
                         {transaction.category && (
-                          <Badge variant="outline" className="text-xs">
+                          <span style={{ background: T.light, color: T.muted, borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
                             {transaction.category.name}
-                          </Badge>
+                          </span>
                         )}
-                        <Badge className={cn("text-xs", getTransactionTypeColor(transaction.transaction_type_cd))}>
+                        <span style={{ ...getTransactionTypeStyle(transaction.transaction_type_cd), borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
                           {getTransactionTypeLabel(transaction.transaction_type_cd)}
-                        </Badge>
+                        </span>
                         {transaction.payment_plan_id && transaction.installment_number && (
-                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                          <Badge variant="outline" className="text-xs" style={{ background: T.chip, color: T.brand, borderColor: T.brand + '40' }}>
                             {transaction.installment_number}/{transaction.installment_total || '?'} Parcelas
                           </Badge>
                         )}
-                        <Button
-                          variant={transaction.paid ? "default" : "secondary"}
-                          size="sm"
+                        <button
                           onClick={(e) => {
                             e.stopPropagation()
                             handleTogglePaidStatus(transaction)
                           }}
                           disabled={isLoading}
-                          className="flex items-center gap-1.5"
+                          style={{
+                            borderRadius: 20,
+                            padding: '3px 8px',
+                            fontSize: 11,
+                            fontWeight: 600,
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            background: transaction.paid ? T.green + '18' : T.amber + '18',
+                            color: transaction.paid ? T.green : T.amber,
+                          }}
                         >
                           {isLoading ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -2436,14 +2405,11 @@ export function Transactions() {
                               Pendente
                             </>
                           )}
-                        </Button>
+                        </button>
                       </div>
                     </div>
                     <div className="ml-4 text-right">
-                      <p className={cn(
-                        "text-lg font-semibold",
-                        isRevenue ? "text-accent" : "text-danger"
-                      )}>
+                      <p style={{ fontSize: '1.125rem', fontWeight: 600, color: isRevenue ? T.green : T.red }}>
                         {isRevenue ? '+' : '-'}{formatCurrency(amount)}
                       </p>
                     </div>
@@ -2469,9 +2435,20 @@ export function Transactions() {
                   </div>
 
                   <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-border" onClick={(e) => e.stopPropagation()}>
+                    {transaction.contact && getContactPhone(transaction.contact) && !transaction.paid && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openWhatsApp(getContactPhone(transaction.contact), WA_TEMPLATES.payment(transaction))}
+                        title="Cobrar via WhatsApp"
+                        style={{ color: '#25D366' }}
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </Button>
+                    )}
                     {transaction.payment_plan_id && transaction.payment_type_cd === 1 && (
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleEditInstallments(transaction)}
                         title="Editar parcelas"
@@ -2479,15 +2456,15 @@ export function Transactions() {
                         <Calendar className="w-4 h-4" />
                       </Button>
                     )}
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleEditTransaction(transaction)}
                     >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteTransaction(transaction.id)}
                     >
@@ -2511,10 +2488,10 @@ export function Transactions() {
             </p>
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+        <div style={{ background: T.white, borderRadius: 12, border: `1px solid ${T.border}`, overflow: 'hidden' }}>
           <Table className="w-full">
             <TableHeader>
-              <TableRow className="bg-gray-50 dark:bg-gray-800">
+              <TableRow style={{ background: T.bg }}>
                 <TableHead className="whitespace-nowrap text-sm font-semibold py-4" style={{ width: '10%' }}>Vencimento</TableHead>
                 <TableHead className="!whitespace-normal text-sm font-semibold py-4">Descrição</TableHead>
                 <TableHead className="whitespace-nowrap text-sm font-semibold py-4" style={{ width: '12%' }}>Categoria</TableHead>
@@ -2539,13 +2516,16 @@ export function Transactions() {
                     const isLast = index === filteredTransactions.length - 1
                     
                     return (
-                      <TableRow 
+                      <TableRow
                         key={transaction.id}
                         className={cn(
-                          "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors",
+                          "cursor-pointer transition-colors",
                           isFirst && "serial-position-first",
                           isLast && "serial-position-last"
                         )}
+                        style={{ borderLeft: `3px solid ${isRevenue ? T.green : '#E5E7EB'}`, transition: 'background 100ms' }}
+                        onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         onClick={() => handleEditTransaction(transaction)}
                       >
                         <TableCell className="text-base whitespace-nowrap text-text-primary py-4">{formatDate(transaction.due_date)}</TableCell>
@@ -2569,7 +2549,7 @@ export function Transactions() {
                               )}
                             </div>
                             {transaction.payment_plan_id && transaction.installment_number && (
-                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 flex-shrink-0">
+                              <Badge variant="outline" className="text-xs flex-shrink-0" style={{ background: T.chip, color: T.brand, borderColor: T.brand + '40' }}>
                                 {transaction.installment_number}/{transaction.installment_total || '?'}
                               </Badge>
                             )}
@@ -2577,34 +2557,42 @@ export function Transactions() {
                         </TableCell>
                         <TableCell className="whitespace-nowrap py-4">
                           {transaction.category ? (
-                            <Badge variant="outline" className="whitespace-nowrap">{transaction.category.name}</Badge>
+                            <span style={{ background: T.light, color: T.muted, borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>{transaction.category.name}</span>
                           ) : (
                             <span className="text-text-secondary">-</span>
                           )}
                         </TableCell>
                         <TableCell className="whitespace-nowrap py-4">
-                          <span className={cn(
-                            "font-semibold text-lg",
-                            isRevenue ? "text-accent" : "text-danger"
-                          )}>
+                          <span style={{ fontWeight: 600, fontSize: '1.125rem', color: isRevenue ? T.green : T.red }}>
                             {isRevenue ? '+' : '-'}{formatCurrency(amount)}
                           </span>
                         </TableCell>
                         <TableCell className="whitespace-nowrap py-4">
-                          <Badge className={cn("text-xs whitespace-nowrap", getTransactionTypeColor(transaction.transaction_type_cd))}>
+                          <span style={{ ...getTransactionTypeStyle(transaction.transaction_type_cd), borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
                             {getTransactionTypeLabel(transaction.transaction_type_cd)}
-                          </Badge>
+                          </span>
                         </TableCell>
                         <TableCell className="whitespace-nowrap py-4">
-                          <Button
-                            variant={transaction.paid ? "default" : "secondary"}
-                            size="sm"
+                          <button
                             onClick={(e) => {
                               e.stopPropagation()
                               handleTogglePaidStatus(transaction)
                             }}
                             disabled={isLoading}
-                            className="flex items-center gap-2 whitespace-nowrap"
+                            style={{
+                              borderRadius: 20,
+                              padding: '3px 8px',
+                              fontSize: 11,
+                              fontWeight: 600,
+                              border: 'none',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              whiteSpace: 'nowrap',
+                              background: transaction.paid ? T.green + '18' : T.amber + '18',
+                              color: transaction.paid ? T.green : T.amber,
+                            }}
                           >
                             {isLoading ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
@@ -2619,13 +2607,24 @@ export function Transactions() {
                                 Pendente
                               </>
                             )}
-                          </Button>
+                          </button>
                         </TableCell>
                         <TableCell className="text-right whitespace-nowrap py-4">
                           <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                            {transaction.contact && getContactPhone(transaction.contact) && !transaction.paid && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openWhatsApp(getContactPhone(transaction.contact), WA_TEMPLATES.payment(transaction))}
+                                title="Cobrar via WhatsApp"
+                                style={{ color: '#25D366' }}
+                              >
+                                <MessageCircle className="w-4 h-4" />
+                              </Button>
+                            )}
                             {transaction.payment_plan_id && transaction.payment_type_cd === 1 && (
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditInstallments(transaction)}
                                 title="Editar parcelas"
@@ -2633,16 +2632,16 @@ export function Transactions() {
                                 <Calendar className="w-4 h-4" />
                               </Button>
                             )}
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
                               onClick={() => handleEditTransaction(transaction)}
                               title="Editar transação"
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteTransaction(transaction.id)}
                               title="Excluir transação"
@@ -2692,231 +2691,254 @@ export function Transactions() {
 
       {/* Edit Transaction Dialog */}
       <Dialog open={isEditTransactionOpen} onOpenChange={setIsEditTransactionOpen}>
-        <DialogContent>
+        <DialogContent data-testid="edit-transaction-dialog">
           <DialogHeader>
             <DialogTitle>Editar Transação</DialogTitle>
+            <DialogDescription>Atualize as informações desta movimentação financeira.</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3 md:col-span-2">
-              <Label>Descrição</Label>
-                <Textarea
-                  value={editFormData.description}
-                  onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
-                  onBlur={(e) => {
-                    // Formata a cada 6 palavras quando sair do campo
-                    const text = e.target.value
-                    if (text && text.trim()) {
-                      const formatted = formatDescriptionWithBreaks(text, 6)
-                      if (formatted !== text) {
-                        setEditFormData({...editFormData, description: formatted})
-                      }
-                    }
-                  }}
-                  placeholder="Descrição da transação (quebra automática a cada 6 palavras)"
-                  rows={4}
-                  className="resize-y min-h-[100px]"
-                  style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}
+          <div className="space-y-1.5">
+            <Label>Descrição</Label>
+            <Textarea
+              value={editFormData.description}
+              onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+              onBlur={(e) => {
+                const text = e.target.value
+                if (text && text.trim()) {
+                  const formatted = formatDescriptionWithBreaks(text, 6)
+                  if (formatted !== text) {
+                    setEditFormData({...editFormData, description: formatted})
+                  }
+                }
+              }}
+              placeholder="Descrição da transação (quebra automática a cada 6 palavras)"
+              rows={4}
+              className="resize-y min-h-[100px]"
+              style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}
+            />
+          </div>
+
+          <div className="space-y-4 pt-5 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Financeiro</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Valor</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editFormData.amount_cents}
+                  onChange={(e) => setEditFormData({...editFormData, amount_cents: e.target.value})}
+                  placeholder="0,00"
                 />
-            </div>
-            <div className="space-y-3">
-              <Label>Valor</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={editFormData.amount_cents}
-                onChange={(e) => setEditFormData({...editFormData, amount_cents: e.target.value})}
-                placeholder="0,00"
-              />
-            </div>
-            <div className="space-y-3">
-              <Label>Tipo</Label>
-              <Select 
-                value={editFormData.transaction_type_cd.toString()} 
-                onValueChange={(value) => setEditFormData({...editFormData, transaction_type_cd: parseInt(value)})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Receita</SelectItem>
-                  <SelectItem value="1">Despesa Fixa</SelectItem>
-                  <SelectItem value="2">Despesa Variável</SelectItem>
-                  <SelectItem value="3">Folha de Pagamento</SelectItem>
-                  <SelectItem value="4">Imposto</SelectItem>
-                  <SelectItem value="5">Transferência</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-3">
-              <Label>Data de Vencimento</Label>
-              <Input
-                type="text"
-                placeholder="dd/mm/aaaa"
-                value={editFormData.due_date}
-                onChange={(e) => {
-                  const value = e.target.value
-                  const maskedValue = applyDateMask(value)
-                  setEditFormData({...editFormData, due_date: maskedValue})
-                }}
-                maxLength={10}
-              />
-            </div>
-            <div className="space-y-3">
-              <Label>Data de Pagamento</Label>
-              <Input
-                type="text"
-                placeholder="dd/mm/aaaa"
-                value={editFormData.paid_at}
-                onChange={(e) => {
-                  const value = e.target.value
-                  const maskedValue = applyDateMask(value)
-                  setEditFormData({...editFormData, paid_at: maskedValue})
-                }}
-                maxLength={10}
-              />
-            </div>
-            <div className="space-y-3">
-              <Label>Categoria</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between">
-                    {editFormData.category_id 
-                      ? categories.find(c => c.id.toString() === editFormData.category_id)?.name || 'Selecione'
-                      : 'Selecione uma categoria'}
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-full min-w-[200px]">
-                  <DropdownMenuLabel>Categorias</DropdownMenuLabel>
-                  {categories.map((category) => (
-                    <DropdownMenuItem 
-                      key={category.id}
-                      onClick={() => setEditFormData({...editFormData, category_id: category.id.toString()})}
-                    >
-                      {category.name}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setIsAddCategoryOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nova Categoria
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            <div className="space-y-3">
-              <Label>Centro de Custo</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between">
-                    {editFormData.cost_center_id 
-                      ? costCenters.find(c => c.id.toString() === editFormData.cost_center_id)?.name || 'Selecione'
-                      : 'Selecione um centro de custo'}
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-full min-w-[200px]">
-                  <DropdownMenuLabel>Centros de Custo</DropdownMenuLabel>
-                  {costCenters.map((costCenter) => (
-                    <DropdownMenuItem 
-                      key={costCenter.id}
-                      onClick={() => setEditFormData({...editFormData, cost_center_id: costCenter.id.toString()})}
-                    >
-                      {costCenter.name}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setIsAddCostCenterOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Centro de Custo
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            <div className="space-y-3">
-              <Label>Contato</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between">
-                    {editFormData.contact_id 
-                      ? contacts.find(c => c.id.toString() === editFormData.contact_id)?.name || 'Selecione'
-                      : 'Selecione um contato'}
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-full min-w-[200px]">
-                  <DropdownMenuLabel>Contatos</DropdownMenuLabel>
-                  {contacts.map((contact) => (
-                    <DropdownMenuItem 
-                      key={contact.id}
-                      onClick={() => setEditFormData({...editFormData, contact_id: contact.id.toString()})}
-                    >
-                      {contact.name}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setIsAddContactOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Contato
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            <div className="space-y-3">
-              <Label>Conta Bancária</Label>
-              <Select 
-                value={editFormData.bank_account_id?.toString() || '1'} 
-                onValueChange={(value) => setEditFormData({...editFormData, bank_account_id: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {bankAccounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id.toString()}>
-                      {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-3">
-              <Label>Método de Pagamento</Label>
-              <Select 
-                value={editFormData.payment_method_cd.toString()} 
-                onValueChange={(value) => setEditFormData({...editFormData, payment_method_cd: parseInt(value)})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Indefinido</SelectItem>
-                  <SelectItem value="1">Dinheiro</SelectItem>
-                  <SelectItem value="2">Cartão de Crédito</SelectItem>
-                  <SelectItem value="3">Cartão de Débito</SelectItem>
-                  <SelectItem value="4">PIX</SelectItem>
-                  <SelectItem value="5">Transferência</SelectItem>
-                  <SelectItem value="6">Boleto</SelectItem>
-                  <SelectItem value="7">Cheque</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-                        <div className="space-y-3">
-                          <Label>Status</Label>
-              <Select 
-                value={editFormData.paid.toString()} 
-                onValueChange={(value) => setEditFormData({...editFormData, paid: value === 'true'})}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="false">Pendente</SelectItem>
-                  <SelectItem value="true">Pago</SelectItem>
-                </SelectContent>
-              </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Tipo</Label>
+                <Select
+                  value={editFormData.transaction_type_cd.toString()}
+                  onValueChange={(value) => setEditFormData({...editFormData, transaction_type_cd: parseInt(value)})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Receita</SelectItem>
+                    <SelectItem value="1">Despesa Fixa</SelectItem>
+                    <SelectItem value="2">Despesa Variável</SelectItem>
+                    <SelectItem value="3">Folha de Pagamento</SelectItem>
+                    <SelectItem value="4">Imposto</SelectItem>
+                    <SelectItem value="5">Transferência</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
+
+          <div className="space-y-4 pt-5 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Datas</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Vencimento</Label>
+                <Input
+                  type="text"
+                  placeholder="dd/mm/aaaa"
+                  value={editFormData.due_date}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    const maskedValue = applyDateMask(value)
+                    setEditFormData({...editFormData, due_date: maskedValue})
+                  }}
+                  maxLength={10}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Pagamento</Label>
+                <Input
+                  type="text"
+                  placeholder="dd/mm/aaaa"
+                  value={editFormData.paid_at}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    const maskedValue = applyDateMask(value)
+                    setEditFormData({...editFormData, paid_at: maskedValue})
+                  }}
+                  maxLength={10}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-5 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Classificação</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Categoria</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {editFormData.category_id
+                        ? categories.find(c => c.id.toString() === editFormData.category_id)?.name || 'Selecione'
+                        : 'Selecione uma categoria'}
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full min-w-[200px]">
+                    <DropdownMenuLabel>Categorias</DropdownMenuLabel>
+                    {categories.map((category) => (
+                      <DropdownMenuItem
+                        key={category.id}
+                        onClick={() => setEditFormData({...editFormData, category_id: category.id.toString()})}
+                      >
+                        {category.name}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setIsAddCategoryOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nova Categoria
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Centro de Custo</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {editFormData.cost_center_id
+                        ? costCenters.find(c => c.id.toString() === editFormData.cost_center_id)?.name || 'Selecione'
+                        : 'Selecione um centro de custo'}
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full min-w-[200px]">
+                    <DropdownMenuLabel>Centros de Custo</DropdownMenuLabel>
+                    {costCenters.map((costCenter) => (
+                      <DropdownMenuItem
+                        key={costCenter.id}
+                        onClick={() => setEditFormData({...editFormData, cost_center_id: costCenter.id.toString()})}
+                      >
+                        {costCenter.name}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setIsAddCostCenterOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Novo Centro de Custo
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Contato</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {editFormData.contact_id
+                        ? contacts.find(c => c.id.toString() === editFormData.contact_id)?.name || 'Selecione'
+                        : 'Selecione um contato'}
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full min-w-[200px]">
+                    <DropdownMenuLabel>Contatos</DropdownMenuLabel>
+                    {contacts.map((contact) => (
+                      <DropdownMenuItem
+                        key={contact.id}
+                        onClick={() => setEditFormData({...editFormData, contact_id: contact.id.toString()})}
+                      >
+                        {contact.name}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setIsAddContactOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Novo Contato
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-5 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Pagamento</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label>Conta Bancária</Label>
+                <Select
+                  value={editFormData.bank_account_id?.toString() || '1'}
+                  onValueChange={(value) => setEditFormData({...editFormData, bank_account_id: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bankAccounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id.toString()}>
+                        {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Método</Label>
+                <Select
+                  value={editFormData.payment_method_cd.toString()}
+                  onValueChange={(value) => setEditFormData({...editFormData, payment_method_cd: parseInt(value)})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Indefinido</SelectItem>
+                    <SelectItem value="1">Dinheiro</SelectItem>
+                    <SelectItem value="2">Cartão de Crédito</SelectItem>
+                    <SelectItem value="3">Cartão de Débito</SelectItem>
+                    <SelectItem value="4">PIX</SelectItem>
+                    <SelectItem value="5">Transferência</SelectItem>
+                    <SelectItem value="6">Boleto</SelectItem>
+                    <SelectItem value="7">Cheque</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select
+                  value={editFormData.paid.toString()}
+                  onValueChange={(value) => setEditFormData({...editFormData, paid: value === 'true'})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="false">Pendente</SelectItem>
+                    <SelectItem value="true">Pago</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border">
             <Button variant="secondary" onClick={() => setIsEditTransactionOpen(false)}>
               Cancelar
@@ -2955,8 +2977,8 @@ export function Transactions() {
             }}>
               Cancelar
             </Button>
-            <Button onClick={handleCreateCategory} disabled={isLoading || !newCategoryName.trim()}>
-              {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            <Button onClick={handleCreateCategory} disabled={isCreatingCategory || !newCategoryName.trim()}>
+              {isCreatingCategory ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Criar
             </Button>
           </div>
@@ -2988,8 +3010,8 @@ export function Transactions() {
             }}>
               Cancelar
             </Button>
-            <Button onClick={handleCreateContact} disabled={isLoading || !newContactName.trim()}>
-              {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            <Button onClick={handleCreateContact} disabled={isCreatingContact || !newContactName.trim()}>
+              {isCreatingContact ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Criar
             </Button>
           </div>
@@ -3021,8 +3043,8 @@ export function Transactions() {
             }}>
               Cancelar
             </Button>
-            <Button onClick={handleCreateCostCenter} disabled={isLoading || !newCostCenterName.trim()}>
-              {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            <Button onClick={handleCreateCostCenter} disabled={isCreatingCostCenter || !newCostCenterName.trim()}>
+              {isCreatingCostCenter ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Criar
             </Button>
           </div>
@@ -3031,9 +3053,10 @@ export function Transactions() {
 
       {/* Diálogo para Editar Parcelas */}
       <Dialog open={showEditInstallmentsDialog} onOpenChange={setShowEditInstallmentsDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>Editar Parcelas</DialogTitle>
+            <DialogDescription>Ajuste as datas e valores de cada parcela desta transação recorrente.</DialogDescription>
           </DialogHeader>
           {loadingInstallments ? (
             <div className="flex items-center justify-center py-8">
@@ -3137,7 +3160,8 @@ export function Transactions() {
               <div className="flex gap-2 pt-4 border-t">
                 <Button
                   onClick={handleUpdateInstallments}
-                  className="flex-1 bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white"
+                  className="flex-1"
+                  style={{ background: T.brand, color: '#fff' }}
                   disabled={loadingInstallments}
                 >
                   {loadingInstallments ? (
@@ -3167,9 +3191,10 @@ export function Transactions() {
 
       {/* Diálogo para Recorrências Próximas do Fim */}
       <Dialog open={showRecurrenceDialog} onOpenChange={setShowRecurrenceDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Recorrência Próxima do Fim</DialogTitle>
+            <DialogDescription>Esta cobrança recorrente está se encerrando em breve. Decida como prosseguir.</DialogDescription>
           </DialogHeader>
           {selectedRecurrence && (
             <div className="space-y-4">
@@ -3188,31 +3213,27 @@ export function Transactions() {
                   onClick={async () => {
                     try {
                       await apiService.extendRecurrence(selectedRecurrence.payment_plan_id)
-                      // Remover esta recorrência da lista
                       setExpiringRecurrences(prev => prev.filter(r => r.payment_plan_id !== selectedRecurrence.payment_plan_id))
-                      // Se houver mais recorrências, mostrar a próxima
                       const remaining = expiringRecurrences.filter(r => r.payment_plan_id !== selectedRecurrence.payment_plan_id)
                       if (remaining.length > 0) {
                         setSelectedRecurrence(remaining[0])
                       } else {
                         setShowRecurrenceDialog(false)
                       }
-                      alert('Recorrência estendida com sucesso por mais 12 meses!')
+                      toast.success('Recorrência estendida por mais 12 meses!')
                     } catch (error) {
-                      console.error('Erro ao estender recorrência:', error)
-                      alert('Erro ao estender recorrência. Tente novamente.')
+                      toast.error('Erro ao estender recorrência. Tente novamente.')
                     }
                   }}
-                  className="flex-1 bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white"
+                  className="flex-1"
+                  style={{ background: T.brand, color: '#fff' }}
                 >
                   Estender por mais 12 meses
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => {
-                    // Remover esta recorrência da lista
                     setExpiringRecurrences(prev => prev.filter(r => r.payment_plan_id !== selectedRecurrence.payment_plan_id))
-                    // Se houver mais recorrências, mostrar a próxima
                     const remaining = expiringRecurrences.filter(r => r.payment_plan_id !== selectedRecurrence.payment_plan_id)
                     if (remaining.length > 0) {
                       setSelectedRecurrence(remaining[0])
@@ -3234,7 +3255,8 @@ export function Transactions() {
         <Button
           onClick={() => setIsQuickAddOpen(true)}
           size="lg"
-          className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-[#5B7A9E] to-[#6B8FA3] hover:from-[#4A5C7A] hover:to-[#5B7A9E] text-white border-0"
+          className="h-14 w-14 rounded-full shadow-lg border-0"
+          style={{ background: T.brand, color: '#fff' }}
         >
           <Plus className="w-6 h-6" />
         </Button>

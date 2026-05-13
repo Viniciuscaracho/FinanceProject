@@ -39,7 +39,6 @@ export function AdminAccountDetails() {
       const response = await apiService.getAdminAccountDetails(id)
       setAccount(response.account)
     } catch (error) {
-      console.error('Erro ao carregar detalhes da conta:', error)
       toast.error(error.message || 'Não foi possível carregar os detalhes da conta')
       navigate('/admin')
     } finally {
@@ -52,7 +51,6 @@ export function AdminAccountDetails() {
       const response = await apiService.getAdminAccountSubscriptions(id)
       setSubscriptions(response.subscriptions || [])
     } catch (error) {
-      console.error('Erro ao carregar assinaturas:', error)
     }
   }
 
@@ -135,7 +133,7 @@ export function AdminAccountDetails() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">

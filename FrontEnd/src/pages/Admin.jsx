@@ -40,7 +40,6 @@ export function Admin() {
       const response = await apiService.getAdminDashboard()
       setDashboard(response.summary)
     } catch (error) {
-      console.error('Erro ao carregar dashboard:', error)
       toast.error('Não foi possível carregar o dashboard')
     }
   }
@@ -57,7 +56,6 @@ export function Admin() {
       setAccounts(response.accounts || [])
       setTotalPages(response.pagination?.total_pages || 1)
     } catch (error) {
-      console.error('Erro ao carregar contas:', error)
       toast.error(error.message || 'Não foi possível carregar as contas')
     } finally {
       setLoading(false)
@@ -102,7 +100,7 @@ export function Admin() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

@@ -1,29 +1,22 @@
-/**
- * Configuração do Playwright para testes de performance e E2E
- * 
- * Instalação:
- * npm install -D @playwright/test
- * npx playwright install
- * 
- * Execução:
- * npx playwright test
- * npx playwright test --project=performance
- */
+const { defineConfig, devices } = require('@playwright/test');
+const path = require('path');
 
-import { defineConfig, devices } from '@playwright/test';
+const AUTH_STATE_PATH = path.join(__dirname, '.auth', 'user.json');
 
-export default defineConfig({
+module.exports = defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
+  globalSetup: require.resolve('./global-setup.js'),
+
   reporter: [
     ['html'],
     ['json', { outputFile: 'test-results/results.json' }],
     ['junit', { outputFile: 'test-results/junit.xml' }],
   ],
-  
+
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:5173',
     trace: 'on-first-retry',
@@ -32,26 +25,46 @@ export default defineConfig({
   },
 
   projects: [
+    // Testes públicos/auth — sem storageState
     {
-      name: 'chromium',
+      name: 'public',
       use: { ...devices['Desktop Chrome'] },
+      testMatch: ['**/auth.spec.js', '**/public.spec.js'],
     },
+
+    // Testes autenticados — reutilizam o storageState do global-setup
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      name: 'authenticated',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: AUTH_STATE_PATH,
+      },
+      testMatch: [
+        '**/dashboard.spec.js',
+        '**/appointments.e2e.spec.js',
+        '**/appointments-modal.spec.js',
+        '**/navigation.spec.js',
+        '**/professionals.spec.js',
+        '**/services.spec.js',
+        '**/transactions.spec.js',
+        '**/contacts.spec.js',
+        '**/appointment-links.spec.js',
+        '**/imports.spec.js',
+        '**/appointment-notes.spec.js',
+      ],
     },
+
+    // Mobile autenticado
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      name: 'mobile',
+      use: {
+        ...devices['Pixel 5'],
+        storageState: AUTH_STATE_PATH,
+      },
+      testMatch: ['**/dashboard.spec.js', '**/navigation.spec.js'],
     },
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
+
+    // Performance
     {
       name: 'performance',
       use: { ...devices['Desktop Chrome'] },
@@ -60,10 +73,9 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'cd FrontEnd && npm run dev',
+    command: `cd ${path.join(__dirname, '../../FrontEnd')} && pnpm dev`,
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
 });
-

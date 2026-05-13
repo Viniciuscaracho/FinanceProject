@@ -28,9 +28,9 @@ module Appointments
       # 1. O agendamento estava pago
       # 2. Tem um payment_intent_id do Stripe
       # 3. Ainda não foi reembolsado
-      appointment.payment_status == Appointment::PAYMENT_STATUS[:paid] &&
+      (appointment.payment_status == :paid || appointment.payment_status == Appointment::PAYMENT_STATUS[:paid]) &&
         appointment.stripe_payment_intent_id.present? &&
-        appointment.payment_status != Appointment::PAYMENT_STATUS[:refunded]
+        appointment.payment_status != :refunded
     end
 
     def process_stripe_refund(appointment)
@@ -38,26 +38,26 @@ module Appointments
         return { success: false, error: "Stripe não está configurado" }
       end
 
+      result = nil
       BarberManagement::Stripe::Client.with_api_key do
         begin
-          # Buscar o payment intent
           payment_intent = ::Stripe::PaymentIntent.retrieve(appointment.stripe_payment_intent_id)
-          
-          # Verificar se já foi reembolsado
+
           if payment_intent.status == 'refunded' || payment_intent.charges.data.any? { |c| c.refunded }
             Rails.logger.info "Payment intent #{appointment.stripe_payment_intent_id} já foi reembolsado"
-            return { success: true, refund_id: 'already_refunded' }
+            result = { success: true, refund_id: 'already_refunded' }
+            next
           end
 
-          # Criar reembolso
           charge_id = payment_intent.charges.data.first&.id
           unless charge_id
-            return { success: false, error: "Nenhuma cobrança encontrada no payment intent" }
+            result = { success: false, error: "Nenhuma cobrança encontrada no payment intent" }
+            next
           end
 
           refund = ::Stripe::Refund.create(
             charge: charge_id,
-            amount: appointment.price_cents, # Reembolsar o valor total
+            amount: appointment.price_cents,
             metadata: BarberManagement::Stripe::Client.default_metadata(
               account_id: appointment.account_id,
               additional: {
@@ -68,17 +68,19 @@ module Appointments
           )
 
           Rails.logger.info "Reembolso criado com sucesso: #{refund.id} para agendamento #{appointment.id}"
-          { success: true, refund_id: refund.id }
+          result = { success: true, refund_id: refund.id }
         rescue ::Stripe::StripeError => e
           Rails.logger.error "Erro do Stripe ao processar reembolso: #{e.message}"
-          { success: false, error: "Erro do Stripe: #{e.message}" }
+          result = { success: false, error: "Erro do Stripe: #{e.message}" }
         end
       end
+
+      result
     end
 
     def update_appointment_status(appointment)
       # O status já foi atualizado no método cancel!, apenas garantir payment_status
-      if appointment.payment_status != Appointment::PAYMENT_STATUS[:refunded]
+      if appointment.payment_status != :refunded
         appointment.update_column(:payment_status, Appointment::PAYMENT_STATUS[:refunded])
       end
     end
