@@ -214,10 +214,10 @@ class ApiService {
     });
   }
 
-  async register({ name, accountName, email, password }) {
+  async register({ name, accountName, email, password, document }) {
     const response = await this.request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, account_name: accountName, email, password }),
+      body: JSON.stringify({ name, account_name: accountName, email, password, document }),
     });
 
     if (response.success && response.token) {
@@ -225,6 +225,13 @@ class ApiService {
     }
 
     return response;
+  }
+
+  async lookupCnpj(cnpj) {
+    const digits = cnpj.replace(/\D/g, '')
+    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`)
+    if (!res.ok) throw new Error('CNPJ não encontrado')
+    return res.json()
   }
 
   // Transactions
@@ -540,6 +547,10 @@ class ApiService {
         observations: options.observations || '',
       }),
     });
+  }
+
+  async sendAnamneseWhatsApp(appointmentId) {
+    return await this.request(`/appointments/${appointmentId}/send_anamnese`, { method: 'POST' });
   }
 
   // Appointment Attachments
@@ -1236,6 +1247,35 @@ class ApiService {
     });
   }
 
+  // PIX Payments (AbacatePay)
+  async createPixBilling({ amount, planId, planName, planDescription, frequency = 'MONTHLY' }) {
+    return await this.request('/pix_payments/create_billing', {
+      method: 'POST',
+      body: JSON.stringify({
+        amount,
+        plan_id: planId,
+        plan_name: planName,
+        plan_description: planDescription,
+        frequency,
+      }),
+    });
+  }
+
+  async getPixBillingStatus(billingId) {
+    return await this.request(`/pix_payments/status/${billingId}`);
+  }
+
+  async getPixBillings() {
+    return await this.request('/pix_payments');
+  }
+
+  async syncPixPayment(billingId) {
+    return await this.request('/pix_payments/sync', {
+      method: 'POST',
+      body: JSON.stringify({ billing_id: billingId }),
+    });
+  }
+
   // Admin endpoints (exclusivo para dono do sistema)
   async getAdminDashboard() {
     return await this.request('/admin/dashboard');
@@ -1320,6 +1360,90 @@ class ApiService {
     return await this.request('/admin/stop_impersonating', {
       method: 'POST',
     });
+  }
+
+  async extendAdminTrial(accountId, days) {
+    return await this.request(`/admin/accounts/${accountId}/extend_trial`, {
+      method: 'POST',
+      body: JSON.stringify({ days }),
+    });
+  }
+
+  async getAdminUsers(params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    return await this.request(`/admin/users${queryParams ? `?${queryParams}` : ''}`);
+  }
+
+  async resendAdminConfirmation(userId) {
+    return await this.request(`/admin/users/${userId}/resend_confirmation`, { method: 'POST' });
+  }
+
+  async getAdminWebhookLogs(params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    return await this.request(`/admin/webhooks${queryParams ? `?${queryParams}` : ''}`);
+  }
+
+  async retryAdminWebhook(webhookId) {
+    return await this.request(`/admin/webhooks/${webhookId}/retry`, { method: 'POST' });
+  }
+
+  async syncStripe() {
+    return await this.request('/admin/sync_stripe', { method: 'POST' });
+  }
+
+  async fixSubscriptions() {
+    return await this.request('/admin/fix_subscriptions', { method: 'POST' });
+  }
+
+  async getAdminAuditLogs(accountId, params = {}) {
+    const queryParams = new URLSearchParams(params).toString();
+    return await this.request(`/admin/accounts/${accountId}/audit_logs${queryParams ? `?${queryParams}` : ''}`);
+  }
+
+  // Announcements
+  async getAdminAnnouncements() {
+    return await this.request('/admin/announcements');
+  }
+
+  async createAdminAnnouncement(data) {
+    return await this.request('/admin/announcements', {
+      method: 'POST',
+      body: JSON.stringify({ announcement: data }),
+    });
+  }
+
+  async updateAdminAnnouncement(id, data) {
+    return await this.request(`/admin/announcements/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ announcement: data }),
+    });
+  }
+
+  async deleteAdminAnnouncement(id) {
+    return await this.request(`/admin/announcements/${id}`, { method: 'DELETE' });
+  }
+
+  // Referral Codes
+  async getAdminReferralCodes() {
+    return await this.request('/admin/referral_codes');
+  }
+
+  async createAdminReferralCode(data) {
+    return await this.request('/admin/referral_codes', {
+      method: 'POST',
+      body: JSON.stringify({ referral_code: data }),
+    });
+  }
+
+  async updateAdminReferralCode(id, data) {
+    return await this.request(`/admin/referral_codes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ referral_code: data }),
+    });
+  }
+
+  async deleteAdminReferralCode(id) {
+    return await this.request(`/admin/referral_codes/${id}`, { method: 'DELETE' });
   }
 
   // Account Settings (somente para admins da conta)
@@ -1521,6 +1645,195 @@ class ApiService {
 
   async discoverCategories() {
     return this.request('/public/discover/categories')
+  }
+
+  // ── Google Calendar ──────────────────────────────────────────────────────────
+
+  async getGoogleCalendarStatus() {
+    return this.request('/google_calendar/status')
+  }
+
+  async getGoogleCalendarOAuthUrl() {
+    return this.request('/google_calendar/oauth_url')
+  }
+
+  async disconnectGoogleCalendar() {
+    return this.request('/google_calendar/disconnect', { method: 'DELETE' })
+  }
+
+  async syncGoogleCalendar() {
+    return this.request('/google_calendar/sync', { method: 'POST' })
+  }
+
+  // ── Google Contacts ──────────────────────────────────────────────────────────
+
+  async getGoogleContactsStatus() {
+    return this.request('/google_contacts/status')
+  }
+
+  async getGoogleContactsOAuthUrl() {
+    return this.request('/google_contacts/oauth_url')
+  }
+
+  async disconnectGoogleContacts() {
+    return this.request('/google_contacts/disconnect', { method: 'DELETE' })
+  }
+
+  async listGoogleContacts() {
+    return this.request('/google_contacts/list')
+  }
+
+  async importGoogleContacts(contacts) {
+    return this.request('/google_contacts/import', {
+      method: 'POST',
+      body: JSON.stringify({ contacts }),
+    })
+  }
+
+  // ── Anamnese Templates ───────────────────────────────────────────────────────
+
+  async getAnamneseTemplates() {
+    return this.request('/anamnese_templates')
+  }
+
+  async createAnamneseTemplate(data) {
+    return this.request('/anamnese_templates', {
+      method: 'POST',
+      body: JSON.stringify({ anamnese_template: data }),
+    })
+  }
+
+  async updateAnamneseTemplate(id, data) {
+    return this.request(`/anamnese_templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ anamnese_template: data }),
+    })
+  }
+
+  async deleteAnamneseTemplate(id) {
+    return this.request(`/anamnese_templates/${id}`, { method: 'DELETE' })
+  }
+
+  // ── Anamnese Responses (nested under appointments) ───────────────────────────
+
+  async getAnamneseResponse(appointmentId) {
+    return this.request(`/appointments/${appointmentId}/anamnese_response`)
+  }
+
+  async saveAnamneseResponse(appointmentId, data) {
+    return this.request(`/appointments/${appointmentId}/anamnese_response`, {
+      method: 'POST',
+      body: JSON.stringify({ anamnese_response: data }),
+    })
+  }
+
+  // ── Anamnese pública (preenchimento pelo paciente, sem auth) ─────────────────
+
+  async getPublicAnamnese(token) {
+    const url = `${this.baseURL}/public/anamnese/${token}`
+    const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } })
+    if (!res.ok) throw new Error('Link inválido ou expirado')
+    return res.json()
+  }
+
+  async submitPublicAnamnese(token, data) {
+    const url = `${this.baseURL}/public/anamnese/${token}`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ anamnese_response: data }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.error || 'Erro ao enviar anamnese')
+    }
+    return res.json()
+  }
+
+  // ── Última anamnese por contato ───────────────────────────────────────────────
+
+  async getLastAnamneseResponse(contactId) {
+    return this.request(`/contacts/${contactId}/last_anamnese_response`)
+  }
+
+  async getAnamneseHistory(contactId) {
+    return this.request(`/contacts/${contactId}/anamnese_history`)
+  }
+
+  // ── Appointment: salvar template de anamnese ──────────────────────────────────
+
+  async setAppointmentAnamneseTemplate(appointmentId, templateId) {
+    return this.request(`/appointments/${appointmentId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ appointment: { anamnese_template_id: templateId } }),
+    })
+  }
+
+  // ── Patient Goals (nested under contacts) ────────────────────────────────────
+
+  async getPatientGoals(contactId) {
+    return this.request(`/contacts/${contactId}/patient_goals`)
+  }
+
+  async createPatientGoal(contactId, data) {
+    return this.request(`/contacts/${contactId}/patient_goals`, {
+      method: 'POST',
+      body: JSON.stringify({ patient_goal: data }),
+    })
+  }
+
+  async updatePatientGoal(contactId, goalId, data) {
+    return this.request(`/contacts/${contactId}/patient_goals/${goalId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ patient_goal: data }),
+    })
+  }
+
+  async deletePatientGoal(contactId, goalId) {
+    return this.request(`/contacts/${contactId}/patient_goals/${goalId}`, { method: 'DELETE' })
+  }
+
+  async addPatientGoalProgress(contactId, goalId, value, note = null, date = null) {
+    return this.request(`/contacts/${contactId}/patient_goals/${goalId}/add_progress`, {
+      method: 'POST',
+      body: JSON.stringify({ value, note, date }),
+    })
+  }
+
+  // ── Documentos do Paciente ────────────────────────────────────────────────────
+
+  async getPatientDocuments(contactId) {
+    return this.request(`/contacts/${contactId}/patient_documents`)
+  }
+
+  async createPatientDocument(contactId, data) {
+    return this.request(`/contacts/${contactId}/patient_documents`, {
+      method: 'POST',
+      body: JSON.stringify({ patient_document: data }),
+    })
+  }
+
+  async updatePatientDocument(contactId, docId, data) {
+    return this.request(`/contacts/${contactId}/patient_documents/${docId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ patient_document: data }),
+    })
+  }
+
+  async deletePatientDocument(contactId, docId) {
+    return this.request(`/contacts/${contactId}/patient_documents/${docId}`, { method: 'DELETE' })
+  }
+
+  async togglePatientDocumentShared(contactId, docId) {
+    return this.request(`/contacts/${contactId}/patient_documents/${docId}/toggle_shared`, { method: 'POST' })
+  }
+
+  async getPublicPatientDocument(token) {
+    const url = `${this.baseURL}/public/documents/${token}`
+    const res = await fetch(url)
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Documento não encontrado')
+    return data
   }
 }
 

@@ -222,10 +222,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async ({ name, accountName, email, password }) => {
+  const register = async ({ name, accountName, email, password, document }) => {
     try {
       setError(null);
-      const response = await apiService.register({ name, accountName, email, password });
+      const response = await apiService.register({ name, accountName, email, password, document });
 
       if (response.success) {
         setUser(response.user);

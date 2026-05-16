@@ -130,7 +130,7 @@ function ProfRow({ prof, isMobile }) {
                 <p style={{ fontSize: 14, fontWeight: 700, color: '#F59E0B', margin: 0 }}>{fmtBRL(commission * 100)}</p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>Líquido</p>
+                <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>Margem</p>
                 <p style={{ fontSize: 14, fontWeight: 700, color: T.brand, margin: 0 }}>{fmtBRL(net * 100)}</p>
               </div>
             </>
@@ -138,7 +138,7 @@ function ProfRow({ prof, isMobile }) {
           {isMobile && (
             <div style={{ textAlign: 'right' }}>
               <p style={{ fontSize: 13, fontWeight: 700, color: T.green, margin: 0 }}>{fmtBRL(revenue * 100)}</p>
-              <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>Líq: {fmtBRL(net * 100)}</p>
+              <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>Margem: {fmtBRL(net * 100)}</p>
             </div>
           )}
           {open ? <ChevronDown size={14} style={{ color: T.muted }} /> : <ChevronRight size={14} style={{ color: T.muted }} />}
@@ -154,7 +154,7 @@ function ProfRow({ prof, isMobile }) {
               <Stat label="Receita Bruta" value={fmtBRL(revenue * 100)} color={T.green} />
               <Stat label="Comissão" value={fmtBRL(commission * 100)} color="#F59E0B" />
               <Stat label="Repasse Pend." value={fmtBRL(payout * 100)} color={T.brand} />
-              <Stat label="Receita Líquida" value={fmtBRL(net * 100)} color={T.text} />
+              <Stat label="Margem" value={fmtBRL(net * 100)} color={T.text} />
             </div>
           )}
 
@@ -309,7 +309,7 @@ function AppointmentReportTab({ isMobile }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160 }}>
             <label style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Profissional</label>
             <Select value={profId} onValueChange={setProfId}>
-              <SelectTrigger style={{ height: 32, fontSize: 13 }}>
+              <SelectTrigger style={{ height: 36, fontSize: 13, borderWidth: 1.5 }}>
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -361,7 +361,7 @@ function AppointmentReportTab({ isMobile }) {
             <Stat label="Confirmados"  value={summary.confirmed || 0} color={T.brand} />
             <Stat label="Receita Total" value={fmtBRL(summary.total_revenue?.cents || 0)} color={T.green} />
             <Stat label="Comissões" value={fmtBRL(summary.total_commissions?.cents || 0)} color="#F59E0B" />
-            <div style={{ background: T.brand + '12', border: `1px solid ${T.brand}30`, borderRadius: 10, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ background: T.brand + '12', border: `1px solid ${T.brand}30`, borderRadius: 10, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 4, gridColumn: isMobile ? 'span 2' : 'auto' }}>
               <p style={{ fontSize: 11, color: T.brand, margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Receita Líquida</p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                 <p style={{ fontSize: 18, fontWeight: 700, color: T.green, margin: 0, letterSpacing: '-0.02em' }}>{fmtBRL(netRevenue)}</p>
@@ -384,11 +384,11 @@ function AppointmentReportTab({ isMobile }) {
                     <Tooltip formatter={v => fmtBRL(v * 100)} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
                     <Bar dataKey="receita"  fill={T.green}   name="Receita"   radius={[3,3,0,0]} />
                     <Bar dataKey="comissao" fill="#F59E0B"   name="Comissão"  radius={[3,3,0,0]} />
-                    <Bar dataKey="liquido"  fill={T.brand}   name="Líquido"   radius={[3,3,0,0]} />
+                    <Bar dataKey="liquido"  fill={T.brand}   name="Margem"    radius={[3,3,0,0]} />
                   </BarChart>
                 </ResponsiveContainer>
                 <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                  {[['Receita', T.green], ['Comissão', '#F59E0B'], ['Líquido', T.brand]].map(([l, c]) => (
+                  {[['Receita', T.green], ['Comissão', '#F59E0B'], ['Margem', T.brand]].map(([l, c]) => (
                     <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <div style={{ width: 8, height: 8, borderRadius: 2, background: c }} />
                       <span style={{ fontSize: 11, color: T.muted }}>{l}</span>
@@ -499,6 +499,13 @@ function FinancialReportTab({ isMobile }) {
       .catch(() => {})
   }, [])
 
+  // Force Recharts ResponsiveContainer to re-measure after data arrives or report changes
+  useEffect(() => {
+    if (!reportData) return
+    const t = setTimeout(() => window.dispatchEvent(new Event('resize')), 60)
+    return () => clearTimeout(t)
+  }, [reportData, selectedReport])
+
   const loading = reportsLoading || reportLoading
   const essentialReports = reports.filter(r => ['dre', 'extract', 'income_expense'].includes(r.id))
 
@@ -534,18 +541,48 @@ function FinancialReportTab({ isMobile }) {
       { label: '(-) Folha',           value: payroll,           type: 'expense' },
       { label: '= Resultado Líquido', value: result,            type: 'final' },
     ]
+    const dreChartData = [
+      { name: 'Receita', value: (gross_income?.cents || 0) / 100, fill: T.green },
+      { name: 'Impostos', value: (taxes?.cents || 0) / 100, fill: '#EF4444' },
+      { name: 'Desp. Var.', value: (variable_expense?.cents || 0) / 100, fill: '#F59E0B' },
+      { name: 'Desp. Fix.', value: (fixed_expense?.cents || 0) / 100, fill: '#F59E0B' },
+      { name: 'Folha', value: (payroll?.cents || 0) / 100, fill: '#8B5CF6' },
+      { name: 'Resultado', value: Math.abs((result?.cents || 0) / 100), fill: (result?.cents || 0) >= 0 ? T.brand : '#EF4444' },
+    ]
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {items.map((item, i) => {
-          const bg = item.type === 'revenue' ? T.green + '12' : item.type === 'expense' ? T.red + '10' : item.type === 'final' ? T.brand + '14' : T.chip
-          const border = item.type === 'final' ? `2px solid ${T.brand}` : `1px solid ${T.border}`
-          return (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderRadius: 10, background: bg, border }}>
-              <span style={{ fontSize: item.type === 'final' ? 15 : 13, fontWeight: item.type === 'final' ? 700 : 500, color: T.text }}>{item.label}</span>
-              <span style={{ fontSize: item.type === 'final' ? 15 : 13, fontWeight: 700, color: T.text }}>{formatCurrency(item.value?.cents || 0, item.value?.currency || 'BRL')}</span>
-            </div>
-          )
-        })}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Mini chart */}
+        <div style={{ background: T.bg, borderRadius: 12, padding: '16px' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.muted, margin: '0 0 12px' }}>
+            Visão Gráfica
+          </p>
+          <ResponsiveContainer width="100%" height={isMobile ? 180 : 240}>
+            <BarChart data={dreChartData} margin={{ top: 4, right: 8, left: 0, bottom: isMobile ? 30 : 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: T.muted }} angle={isMobile ? -30 : 0} textAnchor={isMobile ? 'end' : 'middle'} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: T.muted }} axisLine={false} tickLine={false} />
+              <Tooltip formatter={v => formatCurrency(v * 100)} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+              <Bar dataKey="value" radius={[4,4,0,0]}>
+                {dreChartData.map((entry, i) => (
+                  <Cell key={i} fill={entry.fill} fillOpacity={0.85} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        {/* DRE rows */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {items.map((item, i) => {
+            const bg = item.type === 'revenue' ? T.green + '12' : item.type === 'expense' ? T.red + '10' : item.type === 'final' ? T.brand + '14' : T.chip
+            const border = item.type === 'final' ? `2px solid ${T.brand}` : `1px solid ${T.border}`
+            return (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderRadius: 10, background: bg, border }}>
+                <span style={{ fontSize: item.type === 'final' ? 15 : 13, fontWeight: item.type === 'final' ? 700 : 500, color: T.text }}>{item.label}</span>
+                <span style={{ fontSize: item.type === 'final' ? 15 : 13, fontWeight: 700, color: T.text }}>{formatCurrency(item.value?.cents || 0, item.value?.currency || 'BRL')}</span>
+              </div>
+            )
+          })}
+        </div>
       </div>
     )
   }
@@ -616,6 +653,14 @@ function FinancialReportTab({ isMobile }) {
   const renderIncomeExpense = () => {
     if (!reportData) return <Empty />
     const { income, expenses, net, savings_rate } = reportData
+    const incomeVal  = (income || 0) / 100
+    const expenseVal = Math.abs(expenses || 0) / 100
+    const netVal     = (net || 0) / 100
+    const ieChartData = [
+      { name: 'Receitas',  value: incomeVal,  fill: T.green },
+      { name: 'Despesas',  value: expenseVal, fill: '#EF4444' },
+      { name: 'Saldo',     value: Math.abs(netVal), fill: netVal >= 0 ? T.brand : '#F59E0B' },
+    ]
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 8 }}>
@@ -623,6 +668,24 @@ function FinancialReportTab({ isMobile }) {
           <Stat label="Total de Despesas" value={formatCurrency(expenses || 0)} color={T.red} />
           <Stat label="Saldo Líquido"     value={formatCurrency(net || 0)} color={(net||0) >= 0 ? T.green : T.red} />
           <Stat label="Taxa de Poupança"  value={`${savings_rate?.toFixed(2) || '0.00'}%`} color={T.brand} />
+        </div>
+        <div style={{ background: T.bg, borderRadius: 12, padding: '16px' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.muted, margin: '0 0 12px' }}>
+            Comparativo
+          </p>
+          <ResponsiveContainer width="100%" height={isMobile ? 200 : 260} debounce={50}>
+            <BarChart data={ieChartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: T.muted }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: T.muted }} axisLine={false} tickLine={false} />
+              <Tooltip formatter={v => formatCurrency(v * 100)} contentStyle={{ fontSize: 12, borderRadius: 8, border: `1px solid ${T.border}` }} />
+              <Bar dataKey="value" radius={[4,4,0,0]}>
+                {ieChartData.map((entry, i) => (
+                  <Cell key={i} fill={entry.fill} fillOpacity={0.85} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     )
@@ -742,11 +805,10 @@ function Empty({ text }) {
 /* ─── Page ────────────────────────────────────────── */
 export function FinancialReports() {
   const isMobile = useIsMobile()
-  const [mainTab, setMainTab] = useState('financial')
+  const [mainTab, setMainTab] = useState('appointments')
 
   return (
-    <div style={{ minHeight: '100vh', background: T.bg, ...DISPLAY }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, ...DISPLAY }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -783,6 +845,5 @@ export function FinancialReports() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
   )
 }

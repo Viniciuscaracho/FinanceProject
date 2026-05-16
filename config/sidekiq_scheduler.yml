@@ -22,3 +22,7 @@ appointment_billing_notifications:
     cron: '0 * * * * America/Sao_Paulo'
     class: AppointmentBillingNotificationsJob
     enabled: true
+trial_expiry_reminders:
+    cron: '0 8 * * * America/Sao_Paulo'
+    class: TrialExpiryReminderJob
+    enabled: true

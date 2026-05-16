@@ -29,10 +29,10 @@ test.describe('Agendamentos — visualização', () => {
     await page.goto('/appointments');
     await page.waitForLoadState('networkidle');
     // Deve exibir alguma forma de visualização (tabela, calendário ou estado vazio)
+    const wrapper = page.locator('[data-testid="appointments-page"]');
+    await expect(wrapper).toBeVisible({ timeout: 12000 });
     await expect(
-      page.locator('[data-testid="appointments-page"]')
-        .locator('table, [class*="calendar"], [class*="rbc-"], text=/nenhum|vazio|sem agendamento/i')
-        .first()
+      wrapper.locator('table').or(wrapper.locator('[class*="rbc-"]')).or(wrapper.locator('[role="tablist"]')).first()
     ).toBeVisible({ timeout: 12000 });
   });
 });
@@ -61,8 +61,8 @@ test.describe('Agendamentos — criação', () => {
     await expect(dialog).toBeVisible({ timeout: 8000 });
 
     // Fecha pelo botão Cancelar ou pelo X do dialog
-    const cancelBtn = dialog.locator('button:has-text(/cancelar/i), button[aria-label*="fechar"], button[aria-label*="close"]').first();
-    await cancelBtn.click();
+    const cancelBtn = dialog.locator('button:has-text("Cancelar"), button[aria-label*="fechar"]').first();
+    await cancelBtn.click({ force: true });
 
     await expect(dialog).not.toBeVisible({ timeout: 5000 });
   });

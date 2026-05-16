@@ -64,7 +64,7 @@ export function Commissions() {
 
   useEffect(() => {
     apiService.getProfessionals()
-      .then(r => setProfessionals(r.professionals || []))
+      .then(r => setProfessionals(Array.isArray(r) ? r : []))
       .catch(() => {})
   }, [])
 
@@ -108,7 +108,7 @@ export function Commissions() {
   const summary = commissionsData?.summary
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, ...DISPLAY }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: isMobile ? 80 : 0, ...DISPLAY }}>
 
       {/* ══ HERO ═══════════════════════════════════ */}
       <div style={{
@@ -130,16 +130,24 @@ export function Commissions() {
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: isMobile ? 20 : 36 }}>
           <div>
+            <p style={{ fontSize: isMobile ? 19 : 22, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
+              {summary ? fmtBRL(summary.total_revenue) : '—'}
+            </p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Receita gerada</p>
+          </div>
+          <div>
             <p style={{ fontSize: isMobile ? 19 : 22, fontWeight: 700, color: T.green, margin: 0, letterSpacing: '-0.02em' }}>
               {summary ? fmtBRL(summary.total_commissions) : '—'}
             </p>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Total a pagar</p>
           </div>
           <div>
-            <p style={{ fontSize: isMobile ? 19 : 22, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
-              {summary?.total_professionals ?? '—'}
+            <p style={{ fontSize: isMobile ? 19 : 22, fontWeight: 700, color: 'rgba(255,255,255,0.7)', margin: 0, letterSpacing: '-0.02em' }}>
+              {summary?.total_revenue?.cents > 0
+                ? `${((summary.total_commissions.cents / summary.total_revenue.cents) * 100).toFixed(1)}%`
+                : '—'}
             </p>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Profissionais</p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Taxa média</p>
           </div>
           <div>
             <p style={{ fontSize: isMobile ? 19 : 22, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
@@ -302,7 +310,7 @@ export function Commissions() {
                       {profComm.professional.name}
                     </p>
                     <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>
-                      {profComm.professional.email} · {sessions} sessão{sessions !== 1 ? 'ões' : ''}
+                      {profComm.professional.email} · {sessions} {sessions !== 1 ? 'sessões' : 'sessão'}
                     </p>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -415,7 +423,7 @@ export function Commissions() {
                         padding: '10px 20px', borderTop: `1px solid ${T.border}`,
                         background: T.bg,
                       }}>
-                        <span style={{ fontSize: 12, color: T.muted }}>{sessions} sessão{sessions !== 1 ? 'ões' : ''}</span>
+                        <span style={{ fontSize: 12, color: T.muted }}>{sessions} {sessions !== 1 ? 'sessões' : 'sessão'}</span>
                         <span style={{ fontSize: 15, fontWeight: 700, color: T.green }}>
                           {fmtBRL(totalCents)}
                         </span>

@@ -9,7 +9,7 @@ module Api
       skip_before_action :set_current_account, only: [:create, :available_slots]
       before_action :authenticate_api_key, only: [:create, :available_slots]
       before_action :set_account_from_api, only: [:create, :available_slots]
-      before_action :set_appointment, only: [:show, :update, :destroy, :generate_professional_document]
+      before_action :set_appointment, only: [:show, :update, :destroy, :generate_professional_document, :send_anamnese]
 
       def index
         account = Current.account
@@ -28,6 +28,7 @@ module Api
           appointments = appointments.where(payment_status: ps_val) if ps_val
         end
         appointments = appointments.where(account_user_id: params[:account_user_id]) if params[:account_user_id].present?
+        appointments = appointments.where(contact_id: params[:contact_id]) if params[:contact_id].present?
 
         if params[:start_date].present? || params[:end_date].present?
           start_date = params[:start_date].present? ? Time.parse(params[:start_date]).beginning_of_day : nil
@@ -225,6 +226,50 @@ module Api
         render json: { error: e.message }, status: :internal_server_error
       end
 
+      def send_anamnese
+        unless @appointment.anamnese_template_id.present?
+          return render json: { success: false, error: 'Nenhum formulário de anamnese vinculado a este agendamento' }, status: :unprocessable_entity
+        end
+
+        frontend_url = ENV.fetch('FRONTEND_URL', 'http://localhost:5173')
+        anamnese_url = "#{frontend_url}/anamnese/responder/#{@appointment.manage_token}"
+        patient_name = @appointment.contact&.name || @appointment.whatsapp_number
+
+        message = "📋 *Formulário de Anamnese*\n\n"
+        message += "Olá#{patient_name.present? ? ", #{patient_name.split.first}" : ''}!\n\n"
+        message += "Antes da sua consulta, por favor preencha o formulário abaixo:\n\n"
+        message += "🔗 #{anamnese_url}\n\n"
+        message += "Obrigado! 🌿"
+
+        phone = @appointment.contact&.cell_phone_number || @appointment.whatsapp_number
+        account = @appointment.account
+
+        sent = false
+        whatsapp_link = nil
+
+        if phone.present? && WhatsApp::EvolutionApiClient.configured?(account: account)
+          result = WhatsApp::EvolutionApiClient.send_message(account: account, phone: phone, message: message)
+          sent = result[:success]
+        end
+
+        unless sent
+          normalized = phone.to_s.gsub(/\D/, '')
+          normalized = "55#{normalized}" unless normalized.start_with?('55')
+          whatsapp_link = "https://wa.me/#{normalized}?text=#{ERB::Util.url_encode(message)}"
+        end
+
+        render json: {
+          success: true,
+          sent_via_api: sent,
+          whatsapp_link: whatsapp_link,
+          anamnese_url: anamnese_url,
+          message: message
+        }
+      rescue => e
+        Rails.logger.error "appointments#send_anamnese: #{e.message}"
+        render json: { error: e.message }, status: :internal_server_error
+      end
+
       def professional_document_templates
         account = Current.account || @current_account
         return render json: { error: 'Account not found' }, status: :forbidden unless account
@@ -295,7 +340,7 @@ module Api
           :account_user_id, :service_id, :contact_id,
           :start_time, :end_time, :whatsapp_number,
           :price_cents, :price_currency, :status, :payment_status,
-          :google_meet_link, :enable_google_meet,
+          :google_meet_link, :enable_google_meet, :anamnese_template_id,
           additional_service_ids: [],
           recurrence_pattern: {}
         ]
@@ -437,6 +482,10 @@ module Api
               created_at: attachment.created_at.iso8601
             }
           end : [],
+          manage_token:         appointment.manage_token,
+          anamnese_template_id: appointment.anamnese_template_id,
+          anamnese_filled:      appointment.anamnese_response.present?,
+          anamnese_filled_at:   appointment.anamnese_response&.filled_at&.iso8601,
           created_at: appointment.created_at.iso8601,
           updated_at: appointment.updated_at.iso8601
         }

@@ -27,9 +27,9 @@ const T = {
 const DISPLAY = { fontFamily: "'Space Grotesk', system-ui, sans-serif" }
 
 const CATEGORIES = [
-  'Psicólogo', 'Advogado', 'Nutricionista', 'Personal Trainer',
-  'Barbeiro', 'Cabeleireiro', 'Dentista', 'Médico', 'Fisioterapeuta',
-  'Professor', 'Coach', 'Terapeuta', 'Contador', 'Veterinário', 'Arquiteto', 'Designer',
+  'Nutricionista', 'Fisioterapeuta', 'Psicólogo', 'Personal Trainer',
+  'Médico', 'Dentista', 'Fonoaudiólogo', 'Terapeuta',
+  'Professor', 'Coach', 'Advogado', 'Contador', 'Veterinário', 'Designer',
 ]
 
 /* ─── Helpers ────────────────────────────────── */
@@ -61,11 +61,10 @@ function Avatar({ name, src, size = 48, radius = 10 }) {
   )
 }
 
-/* ─── Professional card with cover photo ────── */
+/* ─── Professional card ──────────────────────── */
 function ProfessionalCard({ professional, onClick }) {
   const location = [professional.location?.district, professional.location?.city].filter(Boolean).join(' · ')
   const [hovered, setHovered] = useState(false)
-  const [coverErr, setCoverErr] = useState(false)
 
   return (
     <div
@@ -75,54 +74,32 @@ function ProfessionalCard({ professional, onClick }) {
       style={{
         background: T.white,
         border: `1px solid ${hovered ? T.brand : T.border}`,
-        borderRadius: 12,
+        borderRadius: 14,
         cursor: 'pointer',
         overflow: 'hidden',
         transition: 'border-color 150ms ease, box-shadow 150ms ease',
-        boxShadow: hovered ? '0 4px 16px rgba(76,96,170,0.12)' : 'none',
+        boxShadow: hovered ? '0 4px 18px rgba(76,96,170,0.11)' : 'none',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      {/* Cover photo banner */}
-      <div style={{
-        height: 80, position: 'relative', flexShrink: 0,
-        background: (professional.cover_url && !coverErr)
-          ? 'transparent'
-          : 'linear-gradient(135deg, #1E2440 0%, #4C60AA 100%)',
-        overflow: 'hidden',
-      }}>
-        {professional.cover_url && !coverErr && (
-          <img
-            src={professional.cover_url}
-            alt=""
-            onError={() => setCoverErr(true)}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          />
-        )}
-        {/* Avatar overlapping cover */}
-        <div style={{ position: 'absolute', bottom: -18, left: 16, zIndex: 1 }}>
-          <Avatar name={professional.name} src={professional.logo_url} size={46} radius={10} />
-        </div>
-      </div>
-
-      <div style={{ padding: '22px 16px 14px' }}>
-        <div style={{ minWidth: 0 }}>
+      {/* Header: avatar + identity */}
+      <div style={{ padding: '18px 18px 0', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+        <Avatar name={professional.name} src={professional.logo_url} size={54} radius={12} />
+        <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
           <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...DISPLAY }}>
             {professional.name}
           </p>
-
           {professional.profession_category && (
             <span style={{
-              display: 'inline-block', marginTop: 4,
-              padding: '2px 8px', borderRadius: 4,
+              display: 'inline-block', marginTop: 5,
+              padding: '3px 9px', borderRadius: 20,
               background: T.chip, color: T.brand,
-              fontSize: 11, fontWeight: 600, letterSpacing: '0.02em',
+              fontSize: 11, fontWeight: 600,
             }}>
               {professional.profession_category}
             </span>
           )}
-
           {location && (
             <p style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: T.muted, margin: '6px 0 0' }}>
               <MapPin size={11} style={{ flexShrink: 0 }} />
@@ -130,23 +107,32 @@ function ProfessionalCard({ professional, onClick }) {
             </p>
           )}
         </div>
-
-        {professional.services_preview?.length > 0 && (
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
-            {professional.services_preview.map((svc, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: i < professional.services_preview.length - 1 ? 7 : 0 }}>
-                <span style={{ fontSize: 12, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>{svc.name}</span>
-                {formatPrice(svc.price_cents) && (
-                  <span style={{ fontSize: 12, fontWeight: 700, color: T.text, flexShrink: 0 }}>{formatPrice(svc.price_cents)}</span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
+      {/* Services list */}
+      {professional.services_preview?.length > 0 && (
+        <div style={{ margin: '16px 18px 0', paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
+          {professional.services_preview.map((svc, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+              marginBottom: i < professional.services_preview.length - 1 ? 8 : 0,
+            }}>
+              <span style={{ fontSize: 12, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 8 }}>
+                {svc.name}
+              </span>
+              {formatPrice(svc.price_cents) && (
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.text, flexShrink: 0 }}>
+                  {formatPrice(svc.price_cents)}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Footer */}
       <div style={{
-        marginTop: 'auto', padding: '10px 16px',
+        marginTop: 'auto', padding: '12px 18px', marginTop: 16,
         borderTop: `1px solid ${T.border}`, background: T.bg,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
@@ -389,7 +375,7 @@ export function PublicDiscover() {
 
   const [searchQ,           setSearchQ]          = useState(searchParams.get('q') || '')
   const [searchCity,        setSearchCity]        = useState(searchParams.get('city') || '')
-  const [selectedCategory,  setSelectedCategory]  = useState(searchParams.get('category') || '')
+  const [selectedCategory,  setSelectedCategory]  = useState(searchParams.get('category') || 'Nutricionista')
   const [viewMode,          setViewMode]          = useState('list') // 'list' | 'map'
 
   const [results,     setResults]     = useState([])
@@ -505,10 +491,10 @@ export function PublicDiscover() {
       <div style={{ background: T.white, borderBottom: `1px solid ${T.border}` }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '52px 24px 36px' }}>
           <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', fontWeight: 700, color: T.text, margin: '0 0 10px', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
-            Encontre profissionais<br />perto de você
+            Encontre sua nutricionista<br />e agende na hora
           </h1>
           <p style={{ fontSize: 15, color: T.muted, margin: '0 0 32px', lineHeight: 1.5 }}>
-            Psicólogos, advogados, personal trainers e mais — agende direto pela plataforma.
+            Nutricionistas, fisioterapeutas, personal trainers — agende direto pelo perfil, sem precisar ligar.
           </p>
 
           {/* Search form */}
@@ -517,7 +503,7 @@ export function PublicDiscover() {
               <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: T.muted, pointerEvents: 'none' }} />
               <input
                 type="text"
-                placeholder="Profissão ou nome"
+                placeholder="Nutricionista, fisioterapeuta ou nome"
                 value={searchQ}
                 onChange={e => setSearchQ(e.target.value)}
                 style={{
@@ -608,7 +594,7 @@ export function PublicDiscover() {
               )}
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
               {results.map(professional => (
                 <ProfessionalCard
                   key={professional.id}

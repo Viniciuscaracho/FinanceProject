@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
   Dialog,
   DialogContent,
@@ -40,10 +39,11 @@ import {
   Clock,
   Percent,
   AlertCircle,
+  Lock,
+  Settings,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiService } from '../lib/api'
-import { FluidSection } from '@/components/design'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { T, DISPLAY } from '@/lib/tokens'
 
@@ -96,6 +96,7 @@ export function Professionals() {
   const [pageLoading, setPageLoading] = useState(true)
   const [pageError, setPageError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [mobilePage, setMobilePage] = useState(1)
 
   // — estado do dialog de criar/editar —
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -119,6 +120,10 @@ export function Professionals() {
   useEffect(() => {
     loadProfessionals()
   }, [])
+
+  useEffect(() => {
+    setMobilePage(1)
+  }, [searchTerm])
 
   const loadProfessionals = async () => {
     try {
@@ -283,12 +288,17 @@ export function Professionals() {
     )
   })
 
+  const MOBILE_PAGE_SIZE = 10
+  const mobileTotalPages = Math.ceil(filteredProfessionals.length / MOBILE_PAGE_SIZE)
+  const mobilePageSafe = Math.min(mobilePage, mobileTotalPages || 1)
+  const mobileSlice = filteredProfessionals.slice((mobilePageSafe - 1) * MOBILE_PAGE_SIZE, mobilePageSafe * MOBILE_PAGE_SIZE)
+
   if (pageLoading && professionals.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" style={{ color: T.brand }} />
-          <p style={{ color: T.muted }}>Carregando profissionais...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+        <div style={{ textAlign: 'center' }}>
+          <Loader2 style={{ width: 28, height: 28, color: T.brand, animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
+          <p style={{ color: T.muted, fontSize: 14 }}>Carregando profissionais...</p>
         </div>
       </div>
     )
@@ -296,10 +306,10 @@ export function Professionals() {
 
   if (pageError && professionals.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-3">
-          <AlertCircle className="h-10 w-10 mx-auto text-red-400" />
-          <p className="font-medium text-gray-700 dark:text-gray-300">{pageError}</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+        <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+          <AlertCircle style={{ width: 36, height: 36, color: T.red }} />
+          <p style={{ color: T.text, fontWeight: 600, fontSize: 14, margin: 0 }}>{pageError}</p>
           <Button variant="outline" size="sm" onClick={loadProfessionals}>Tentar novamente</Button>
         </div>
       </div>
@@ -307,8 +317,7 @@ export function Professionals() {
   }
 
   return (
-    <div data-testid="professionals-page" className="relative min-h-screen" style={{ background: T.bg }}>
-      <div className="relative z-10 space-y-3">
+    <div data-testid="professionals-page" style={{ display: 'flex', flexDirection: 'column', gap: 12, ...DISPLAY }}>
         {/* Header compacto */}
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-lg sm:text-xl font-bold" style={{ color: T.text, ...DISPLAY }}>
@@ -339,15 +348,15 @@ export function Professionals() {
         {/* Professionals Table */}
         <div>
           {filteredProfessionals.length === 0 ? (
-            <div className="text-center py-12" style={{ color: T.muted }}>
-              <Users className="w-12 h-12 mx-auto mb-4" style={{ color: T.border }} />
-              <p>Nenhum profissional encontrado</p>
+            <div style={{ textAlign: 'center', padding: '48px 24px', background: T.white, border: `1px solid ${T.border}`, borderRadius: 12 }}>
+              <Users style={{ width: 40, height: 40, margin: '0 auto 12px', color: T.border }} />
+              <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>Nenhum profissional encontrado</p>
             </div>
           ) : (
             <>
               {/* Mobile: Cards Layout */}
               <div className="block md:hidden space-y-3">
-                {filteredProfessionals.map((professional) => (
+                {mobileSlice.map((professional) => (
                   <div
                     key={professional.id}
                     className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200"
@@ -454,11 +463,36 @@ export function Professionals() {
                 ))}
               </div>
 
+              {/* Mobile pagination */}
+              {mobileTotalPages > 1 && (
+                <div className="flex md:hidden items-center justify-between pt-2 pb-1">
+                  <button
+                    disabled={mobilePageSafe <= 1}
+                    onClick={() => setMobilePage(p => Math.max(1, p - 1))}
+                    className="text-xs font-medium px-3 py-1.5 rounded-full border border-border disabled:opacity-40"
+                    style={{ color: T.muted }}
+                  >
+                    ← Anterior
+                  </button>
+                  <span className="text-xs" style={{ color: T.muted }}>
+                    {mobilePageSafe} / {mobileTotalPages}
+                  </span>
+                  <button
+                    disabled={mobilePageSafe >= mobileTotalPages}
+                    onClick={() => setMobilePage(p => Math.min(mobileTotalPages, p + 1))}
+                    className="text-xs font-medium px-3 py-1.5 rounded-full border border-border disabled:opacity-40"
+                    style={{ color: T.muted }}
+                  >
+                    Próxima →
+                  </button>
+                </div>
+              )}
+
               {/* Desktop: Table Layout */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="hidden md:block" style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow style={{ background: T.bg }}>
                       <TableHead>Nome</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Telefone</TableHead>
@@ -523,12 +557,12 @@ export function Professionals() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center space-x-1">
-                            <Percent className="w-3.5 h-3.5" style={{ color: T.green }} />
-                            <span className="font-semibold" style={{ color: T.green }}>
-                              {professional.commission_percentage ?? 50}%
-                            </span>
-                          </div>
+                          <span style={{
+                            borderRadius: 20, padding: '3px 9px', fontSize: 12, fontWeight: 700,
+                            background: T.green + '18', color: T.green,
+                          }}>
+                            {professional.commission_percentage ?? 50}%
+                          </span>
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center space-x-1">
@@ -575,17 +609,22 @@ export function Professionals() {
 
         {/* Dialog criar/editar */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent data-testid="professional-dialog" className="sm:max-w-[600px]">
+          <DialogContent data-testid="professional-dialog" className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
             <form onSubmit={handleSubmit}>
               <DialogHeader>
-                <DialogTitle>
-                  {editingProfessional ? 'Editar Profissional' : 'Novo Profissional'}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingProfessional
-                    ? 'Atualize as informações do profissional'
-                    : 'Preencha os dados para cadastrar um novo profissional'}
-                </DialogDescription>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <User className="h-5 w-5" style={{ color: T.brand }} />
+                  </div>
+                  <div>
+                    <DialogTitle style={{ margin: 0 }}>
+                      {editingProfessional ? 'Editar Profissional' : 'Novo Profissional'}
+                    </DialogTitle>
+                    <DialogDescription style={{ margin: 0 }}>
+                      {editingProfessional ? 'Atualize as informações do profissional' : 'Preencha os dados do membro da equipe'}
+                    </DialogDescription>
+                  </div>
+                </div>
               </DialogHeader>
 
               {/* Identificação */}
@@ -632,8 +671,13 @@ export function Professionals() {
               </div>
 
               {/* Acesso */}
-              <div className="space-y-4 pt-5 border-t border-gray-100 dark:border-gray-800">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Acesso</p>
+              <div style={{ paddingTop: 20, borderTop: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Lock className="h-4 w-4" style={{ color: T.brand }} />
+                  </div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: T.text, margin: 0 }}>Acesso</p>
+                </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="password">
                     {editingProfessional ? 'Nova Senha (opcional)' : 'Senha (opcional)'}
@@ -649,25 +693,36 @@ export function Professionals() {
               </div>
 
               {/* Configuração */}
-              <div className="space-y-4 pt-5 border-t border-gray-100 dark:border-gray-800">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Configuração</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="role">Função</Label>
-                    <Select
-                      value={formData.role}
-                      onValueChange={(value) => setFormData({ ...formData, role: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="custom">Profissional</SelectItem>
-                        <SelectItem value="admin">Administrador</SelectItem>
-                      </SelectContent>
-                    </Select>
+              <div style={{ paddingTop: 20, borderTop: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Settings className="h-4 w-4" style={{ color: T.brand }} />
                   </div>
-                  <div className="space-y-1.5">
+                  <p style={{ fontSize: 13, fontWeight: 700, color: T.text, margin: 0 }}>Configuração</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Função</Label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {[
+                      { value: 'custom', label: 'Profissional' },
+                      { value: 'admin', label: 'Administrador' },
+                    ].map(opt => (
+                      <button key={opt.value} type="button"
+                        onClick={() => setFormData({ ...formData, role: opt.value })}
+                        style={{
+                          padding: '8px 20px', borderRadius: 20, fontSize: 13, fontWeight: 500,
+                          cursor: 'pointer', border: '1px solid', fontFamily: 'inherit',
+                          borderColor: formData.role === opt.value ? T.brand : T.border,
+                          background: formData.role === opt.value ? T.chip : T.white,
+                          color: formData.role === opt.value ? T.brand : T.text,
+                          transition: 'all 150ms',
+                        }}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
                     <Label htmlFor="commission_percentage">Comissão (%)</Label>
                     <div className="relative">
                       <Input
@@ -683,7 +738,6 @@ export function Professionals() {
                       <Percent className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: T.muted }} />
                     </div>
                     <p style={{ fontSize: 12, color: T.muted }}>Aplicada a todos os serviços</p>
-                  </div>
                 </div>
 
                 {!editingProfessional && (
@@ -819,14 +873,21 @@ export function Professionals() {
 
         {/* Schedule Configuration Dialog */}
         <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
-          <DialogContent data-testid="professional-schedule-dialog" className="sm:max-w-[600px]">
+          <DialogContent data-testid="professional-schedule-dialog" className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle>
-                Configurar Horários — {scheduleProfessional?.name}
-              </DialogTitle>
-              <DialogDescription>
-                Configure os horários de trabalho para cada dia da semana
-              </DialogDescription>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Clock className="h-5 w-5" style={{ color: T.brand }} />
+                </div>
+                <div>
+                  <DialogTitle style={{ margin: 0 }}>
+                    Horários de {scheduleProfessional?.name}
+                  </DialogTitle>
+                  <DialogDescription style={{ margin: 0 }}>
+                    Configure os dias e horários de trabalho da semana
+                  </DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
 
             <div className="space-y-3">
@@ -837,13 +898,14 @@ export function Professionals() {
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-semibold" style={{ color: T.text }}>{DAY_NAMES[day]}</Label>
                       <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
+                        <Switch
+                          id={`${day}-enabled`}
                           checked={dayData.enabled || false}
-                          onChange={(e) => handleScheduleChange(day, 'enabled', e.target.checked)}
-                          className="w-4 h-4 rounded cursor-pointer"
+                          onCheckedChange={(checked) => handleScheduleChange(day, 'enabled', checked)}
                         />
-                        <span className="text-sm font-medium" style={{ color: T.muted }}>Trabalha neste dia</span>
+                        <Label htmlFor={`${day}-enabled`} className="text-sm font-medium cursor-pointer" style={{ color: T.muted }}>
+                          Trabalha neste dia
+                        </Label>
                       </div>
                     </div>
 
@@ -922,7 +984,8 @@ export function Professionals() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }

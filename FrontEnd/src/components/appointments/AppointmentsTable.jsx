@@ -125,7 +125,7 @@ function DeleteDialog({ appointment, onConfirm, isSubmitting, isOpen, onOpenChan
           Excluir
         </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent data-testid="delete-appointment-dialog">
         <AlertDialogHeader>
           <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
           <AlertDialogDescription>
@@ -570,7 +570,10 @@ export function AppointmentsTable({ onEdit, onDelete, onOpenConsultation }) {
                 isSubmitting={isSubmitting}
                 isOpen={isThisDeleteOpen}
                 onOpenChange={(open) => {
-                  if (!open) {
+                  if (open) {
+                    setSelectedAppointment(apt)
+                    setIsDeleteDialogOpen(true)
+                  } else {
                     setIsDeleteDialogOpen(false)
                     setSelectedAppointment(null)
                   }

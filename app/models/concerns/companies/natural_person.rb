@@ -23,10 +23,10 @@ module Companies
     end
 
     def set_company_attrs
-      self.name = name_natural
-      self.document_1 = document_1_natural
-      self.document_2 = document_2_natural
-      self.screen_name = screen_name_natural
+      self.name = name_natural.presence || name
+      self.document_1 = document_1_natural.presence || document_1
+      self.document_2 = document_2_natural.presence || document_2
+      self.screen_name = screen_name_natural.presence || screen_name
     end
   end
 end

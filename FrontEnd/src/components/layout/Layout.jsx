@@ -1,12 +1,68 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { BottomNavigation } from './BottomNavigation'
 import { SupportBanner } from './SupportBanner'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useIsMobile, useBreakpoint } from '@/hooks/use-mobile'
-import { ArrowUp } from 'lucide-react'
+import { ArrowUp, AlertTriangle } from 'lucide-react'
 import { OnboardingWizard, useOnboarding } from '@/components/onboarding/OnboardingWizard'
+import { useQuery } from '@tanstack/react-query'
+import { apiService } from '../../lib/api'
+
+function useCompanyDocument() {
+  const { data, isFetching } = useQuery({
+    queryKey: ['account-settings-doc-check'],
+    queryFn: async () => {
+      const res = await apiService.getAccountSettings()
+      return res?.account?.company?.document_1 || null
+    },
+    staleTime: 60 * 1000,
+    retry: false,
+  })
+  // While fetching (initial load or re-fetch after save), treat as unknown
+  // so the banner never flashes during transitions
+  if (isFetching) return undefined
+  return data === undefined ? undefined : (data || null)
+}
+
+function DocumentWarningBanner({ isMobile }) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const document1 = useCompanyDocument()
+
+  if (!document1 && document1 !== undefined && location.pathname !== '/company-settings') {
+    return (
+      <div style={{
+        background: '#FEF3C7',
+        borderBottom: '1px solid #F59E0B40',
+        padding: isMobile ? '8px 12px' : '8px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        flexShrink: 0,
+      }}>
+        <AlertTriangle size={15} style={{ color: '#D97706', flexShrink: 0 }} />
+        <p style={{ fontSize: 13, color: '#92400E', margin: 0, flex: 1, lineHeight: 1.4 }}>
+          <strong>CPF/CNPJ não cadastrado.</strong> Alguns documentos e relatórios podem ficar incompletos.
+        </p>
+        <button
+          onClick={() => navigate('/company-settings')}
+          style={{
+            fontSize: 12, fontWeight: 600, color: '#D97706',
+            background: 'rgba(217,119,6,0.12)', border: '1px solid #F59E0B60',
+            borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
+            whiteSpace: 'nowrap', flexShrink: 0,
+          }}
+        >
+          Configurar →
+        </button>
+      </div>
+    )
+  }
+  return null
+}
 
 const SIDEBAR_EXPANDED = 192
 const SIDEBAR_COLLAPSED = 56
@@ -136,10 +192,11 @@ export function Layout({ children }) {
         />
 
         <SupportBanner />
+        <DocumentWarningBanner isMobile={isMobile} />
 
         <main style={{
           flex: 1,
-          padding: isMobile ? '8px 8px 16px' : '12px 16px',
+          padding: isMobile ? '8px 8px 80px' : '12px 16px',
           boxSizing: 'border-box',
           width: '100%',
           overflowX: 'auto',

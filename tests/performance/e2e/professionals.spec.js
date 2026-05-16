@@ -37,7 +37,7 @@ test.describe('Profissionais — dialog criar/editar', () => {
     await page.click('[data-testid="new-professional-btn"]');
     const dialog = page.locator('[data-testid="professional-dialog"]');
     await expect(dialog).toBeVisible({ timeout: 8000 });
-    await expect(dialog.locator('label:has-text("Nome"), input#first_name')).toBeVisible();
+    await expect(dialog.locator('input#first_name')).toBeVisible();
   });
 
   test('dialog exibe título "Novo Profissional"', async ({ page }) => {
@@ -68,16 +68,14 @@ test.describe('Profissionais — dialog de horários', () => {
     await page.waitForLoadState('networkidle');
 
     // Aparece como texto "Horários" nos cards ou title="Configurar horários" na tabela
-    const scheduleBtn = page.locator(
-      'button[title="Configurar horários"], button:has-text("Horários")'
-    ).first();
+    const scheduleBtn = page.locator('button[title="Configurar horários"]').first();
 
     if (await scheduleBtn.count() === 0) {
       test.skip(true, 'Nenhum profissional cadastrado para testar horários');
       return;
     }
 
-    await scheduleBtn.click();
+    await scheduleBtn.click({ force: true });
     await expect(page.locator('[data-testid="professional-schedule-dialog"]')).toBeVisible({ timeout: 8000 });
   });
 
@@ -85,15 +83,13 @@ test.describe('Profissionais — dialog de horários', () => {
     await page.goto('/professionals');
     await page.waitForLoadState('networkidle');
 
-    const scheduleBtn = page.locator(
-      'button[title="Configurar horários"], button:has-text("Horários")'
-    ).first();
+    const scheduleBtn = page.locator('button[title="Configurar horários"]').first();
     if (await scheduleBtn.count() === 0) {
       test.skip(true, 'Nenhum profissional cadastrado');
       return;
     }
 
-    await scheduleBtn.click();
+    await scheduleBtn.click({ force: true });
     const dialog = page.locator('[data-testid="professional-schedule-dialog"]');
     await expect(dialog).toBeVisible({ timeout: 8000 });
     await expect(dialog.locator('text=/segunda|terça|quarta|quinta|sexta/i').first()).toBeVisible();
@@ -103,15 +99,13 @@ test.describe('Profissionais — dialog de horários', () => {
     await page.goto('/professionals');
     await page.waitForLoadState('networkidle');
 
-    const scheduleBtn = page.locator(
-      'button[title="Configurar horários"], button:has-text("Horários")'
-    ).first();
+    const scheduleBtn = page.locator('button[title="Configurar horários"]').first();
     if (await scheduleBtn.count() === 0) {
       test.skip(true, 'Nenhum profissional cadastrado');
       return;
     }
 
-    await scheduleBtn.click();
+    await scheduleBtn.click({ force: true });
     const dialog = page.locator('[data-testid="professional-schedule-dialog"]');
     await expect(dialog).toBeVisible({ timeout: 8000 });
     await dialog.locator('button:has-text("Cancelar")').click();

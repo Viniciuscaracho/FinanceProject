@@ -4,6 +4,7 @@ import { Camera, Copy, Check, ExternalLink, Loader2, Eye, EyeOff, MapPin, Phone,
 import { apiService } from '../lib/api'
 import { toast } from 'sonner'
 import { T, DISPLAY } from '@/lib/tokens'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 const BASE_URL = window.location.origin
 
@@ -231,9 +232,12 @@ function ProfilePreview({ acct, co, addr, logoUrl, coverUrl }) {
 /* ─── Page ───────────────────────────────────── */
 export function Vitrine() {
   const navigate  = useNavigate()
-  const [acct,    setAcct]    = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [saving,  setSaving]  = useState(false)
+  const isMobile  = useIsMobile()
+  const [acct,       setAcct]       = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [saving,     setSaving]     = useState(false)
+  const [savingInfo, setSavingInfo] = useState(false)
+  const [form,       setForm]       = useState({ screen_name_natural: '', profession_category: '', directory_description: '' })
 
   // URLs salvas na API
   const [logoUrl,  setLogoUrl]  = useState(null)
@@ -265,6 +269,11 @@ export function Vitrine() {
         setAcct(a)
         setLogoUrl(a.company?.logo_url || null)
         setCoverUrl(a.company?.cover_url || null)
+        setForm({
+          screen_name_natural: a.company?.screen_name_natural || a.company?.screen_name || '',
+          profession_category: a.profession_category || '',
+          directory_description: a.directory_description || '',
+        })
       })
       .catch(() => toast.error('Erro ao carregar dados'))
       .finally(() => setLoading(false))
@@ -277,9 +286,9 @@ export function Vitrine() {
       const next = !acct.directory_visible
       const res = await apiService.updateAccountSettings({
         directory_visible: next,
-        profession_category: acct.profession_category || '',
-        directory_description: acct.directory_description || '',
-        company_attributes: { id: co.id },
+        profession_category: form.profession_category,
+        directory_description: form.directory_description,
+        company_attributes: { id: co.id, screen_name_natural: form.screen_name_natural },
       })
       setAcct(res.account)
       toast.success(next ? 'Vitrine ativada!' : 'Vitrine desativada')
@@ -310,6 +319,21 @@ export function Vitrine() {
       toast.success('Fotos salvas!')
     } catch { toast.error('Erro ao salvar fotos') }
     finally { setSavingPhotos(false) }
+  }
+
+  const handleSaveInfo = async () => {
+    setSavingInfo(true)
+    try {
+      const res = await apiService.updateAccountSettings({
+        directory_visible: acct?.directory_visible,
+        profession_category: form.profession_category,
+        directory_description: form.directory_description,
+        company_attributes: { id: co.id, screen_name_natural: form.screen_name_natural },
+      })
+      setAcct(res.account)
+      toast.success('Informações salvas!')
+    } catch { toast.error('Erro ao salvar') }
+    finally { setSavingInfo(false) }
   }
 
   if (loading) {
@@ -419,25 +443,10 @@ export function Vitrine() {
             </div>
           ))}
         </div>
-        {pct < 100 && (
-          <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
-            <button
-              onClick={() => navigate('/company-settings')}
-              style={{
-                fontSize: 12, fontWeight: 600, color: T.brand,
-                background: T.chip, border: `1px solid #DDE3F5`,
-                borderRadius: 6, padding: '6px 14px',
-                cursor: 'pointer', fontFamily: 'inherit',
-              }}
-            >
-              Editar configurações da vitrine →
-            </button>
-          </div>
-        )}
       </Panel>
 
       {/* Fotos + preview — row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto', gap: 12, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0,1fr) auto', gap: 12, alignItems: 'start' }}>
 
         {/* Fotos */}
         <Panel style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -489,13 +498,100 @@ export function Vitrine() {
         </Panel>
 
         {/* Preview */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
           <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.muted, margin: 0 }}>
             Pré-visualização
           </p>
           <ProfilePreview acct={acct} co={co} addr={addr} logoUrl={displayLogoUrl} coverUrl={displayCoverUrl} />
         </div>
       </div>
+
+      {/* Informações da vitrine */}
+      <Panel style={{ padding: '18px 20px' }}>
+        <SectionTitle>Informações</SectionTitle>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: T.text, fontFamily: 'inherit' }}>
+              Nome de exibição
+            </label>
+            <input
+              value={form.screen_name_natural}
+              onChange={e => setForm(f => ({ ...f, screen_name_natural: e.target.value }))}
+              placeholder={co.name || 'Ex: Dr. João Silva'}
+              style={{
+                fontSize: 13, color: T.text, background: T.bg,
+                border: `1px solid ${T.border}`, borderRadius: 8,
+                padding: '8px 12px', fontFamily: 'inherit', outline: 'none',
+              }}
+            />
+            <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>
+              Como você aparece no Descobrir. Se vazio, usa o nome da empresa.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: T.text, fontFamily: 'inherit' }}>
+              Categoria profissional
+            </label>
+            <select
+              value={form.profession_category}
+              onChange={e => setForm(f => ({ ...f, profession_category: e.target.value }))}
+              style={{
+                fontSize: 13, color: T.text, background: T.bg,
+                border: `1px solid ${T.border}`, borderRadius: 8,
+                padding: '8px 12px', fontFamily: 'inherit', outline: 'none', maxWidth: 280,
+              }}
+            >
+              <option value="">Selecione uma categoria</option>
+              {[
+                'Nutricionista', 'Fisioterapeuta', 'Psicólogo', 'Personal Trainer',
+                'Médico', 'Dentista', 'Fonoaudiólogo', 'Terapeuta',
+                'Professor', 'Coach', 'Advogado', 'Contador', 'Veterinário',
+                'Designer', 'Outro',
+              ].map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: T.text, fontFamily: 'inherit' }}>
+              Descrição pública
+            </label>
+            <textarea
+              value={form.directory_description}
+              onChange={e => setForm(f => ({ ...f, directory_description: e.target.value }))}
+              rows={3}
+              placeholder="Descreva sua especialidade, forma de atendimento, diferenciais..."
+              style={{
+                fontSize: 13, color: T.text, background: T.bg,
+                border: `1px solid ${T.border}`, borderRadius: 8,
+                padding: '8px 12px', fontFamily: 'inherit', outline: 'none',
+                resize: 'vertical', lineHeight: 1.5,
+              }}
+            />
+            <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>
+              Aparece no seu perfil público para clientes em potencial.
+            </p>
+          </div>
+
+          <button
+            onClick={handleSaveInfo}
+            disabled={savingInfo}
+            style={{
+              alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 7,
+              fontSize: 13, fontWeight: 600, color: '#fff',
+              background: savingInfo ? T.muted : T.brand,
+              border: 'none', borderRadius: 8, padding: '9px 18px',
+              cursor: savingInfo ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+              transition: 'background 150ms',
+            }}
+          >
+            {savingInfo
+              ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Salvando...</>
+              : <><Save size={13} /> Salvar informações</>}
+          </button>
+        </div>
+      </Panel>
 
       {/* Links para compartilhar */}
       {(profileUrl || bookingUrl) && (

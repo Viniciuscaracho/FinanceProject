@@ -30,6 +30,7 @@
 #  updated_at                   :datetime         not null
 #  account_id                   :bigint           not null
 #  account_user_id              :bigint           not null
+#  anamnese_template_id         :bigint
 #  appointment_link_id          :bigint
 #  contact_id                   :bigint
 #  google_calendar_event_id     :string
@@ -44,6 +45,7 @@
 #  index_appointments_on_account_professional_status_time  (account_id,account_user_id,status,start_time)
 #  index_appointments_on_account_time_status               (account_id,start_time,status)
 #  index_appointments_on_account_user_id                   (account_user_id)
+#  index_appointments_on_anamnese_template_id              (anamnese_template_id)
 #  index_appointments_on_appointment_link_id               (appointment_link_id)
 #  index_appointments_on_billing_notification_sent         (billing_notification_sent)
 #  index_appointments_on_contact_id                        (contact_id)
@@ -60,6 +62,7 @@
 #
 #  fk_rails_...  (account_id => accounts.id)
 #  fk_rails_...  (account_user_id => account_users.id)
+#  fk_rails_...  (anamnese_template_id => anamnese_templates.id)
 #  fk_rails_...  (appointment_link_id => appointment_links.id) ON DELETE => nullify
 #  fk_rails_...  (contact_id => people.id)
 #  fk_rails_...  (parent_appointment_id => appointments.id) ON DELETE => nullify
@@ -95,11 +98,13 @@ class Appointment < ApplicationRecord
   belongs_to :contact, optional: true
   belongs_to :parent_appointment, optional: true, class_name: 'Appointment', foreign_key: 'parent_appointment_id'
   belongs_to :appointment_link, optional: true
+  belongs_to :anamnese_template, optional: true
 
   has_many :appointment_commissions, dependent: :destroy
   has_many :recurring_appointments, class_name: 'Appointment', foreign_key: 'parent_appointment_id', dependent: :nullify
   has_one :financial_transaction, dependent: :nullify, class_name: 'Transaction', foreign_key: 'appointment_id'
-  has_one :appointment_note, dependent: :destroy
+  has_one :appointment_note,     dependent: :destroy
+  has_one :anamnese_response,    dependent: :destroy
 
   validates :start_time, presence: true
   validates :end_time, presence: true

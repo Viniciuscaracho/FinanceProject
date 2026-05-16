@@ -37,7 +37,7 @@ test.describe('Contatos — dialog Novo Contato', () => {
     await page.click('[data-testid="new-contact-btn"]');
     const dialog = page.locator('[data-testid="contact-dialog"]');
     await expect(dialog).toBeVisible({ timeout: 8000 });
-    await expect(dialog.locator('label:has-text("Nome"), input[placeholder="Nome completo"]')).toBeVisible();
+    await expect(dialog.locator('input[placeholder="Nome completo"]')).toBeVisible();
   });
 
   test('dialog tem campo Telefone', async ({ page }) => {
@@ -46,7 +46,7 @@ test.describe('Contatos — dialog Novo Contato', () => {
     await page.click('[data-testid="new-contact-btn"]');
     const dialog = page.locator('[data-testid="contact-dialog"]');
     await expect(dialog).toBeVisible({ timeout: 8000 });
-    await expect(dialog.locator('label:has-text("Telefone"), input[placeholder*="99999"]')).toBeVisible();
+    await expect(dialog.locator('input[placeholder*="99999"]')).toBeVisible();
   });
 
   test('dialog tem campo Email', async ({ page }) => {
@@ -55,7 +55,7 @@ test.describe('Contatos — dialog Novo Contato', () => {
     await page.click('[data-testid="new-contact-btn"]');
     const dialog = page.locator('[data-testid="contact-dialog"]');
     await expect(dialog).toBeVisible({ timeout: 8000 });
-    await expect(dialog.locator('label:has-text("Email"), input[type="email"]')).toBeVisible();
+    await expect(dialog.locator('input[type="email"]')).toBeVisible();
   });
 
   test('dialog exibe título "Novo Contato"', async ({ page }) => {

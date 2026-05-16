@@ -37,7 +37,7 @@ test.describe('Transações — dialog "Nova Transação"', () => {
     await page.click('[data-testid="new-transaction-btn"]');
     const dialog = page.locator('[data-testid="transaction-dialog"]');
     await expect(dialog).toBeVisible({ timeout: 8000 });
-    await expect(dialog.locator('label:has-text("Descrição"), input#quick-description')).toBeVisible();
+    await expect(dialog.locator('input#quick-description')).toBeVisible();
   });
 
   test('dialog tem campo Valor', async ({ page }) => {
@@ -46,7 +46,7 @@ test.describe('Transações — dialog "Nova Transação"', () => {
     await page.click('[data-testid="new-transaction-btn"]');
     const dialog = page.locator('[data-testid="transaction-dialog"]');
     await expect(dialog).toBeVisible({ timeout: 8000 });
-    await expect(dialog.locator('label:has-text("Valor"), input#quick-amount')).toBeVisible();
+    await expect(dialog.locator('input#quick-amount')).toBeVisible();
   });
 
   test('dialog tem seletor de tipo (Receita / Despesa)', async ({ page }) => {

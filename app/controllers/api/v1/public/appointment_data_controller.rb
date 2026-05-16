@@ -147,10 +147,19 @@ module Api
           link_type  = settings['link_type'] || (settings['days_ahead'].to_i >= 30 ? 'premium' : 'normal')
           days_ahead = settings['days_ahead']&.to_i || (link_type == 'premium' ? 30 : 15)
 
+          anamnese_template = nil
+          template_id = settings['anamnese_template_id']&.to_i.presence
+          if template_id
+            t = appointment_link.account.anamnese_templates.find_by(id: template_id, active: true)
+            anamnese_template = t ? { id: t.id, name: t.name, description: t.description, fields: t.fields } : nil
+          end
+
           {
             link_type:           link_type,
             days_ahead:          days_ahead,
             enable_google_meet:  appointment_link.enable_google_meet || false,
+            intake_form:         settings['intake_form'] || [],
+            anamnese_template:   anamnese_template,
             settings: {
               start_hour:               settings['start_hour']&.to_i || 9,
               end_hour:                 settings['end_hour']&.to_i   || 18,

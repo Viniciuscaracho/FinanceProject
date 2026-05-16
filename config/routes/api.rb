@@ -19,6 +19,13 @@ namespace :api, defaults: { format: 'json' } do
       get  'discover',             to: 'discover#index'
       get  'discover/categories',  to: 'discover#categories'
       get  'discover/:id',         to: 'discover#show'
+
+      # Anamnese pública — preenchimento pelo paciente via link
+      get  'anamnese/:token', to: 'anamnese#show'
+      post 'anamnese/:token', to: 'anamnese#create'
+
+      # Documento vivo — visualização pública pelo paciente
+      get 'documents/:token', to: 'patient_documents#show'
     end
     
     # Auth routes
@@ -38,6 +45,15 @@ namespace :api, defaults: { format: 'json' } do
       delete 'disconnect',  to: 'google_calendar#disconnect'
       post   'sync',        to: 'google_calendar#sync'
     end
+
+    scope :google_contacts do
+      get    'status',     to: 'google_contacts#status'
+      get    'oauth_url',  to: 'google_contacts#oauth_url'
+      get    'callback',   to: 'google_contacts#callback'
+      delete 'disconnect', to: 'google_contacts#disconnect'
+      get    'list',       to: 'google_contacts#list'
+      post   'import',     to: 'google_contacts#import'
+    end
     
     resources :transactions, only: %i[index show create update destroy] do
       collection do
@@ -54,7 +70,22 @@ namespace :api, defaults: { format: 'json' } do
         patch :update_installments
       end
     end
-    resources :contacts, only: %i[index show create update destroy]
+    resources :contacts, only: %i[index show create update destroy] do
+      resources :patient_goals, only: %i[index create update destroy] do
+        member do
+          post :add_progress
+        end
+      end
+      resources :patient_documents, only: %i[index show create update destroy] do
+        member do
+          post :toggle_shared
+        end
+      end
+      member do
+        get :last_anamnese_response
+        get :anamnese_history
+      end
+    end
     resources :categories, only: %i[index show create update destroy]
     resources :cost_centers, only: %i[index show create update destroy]
     resources :tags, only: %i[index]
@@ -111,6 +142,7 @@ namespace :api, defaults: { format: 'json' } do
       end
       member do
         post :send_reminder
+        post :send_anamnese
         post :generate_google_meet
         post :generate_professional_document
         get :professional_document_templates
@@ -122,6 +154,7 @@ namespace :api, defaults: { format: 'json' } do
           delete :remove_task, path: 'remove_task/:task_id'
         end
       end
+      resource :anamnese_response, only: [:show, :create]
       resources :attachments, only: %i[index create destroy], controller: 'appointments/attachments'
     end
     
@@ -144,6 +177,9 @@ namespace :api, defaults: { format: 'json' } do
     # Financial reports (including appointments)
     resources :reports, only: %i[index show]
     
+    # Anamnese templates
+    resources :anamnese_templates, only: %i[index show create update destroy]
+
     # Document Templates routes
     resources :receipt_templates, only: %i[index show create update destroy]
     resources :invoice_templates, only: %i[index show create update destroy]
@@ -160,6 +196,15 @@ namespace :api, defaults: { format: 'json' } do
       end
     end
     
+    # PIX Payments (AbacatePay)
+    resources :pix_payments, only: %i[index] do
+      collection do
+        post :create_billing
+        post :sync
+        get 'status/:billing_id', action: :status
+      end
+    end
+
     # Subscriptions routes
     resources :subscriptions, only: %i[index] do
       collection do
@@ -210,10 +255,12 @@ namespace :api, defaults: { format: 'json' } do
     post 'admin/accounts/:id/activate', to: 'admin#activate_account'
     post 'admin/accounts/:id/impersonate', to: 'admin#impersonate'
     get 'admin/accounts/:id/subscriptions', to: 'admin#account_subscriptions'
-    
+    post 'admin/accounts/:id/extend_trial', to: 'admin#extend_trial'
+    get  'admin/accounts/:id/audit_logs',   to: 'admin#audit_logs'
+
     # Support/Impersonation
     post 'admin/stop_impersonating', to: 'admin#stop_impersonating'
-    
+
     # Subscriptions management
     get 'admin/subscriptions', to: 'admin#subscriptions'
     get 'admin/subscriptions/:id', to: 'admin#subscription_details'
@@ -221,5 +268,29 @@ namespace :api, defaults: { format: 'json' } do
     patch 'admin/subscriptions/:id', to: 'admin#update_subscription'
     post 'admin/subscriptions/:id/cancel', to: 'admin#cancel_subscription'
     post 'admin/subscriptions/:id/reactivate', to: 'admin#reactivate_subscription'
+
+    # Users management
+    get  'admin/users', to: 'admin#users'
+    post 'admin/users/:id/resend_confirmation', to: 'admin#resend_confirmation'
+
+    # Webhook logs
+    get  'admin/webhooks',          to: 'admin#webhook_logs'
+    post 'admin/webhooks/:id/retry', to: 'admin#retry_webhook'
+
+    # Stripe sync actions
+    post 'admin/sync_stripe',       to: 'admin#sync_stripe'
+    post 'admin/fix_subscriptions', to: 'admin#fix_subscriptions'
+
+    # Announcements management
+    get    'admin/announcements',     to: 'admin#announcements'
+    post   'admin/announcements',     to: 'admin#create_announcement'
+    patch  'admin/announcements/:id', to: 'admin#update_announcement'
+    delete 'admin/announcements/:id', to: 'admin#destroy_announcement'
+
+    # Referral codes management
+    get    'admin/referral_codes',     to: 'admin#referral_codes'
+    post   'admin/referral_codes',     to: 'admin#create_referral_code'
+    patch  'admin/referral_codes/:id', to: 'admin#update_referral_code'
+    delete 'admin/referral_codes/:id', to: 'admin#destroy_referral_code'
   end
 end

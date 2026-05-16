@@ -1,0 +1,52 @@
+<style>
+  .greeting  { font-size: 18px; font-weight: 600; color: #111827; margin: 0 0 8px; }
+  .subtitle  { font-size: 14px; color: #6b7280; margin: 0 0 24px; }
+  .alert-box { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 20px 24px; margin-bottom: 24px; }
+  .alert-box.urgent { background: #fef2f2; border-color: #fecaca; }
+  .days-badge { display: inline-block; background: #f97316; color: #fff; font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; }
+  .days-badge.urgent { background: #dc2626; }
+  .cta-btn    { display: inline-block; background: #2563eb; color: #fff !important; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 15px; font-weight: 600; margin: 8px 0; }
+  .note       { font-size: 13px; color: #6b7280; margin: 16px 0 0; }
+</style>
+
+<% urgent = @days_remaining == 1 %>
+
+<p class="greeting">
+  <%= @days_remaining == 1 ? '⚠️ Último dia de trial!' : "⏰ #{@days_remaining} dias restantes no trial" %>
+</p>
+<p class="subtitle">
+  <%= @owner_name %>, seu período de teste em <strong><%= @company_name %></strong> está chegando ao fim.
+</p>
+
+<div class="alert-box <%= 'urgent' if urgent %>">
+  <span class="days-badge <%= 'urgent' if urgent %>">
+    <%= @days_remaining == 1 ? 'Encerra amanhã' : "#{@days_remaining} dias restantes" %>
+  </span>
+
+  <p style="margin: 0 0 8px; font-size: 14px; color: #374151;">
+    <% if urgent %>
+      Amanhã seu acesso será encerrado. Para continuar usando todos os recursos sem interrupção, escolha um plano hoje.
+    <% else %>
+      Aproveite os últimos dias para explorar tudo que a plataforma oferece — e quando estiver pronto, escolha o plano ideal para continuar.
+    <% end %>
+  </p>
+
+  <a href="https://app.orbi.app/subscription" class="cta-btn">
+    <%= urgent ? 'Assinar agora e não perder o acesso' : 'Ver planos e assinar' %>
+  </a>
+</div>
+
+<p style="font-size: 14px; color: #374151; margin: 0 0 12px;">
+  <strong>O que você perde ao fim do trial:</strong>
+</p>
+<ul style="font-size: 14px; color: #6b7280; margin: 0 0 24px; padding-left: 20px; line-height: 1.7;">
+  <li>Acesso ao agendamento online e gestão de clientes</li>
+  <li>Controle financeiro e relatórios</li>
+  <li>Comissões e gestão de profissionais</li>
+</ul>
+
+<p class="note">
+  Tem dúvidas? Fale com nosso suporte em
+  <a href="mailto:suporte@orbi.app" style="color: #2563eb;">suporte@orbi.app</a>
+  — estamos aqui para ajudar.
+</p>

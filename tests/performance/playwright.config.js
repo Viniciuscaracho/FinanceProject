@@ -51,6 +51,7 @@ module.exports = defineConfig({
         '**/appointment-links.spec.js',
         '**/imports.spec.js',
         '**/appointment-notes.spec.js',
+        '**/subscription-pix.spec.js',
       ],
     },
 
@@ -69,6 +70,26 @@ module.exports = defineConfig({
       name: 'performance',
       use: { ...devices['Desktop Chrome'] },
       testMatch: '**/*.performance.spec.js',
+    },
+
+    // UI Tour — screenshots de todas as telas (faz login inline)
+    {
+      name: 'ui-tour',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 720 },
+      },
+      testMatch: '**/ui-tour.spec.js',
+    },
+
+    // UI Tour Interactive — modals, tabs, estados de click
+    {
+      name: 'ui-tour-interactive',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 720 },
+      },
+      testMatch: ['**/ui-tour-interactive.spec.js', '**/ui-interactive-batch*.spec.js'],
     },
   ],
 

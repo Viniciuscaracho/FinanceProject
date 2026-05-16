@@ -2,6 +2,8 @@
 
 root 'home#index'
 
+get '/sitemap.xml', to: 'sitemap#index', format: :xml
+
 # API Routes
 namespace :api do
   namespace :v1 do
@@ -87,6 +89,7 @@ end
 namespace :webhooks do
   post '/stripe', to: 'stripe#create'
   post '/pluggy/account/:id', to: 'pluggy#update', as: :pluggy_account
+  post '/abacate_pay', to: 'abacate_pay#create'
 end
 
 # Billing portal sessions

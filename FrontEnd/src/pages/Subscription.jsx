@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   Check, Loader2, CreditCard, AlertCircle,
-  Crown, Sparkles, ArrowRight, Settings, X, RefreshCw,
+  Crown, Sparkles, ArrowRight, Settings, X, RefreshCw, QrCode,
 } from 'lucide-react'
 import { apiService } from '../lib/api'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -85,20 +85,68 @@ export function Subscription() {
   const [subscription, setSubscription] = useState(null)
   const [plans,        setPlans]        = useState([])
   const [plansError,   setPlansError]   = useState(null)
-  const [busy,         setBusy]         = useState(null) // 'checkout:planId' | 'portal' | 'cancel' | 'reactivate' | 'sync'
+  const [busy,         setBusy]         = useState(null) // 'checkout:planId' | 'pix:planId' | 'portal' | 'cancel' | 'reactivate' | 'sync'
+  const [pixSyncing,   setPixSyncing]   = useState(false)
 
   /* ── load ──────────────────────────────────────── */
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
+    const pixSuccess = p.get('pix_success') === 'true'
+    const pixReturn  = p.get('pix_return')  === 'true'
+
     if (p.get('success') === 'true') {
       window.history.replaceState({}, '', '/subscription')
       toast.success('Assinatura criada! Carregando dados...')
     } else if (p.get('canceled') === 'true') {
       toast.info('Checkout cancelado.')
       window.history.replaceState({}, '', '/subscription')
+    } else if (pixSuccess || pixReturn) {
+      window.history.replaceState({}, '', '/subscription')
+      if (pixSuccess) toast.success('Pagamento PIX confirmado! Verificando assinatura...')
+      else            toast.info('Retornando do PIX. Verificando status...')
+
+      // Sincroniza com AbacatePay e atualiza assinatura automaticamente
+      syncPixAndLoad()
+      return
     }
     loadAll()
   }, [])
+
+  const syncPixAndLoad = async () => {
+    setPixSyncing(true)
+    setLoading(true)
+    try {
+      const billingId = sessionStorage.getItem('pix_billing_id')
+      const syncResult = await apiService.syncPixPayment(billingId || undefined)
+
+      if (syncResult?.subscribed) {
+        setSubscription({ subscription: syncResult.subscription, subscribed: true })
+        toast.success('Assinatura ativada com sucesso!')
+      } else {
+        // Se ainda não confirmado, carrega normalmente e tenta novamente em 5s
+        await loadAll()
+        if (syncResult?.pix_status === 'PENDING') {
+          toast.info('Pagamento ainda sendo processado. Aguarde alguns instantes...')
+          setTimeout(syncPixAndLoad, 5000)
+        }
+      }
+    } catch {
+      await loadAll()
+    } finally {
+      setPixSyncing(false)
+      sessionStorage.removeItem('pix_billing_id')
+    }
+
+    // Carrega planos em paralelo
+    try {
+      const plansResult = await apiService.getSubscriptionPlans()
+      setPlans(plansResult?.plans || [])
+    } catch {
+      setPlansError('Não foi possível carregar os planos.')
+    }
+
+    setLoading(false)
+  }
 
   const loadAll = async () => {
     setLoading(true)
@@ -175,6 +223,30 @@ export function Subscription() {
     }
   }
 
+  const handlePixCheckout = async (plan) => {
+    try {
+      setBusy(`pix:${plan.id}`)
+      const res = await apiService.createPixBilling({
+        amount: plan.amount,
+        planId: plan.id,
+        planName: plan.name,
+        planDescription: plan.description,
+        frequency: 'ONE_TIME',
+      })
+      if (res.billing_url) {
+        // Guarda o billing_id para sincronizar no retorno
+        sessionStorage.setItem('pix_billing_id', res.billing_id)
+        window.location.href = res.billing_url
+      } else {
+        throw new Error('URL de pagamento PIX não retornada')
+      }
+    } catch (err) {
+      toast.error(err.message || 'Erro ao criar cobrança PIX.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
   const handleSync = async () => {
     try {
       setBusy('sync')
@@ -196,8 +268,9 @@ export function Subscription() {
 
   /* ── render ────────────────────────────────────── */
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 360, ...DISPLAY }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 360, ...DISPLAY }}>
       <Loader2 size={24} style={{ color: T.brand, animation: 'spin 1s linear infinite' }} />
+      {pixSyncing && <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>Verificando status do pagamento PIX...</p>}
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
@@ -420,26 +493,42 @@ export function Subscription() {
                   </div>
 
                   {/* CTA */}
-                  <div style={{ padding: 16 }}>
+                  <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {isCurrent ? (
                       <Btn onClick={handlePortal} disabled={anyBusy} variant="ghost" style={{ width: '100%', justifyContent: 'center' }}>
                         {isBusy('portal') ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Settings size={13} />}
                         Gerenciar
                       </Btn>
                     ) : (
-                      <Btn
-                        onClick={() => handleCheckout(plan.id)}
-                        disabled={anyBusy || subscribed}
-                        variant={isPopular ? 'primary' : 'outline'}
-                        style={{ width: '100%', justifyContent: 'center' }}
-                      >
-                        {isBusy(`checkout:${plan.id}`)
-                          ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Processando...</>
-                          : subscribed
-                            ? <><Check size={13} /> Já assinado</>
-                            : <>Assinar agora <ArrowRight size={13} /></>
-                        }
-                      </Btn>
+                      <>
+                        <Btn
+                          onClick={() => handleCheckout(plan.id)}
+                          disabled={anyBusy || subscribed}
+                          variant={isPopular ? 'primary' : 'outline'}
+                          style={{ width: '100%', justifyContent: 'center' }}
+                        >
+                          {isBusy(`checkout:${plan.id}`)
+                            ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Processando...</>
+                            : subscribed
+                              ? <><Check size={13} /> Já assinado</>
+                              : <><CreditCard size={13} /> Cartão / Boleto <ArrowRight size={13} /></>
+                          }
+                        </Btn>
+
+                        {!subscribed && (
+                          <Btn
+                            onClick={() => handlePixCheckout(plan)}
+                            disabled={anyBusy}
+                            variant="ghost"
+                            style={{ width: '100%', justifyContent: 'center', borderColor: '#00B894', color: '#00B894' }}
+                          >
+                            {isBusy(`pix:${plan.id}`)
+                              ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Gerando PIX...</>
+                              : <><QrCode size={13} /> Pagar via PIX</>
+                            }
+                          </Btn>
+                        )}
+                      </>
                     )}
                   </div>
                 </Panel>
@@ -456,9 +545,9 @@ export function Subscription() {
           <p style={{ fontSize: 12, fontWeight: 700, color: T.text, margin: 0 }}>Informações de pagamento</p>
         </div>
         {[
-          'Pagamentos processados com segurança pelo Stripe',
+          'Cartão e boleto processados com segurança pelo Stripe',
+          'PIX processado pelo AbacatePay — renovação mensal automática',
           'Cancele a qualquer momento — acesso continua até o fim do período',
-          'Suporte a cartão de crédito e boleto bancário',
         ].map(t => (
           <p key={t} style={{ fontSize: 12, color: T.muted, margin: '0 0 3px' }}>• {t}</p>
         ))}

@@ -28,10 +28,12 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { apiService } from '@/lib/api'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { toast } from 'sonner'
+import { T } from '@/lib/tokens'
 
 const DOCUMENT_TYPES = {
   receipt: {
     label: 'Recibos',
+    labelMobile: 'Recibos',
     icon: Receipt,
     type: 'ReceiptTemplate',
     endpoint: 'receipt',
@@ -39,6 +41,7 @@ const DOCUMENT_TYPES = {
   },
   invoice: {
     label: 'Faturas',
+    labelMobile: 'Faturas',
     icon: FileCheck,
     type: 'InvoiceTemplate',
     endpoint: 'invoice',
@@ -46,6 +49,7 @@ const DOCUMENT_TYPES = {
   },
   contract: {
     label: 'Contratos',
+    labelMobile: 'Contratos',
     icon: FileSignature,
     type: 'ContractTemplate',
     endpoint: 'contract',
@@ -53,6 +57,7 @@ const DOCUMENT_TYPES = {
   },
   professional: {
     label: 'Documentos Profissionais',
+    labelMobile: 'Profis.',
     icon: GraduationCap,
     type: 'ProfessionalDocumentTemplate',
     endpoint: 'professional',
@@ -187,24 +192,26 @@ export function DocumentTemplates() {
         )}
 
         {/* Tabs */}
-        <Card>
+        <Card className="overflow-hidden">
           <CardContent className="p-0">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
-                {Object.entries(DOCUMENT_TYPES).map(([key, type]) => {
-                  const TabIcon = type.icon
-                  return (
-                    <TabsTrigger
-                      key={key}
-                      value={key}
-                      className="data-[state=active]:border-b-2 data-[state=active]:border-accent rounded-none"
-                    >
-                      <TabIcon className="h-4 w-4 mr-2" />
-                      {type.label}
-                    </TabsTrigger>
-                  )
-                })}
-              </TabsList>
+              <div className="overflow-x-auto border-b">
+                <TabsList className="w-max min-w-full justify-start rounded-none bg-transparent p-0 h-auto">
+                  {Object.entries(DOCUMENT_TYPES).map(([key, type]) => {
+                    const TabIcon = type.icon
+                    return (
+                      <TabsTrigger
+                        key={key}
+                        value={key}
+                        className="data-[state=active]:border-b-2 data-[state=active]:border-accent rounded-none shrink-0 whitespace-nowrap"
+                      >
+                        <TabIcon className="h-4 w-4 mr-2" />
+                        {isMobile ? type.labelMobile : type.label}
+                      </TabsTrigger>
+                    )
+                  })}
+                </TabsList>
+              </div>
 
               {Object.keys(DOCUMENT_TYPES).map((key) => (
                 <TabsContent key={key} value={key} className="m-0">
@@ -220,11 +227,27 @@ export function DocumentTemplates() {
                         ))}
                       </div>
                     ) : templates.length === 0 ? (
-                      <div className="text-center py-12">
-                        <FileText className="h-12 w-12 mx-auto text-text-tertiary mb-4" />
-                        <p className="text-text-secondary">
-                          Nenhum template encontrado. Clique em "Novo Template" para criar um.
-                        </p>
+                      <div style={{ textAlign: 'center', padding: '40px 24px' }}>
+                        {(() => {
+                          const cfg = DOCUMENT_TYPES[key]
+                          const Icon = cfg?.icon || FileText
+                          const msgs = {
+                            receipt: { title: 'Nenhum recibo criado', sub: 'Crie templates de recibos para emitir comprovantes de pagamento rápido' },
+                            invoice: { title: 'Nenhuma fatura criada', sub: 'Templates de fatura para cobranças formais com dados do cliente' },
+                            contract: { title: 'Nenhum contrato criado', sub: 'Modelos de contrato para formalizar o acordo com seus clientes' },
+                            professional_document: { title: 'Nenhum documento profissional', sub: 'Templates personalizados para documentação de sessões e evoluções' },
+                          }
+                          const m = msgs[key] || { title: 'Nenhum template', sub: 'Crie um novo template para começar' }
+                          return (
+                            <>
+                              <div style={{ width: 56, height: 56, borderRadius: 16, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                <Icon className="h-7 w-7" style={{ color: T.brand }} />
+                              </div>
+                              <p style={{ fontSize: 15, fontWeight: 600, color: T.text, margin: '0 0 6px' }}>{m.title}</p>
+                              <p style={{ fontSize: 13, color: T.muted, margin: '0 0 20px', maxWidth: 320, marginLeft: 'auto', marginRight: 'auto' }}>{m.sub}</p>
+                            </>
+                          )
+                        })()}
                       </div>
                     ) : (
                       <>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -77,6 +77,55 @@ const sourceLabels = {
   zero_paper: 'Zero Paper',
   xlsx_contacts: 'Planilha de Contatos',
   xlsx_default: 'Planilha Padrão'
+}
+
+function FileDropZone({ file, onFileChange }) {
+  const inputRef = useRef(null)
+  const [dragging, setDragging] = useState(false)
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setDragging(false)
+    const dropped = e.dataTransfer.files[0]
+    if (dropped) onFileChange(dropped)
+  }
+
+  return (
+    <div
+      onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={handleDrop}
+      onClick={() => inputRef.current?.click()}
+      style={{
+        border: `2px dashed ${dragging ? T.brand : T.border}`,
+        borderRadius: 10,
+        padding: '20px 16px',
+        textAlign: 'center',
+        cursor: 'pointer',
+        background: dragging ? T.brand + '08' : T.bg,
+        transition: 'all 150ms',
+      }}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".xlsx,.xls,.csv"
+        style={{ display: 'none' }}
+        onChange={(e) => onFileChange(e.target.files[0])}
+      />
+      <Upload style={{ width: 24, height: 24, color: T.muted, margin: '0 auto 8px' }} />
+      {file ? (
+        <p style={{ fontSize: 13, color: T.text, margin: 0, fontWeight: 600 }}>{file.name}</p>
+      ) : (
+        <>
+          <p style={{ fontSize: 13, color: T.text, margin: '0 0 4px', fontWeight: 600 }}>
+            Arraste o arquivo ou clique para selecionar
+          </p>
+          <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>.xlsx · .xls · .csv</p>
+        </>
+      )}
+    </div>
+  )
 }
 
 export function Imports() {
@@ -252,37 +301,59 @@ export function Imports() {
           </DialogTrigger>
           <DialogContent data-testid="import-dialog" className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Nova Importação</DialogTitle>
-              <DialogDescription>Selecione a origem e envie o arquivo para importar seus dados.</DialogDescription>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Upload className="h-5 w-5" style={{ color: T.brand }} />
+                </div>
+                <div>
+                  <DialogTitle style={{ margin: 0 }}>Nova Importação</DialogTitle>
+                  <DialogDescription style={{ margin: 0 }}>Selecione a origem e envie o arquivo para importar seus dados.</DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="text-sm font-medium mb-2 block">
+                <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 10 }}>
                   Tipo de Importação
-                </label>
-                <Select value={uploadSource} onValueChange={setUploadSource}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="xlsx_default">Planilha Padrão</SelectItem>
-                    <SelectItem value="xlsx_contacts">Planilha de Contatos</SelectItem>
-                    <SelectItem value="zero_paper">Zero Paper</SelectItem>
-                  </SelectContent>
-                </Select>
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    { value: 'xlsx_default', label: 'Planilha Padrão', desc: 'Modelo de planilha do sistema' },
+                    { value: 'xlsx_contacts', label: 'Planilha de Contatos', desc: 'Importar lista de contatos' },
+                    { value: 'zero_paper', label: 'Zero Paper', desc: 'Migração do Zero Paper' },
+                  ].map(opt => (
+                    <button key={opt.value} type="button"
+                      onClick={() => setUploadSource(opt.value)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '10px 14px', borderRadius: 10, fontFamily: 'inherit',
+                        cursor: 'pointer', border: '1px solid', textAlign: 'left',
+                        borderColor: uploadSource === opt.value ? T.brand : T.border,
+                        background: uploadSource === opt.value ? T.chip : T.white,
+                        transition: 'all 150ms',
+                      }}>
+                      <div style={{
+                        width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                        background: uploadSource === opt.value ? T.brand : T.border,
+                        transition: 'background 150ms',
+                      }} />
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: uploadSource === opt.value ? T.brand : T.text, margin: 0 }}>{opt.label}</p>
+                        <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>{opt.desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">
+                <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 10 }}>
                   Arquivo
-                </label>
-                <Input
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={(e) => setUploadFile(e.target.files[0])}
-                />
+                </p>
+                <FileDropZone file={uploadFile} onFileChange={setUploadFile} />
               </div>
               {error && (
-                <div className="p-3 rounded-md bg-red-500/10 text-red-600 dark:text-red-400 text-sm">
+                <div className="p-3 rounded-md bg-red-500/10 text-red-600 dark:text-red-400 text-sm flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
                   {error}
                 </div>
               )}
@@ -297,6 +368,7 @@ export function Imports() {
                 <Button
                   onClick={handleUpload}
                   disabled={uploading || !uploadFile}
+                  style={{ background: T.brand, color: '#fff', border: 'none' }}
                 >
                   {uploading ? (
                     <>
@@ -393,9 +465,14 @@ export function Imports() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : imports.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nenhuma importação encontrada</p>
+            <div style={{ textAlign: 'center', padding: '40px 24px' }}>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <Upload className="h-7 w-7" style={{ color: T.brand }} />
+              </div>
+              <p style={{ fontSize: 15, fontWeight: 600, color: T.text, margin: '0 0 6px' }}>Nenhuma importação ainda</p>
+              <p style={{ fontSize: 13, color: T.muted, margin: '0 0 20px', maxWidth: 320, marginLeft: 'auto', marginRight: 'auto' }}>
+                Importe extratos bancários ou listas de transações para começar a conciliar
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">

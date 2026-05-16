@@ -85,6 +85,7 @@ class Contact < Person
   has_many :transactions, dependent: :restrict_with_error
   has_many :statement_items, dependent: :restrict_with_error
   has_many :contracts, dependent: :restrict_with_error
+  has_many :patient_documents, foreign_key: :contact_id, dependent: :delete_all
 
   validates :contact_type, presence: true, inclusion: { in: CONTACT_TYPES.keys }
   validates :document_1, allow_blank: true, cpf_or_cnpj: true, if: :validate_cpf_or_cnpj?

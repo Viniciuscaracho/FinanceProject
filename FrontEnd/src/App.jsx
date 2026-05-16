@@ -12,7 +12,7 @@ import { Toaster } from './components/ui/sonner'
 import { ModalProvider } from './components/ui/enhanced-modal'
 import ErrorBoundary from './components/ErrorBoundary'
 import { PageSkeleton } from './components/Skeleton'
-import { LandingPage, PublicAppointmentBooking, AppointmentManage, PublicDiscover, PublicProfessionalProfile, protectedRoutes } from './config/routes'
+import { LandingPage, PublicAppointmentBooking, AppointmentManage, PublicDiscover, PublicProfessionalProfile, PublicAnamneseForm, PublicPatientDocument, protectedRoutes } from './config/routes'
 import './App.css'
 
 function ProtectedRoute({ children }) {
@@ -54,6 +54,8 @@ function AppContent() {
         <Route path="/descobrir/:id" element={<PublicProfessionalProfile />} />
         <Route path="/agendar/:token" element={<PublicAppointmentBooking />} />
         <Route path="/agendar/gerenciar/:manage_token" element={<AppointmentManage />} />
+        <Route path="/anamnese/responder/:token" element={<PublicAnamneseForm />} />
+        <Route path="/d/:token" element={<PublicPatientDocument />} />
 
         {protectedRoutes.map(({ path, element: Page }) => (
           <Route

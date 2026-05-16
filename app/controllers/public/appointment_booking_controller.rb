@@ -136,6 +136,9 @@ module Public
       appointment = account.appointments.build(appointment_params_data)
       appointment.status ||= :pending
       appointment.payment_status ||= :pending
+
+      anamnese_template_id = appointment_link.settings&.dig('anamnese_template_id')&.to_i.presence
+      appointment.anamnese_template_id = anamnese_template_id if anamnese_template_id
       
       if appointment.save
           google_meet_link = nil
@@ -376,7 +379,9 @@ module Public
         has_google_meet: appointment.google_meet_link.present?,
         recurrence_pattern: appointment.recurrence_pattern,
         recurring: appointment.recurrence_pattern.present?,
-        parent_appointment_id: appointment.parent_appointment_id
+        parent_appointment_id: appointment.parent_appointment_id,
+        manage_token: appointment.manage_token,
+        anamnese_template_id: appointment.anamnese_template_id
       }
     end
     

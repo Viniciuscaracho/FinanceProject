@@ -13,6 +13,7 @@ module Accounts
       has_many   :subscriptions,         dependent: :destroy
       has_many   :subscription_charges,  dependent: :destroy
       has_many   :subscription_invoices, dependent: :destroy
+      has_many   :pix_billings,          dependent: :destroy
 
       scope :with_granted_access,                  -> { where_assoc_exists(:subscriptions, status: Subscription::ACCESS_GRANTING_STATUSES) }
       scope :with_subscription,                    -> { where_assoc_exists(:subscriptions) }

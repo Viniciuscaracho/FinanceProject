@@ -40,6 +40,7 @@
 #  trial_ends_at                                        :date
 #  created_at                                           :datetime         not null
 #  updated_at                                           :datetime         not null
+#  abacate_pay_customer_id                              :string
 #  company_id                                           :bigint           not null
 #  google_calendar_id                                   :string           default("primary")
 #  owner_id                                             :bigint

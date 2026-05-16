@@ -97,20 +97,11 @@ export function AppointmentNotes() {
       setLoading(true)
       const response = await apiService.getAppointments()
       const appointmentsData = response.appointments || response || []
-      setAppointments(appointmentsData)
-      
-      // Carregar anotações para cada agendamento
-      for (const appointment of appointmentsData) {
-        try {
-          const notesResponse = await apiService.getAppointmentNotes(appointment.id)
-          if (notesResponse.notes && notesResponse.notes.length > 0) {
-            appointment.note = notesResponse.notes[0] // Assumindo uma anotação por agendamento
-          }
-        } catch (err) {
-          // Se não houver anotação, não faz nada
-        }
+      // appointment_note já vem embutido na resposta do backend — sem N+1
+      for (const apt of appointmentsData) {
+        if (apt.appointment_note) apt.note = apt.appointment_note
       }
-      setAppointments([...appointmentsData])
+      setAppointments(appointmentsData)
     } catch (err) {
       toast.error('Erro ao carregar agendamentos')
     } finally {
@@ -323,61 +314,74 @@ export function AppointmentNotes() {
               Anotações de Sessões
             </h1>
             <p style={{ fontSize: 14, color: T.muted }}>
-              Gerencie anotações de sessões para nutricionistas, psicólogos e outros profissionais de saúde
+              Gerencie anotações clínicas e acompanhamentos dos seus pacientes
             </p>
           </div>
         </div>
 
         {/* Filtros */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-tertiary" />
-                  <Input
-                    placeholder="Buscar por cliente, serviço ou anotação..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <div className="w-full sm:w-48">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filtrar por status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os status</SelectItem>
-                    <SelectItem value="completed">Concluídos</SelectItem>
-                    <SelectItem value="confirmed">Confirmados</SelectItem>
-                    <SelectItem value="pending">Pendentes</SelectItem>
-                    <SelectItem value="canceled">Cancelados</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                variant="outline"
+        <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, padding: '14px 16px' }}>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: T.muted }} />
+              <Input
+                placeholder="Buscar por cliente, serviço ou anotação..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { value: 'all', label: 'Todos' },
+                { value: 'completed', label: 'Concluídos' },
+                { value: 'confirmed', label: 'Confirmados' },
+                { value: 'pending', label: 'Pendentes' },
+                { value: 'canceled', label: 'Cancelados' },
+              ].map(opt => (
+                <button key={opt.value} type="button"
+                  onClick={() => setStatusFilter(opt.value)}
+                  style={{
+                    padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                    cursor: 'pointer', border: '1px solid', fontFamily: 'inherit',
+                    borderColor: statusFilter === opt.value ? T.brand : T.border,
+                    background: statusFilter === opt.value ? T.chip : T.white,
+                    color: statusFilter === opt.value ? T.brand : T.text,
+                    transition: 'all 150ms', whiteSpace: 'nowrap',
+                  }}>
+                  {opt.label}
+                </button>
+              ))}
+              <button type="button"
                 onClick={loadAppointments}
                 disabled={loading}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px',
+                  borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                  border: `1px solid ${T.border}`, background: T.white, color: T.text,
+                  fontFamily: 'inherit', transition: 'all 150ms',
+                }}>
+                <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
                 Atualizar
-              </Button>
+              </button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Lista de Agendamentos */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <StickyNote className="h-5 w-5" />
-              Agendamentos ({filteredAppointments.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className={isMobile ? "p-0" : undefined}>
+        <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: `1px solid ${T.border}` }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <StickyNote className="h-4 w-4" style={{ color: T.brand }} />
+            </div>
+            <span style={{ fontSize: 14, fontWeight: 600, color: T.text }}>
+              Agendamentos
+            </span>
+            <span style={{ marginLeft: 4, fontSize: 12, color: T.muted, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 20, padding: '2px 8px', fontWeight: 500 }}>
+              {filteredAppointments.length}
+            </span>
+          </div>
+          <div className={isMobile ? "" : "p-0"}>
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin" style={{ color: T.brand }} />
@@ -536,33 +540,44 @@ export function AppointmentNotes() {
                 </TableBody>
               </Table>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Dialog para criar/editar anotação */}
         <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
-          <DialogContent data-testid="appointment-note-dialog" className="sm:max-w-2xl">
+          <DialogContent data-testid="appointment-note-dialog" className="sm:max-w-2xl overflow-y-auto max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle>
-                {currentNote ? 'Editar Anotação' : 'Nova Anotação'}
-              </DialogTitle>
-              <DialogDescription>
-                {currentNote ? 'Atualize o conteúdo desta anotação.' : 'Registre observações importantes sobre o atendimento.'}
-              </DialogDescription>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <StickyNote className="h-5 w-5" style={{ color: T.brand }} />
+                </div>
+                <div>
+                  <DialogTitle style={{ margin: 0 }}>
+                    {currentNote ? 'Editar Anotação' : 'Nova Anotação'}
+                  </DialogTitle>
+                  <DialogDescription style={{ margin: 0 }}>
+                    {currentNote ? 'Atualize o conteúdo desta anotação.' : 'Registre observações importantes sobre o atendimento.'}
+                  </DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
             {selectedAppointment && (
               <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm font-medium mb-2">Agendamento:</p>
-                  <p className="text-sm text-text-secondary">
-                    <strong>Cliente:</strong> {selectedAppointment.contact?.name || selectedAppointment.whatsapp_number || '-'}
-                  </p>
-                  <p className="text-sm text-text-secondary">
-                    <strong>Serviço:</strong> {selectedAppointment.service?.name || '-'}
-                  </p>
-                  <p className="text-sm text-text-secondary">
-                    <strong>Data:</strong> {formatDate(selectedAppointment.start_time)}
-                  </p>
+                <div style={{ borderRadius: 10, background: T.bg, border: `1px solid ${T.border}`, padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: T.text }}>
+                      <User className="h-3.5 w-3.5 flex-shrink-0" style={{ color: T.muted }} />
+                      <span>{selectedAppointment.contact?.name || selectedAppointment.whatsapp_number || '-'}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: T.text }}>
+                      <Scissors className="h-3.5 w-3.5 flex-shrink-0" style={{ color: T.muted }} />
+                      <span>{selectedAppointment.service?.name || '-'}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: T.muted }}>
+                      <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span>{formatDate(selectedAppointment.start_time)}</span>
+                    </div>
+                  </div>
                 </div>
                 {/* Tarefas Pendentes da Sessão Anterior */}
                 {pendingTasksFromPrevious.length > 0 && (
@@ -570,7 +585,7 @@ export function AppointmentNotes() {
                     <div className="flex items-center gap-2 mb-3">
                       <AlertCircle className="h-4 w-4 text-amber-600" />
                       <Label className="text-sm font-semibold text-amber-800">
-                        Tarefas Pendentes da Sessão Anterior
+                        Pendências do Atendimento Anterior
                       </Label>
                     </div>
                     <div className="space-y-2">
@@ -590,12 +605,12 @@ export function AppointmentNotes() {
                     id="notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Digite as anotações da sessão (sintomas, diagnóstico, tratamento, observações, etc.)"
+                    placeholder="Digite as anotações do atendimento (anamnese, evolução, orientações, plano alimentar, etc.)"
                     className="w-full min-h-[200px] px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                     required
                   />
                   <p className="text-xs text-text-tertiary">
-                    Mínimo de 3 caracteres. Use este espaço para anotações clínicas, observações importantes, plano de tratamento, etc.
+                    Mínimo de 3 caracteres. Use este espaço para evolução nutricional, orientações alimentares, plano dietético, etc.
                   </p>
                 </div>
 
@@ -682,7 +697,7 @@ export function AppointmentNotes() {
                       </Button>
                     </div>
                     <p className="text-xs text-text-tertiary">
-                      As tarefas adicionadas aqui serão lembradas na próxima sessão do paciente.
+                      As tarefas adicionadas aqui serão lembradas no próximo atendimento do paciente.
                     </p>
                   </div>
                 )}

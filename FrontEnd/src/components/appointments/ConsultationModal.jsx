@@ -3,8 +3,8 @@ import DOMPurify from 'dompurify'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { DocumentEditor } from '@/components/DocumentEditor'
 import {
   Dialog,
   DialogContent,
@@ -39,11 +39,23 @@ import {
   AlertCircle,
   Video,
   ExternalLink,
+  ClipboardList,
+  Target,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+  TrendingUp,
+  Link2,
+  Copy,
+  Edit,
+  MessageCircle,
+  History,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { apiService } from '@/lib/api'
 import { formatCurrency } from '@/utils/format'
+import { openWhatsApp, getContactPhone } from '@/lib/whatsapp'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { T, DISPLAY } from '@/lib/tokens'
@@ -89,7 +101,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
   const [currentNote, setCurrentNote] = useState(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [lastSaved, setLastSaved] = useState(null)
-  const autoSaveTimeoutRef = useRef(null)
+
   const textareaRef = useRef(null)
   const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false)
   const [templates, setTemplates] = useState([])
@@ -101,6 +113,42 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false)
   const fileInputRef = useRef(null)
 
+  // Anamnese state
+  const [anamneseResponse, setAnamneseResponse] = useState(null)
+  const [anamneseTemplates, setAnamneseTemplates] = useState([])
+  const [anamneseTemplateId, setAnamneseTemplateId] = useState('')
+  const [anamneseAnswers, setAnamneseAnswers] = useState({})
+  const [isSavingAnamnese, setIsSavingAnamnese] = useState(false)
+  const [anamneseExpanded, setAnamneseExpanded] = useState(false)
+  const [lastAnamnese, setLastAnamnese] = useState(null)
+  const [loadingLastAnamnese, setLoadingLastAnamnese] = useState(false)
+  const [anamneseHistory, setAnamneseHistory] = useState([])
+  const [historyExpanded, setHistoryExpanded] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(false)
+  const [expandedHistoryId, setExpandedHistoryId] = useState(null)
+
+  // Patient Goals state
+  const [goals, setGoals] = useState([])
+  const [goalsExpanded, setGoalsExpanded] = useState(false)
+  const [newGoal, setNewGoal] = useState({ title: '', unit: '', target_value: '', current_value: '', deadline: '', notes: '' })
+  const [showNewGoalForm, setShowNewGoalForm] = useState(false)
+  const [savingGoal, setSavingGoal] = useState(false)
+  const [progressGoalId, setProgressGoalId] = useState(null)
+  const [progressValue, setProgressValue] = useState('')
+  const [progressNote, setProgressNote] = useState('')
+  const [progressDate, setProgressDate] = useState('')
+  const [showGoalHistoryId, setShowGoalHistoryId] = useState(null)
+
+  // Patient Documents state
+  const [patientDocs, setPatientDocs] = useState([])
+  const [docsExpanded, setDocsExpanded] = useState(false)
+  const [showNewDocDialog, setShowNewDocDialog] = useState(false)
+  const [newDoc, setNewDoc] = useState({ title: '', document_type: 'plano_alimentar', content: '' })
+  const [savingDoc, setSavingDoc] = useState(false)
+  const [editingDoc, setEditingDoc] = useState(null)
+  const [editingDocContent, setEditingDocContent] = useState('')
+  const [savingEditDoc, setSavingEditDoc] = useState(false)
+
   // Carrega notas + anexos em paralelo, usando cache quando disponível
   useEffect(() => {
     if (!open || !appointment?.id) {
@@ -110,7 +158,28 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
         setHasUnsavedChanges(false)
         setLastSaved(null)
         setAttachments([])
-        if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current)
+        setAnamneseResponse(null)
+        setAnamneseAnswers({})
+        setAnamneseTemplateId('')
+        setAnamneseExpanded(false)
+        setLastAnamnese(null)
+        setAnamneseHistory([])
+        setHistoryExpanded(false)
+        setExpandedHistoryId(null)
+        setGoals([])
+        setGoalsExpanded(false)
+        setShowNewGoalForm(false)
+        setProgressGoalId(null)
+        setProgressValue('')
+        setProgressNote('')
+        setProgressDate('')
+        setShowGoalHistoryId(null)
+        setPatientDocs([])
+        setDocsExpanded(false)
+        setShowNewDocDialog(false)
+        setNewDoc({ title: '', document_type: 'plano_alimentar', content: '' })
+        setEditingDoc(null)
+        setEditingDocContent('')
       }
       return
     }
@@ -150,14 +219,6 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
     })
   }, [open, appointment?.id])
 
-  // Auto-save após 2 segundos de inatividade
-  useEffect(() => {
-    if (hasUnsavedChanges && notes.trim().length >= 3) {
-      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current)
-      autoSaveTimeoutRef.current = setTimeout(() => { handleAutoSave() }, 2000)
-    }
-    return () => { if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current) }
-  }, [notes, hasUnsavedChanges])
 
   const loadAttachments = async () => {
     if (!appointment?.id) return
@@ -197,55 +258,17 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
     }
   }
 
+  const getPlainText = (html) => html.replace(/<[^>]*>/g, '').trim()
+
   const handleNotesChange = (value) => {
     setNotes(value)
     setHasUnsavedChanges(true)
   }
 
-  const handleAutoSave = async () => {
-    if (!appointment?.id || !notes.trim() || notes.trim().length < 3) {
-      return
-    }
-
-    try {
-      setIsSaving(true)
-      
-      if (currentNote) {
-        // Atualizar anotação existente
-        await apiService.updateAppointmentNote(
-          appointment.id,
-          currentNote.id,
-          { notes }
-        )
-      } else {
-        // Criar nova anotação
-        const response = await apiService.createAppointmentNote(
-          appointment.id,
-          { notes }
-        )
-        if (response.note) {
-          setCurrentNote(response.note)
-        }
-      }
-
-      setHasUnsavedChanges(false)
-      setLastSaved(new Date().toISOString())
-      cacheInvalidate(appointment.id)
-      toast.success('Anotação salva automaticamente', {
-        duration: 1500,
-        position: 'bottom-right'
-      })
-    } catch (error) {
-      toast.error('Erro ao salvar anotação automaticamente')
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
   const handleManualSave = async () => {
     if (!appointment?.id) return
 
-    if (!notes.trim() || notes.trim().length < 3) {
+    if (getPlainText(notes).length < 3) {
       toast.error('A anotação deve ter pelo menos 3 caracteres')
       return
     }
@@ -387,6 +410,273 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
     }
   }
 
+  const loadAnamnese = async () => {
+    if (!appointment?.id) return
+    const [anamRes, templRes] = await Promise.all([
+      apiService.getAnamneseResponse(appointment.id).catch(() => ({ response: null })),
+      apiService.getAnamneseTemplates().catch(() => ({ templates: [] })),
+    ])
+    const resp = anamRes?.response ?? null
+    setAnamneseResponse(resp)
+    setAnamneseTemplates(templRes?.templates || [])
+    if (resp) {
+      setAnamneseTemplateId(resp.anamnese_template_id?.toString() || '')
+      setAnamneseAnswers(resp.responses || {})
+    } else if (appointment?.anamnese_template_id) {
+      setAnamneseTemplateId(appointment.anamnese_template_id.toString())
+    }
+
+    // Busca última anamnese do paciente para oferecer pré-preenchimento
+    if (!resp && appointment?.contact?.id) {
+      apiService.getLastAnamneseResponse(appointment.contact.id)
+        .then(r => { if (r?.response) setLastAnamnese(r.response) })
+        .catch(() => {})
+    }
+  }
+
+  const handleCarryForward = () => {
+    if (!lastAnamnese) return
+    const tplId = lastAnamnese.anamnese_template_id?.toString() || ''
+    setAnamneseTemplateId(tplId)
+    setAnamneseAnswers(lastAnamnese.responses || {})
+    setLastAnamnese(null)
+    toast.success('Respostas da última consulta carregadas. Revise e salve.')
+  }
+
+  const handleAnamneseExpand = () => {
+    if (!anamneseExpanded) loadAnamnese()
+    setAnamneseExpanded(prev => !prev)
+  }
+
+  const handleSaveAnamnese = async () => {
+    if (!appointment?.id) return
+    setIsSavingAnamnese(true)
+    try {
+      const res = await apiService.saveAnamneseResponse(appointment.id, {
+        anamnese_template_id: anamneseTemplateId || null,
+        responses: anamneseAnswers,
+      })
+      setAnamneseResponse(res.response)
+      toast.success('Anamnese salva!')
+    } catch (e) {
+      toast.error(e?.message || 'Erro ao salvar anamnese')
+    } finally {
+      setIsSavingAnamnese(false)
+    }
+  }
+
+  const handleTemplateChange = async (templateId) => {
+    setAnamneseTemplateId(templateId)
+    setAnamneseAnswers({})
+    if (!appointment?.id) return
+    try {
+      await apiService.setAppointmentAnamneseTemplate(appointment.id, templateId || null)
+    } catch {
+      // silent — não crítico
+    }
+  }
+
+  const handleCopyAnamneseLink = () => {
+    if (!appointment?.manage_token) return
+    const link = `${window.location.origin}/anamnese/responder/${appointment.manage_token}`
+    navigator.clipboard.writeText(link).then(() => toast.success('Link copiado!'))
+  }
+
+  const handleSendAnamneseWhatsApp = async () => {
+    if (!appointment?.id) return
+    try {
+      const res = await apiService.sendAnamneseWhatsApp(appointment.id)
+      if (res.sent_via_api) {
+        toast.success('Formulário enviado pelo WhatsApp!')
+      } else if (res.whatsapp_link) {
+        window.open(res.whatsapp_link, '_blank')
+        toast.success('WhatsApp aberto com a mensagem pronta')
+      } else {
+        toast.success('Link gerado!')
+      }
+    } catch (e) {
+      // Fallback: open WhatsApp Web directly from frontend
+      const link = `${window.location.origin}/anamnese/responder/${appointment.manage_token}`
+      const phone = getContactPhone(appointment.contact)
+      if (!phone) { toast.error('Paciente sem número de WhatsApp cadastrado'); return }
+      const msg = `Olá! Por favor, preencha o formulário antes da nossa consulta:\n${link}`
+      openWhatsApp(phone, msg)
+    }
+  }
+
+  const handleHistoryExpand = async () => {
+    if (!historyExpanded && anamneseHistory.length === 0 && appointment?.contact?.id) {
+      setLoadingHistory(true)
+      try {
+        const res = await apiService.getAnamneseHistory(appointment.contact.id)
+        setAnamneseHistory(res.responses || [])
+      } catch { /* silent */ } finally {
+        setLoadingHistory(false)
+      }
+    }
+    setHistoryExpanded(prev => !prev)
+  }
+
+  const loadGoals = async () => {
+    if (!appointment?.contact?.id) return
+    const res = await apiService.getPatientGoals(appointment.contact.id).catch(() => ({ goals: [] }))
+    setGoals(res.goals || [])
+  }
+
+  const handleGoalsExpand = () => {
+    if (!goalsExpanded) loadGoals()
+    setGoalsExpanded(prev => !prev)
+  }
+
+  const handleSaveGoal = async () => {
+    if (!newGoal.title.trim() || !appointment?.contact?.id) return
+    setSavingGoal(true)
+    try {
+      const res = await apiService.createPatientGoal(appointment.contact.id, newGoal)
+      setGoals(prev => [res.goal, ...prev])
+      setNewGoal({ title: '', unit: '', target_value: '', current_value: '', deadline: '', notes: '' })
+      setShowNewGoalForm(false)
+      toast.success('Meta adicionada!')
+    } catch (e) {
+      toast.error(e?.message || 'Erro ao salvar meta')
+    } finally {
+      setSavingGoal(false)
+    }
+  }
+
+  const handleAddProgress = async (goal) => {
+    if (!progressValue || !appointment?.contact?.id) return
+    try {
+      const res = await apiService.addPatientGoalProgress(
+        appointment.contact.id, goal.id,
+        parseFloat(progressValue),
+        progressNote || null,
+        progressDate || null
+      )
+      setGoals(prev => prev.map(g => g.id === goal.id ? res.goal : g))
+      setProgressGoalId(null)
+      setProgressValue('')
+      setProgressNote('')
+      setProgressDate('')
+      toast.success('Progresso registrado!')
+    } catch (e) {
+      toast.error(e?.message || 'Erro ao registrar progresso')
+    }
+  }
+
+  const handleUpdateGoalStatus = async (goal, status) => {
+    if (!appointment?.contact?.id) return
+    try {
+      const res = await apiService.updatePatientGoal(appointment.contact.id, goal.id, { status })
+      setGoals(prev => prev.map(g => g.id === goal.id ? res.goal : g))
+      toast.success(status === 'completed' ? 'Meta concluída!' : 'Meta atualizada')
+    } catch (e) {
+      toast.error('Erro ao atualizar status')
+    }
+  }
+
+  const handleDeleteGoal = async (goalId) => {
+    if (!appointment?.contact?.id) return
+    if (!window.confirm('Remover esta meta?')) return
+    try {
+      await apiService.deletePatientGoal(appointment.contact.id, goalId)
+      setGoals(prev => prev.filter(g => g.id !== goalId))
+      toast.success('Meta removida')
+    } catch {
+      toast.error('Erro ao remover meta')
+    }
+  }
+
+  const loadPatientDocs = async () => {
+    if (!appointment?.contact?.id) return
+    const res = await apiService.getPatientDocuments(appointment.contact.id).catch(() => ({ documents: [] }))
+    setPatientDocs(res.documents || [])
+  }
+
+  const handleDocsExpand = () => {
+    if (!docsExpanded) loadPatientDocs()
+    setDocsExpanded(prev => !prev)
+  }
+
+  const handleOpenNewDoc = async () => {
+    if (templates.length === 0 && appointment?.id) {
+      try {
+        const res = await apiService.getProfessionalDocumentTemplatesForAppointment(appointment.id)
+        setTemplates(res.templates || [])
+      } catch { /* silent */ }
+    }
+    setNewDoc({ title: '', document_type: 'plano_alimentar', content: '' })
+    setShowNewDocDialog(true)
+  }
+
+  const handleNewDocTemplateChange = (templateId) => {
+    const tpl = templates.find(t => String(t.id) === templateId)
+    setNewDoc(prev => ({ ...prev, content: tpl?.content || '' }))
+  }
+
+  const handleCreateDoc = async () => {
+    if (!newDoc.title.trim() || !appointment?.contact?.id) return
+    setSavingDoc(true)
+    try {
+      const res = await apiService.createPatientDocument(appointment.contact.id, newDoc)
+      setPatientDocs(prev => [res.document, ...prev])
+      setShowNewDocDialog(false)
+      toast.success('Documento criado!')
+    } catch (e) {
+      toast.error(e?.message || 'Erro ao criar documento')
+    } finally {
+      setSavingDoc(false)
+    }
+  }
+
+  const handleToggleDocShared = async (doc) => {
+    try {
+      const res = await apiService.togglePatientDocumentShared(appointment.contact.id, doc.id)
+      setPatientDocs(prev => prev.map(d => d.id === doc.id ? res.document : d))
+      toast.success(res.document.shared ? 'Link ativado!' : 'Link desativado')
+    } catch {
+      toast.error('Erro ao alterar compartilhamento')
+    }
+  }
+
+  const handleCopyDocLink = (doc) => {
+    const link = `${window.location.origin}/d/${doc.public_token}`
+    navigator.clipboard.writeText(link).then(() => toast.success('Link copiado!'))
+  }
+
+  const handleDeleteDoc = async (docId) => {
+    if (!appointment?.contact?.id) return
+    if (!window.confirm('Remover este documento?')) return
+    try {
+      await apiService.deletePatientDocument(appointment.contact.id, docId)
+      setPatientDocs(prev => prev.filter(d => d.id !== docId))
+      toast.success('Documento removido')
+    } catch {
+      toast.error('Erro ao remover documento')
+    }
+  }
+
+  const handleOpenEditDoc = (doc) => {
+    setEditingDoc(doc)
+    setEditingDocContent(doc.content || '')
+  }
+
+  const handleSaveEditDoc = async () => {
+    if (!editingDoc || !appointment?.contact?.id) return
+    setSavingEditDoc(true)
+    try {
+      const res = await apiService.updatePatientDocument(appointment.contact.id, editingDoc.id, { content: editingDocContent })
+      setPatientDocs(prev => prev.map(d => d.id === editingDoc.id ? res.document : d))
+      setEditingDoc(null)
+      setEditingDocContent('')
+      toast.success('Documento salvo!')
+    } catch {
+      toast.error('Erro ao salvar documento')
+    } finally {
+      setSavingEditDoc(false)
+    }
+  }
+
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -436,7 +726,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent data-testid="consultation-modal" className="w-full sm:max-w-2xl p-0 flex flex-col overflow-hidden">
+      <SheetContent data-testid="consultation-modal" className="w-full sm:max-w-2xl p-0 flex flex-col overflow-hidden" showCloseButton={false}>
         {/* ── Header ── */}
         <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 dark:from-gray-950 dark:to-gray-900 px-6 pt-6 pb-5 flex-shrink-0">
           <button
@@ -447,9 +737,9 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
           </button>
 
           <SheetHeader className="p-0">
-            <SheetTitle className="sr-only">Sessão do cliente</SheetTitle>
+            <SheetTitle className="sr-only">Atendimento do paciente</SheetTitle>
             <SheetDescription className="sr-only">
-              Detalhes e anotações da sessão do agendamento
+              Detalhes e anotações do atendimento
             </SheetDescription>
           </SheetHeader>
 
@@ -460,7 +750,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: T.chip }}>Sessão do cliente</p>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-0.5" style={{ color: T.chip }}>Atendimento do paciente</p>
               <h2 className="text-xl font-bold text-white truncate">{clientName}</h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-sm text-gray-300">{serviceName}</span>
@@ -522,7 +812,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4" style={{ color: T.brand }} />
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Anotações da Sessão</span>
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Anotações do Atendimento</span>
               </div>
               <div className="flex items-center gap-1.5">
                 {isSaving && (
@@ -556,17 +846,595 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                 <div className="h-3.5 bg-gray-100 dark:bg-gray-800 rounded-full w-4/5" />
               </div>
             ) : (
-              <Textarea
-                id="session-notes"
-                ref={textareaRef}
-                value={notes}
-                onChange={(e) => handleNotesChange(e.target.value)}
-                placeholder="Anotações, observações, diagnóstico, tratamento…"
-                className="min-h-[220px] resize-y border-0 rounded-none focus-visible:ring-0 bg-transparent text-sm leading-relaxed"
-                disabled={isSaving}
-              />
+              <div className={isSaving ? 'pointer-events-none opacity-60' : undefined}>
+                <DocumentEditor
+                  key={appointment?.id}
+                  content={notes}
+                  onChange={handleNotesChange}
+                  placeholder="Evolução, orientações nutricionais, plano alimentar, observações…"
+                  className="border-0 rounded-none shadow-none"
+                />
+              </div>
             )}
           </div>
+
+          {/* Anamnese */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+            <button
+              type="button"
+              onClick={handleAnamneseExpand}
+              className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" style={{ color: T.brand }} />
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Anamnese</span>
+                {(appointment?.anamnese_filled || anamneseResponse) ? (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: '#E8FDF3', color: '#10B981' }}>Preenchida</span>
+                ) : appointment?.anamnese_template_id ? (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: '#FEF3C7', color: '#D97706' }}>Aguardando paciente</span>
+                ) : null}
+              </div>
+              {anamneseExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+            </button>
+
+            {anamneseExpanded && (
+              <div className="p-4 space-y-4">
+                {/* Banner: pré-preencher da última consulta */}
+                {lastAnamnese && !anamneseResponse && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 14px', borderRadius: 10,
+                    background: '#F5F3FF', border: '1px solid #DDD6FE', gap: 12,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: '#5B21B6', margin: 0 }}>Retorno detectado</p>
+                      <p style={{ fontSize: 11, color: '#7C3AED', margin: '2px 0 0' }}>
+                        Pré-preencha com as respostas da última consulta e edite só o que mudou.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCarryForward}
+                      style={{
+                        flexShrink: 0, padding: '6px 12px', borderRadius: 8,
+                        background: '#7C3AED', color: '#fff', border: 'none',
+                        fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      Usar anterior
+                    </button>
+                  </div>
+                )}
+
+                {/* Template selector + link */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-500">Template de anamnese</label>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <select
+                      value={anamneseTemplateId}
+                      onChange={e => handleTemplateChange(e.target.value)}
+                      style={{
+                        flex: 1, padding: '7px 10px', borderRadius: 8,
+                        border: '1px solid #E5E7EB', fontSize: 13,
+                        background: '#fff', fontFamily: 'inherit', cursor: 'pointer',
+                      }}
+                    >
+                      <option value="">Sem template (livre)</option>
+                      {anamneseTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                    {anamneseTemplateId && appointment?.manage_token && (
+                      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          onClick={handleCopyAnamneseLink}
+                          title="Copiar link"
+                          style={{
+                            padding: '7px 10px', borderRadius: 8,
+                            border: '1px solid #E5E7EB', background: '#F9FAFB',
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+                            fontSize: 12, fontWeight: 600, color: T.brand, fontFamily: 'inherit',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          <Link2 size={13} /> Copiar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSendAnamneseWhatsApp}
+                          title="Enviar pelo WhatsApp"
+                          style={{
+                            padding: '7px 10px', borderRadius: 8,
+                            border: 'none', background: '#25D366',
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+                            fontSize: 12, fontWeight: 600, color: '#fff', fontFamily: 'inherit',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          <MessageCircle size={13} /> WhatsApp
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {anamneseTemplateId && appointment?.manage_token && (
+                    <p style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
+                      Envie o link via WhatsApp para o paciente preencher antes da consulta.
+                    </p>
+                  )}
+                </div>
+
+                {/* Fields from selected template */}
+                {anamneseTemplateId && (() => {
+                  const tpl = anamneseTemplates.find(t => t.id.toString() === anamneseTemplateId)
+                  if (!tpl?.fields?.length) return null
+                  return (
+                    <div className="space-y-3">
+                      {tpl.fields.map(field => (
+                        <div key={field.id} className="space-y-1">
+                          <label className="text-xs font-semibold text-gray-600">
+                            {field.label}
+                            {field.required && <span style={{ color: '#EF4444', marginLeft: 3 }}>*</span>}
+                          </label>
+                          {field.type === 'textarea' && (
+                            <textarea
+                              rows={3}
+                              value={anamneseAnswers[field.id] || ''}
+                              onChange={e => setAnamneseAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                            />
+                          )}
+                          {(field.type === 'text' || field.type === 'number' || field.type === 'date') && (
+                            <input
+                              type={field.type}
+                              value={anamneseAnswers[field.id] || ''}
+                              onChange={e => setAnamneseAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }}
+                            />
+                          )}
+                          {field.type === 'select' && (
+                            <select
+                              value={anamneseAnswers[field.id] || ''}
+                              onChange={e => setAnamneseAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', background: '#fff' }}
+                            >
+                              <option value="">Selecione…</option>
+                              {(field.options || []).map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
+                            </select>
+                          )}
+                          {field.type === 'checkbox' && (
+                            <div style={{ display: 'flex', gap: 16 }}>
+                              {['Sim', 'Não'].map(opt => (
+                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                                  <input
+                                    type="radio"
+                                    name={`field_${field.id}`}
+                                    value={opt}
+                                    checked={anamneseAnswers[field.id] === opt}
+                                    onChange={() => setAnamneseAnswers(prev => ({ ...prev, [field.id]: opt }))}
+                                    style={{ accentColor: T.brand }}
+                                  />
+                                  {opt}
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+
+                {/* Free-form when no template */}
+                {!anamneseTemplateId && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500">Observações livres</label>
+                    <textarea
+                      rows={4}
+                      value={anamneseAnswers['__free__'] || ''}
+                      onChange={e => setAnamneseAnswers({ '__free__': e.target.value })}
+                      placeholder="Histórico, queixas, observações importantes…"
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                )}
+
+                <Button
+                  size="sm"
+                  onClick={handleSaveAnamnese}
+                  disabled={isSavingAnamnese}
+                  style={{ background: T.brand, color: '#fff' }}
+                  className="gap-2"
+                >
+                  {isSavingAnamnese ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  Salvar anamnese
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Histórico de Anamneses */}
+          {appointment?.contact?.id && (
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+              <button
+                type="button"
+                onClick={handleHistoryExpand}
+                className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4" style={{ color: T.brand }} />
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Histórico de Anamneses</span>
+                  {anamneseHistory.length > 0 && (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: T.chip, color: T.brand }}>{anamneseHistory.length}</span>
+                  )}
+                </div>
+                {historyExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+              </button>
+
+              {historyExpanded && (
+                <div className="p-4 space-y-3">
+                  {loadingHistory ? (
+                    <div style={{ textAlign: 'center', padding: '16px' }}>
+                      <Loader2 className="h-4 w-4 animate-spin mx-auto" style={{ color: T.brand }} />
+                    </div>
+                  ) : anamneseHistory.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-4">Nenhuma anamnese registrada para este paciente</p>
+                  ) : (
+                    anamneseHistory.map(resp => {
+                      const isExpanded = expandedHistoryId === resp.id
+                      const templateName = resp.anamnese_template?.name || 'Formulário livre'
+                      const date = resp.appointment_start_time
+                        ? format(new Date(resp.appointment_start_time), "dd/MM/yyyy", { locale: ptBR })
+                        : format(new Date(resp.created_at), "dd/MM/yyyy", { locale: ptBR })
+                      const fields = resp.anamnese_template?.fields || []
+                      const answers = resp.responses || {}
+
+                      return (
+                        <div key={resp.id} style={{ border: '1px solid #E5E7EB', borderRadius: 10, overflow: 'hidden' }}>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedHistoryId(isExpanded ? null : resp.id)}
+                            style={{
+                              width: '100%', padding: '10px 14px', textAlign: 'left',
+                              background: isExpanded ? T.chip : '#fff', border: 'none',
+                              cursor: 'pointer', display: 'flex', alignItems: 'center',
+                              justifyContent: 'space-between', fontFamily: 'inherit',
+                            }}
+                          >
+                            <div>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#222' }}>{templateName}</span>
+                              <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>{date}</span>
+                            </div>
+                            {isExpanded ? <ChevronUp size={14} style={{ color: '#888' }} /> : <ChevronDown size={14} style={{ color: '#888' }} />}
+                          </button>
+
+                          {isExpanded && (
+                            <div style={{ padding: '12px 14px', borderTop: '1px solid #F3F4F6', background: '#FAFAFA', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                              {fields.length > 0 ? fields.map(field => {
+                                const val = answers[field.id]
+                                if (!val) return null
+                                return (
+                                  <div key={field.id}>
+                                    <p style={{ fontSize: 11, fontWeight: 700, color: '#888', margin: '0 0 2px' }}>{field.label}</p>
+                                    <p style={{ fontSize: 13, color: '#222', margin: 0, lineHeight: 1.5 }}>{val}</p>
+                                  </div>
+                                )
+                              }) : (
+                                answers['__free__'] && (
+                                  <div>
+                                    <p style={{ fontSize: 11, fontWeight: 700, color: '#888', margin: '0 0 2px' }}>Observações</p>
+                                    <p style={{ fontSize: 13, color: '#222', margin: 0, lineHeight: 1.5 }}>{answers['__free__']}</p>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Metas do paciente */}
+          {appointment?.contact?.id && (
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+              <button
+                type="button"
+                onClick={handleGoalsExpand}
+                className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4" style={{ color: T.brand }} />
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Metas do Paciente</span>
+                  {goals.length > 0 && (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: T.chip, color: T.brand }}>{goals.length}</span>
+                  )}
+                </div>
+                {goalsExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+              </button>
+
+              {goalsExpanded && (
+                <div className="p-4 space-y-3">
+                  {goals.length === 0 && !showNewGoalForm && (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-400">Nenhuma meta cadastrada para este paciente</p>
+                    </div>
+                  )}
+
+                  {goals.map(goal => {
+                    const statusColors = { active: '#10B981', completed: '#4C60AA', abandoned: '#9CA3AF' }
+                    const statusLabels = { active: 'Ativa', completed: 'Concluída', abandoned: 'Abandonada' }
+                    const color = statusColors[goal.status] || '#9CA3AF'
+                    const isActive = goal.status === 'active'
+                    const pct = (goal.current_value != null && goal.target_value != null && goal.target_value > 0)
+                      ? Math.min(100, Math.round((goal.current_value / goal.target_value) * 100))
+                      : null
+                    const historyEntries = goal.progress_history || []
+                    const showHistory = showGoalHistoryId === goal.id
+                    return (
+                      <div key={goal.id} style={{ border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>
+                        {/* Header row */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 700, fontSize: 13 }}>{goal.title}</span>
+                              <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 8px', borderRadius: 20, background: color + '20', color }}>
+                                {statusLabels[goal.status] || goal.status}
+                              </span>
+                            </div>
+                            {(goal.current_value != null || goal.target_value != null) && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5, fontSize: 12, color: '#666' }}>
+                                <TrendingUp size={12} style={{ color: T.brand }} />
+                                <span>
+                                  {goal.current_value != null ? `Atual: ${goal.current_value}` : ''}
+                                  {goal.current_value != null && goal.target_value != null ? ' → ' : ''}
+                                  {goal.target_value != null ? `Meta: ${goal.target_value}` : ''}
+                                  {goal.unit ? ` ${goal.unit}` : ''}
+                                </span>
+                                {pct != null && <span style={{ fontWeight: 700, color: T.brand }}>{pct}%</span>}
+                              </div>
+                            )}
+                            {/* Progress bar */}
+                            {pct != null && (
+                              <div style={{ marginTop: 6, height: 5, borderRadius: 99, background: '#E5E7EB', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width 0.4s' }} />
+                              </div>
+                            )}
+                            {goal.deadline && (
+                              <p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>
+                                Prazo: {new Date(goal.deadline + 'T12:00:00').toLocaleDateString('pt-BR')}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGoal(goal.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB', padding: 4, flexShrink: 0 }}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+
+                        {/* Action row */}
+                        <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                          {isActive && (
+                            <button type="button"
+                              onClick={() => { setProgressGoalId(progressGoalId === goal.id ? null : goal.id); setProgressValue(''); setProgressNote(''); setProgressDate('') }}
+                              style={{ fontSize: 11, fontWeight: 600, color: T.brand, background: T.chip, border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                            >
+                              + Registrar
+                            </button>
+                          )}
+                          {historyEntries.length > 0 && (
+                            <button type="button"
+                              onClick={() => setShowGoalHistoryId(showHistory ? null : goal.id)}
+                              style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', background: '#F3F4F6', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                            >
+                              {showHistory ? '▲' : '▼'} Histórico ({historyEntries.length})
+                            </button>
+                          )}
+                          {isActive && (
+                            <button type="button"
+                              onClick={() => handleUpdateGoalStatus(goal, 'completed')}
+                              style={{ fontSize: 11, fontWeight: 600, color: '#4C60AA', background: '#EEF2FF', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                            >
+                              ✓ Concluir
+                            </button>
+                          )}
+                          {!isActive && (
+                            <button type="button"
+                              onClick={() => handleUpdateGoalStatus(goal, 'active')}
+                              style={{ fontSize: 11, fontWeight: 600, color: '#10B981', background: '#ECFDF5', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                            >
+                              ↺ Reativar
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Progress entry form */}
+                        {progressGoalId === goal.id && (
+                          <div style={{ marginTop: 10, padding: '10px 12px', background: '#F9FAFB', borderRadius: 8, border: '1px solid #E5E7EB' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 }}>
+                              <input
+                                type="number" step="any" value={progressValue}
+                                onChange={e => setProgressValue(e.target.value)}
+                                placeholder={`Valor${goal.unit ? ` (${goal.unit})` : ''}`}
+                                style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit' }}
+                              />
+                              <input
+                                type="date" value={progressDate}
+                                onChange={e => setProgressDate(e.target.value)}
+                                style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit' }}
+                              />
+                            </div>
+                            <input
+                              type="text" value={progressNote}
+                              onChange={e => setProgressNote(e.target.value)}
+                              placeholder="Observação (opcional)"
+                              style={{ width: '100%', padding: '6px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 6 }}
+                            />
+                            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                              <Button size="sm" variant="ghost" onClick={() => { setProgressGoalId(null); setProgressValue(''); setProgressNote(''); setProgressDate('') }} style={{ fontSize: 11 }}>Cancelar</Button>
+                              <Button size="sm" onClick={() => handleAddProgress(goal)} disabled={!progressValue} style={{ background: T.brand, color: '#fff', fontSize: 11 }}>OK</Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Progress history */}
+                        {showHistory && historyEntries.length > 0 && (
+                          <div style={{ marginTop: 8, borderTop: '1px solid #F3F4F6', paddingTop: 8 }}>
+                            {[...historyEntries].reverse().map((entry, i) => (
+                              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: 12, color: '#374151', padding: '3px 0', borderBottom: i < historyEntries.length - 1 ? '1px solid #F3F4F6' : 'none' }}>
+                                <div>
+                                  <span style={{ fontWeight: 700 }}>{entry.value}{goal.unit ? ` ${goal.unit}` : ''}</span>
+                                  {entry.note && <span style={{ color: '#9CA3AF', marginLeft: 6 }}>{entry.note}</span>}
+                                </div>
+                                <span style={{ color: '#9CA3AF', fontSize: 11, flexShrink: 0, marginLeft: 8 }}>
+                                  {entry.date ? new Date(entry.date + 'T12:00:00').toLocaleDateString('pt-BR') : ''}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+
+                  {showNewGoalForm ? (
+                    <div style={{ border: '1px solid #E5E7EB', borderRadius: 10, padding: '14px', background: '#F9FAFB', space: 'y-3' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                        <div style={{ gridColumn: '1 / -1' }}>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Título da meta *</label>
+                          <input type="text" value={newGoal.title} onChange={e => setNewGoal(p => ({ ...p, title: e.target.value }))}
+                            placeholder="Ex: Emagrecer 5kg" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Valor atual</label>
+                          <input type="number" step="any" value={newGoal.current_value} onChange={e => setNewGoal(p => ({ ...p, current_value: e.target.value }))}
+                            placeholder="72" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Meta</label>
+                          <input type="number" step="any" value={newGoal.target_value} onChange={e => setNewGoal(p => ({ ...p, target_value: e.target.value }))}
+                            placeholder="65" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Unidade</label>
+                          <input type="text" value={newGoal.unit} onChange={e => setNewGoal(p => ({ ...p, unit: e.target.value }))}
+                            placeholder="kg, mg/dL…" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Prazo</label>
+                          <input type="date" value={newGoal.deadline} onChange={e => setNewGoal(p => ({ ...p, deadline: e.target.value }))}
+                            style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                        <Button size="sm" variant="ghost" onClick={() => setShowNewGoalForm(false)} disabled={savingGoal} style={{ fontSize: 12 }}>Cancelar</Button>
+                        <Button size="sm" onClick={handleSaveGoal} disabled={savingGoal || !newGoal.title.trim()} style={{ background: T.brand, color: '#fff', fontSize: 12 }} className="gap-1.5">
+                          {savingGoal ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                          Salvar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => setShowNewGoalForm(true)} className="gap-2 w-full" style={{ fontSize: 12 }}>
+                      <Plus className="h-3.5 w-3.5" /> Nova meta
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Documentos do Paciente */}
+          {appointment?.contact?.id && (
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+              <button
+                type="button"
+                onClick={handleDocsExpand}
+                className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" style={{ color: T.brand }} />
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Documentos do Paciente</span>
+                  {patientDocs.length > 0 && (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: T.chip, color: T.brand }}>{patientDocs.length}</span>
+                  )}
+                </div>
+                {docsExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+              </button>
+
+              {docsExpanded && (
+                <div className="p-4 space-y-3">
+                  {patientDocs.length === 0 && (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-400">Nenhum documento criado para este paciente</p>
+                    </div>
+                  )}
+
+                  {patientDocs.map(doc => (
+                    <div key={doc.id} style={{ border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 700, fontSize: 13 }}>{doc.title}</span>
+                            {doc.document_type_label && (
+                              <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 8px', borderRadius: 20, background: T.chip, color: T.brand }}>
+                                {doc.document_type_label}
+                              </span>
+                            )}
+                          </div>
+                          <p style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>
+                            Atualizado {formatDate(doc.updated_at)}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDoc(doc.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB', padding: 4 }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditDoc(doc)}
+                          style={{ fontSize: 11, fontWeight: 600, color: T.brand, background: T.chip, border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
+                        >
+                          <Edit size={11} /> Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleDocShared(doc)}
+                          style={{ fontSize: 11, fontWeight: 600, color: doc.shared ? '#10B981' : '#9CA3AF', background: doc.shared ? '#D1FAE5' : '#F3F4F6', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
+                        >
+                          <Link2 size={11} /> {doc.shared ? 'Link ativo' : 'Ativar link'}
+                        </button>
+                        {doc.shared && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyDocLink(doc)}
+                            style={{ fontSize: 11, fontWeight: 600, color: '#fff', background: T.brand, border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
+                          >
+                            <Copy size={11} /> Copiar link
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  <Button size="sm" variant="outline" onClick={handleOpenNewDoc} className="gap-2 w-full" style={{ fontSize: 12 }}>
+                    <Plus className="h-3.5 w-3.5" /> Novo documento
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Anexos */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
@@ -701,7 +1569,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
             <Button
               size="sm"
               onClick={handleManualSave}
-              disabled={isSaving || !notes.trim() || notes.trim().length < 3 || !hasUnsavedChanges}
+              disabled={isSaving || getPlainText(notes).length < 3}
               className="gap-2"
               style={{ background: T.brand, color: '#fff', borderRadius: 8 }}
             >
@@ -755,7 +1623,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
 
               <div className="bg-muted/50 rounded-lg p-4">
                 <p className="text-sm text-muted-foreground">
-                  <strong>Nota:</strong> O documento será gerado usando as anotações da sessão e informações do agendamento.
+                  <strong>Nota:</strong> O documento será gerado usando as anotações do atendimento e informações do agendamento.
                 </p>
               </div>
             </div>
@@ -822,6 +1690,93 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                 </Button>
               </>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Dialog: Novo Documento do Paciente */}
+      <Dialog open={showNewDocDialog} onOpenChange={setShowNewDocDialog}>
+        <DialogContent style={{ maxWidth: 480 }}>
+          <DialogHeader>
+            <DialogTitle>Novo Documento</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>Título *</label>
+              <input
+                type="text"
+                value={newDoc.title}
+                onChange={e => setNewDoc(p => ({ ...p, title: e.target.value }))}
+                placeholder="Ex: Plano Alimentar - Maio 2026"
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>Tipo</label>
+              <select
+                value={newDoc.document_type}
+                onChange={e => setNewDoc(p => ({ ...p, document_type: e.target.value }))}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 14, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}
+              >
+                <option value="plano_alimentar">Plano Alimentar</option>
+                <option value="orientacao_nutricional">Orientação Nutricional</option>
+                <option value="evolucao_paciente">Evolução do Paciente</option>
+                <option value="orientacao_terapeutica">Orientação Terapêutica</option>
+                <option value="anotacao_sessao">Anotação de Sessão</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+
+            {templates.length > 0 && (
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>
+                  Usar template como base <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(opcional)</span>
+                </label>
+                <select
+                  onChange={e => handleNewDocTemplateChange(e.target.value)}
+                  defaultValue=""
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 14, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}
+                >
+                  <option value="">Sem template (documento em branco)</option>
+                  {templates.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewDocDialog(false)} disabled={savingDoc}>Cancelar</Button>
+            <Button onClick={handleCreateDoc} disabled={savingDoc || !newDoc.title.trim()} style={{ background: T.brand, color: '#fff' }} className="gap-2">
+              {savingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              Criar documento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Editar Documento do Paciente */}
+      <Dialog open={!!editingDoc} onOpenChange={open => { if (!open) { setEditingDoc(null); setEditingDocContent('') } }}>
+        <DialogContent style={{ maxWidth: 860, width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+          <DialogHeader>
+            <DialogTitle>{editingDoc?.title}</DialogTitle>
+          </DialogHeader>
+
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            <DocumentEditor
+              value={editingDocContent}
+              onChange={setEditingDocContent}
+            />
+          </div>
+
+          <DialogFooter style={{ marginTop: 12 }}>
+            <Button variant="outline" onClick={() => { setEditingDoc(null); setEditingDocContent('') }} disabled={savingEditDoc}>Cancelar</Button>
+            <Button onClick={handleSaveEditDoc} disabled={savingEditDoc} style={{ background: T.brand, color: '#fff' }} className="gap-2">
+              {savingEditDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

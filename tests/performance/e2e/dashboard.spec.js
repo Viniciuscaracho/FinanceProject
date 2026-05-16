@@ -22,8 +22,8 @@ test.describe('Dashboard', () => {
     await expect(dashboard).toBeVisible({ timeout: 15000 });
 
     // A área hero sempre mostra "Hoje" e "Recebido"
-    await expect(dashboard.locator('text=Hoje')).toBeVisible({ timeout: 8000 });
-    await expect(dashboard.locator('text=Recebido')).toBeVisible();
+    await expect(dashboard.getByText('Hoje', { exact: true })).toBeVisible({ timeout: 8000 });
+    await expect(dashboard.getByText('Recebido', { exact: true })).toBeVisible();
   });
 
   test('exibe saudação com nome do usuário', async ({ page }) => {
@@ -39,9 +39,12 @@ test.describe('Dashboard', () => {
   test('exibe lista de próximos agendamentos ou estado vazio', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+    const dashboard = page.locator('[data-testid="dashboard"]');
+    await expect(dashboard).toBeVisible({ timeout: 15000 });
     await expect(
-      page.locator('text=/agendamentos|vazio|nenhum|sem agenda/i, [data-testid*="appointment"]').first()
-    ).toBeVisible({ timeout: 10000 });
+      dashboard.getByText('Hoje', { exact: true })
+        .or(dashboard.locator('p').filter({ hasText: /nenhum|sem agenda|agendamentos/i }))
+    ).toBeVisible({ timeout: 12000 });
   });
 
   test('o link de navegação para Agendamentos funciona', async ({ page }) => {

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, Copy, MessageCircle, ChevronRight, Scissors, Clock, Link2, Loader2, Plus } from 'lucide-react'
+import { Check, Copy, MessageCircle, ChevronRight, Briefcase, Clock, Link2, Loader2, Plus, FileText } from 'lucide-react'
 import { apiService } from '@/lib/api'
 import { T, DISPLAY } from '@/lib/tokens'
 import { toast } from 'sonner'
@@ -68,10 +68,46 @@ function DayPill({ label, active, onClick }) {
   )
 }
 
+function formatDocument(value) {
+  const digits = value.replace(/\D/g, '').slice(0, 14)
+  if (digits.length <= 11) {
+    return digits
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+  }
+  return digits
+    .replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1/$2')
+    .replace(/(\d{4})(\d{1,2})$/, '$1-$2')
+}
+
+function validateCpf(cpf) {
+  const d = cpf.replace(/\D/g, '')
+  if (d.length !== 11 || /^(\d)\1+$/.test(d)) return false
+  let sum = 0
+  for (let i = 0; i < 9; i++) sum += parseInt(d[i]) * (10 - i)
+  let r = (sum * 10) % 11
+  if (r === 10 || r === 11) r = 0
+  if (r !== parseInt(d[9])) return false
+  sum = 0
+  for (let i = 0; i < 10; i++) sum += parseInt(d[i]) * (11 - i)
+  r = (sum * 10) % 11
+  if (r === 10 || r === 11) r = 0
+  return r === parseInt(d[10])
+}
+
 /* ── Main wizard ────────────────────────────────── */
 export function OnboardingWizard({ onDone }) {
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
+
+  // Step 0 — document
+  const [document, setDocument]         = useState('')
+  const [docLookupLoading, setDocLookupLoading] = useState(false)
+  const [docInfo, setDocInfo]           = useState(null) // { name, valid }
+  const docLookupTimer                  = useRef(null)
 
   // Step 1 — service
   const [serviceName, setServiceName]   = useState('')
@@ -87,11 +123,66 @@ export function OnboardingWizard({ onDone }) {
   const [bookingUrl, setBookingUrl] = useState('')
   const [copied, setCopied]         = useState(false)
 
-  const STEPS = 3
+  const STEPS = 4
 
   const finish = () => {
     localStorage.setItem(STORAGE_KEY, '1')
     onDone()
+  }
+
+  /* ── Document input handler ─────────────────── */
+  const handleDocumentChange = (e) => {
+    const formatted = formatDocument(e.target.value)
+    setDocument(formatted)
+    setDocInfo(null)
+
+    const digits = formatted.replace(/\D/g, '')
+
+    if (digits.length === 14) {
+      clearTimeout(docLookupTimer.current)
+      docLookupTimer.current = setTimeout(async () => {
+        setDocLookupLoading(true)
+        try {
+          const data = await apiService.lookupCnpj(digits)
+          const name = data.nome_fantasia || data.razao_social || ''
+          setDocInfo({ name, valid: true, type: 'cnpj' })
+        } catch {
+          setDocInfo({ name: '', valid: false, type: 'cnpj' })
+        } finally {
+          setDocLookupLoading(false)
+        }
+      }, 600)
+    } else if (digits.length === 11) {
+      setDocInfo({ valid: validateCpf(digits), type: 'cpf', name: '' })
+    }
+  }
+
+  /* ── Step 0: save document ──────────────────── */
+  const saveDocument = async () => {
+    const digits = document.replace(/\D/g, '')
+    if (digits.length !== 11 && digits.length !== 14) {
+      toast.error('Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido')
+      return
+    }
+    if (digits.length === 11 && !validateCpf(digits)) {
+      toast.error('CPF inválido')
+      return
+    }
+    if (digits.length === 14 && docInfo?.valid === false) {
+      toast.error('CNPJ não encontrado na Receita Federal')
+      return
+    }
+    setSaving(true)
+    try {
+      await apiService.updateAccountSettings({
+        company_attributes: { document_1: document },
+      })
+    } catch {
+      // Não bloqueamos o fluxo se falhar — o dado pode ser corrigido nas configurações
+    } finally {
+      setSaving(false)
+    }
+    setStep(1)
   }
 
   /* ── Step 1: create service ─────────────────── */
@@ -110,7 +201,7 @@ export function OnboardingWizard({ onDone }) {
           selling_price_cents: Math.round(priceVal * 100),
         })
       }
-      setStep(1)
+      setStep(2)
     } catch {
       toast.error('Não foi possível salvar o serviço')
     } finally { setSaving(false) }
@@ -159,7 +250,7 @@ export function OnboardingWizard({ onDone }) {
     } catch {
       setBookingUrl(window.location.origin + '/agendar')
     } finally { setSaving(false) }
-    setStep(2)
+    setStep(3)
   }
 
   const copyLink = async () => {
@@ -205,7 +296,7 @@ export function OnboardingWizard({ onDone }) {
 
         <Dots step={step} total={STEPS} />
 
-        {/* ── Step 0: serviço ─────────────────── */}
+        {/* ── Step 0: documento ───────────────── */}
         {step === 0 && (
           <>
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
@@ -214,7 +305,79 @@ export function OnboardingWizard({ onDone }) {
                 background: '#EEF2FA', display: 'inline-flex',
                 alignItems: 'center', justifyContent: 'center', marginBottom: 14,
               }}>
-                <Scissors size={24} style={{ color: '#4C60AA' }} />
+                <FileText size={24} style={{ color: '#4C60AA' }} />
+              </div>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: T.text, margin: '0 0 6px' }}>
+                Qual é o seu CPF ou CNPJ?
+              </h2>
+              <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>
+                Usado para emissão de documentos e notas. Você pode alterar depois.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ position: 'relative' }}>
+                <input
+                  style={inputStyle}
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                  value={document}
+                  onChange={handleDocumentChange}
+                  inputMode="numeric"
+                  autoFocus
+                />
+                {docLookupLoading && (
+                  <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)' }}>
+                    <Loader2 size={16} style={{ color: T.muted, animation: 'spin 1s linear infinite' }} />
+                  </div>
+                )}
+              </div>
+
+              {docInfo && !docLookupLoading && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: 8,
+                  background: docInfo.valid ? '#ECFDF5' : '#FEF2F2',
+                  border: `1px solid ${docInfo.valid ? '#6EE7B7' : '#FECACA'}`,
+                  fontSize: 13, color: docInfo.valid ? '#065F46' : '#991B1B',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  {docInfo.valid ? <Check size={14} /> : null}
+                  {docInfo.type === 'cnpj'
+                    ? (docInfo.valid ? `${docInfo.name || 'CNPJ encontrado'}` : 'CNPJ não encontrado na Receita Federal')
+                    : (docInfo.valid ? 'CPF válido' : 'CPF inválido')}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={saveDocument}
+              disabled={saving}
+              style={{
+                marginTop: 24, width: '100%', padding: '13px',
+                borderRadius: 10, border: 'none',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                background: saving ? 'var(--border)' : '#4C60AA',
+                color: '#fff', fontSize: 15, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                transition: 'background 150ms',
+              }}
+            >
+              {saving
+                ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                : <>Continuar <ChevronRight size={18} /></>}
+            </button>
+          </>
+        )}
+
+        {/* ── Step 1: serviço ─────────────────── */}
+        {step === 1 && (
+          <>
+            <div style={{ textAlign: 'center', marginBottom: 28 }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 14,
+                background: '#EEF2FA', display: 'inline-flex',
+                alignItems: 'center', justifyContent: 'center', marginBottom: 14,
+              }}>
+                <Briefcase size={24} style={{ color: '#4C60AA' }} />
               </div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: T.text, margin: '0 0 6px' }}>
                 Qual é seu serviço principal?
@@ -231,7 +394,7 @@ export function OnboardingWizard({ onDone }) {
                   <label style={labelStyle}>Nome do serviço</label>
                   <input
                     style={inputStyle}
-                    placeholder="ex: Corte masculino"
+                    placeholder="ex: Consulta Nutricional"
                     value={serviceName}
                     onChange={e => setServiceName(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && saveService()}
@@ -306,8 +469,8 @@ export function OnboardingWizard({ onDone }) {
           </>
         )}
 
-        {/* ── Step 1: horário ─────────────────── */}
-        {step === 1 && (
+        {/* ── Step 2: horário ─────────────────── */}
+        {step === 2 && (
           <>
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <div style={{
@@ -379,8 +542,8 @@ export function OnboardingWizard({ onDone }) {
           </>
         )}
 
-        {/* ── Step 2: link pronto ─────────────── */}
-        {step === 2 && (
+        {/* ── Step 3: link pronto ─────────────── */}
+        {step === 3 && (
           <>
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <div style={{

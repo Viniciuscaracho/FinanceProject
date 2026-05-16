@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useMemo, useEffect } from 'react'
 import { useAppointments, useAppointmentResources } from '@/hooks/useAppointments'
 import { getClientName } from '@/utils/appointmentUtils'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 const AppointmentsContext = createContext(null)
 
@@ -13,9 +14,10 @@ export function useAppointmentsContext() {
 export function AppointmentsProvider({ children }) {
   const appointmentsData = useAppointments()
   const resourcesData = useAppointmentResources()
+  const isMobile = useIsMobile()
 
   const [searchTerm, setSearchTerm] = useState('')
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 })
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: isMobile ? 10 : 20 })
 
   // Dialog / selection state
   const [selectedAppointment, setSelectedAppointment] = useState(null)

@@ -51,6 +51,7 @@ import {
   Loader2,
   AlertCircle,
   ChevronDown,
+  ChevronUp,
   Landmark,
   ArrowUpCircle,
   ArrowDownCircle,
@@ -105,6 +106,7 @@ export function Transactions() {
   const initialFilterApplied = useRef(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
+  const [sort, setSort] = useState({ field: 'due_date', direction: 'asc' })
   const [isNewTransactionOpen, setIsNewTransactionOpen] = useState(false)
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [isEditTransactionOpen, setIsEditTransactionOpen] = useState(false)
@@ -1131,6 +1133,31 @@ export function Transactions() {
     })
   }, [transactions, selectedFilter, searchQuery])
 
+  const sortedTransactions = useMemo(() => {
+    if (!sort.field) return filteredTransactions
+    return [...filteredTransactions].sort((a, b) => {
+      let valA, valB
+      if (sort.field === 'due_date') {
+        valA = a.due_date ? new Date(a.due_date).getTime() : 0
+        valB = b.due_date ? new Date(b.due_date).getTime() : 0
+      } else {
+        valA = (a.description || a.name || '').toLowerCase()
+        valB = (b.description || b.name || '').toLowerCase()
+      }
+      if (valA < valB) return sort.direction === 'asc' ? -1 : 1
+      if (valA > valB) return sort.direction === 'asc' ? 1 : -1
+      return 0
+    })
+  }, [filteredTransactions, sort])
+
+  const toggleSort = (field) => {
+    setSort(prev =>
+      prev.field === field
+        ? { field, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
+        : { field, direction: 'asc' }
+    )
+  }
+
   const filterOptions = [
     { label: 'Todos', value: 'all', count: totalCount, icon: Landmark },
     { label: 'Receitas', value: '0', count: transactions.filter(t => t.transaction_type_cd === 0).length, icon: TrendingUp },
@@ -1232,10 +1259,38 @@ export function Transactions() {
               </DialogTrigger>
               <DialogContent data-testid="transaction-dialog" className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Nova Transação</DialogTitle>
-                  <DialogDescription>Registre uma receita ou despesa rapidamente.</DialogDescription>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <ArrowUpCircle className="h-5 w-5" style={{ color: T.brand }} />
+                    </div>
+                    <div>
+                      <DialogTitle style={{ margin: 0 }}>Nova Transação</DialogTitle>
+                      <DialogDescription style={{ margin: 0 }}>Registre uma receita ou despesa rapidamente.</DialogDescription>
+                    </div>
+                  </div>
                 </DialogHeader>
                 <div className="space-y-4">
+                  {/* Tipo como pills */}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {[
+                      { value: 0, label: 'Receita', color: T.green },
+                      { value: 1, label: 'Despesa', color: T.red },
+                    ].map(opt => (
+                      <button key={opt.value} type="button"
+                        onClick={() => setQuickAddData({...quickAddData, transaction_type_cd: opt.value})}
+                        style={{
+                          flex: 1, padding: '9px 0', borderRadius: 10, fontSize: 14, fontWeight: 600,
+                          cursor: 'pointer', border: '1px solid', fontFamily: 'inherit',
+                          borderColor: quickAddData.transaction_type_cd === opt.value ? opt.color : T.border,
+                          background: quickAddData.transaction_type_cd === opt.value ? opt.color + '14' : T.white,
+                          color: quickAddData.transaction_type_cd === opt.value ? opt.color : T.text,
+                          transition: 'all 150ms',
+                        }}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="space-y-2">
                     <Label>Descrição *</Label>
                     <Input
@@ -1253,42 +1308,24 @@ export function Transactions() {
                       }}
                     />
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Valor *</Label>
-                      <Input
-                        id="quick-amount"
-                        type="number"
-                        step="0.01"
-                        value={quickAddData.amount_cents}
-                        onChange={(e) => setQuickAddData({...quickAddData, amount_cents: e.target.value})}
-                        placeholder="0,00"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault()
-                            const dateInput = document.getElementById('quick-date')
-                            dateInput?.focus()
-                          }
-                        }}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Tipo</Label>
-                      <Select 
-                        value={quickAddData.transaction_type_cd.toString()} 
-                        onValueChange={(value) => setQuickAddData({...quickAddData, transaction_type_cd: parseInt(value)})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">Receita</SelectItem>
-                          <SelectItem value="1">Despesa</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+
+                  <div className="space-y-2">
+                    <Label>Valor *</Label>
+                    <Input
+                      id="quick-amount"
+                      type="number"
+                      step="0.01"
+                      value={quickAddData.amount_cents}
+                      onChange={(e) => setQuickAddData({...quickAddData, amount_cents: e.target.value})}
+                      placeholder="0,00"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const dateInput = document.getElementById('quick-date')
+                          dateInput?.focus()
+                        }
+                      }}
+                    />
                   </div>
                   
                   <div className="space-y-2">
@@ -1326,10 +1363,9 @@ export function Transactions() {
                     </Label>
                   </div>
                   
-                  <div className="flex gap-2 pt-2">
+                  <div className="grid grid-cols-2 gap-2 pt-2">
                     <Button
                       onClick={handleQuickAdd}
-                      className="flex-1"
                       style={{ background: T.brand, color: '#fff' }}
                       disabled={createTransaction.isPending}
                     >
@@ -1345,8 +1381,8 @@ export function Transactions() {
                         </>
                       )}
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={() => setIsQuickAddOpen(false)}
                     >
                       Cancelar
@@ -1441,10 +1477,17 @@ export function Transactions() {
                 })
               }
             }}>
-            <DialogContent className="sm:max-w-2xl">
+            <DialogContent className="sm:max-w-2xl overflow-y-auto max-h-[90vh]">
               <DialogHeader>
-                <DialogTitle>Nova Transação</DialogTitle>
-                <DialogDescription>Preencha os dados completos da transação financeira.</DialogDescription>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <ArrowUpCircle className="h-5 w-5" style={{ color: T.brand }} />
+                  </div>
+                  <div>
+                    <DialogTitle style={{ margin: 0 }}>Nova Transação</DialogTitle>
+                    <DialogDescription style={{ margin: 0 }}>Preencha os dados completos da transação financeira.</DialogDescription>
+                  </div>
+                </div>
               </DialogHeader>
               <Wizard
                 initialStep={0}
@@ -2321,7 +2364,7 @@ export function Transactions() {
 
       {/* Transactions List - Mobile Card View */}
       <div className="block md:hidden space-y-3">
-        {filteredTransactions.length === 0 ? (
+        {sortedTransactions.length === 0 ? (
           <FluidSection
             title="Nenhuma transação encontrada"
             subtitle="Tente ajustar os filtros de busca"
@@ -2331,11 +2374,11 @@ export function Transactions() {
             </div>
           </FluidSection>
         ) : (
-          filteredTransactions.map((transaction, index) => {
+          sortedTransactions.map((transaction, index) => {
             const amount = parseFloat(transaction.amount_cents || 0) / 100
             const isRevenue = transaction.transaction_type_cd === 0
             const isFirst = index === 0
-            const isLast = index === filteredTransactions.length - 1
+            const isLast = index === sortedTransactions.length - 1
             
             return (
               <div 
@@ -2347,18 +2390,24 @@ export function Transactions() {
                 )}
               >
                 <div
-                  className="bg-surface-elevated rounded-[var(--radius-lg)] p-6 border border-border shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-all duration-140 cursor-pointer"
+                  className="bg-surface-elevated rounded-[var(--radius-lg)] p-3 border border-border shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-all duration-140 cursor-pointer"
                   style={{ borderLeft: `3px solid ${isRevenue ? T.green : '#E5E7EB'}`, transition: 'background 100ms' }}
                   onMouseEnter={e => e.currentTarget.style.background = T.bg}
                   onMouseLeave={e => e.currentTarget.style.background = ''}
                   onClick={() => handleEditTransaction(transaction)}
                 >
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start justify-between mb-2">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-base text-text-primary whitespace-pre-line break-words leading-relaxed">
-                        {formatDescriptionWithBreaks(transaction.name || transaction.description || 'Sem descrição', 4)}
+                      <h3
+                        className="font-semibold text-sm text-text-primary truncate leading-snug"
+                        title={transaction.name || transaction.description || ''}
+                      >
+                        {(() => {
+                          const n = transaction.name || transaction.description || 'Sem descrição'
+                          return n.length > 42 ? n.slice(0, 42) + '…' : n
+                        })()}
                       </h3>
-                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                         {transaction.category && (
                           <span style={{ background: T.light, color: T.muted, borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
                             {transaction.category.name}
@@ -2408,33 +2457,24 @@ export function Transactions() {
                         </button>
                       </div>
                     </div>
-                    <div className="ml-4 text-right">
-                      <p style={{ fontSize: '1.125rem', fontWeight: 600, color: isRevenue ? T.green : T.red }}>
+                    <div className="ml-3 text-right shrink-0">
+                      <p style={{ fontSize: '1rem', fontWeight: 700, color: isRevenue ? T.green : T.red }}>
                         {isRevenue ? '+' : '-'}{formatCurrency(amount)}
                       </p>
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-3 text-sm text-text-secondary pt-4 border-t border-border">
-                    <div>
-                      <span className="font-medium">Vencimento:</span>{' '}
-                      {formatDate(transaction.due_date)}
-                    </div>
+
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-text-secondary pt-2 border-t border-border">
+                    <span><span className="font-medium">Venc:</span> {formatDate(transaction.due_date)}</span>
                     {transaction.paid_at && (
-                      <div>
-                        <span className="font-medium">Pagamento:</span>{' '}
-                        {formatDate(transaction.paid_at)}
-                      </div>
+                      <span><span className="font-medium">Pago:</span> {formatDate(transaction.paid_at)}</span>
                     )}
                     {transaction.contact && (
-                      <div className="col-span-2">
-                        <span className="font-medium">Contato:</span>{' '}
-                        {transaction.contact.name}
-                      </div>
+                      <span className="truncate max-w-[140px]"><span className="font-medium">Contato:</span> {transaction.contact.name}</span>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-border" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t border-border" onClick={(e) => e.stopPropagation()}>
                     {transaction.contact && getContactPhone(transaction.contact) && !transaction.paid && (
                       <Button
                         variant="ghost"
@@ -2484,7 +2524,7 @@ export function Transactions() {
           <div>
             <h2 className="text-2xl font-semibold text-text-primary">Transações</h2>
             <p className="text-sm text-text-secondary mt-1">
-              {filteredTransactions.length} transação{filteredTransactions.length !== 1 ? 'ões' : ''} encontrada{filteredTransactions.length !== 1 ? 's' : ''}
+              {sortedTransactions.length} transação{sortedTransactions.length !== 1 ? 'ões' : ''} encontrada{sortedTransactions.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
@@ -2492,8 +2532,29 @@ export function Transactions() {
           <Table className="w-full">
             <TableHeader>
               <TableRow style={{ background: T.bg }}>
-                <TableHead className="whitespace-nowrap text-sm font-semibold py-4" style={{ width: '10%' }}>Vencimento</TableHead>
-                <TableHead className="!whitespace-normal text-sm font-semibold py-4">Descrição</TableHead>
+                <TableHead
+                  className="whitespace-nowrap text-sm font-semibold py-4 cursor-pointer select-none"
+                  style={{ width: '10%' }}
+                  onClick={() => toggleSort('due_date')}
+                >
+                  <span className="flex items-center gap-1">
+                    Vencimento
+                    {sort.field === 'due_date'
+                      ? sort.direction === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />
+                      : <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />}
+                  </span>
+                </TableHead>
+                <TableHead
+                  className="!whitespace-normal text-sm font-semibold py-4 cursor-pointer select-none"
+                  onClick={() => toggleSort('description')}
+                >
+                  <span className="flex items-center gap-1">
+                    Descrição
+                    {sort.field === 'description'
+                      ? sort.direction === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />
+                      : <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />}
+                  </span>
+                </TableHead>
                 <TableHead className="whitespace-nowrap text-sm font-semibold py-4" style={{ width: '12%' }}>Categoria</TableHead>
                 <TableHead className="whitespace-nowrap text-sm font-semibold py-4" style={{ width: '12%' }}>Valor</TableHead>
                 <TableHead className="whitespace-nowrap text-sm font-semibold py-4" style={{ width: '12%' }}>Tipo</TableHead>
@@ -2502,18 +2563,18 @@ export function Transactions() {
               </TableRow>
             </TableHeader>
             <TableBody>
-                {filteredTransactions.length === 0 ? (
+                {sortedTransactions.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-12 text-text-secondary">
                       Nenhuma transação encontrada
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredTransactions.map((transaction, index) => {
+                  sortedTransactions.map((transaction, index) => {
                     const amount = parseFloat(transaction.amount_cents || 0) / 100
                     const isRevenue = transaction.transaction_type_cd === 0
                     const isFirst = index === 0
-                    const isLast = index === filteredTransactions.length - 1
+                    const isLast = index === sortedTransactions.length - 1
                     
                     return (
                       <TableRow
@@ -2532,15 +2593,15 @@ export function Transactions() {
                         <TableCell className="py-4">
                           <div className="flex items-start gap-2">
                             <div className="flex-1">
-                              <div 
-                                className="font-medium text-base text-text-primary leading-relaxed" 
-                                style={{ 
-                                  whiteSpace: 'normal', 
-                                  wordBreak: 'break-word',
-                                  overflowWrap: 'anywhere'
-                                }}
+                              <div
+                                className="font-medium text-sm text-text-primary"
+                                style={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                title={transaction.name || transaction.description || ''}
                               >
-                                {transaction.name || transaction.description || 'Sem descrição'}
+                                {(() => {
+                                  const n = transaction.name || transaction.description || 'Sem descrição'
+                                  return n.length > 48 ? n.slice(0, 48) + '…' : n
+                                })()}
                               </div>
                               {transaction.contact && (
                                 <div className="text-sm text-text-secondary mt-1 truncate">
@@ -2691,10 +2752,17 @@ export function Transactions() {
 
       {/* Edit Transaction Dialog */}
       <Dialog open={isEditTransactionOpen} onOpenChange={setIsEditTransactionOpen}>
-        <DialogContent data-testid="edit-transaction-dialog">
+        <DialogContent data-testid="edit-transaction-dialog" className="overflow-y-auto max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Editar Transação</DialogTitle>
-            <DialogDescription>Atualize as informações desta movimentação financeira.</DialogDescription>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Edit className="h-5 w-5" style={{ color: T.brand }} />
+              </div>
+              <div>
+                <DialogTitle style={{ margin: 0 }}>Editar Transação</DialogTitle>
+                <DialogDescription style={{ margin: 0 }}>Atualize as informações desta movimentação financeira.</DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
           <div className="space-y-1.5">
             <Label>Descrição</Label>

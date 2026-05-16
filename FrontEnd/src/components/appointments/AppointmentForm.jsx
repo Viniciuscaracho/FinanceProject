@@ -495,14 +495,21 @@ export function AppointmentForm({
         side={isMobile ? "bottom" : undefined}
       >
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle className={cn(isMobile && "text-lg")}>
-            {isEdit ? 'Editar Agendamento' : 'Novo Agendamento'}
-          </ResponsiveDialogTitle>
-          <ResponsiveDialogDescription className={cn(isMobile && "text-sm")}>
-            {isEdit 
-              ? 'Atualize os dados do agendamento'
-              : 'Preencha os dados para criar um novo agendamento'}
-          </ResponsiveDialogDescription>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: '#F0F2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <CalendarIcon className="h-5 w-5" style={{ color: '#4C60AA' }} />
+            </div>
+            <div>
+              <ResponsiveDialogTitle className={cn(isMobile && "text-lg")} style={{ margin: 0 }}>
+                {isEdit ? 'Editar Agendamento' : 'Novo Agendamento'}
+              </ResponsiveDialogTitle>
+              <ResponsiveDialogDescription className={cn(isMobile && "text-sm")} style={{ margin: 0 }}>
+                {isEdit
+                  ? 'Atualize os dados do agendamento'
+                  : 'Preencha os dados para criar um novo agendamento'}
+              </ResponsiveDialogDescription>
+            </div>
+          </div>
         </ResponsiveDialogHeader>
         <form onSubmit={handleSubmit}>
             <div className={cn(

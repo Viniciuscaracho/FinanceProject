@@ -30,6 +30,7 @@
 #  updated_at                   :datetime         not null
 #  account_id                   :bigint           not null
 #  account_user_id              :bigint           not null
+#  anamnese_template_id         :bigint
 #  appointment_link_id          :bigint
 #  contact_id                   :bigint
 #  google_calendar_event_id     :string
@@ -44,6 +45,7 @@
 #  index_appointments_on_account_professional_status_time  (account_id,account_user_id,status,start_time)
 #  index_appointments_on_account_time_status               (account_id,start_time,status)
 #  index_appointments_on_account_user_id                   (account_user_id)
+#  index_appointments_on_anamnese_template_id              (anamnese_template_id)
 #  index_appointments_on_appointment_link_id               (appointment_link_id)
 #  index_appointments_on_billing_notification_sent         (billing_notification_sent)
 #  index_appointments_on_contact_id                        (contact_id)
@@ -60,6 +62,7 @@
 #
 #  fk_rails_...  (account_id => accounts.id)
 #  fk_rails_...  (account_user_id => account_users.id)
+#  fk_rails_...  (anamnese_template_id => anamnese_templates.id)
 #  fk_rails_...  (appointment_link_id => appointment_links.id) ON DELETE => nullify
 #  fk_rails_...  (contact_id => people.id)
 #  fk_rails_...  (parent_appointment_id => appointments.id) ON DELETE => nullify
@@ -69,12 +72,16 @@ require 'test_helper'
 
 class AppointmentTest < ActiveSupport::TestCase
   setup do
+    # Freeze to Tuesday at 10am so that +1.day = Wednesday (weekday, within 9-18h default schedule)
+    travel_to Time.zone.parse('2025-01-07 10:00:00')
     _, @account = register_user
     @bank_account = create_bank_account(@account)
     @account_user = @account.account_users.first
     @service = create_service(@account)
     @contact = create_contact(@account)
   end
+
+  teardown { travel_back }
 
   test "should not allow overlapping appointments for same professional" do
     # Criar primeiro agendamento

@@ -16,27 +16,22 @@ import {
   FileText,
   DollarSign,
   Globe,
-  Eye,
-  ExternalLink,
-  Camera,
-  X
 } from 'lucide-react'
 import { apiService } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { T } from '@/lib/tokens'
 
 export function CompanySettings() {
   const isMobile = useIsMobile()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [logoUrl, setLogoUrl] = useState(null)
-  const [uploadingLogo, setUploadingLogo] = useState(false)
-  const [coverUrl, setCoverUrl] = useState(null)
-  const [uploadingCover, setUploadingCover] = useState(false)
 
   // Verificar se o usuário é admin da conta
   const isAccountAdmin = user?.account_admin || user?.account_owner || false
@@ -71,10 +66,6 @@ export function CompanySettings() {
     invoice_due_days: 30,
     invoice_tax_percentage: 0,
     invoice_tax_already_applied: false,
-    // Vitrine pública
-    directory_visible: false,
-    profession_category: '',
-    directory_description: '',
   })
 
   useEffect(() => {
@@ -125,12 +116,7 @@ export function CompanySettings() {
           invoice_due_days: account.invoice_due_days || 30,
           invoice_tax_percentage: account.invoice_tax_percentage || 0,
           invoice_tax_already_applied: account.invoice_tax_already_applied || false,
-          directory_visible: account.directory_visible || false,
-          profession_category: account.profession_category || '',
-          directory_description: account.directory_description || '',
         })
-        setLogoUrl(account.company?.logo_url || null)
-        setCoverUrl(account.company?.cover_url || null)
       }
     } catch (error) {
       toast.error('Erro ao carregar configurações da empresa')
@@ -160,7 +146,10 @@ export function CompanySettings() {
           ...prev,
           company: {
             ...prev.company,
-            [name]: value
+            [name]: value,
+            // keep _natural fields in sync so the backend concern doesn't overwrite
+            ...(name === 'document_1' ? { document_1_natural: value } : {}),
+            ...(name === 'document_1_natural' ? { document_1: value } : {}),
           }
         }))
       }
@@ -190,9 +179,6 @@ export function CompanySettings() {
         invoice_due_days: parseInt(formData.invoice_due_days) || 30,
         invoice_tax_percentage: parseFloat(formData.invoice_tax_percentage) || 0,
         invoice_tax_already_applied: formData.invoice_tax_already_applied,
-        directory_visible: formData.directory_visible,
-        profession_category: formData.profession_category,
-        directory_description: formData.directory_description,
         company_attributes: {
           ...(formData.company.id ? { id: formData.company.id } : {}),
           name: formData.company.name,
@@ -218,8 +204,11 @@ export function CompanySettings() {
       }
 
       await apiService.updateAccountSettings(updateData)
-      
+
       toast.success('Configurações da empresa atualizadas com sucesso!')
+
+      // Invalida cache do banner de CPF/CNPJ no Layout
+      qc.invalidateQueries({ queryKey: ['account-settings-doc-check'] })
 
       // Recarregar configurações para obter dados atualizados
       await loadAccountSettings()
@@ -229,58 +218,6 @@ export function CompanySettings() {
       toast.error(errorMessage)
     } finally {
       setSaving(false)
-    }
-  }
-
-  const handleLogoUpload = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      toast.error('Selecione um arquivo de imagem')
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('A imagem deve ter no máximo 5MB')
-      return
-    }
-    try {
-      setUploadingLogo(true)
-      const preview = URL.createObjectURL(file)
-      setLogoUrl(preview)
-      const res = await apiService.uploadCompanyLogo(file)
-      if (res.logo_url) setLogoUrl(res.logo_url)
-      toast.success('Foto atualizada!')
-    } catch {
-      toast.error('Erro ao enviar foto')
-      setLogoUrl(null)
-    } finally {
-      setUploadingLogo(false)
-    }
-  }
-
-  const handleCoverUpload = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      toast.error('Selecione um arquivo de imagem')
-      return
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('A imagem deve ter no máximo 10MB')
-      return
-    }
-    try {
-      setUploadingCover(true)
-      const preview = URL.createObjectURL(file)
-      setCoverUrl(preview)
-      const res = await apiService.uploadCompanyCover(file)
-      if (res.cover_url) setCoverUrl(res.cover_url)
-      toast.success('Capa atualizada!')
-    } catch {
-      toast.error('Erro ao enviar capa')
-      setCoverUrl(null)
-    } finally {
-      setUploadingCover(false)
     }
   }
 
@@ -300,7 +237,7 @@ export function CompanySettings() {
   }
 
   return (
-    <div className="space-y-3 max-w-5xl mx-auto">
+    <div className="space-y-3 max-w-5xl mx-auto pb-20">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
@@ -311,16 +248,35 @@ export function CompanySettings() {
         </p>
       </div>
 
+      {/* Quick-jump nav */}
+      <nav className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        {[
+          { href: '#sec-empresa', label: 'Empresa' },
+          { href: '#sec-endereco', label: 'Endereço' },
+          { href: '#sec-financeiro', label: 'Financeiro' },
+        ].map(({ href, label }) => (
+          <a
+            key={href}
+            href={href}
+            className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+
       {/* Informações da Empresa */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Building2 className="h-5 w-5 mr-2 text-blue-600" />
-            Informações da Empresa
-          </CardTitle>
-          <CardDescription>
-            Dados cadastrais e informações de contato
-          </CardDescription>
+      <Card id="sec-empresa">
+        <CardHeader className="pb-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 9, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Building2 className="h-4 w-4" style={{ color: T.brand }} />
+            </div>
+            <div>
+              <CardTitle>Informações da Empresa</CardTitle>
+              <CardDescription style={{ margin: 0 }}>Dados cadastrais e informações de contato</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -337,15 +293,28 @@ export function CompanySettings() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="company_document_1">CNPJ/CPF</Label>
+              <Label htmlFor="company_document_1">
+                CNPJ/CPF
+                {!formData.company.document_1 && (
+                  <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: '#D97706', background: '#FEF3C7', border: '1px solid #F59E0B60', borderRadius: 6, padding: '2px 7px' }}>
+                    Obrigatório
+                  </span>
+                )}
+              </Label>
               <Input
                 id="company_document_1"
                 name="document_1"
                 value={formData.company.document_1}
                 onChange={(e) => handleInputChange(e, 'company')}
-                placeholder="00.000.000/0000-00"
+                placeholder="00.000.000/0000-00 ou 000.000.000-00"
                 className="w-full"
+                style={!formData.company.document_1 ? { borderColor: '#F59E0B', boxShadow: '0 0 0 2px #FEF3C720' } : undefined}
               />
+              {!formData.company.document_1 && (
+                <p style={{ fontSize: 12, color: '#92400E', marginTop: 4 }}>
+                  Necessário para emissão de documentos, recibos e relatórios fiscais.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -396,15 +365,17 @@ export function CompanySettings() {
       </Card>
 
       {/* Endereço */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <MapPin className="h-5 w-5 mr-2 text-blue-600" />
-            Endereço
-          </CardTitle>
-          <CardDescription>
-            Informações de localização da empresa
-          </CardDescription>
+      <Card id="sec-endereco">
+        <CardHeader className="pb-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 9, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <MapPin className="h-4 w-4" style={{ color: T.brand }} />
+            </div>
+            <div>
+              <CardTitle>Endereço</CardTitle>
+              <CardDescription style={{ margin: 0 }}>Informações de localização da empresa</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {formData.company.addresses.map((address, index) => (
@@ -488,31 +459,42 @@ export function CompanySettings() {
       </Card>
 
       {/* Configurações Financeiras */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <DollarSign className="h-5 w-5 mr-2 text-blue-600" />
-            Configurações Financeiras
-          </CardTitle>
-          <CardDescription>
-            Configurações relacionadas a faturas e pagamentos
-          </CardDescription>
+      <Card id="sec-financeiro">
+        <CardHeader className="pb-3">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 9, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <DollarSign className="h-4 w-4" style={{ color: T.brand }} />
+            </div>
+            <div>
+              <CardTitle>Configurações Financeiras</CardTitle>
+              <CardDescription style={{ margin: 0 }}>Configurações relacionadas a faturas e pagamentos</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="default_currency">Moeda Padrão</Label>
-              <select
-                id="default_currency"
-                name="default_currency"
-                value={formData.default_currency}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-border rounded-md bg-card text-foreground"
-              >
-                <option value="BRL">R$ (Real Brasileiro)</option>
-                <option value="USD">$ (Dólar Americano)</option>
-                <option value="EUR">€ (Euro)</option>
-              </select>
+              <Label>Moeda Padrão</Label>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {[
+                  { value: 'BRL', label: 'R$ Real' },
+                  { value: 'USD', label: '$ Dólar' },
+                  { value: 'EUR', label: '€ Euro' },
+                ].map(opt => (
+                  <button key={opt.value} type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, default_currency: opt.value }))}
+                    style={{
+                      padding: '7px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500,
+                      cursor: 'pointer', border: '1px solid', fontFamily: 'inherit',
+                      borderColor: formData.default_currency === opt.value ? T.brand : T.border,
+                      background: formData.default_currency === opt.value ? T.chip : T.white,
+                      color: formData.default_currency === opt.value ? T.brand : T.text,
+                      transition: 'all 150ms',
+                    }}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -581,223 +563,6 @@ export function CompanySettings() {
               Imposto já aplicado nos valores
             </Label>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Vitrine Pública */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Eye className="h-5 w-5 mr-2 text-emerald-600" />
-            Vitrine Pública
-          </CardTitle>
-          <CardDescription>
-            Apareça no Descobrir — nosso diretório público de profissionais
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-start space-x-3 p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-lg border border-emerald-100 dark:border-emerald-800">
-            <input
-              type="checkbox"
-              id="directory_visible"
-              name="directory_visible"
-              checked={formData.directory_visible}
-              onChange={handleInputChange}
-              className="w-4 h-4 mt-0.5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer"
-            />
-            <div>
-              <Label htmlFor="directory_visible" className="cursor-pointer font-medium text-emerald-900 dark:text-emerald-100">
-                Aparecer no Descobrir
-              </Label>
-              <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
-                Seu perfil ficará visível para qualquer pessoa que buscar no diretório público
-              </p>
-              {formData.directory_visible && (
-                <a
-                  href="/descobrir"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:underline mt-1.5"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  Ver vitrine pública
-                </a>
-              )}
-            </div>
-          </div>
-
-          {formData.directory_visible && (
-            <>
-              {/* Logo / Foto de perfil */}
-              <div className="space-y-2">
-                <Label>Foto de perfil</Label>
-                <div className="flex items-center gap-4">
-                  <div className="relative flex-shrink-0">
-                    <div style={{
-                      width: 72, height: 72, borderRadius: 12,
-                      background: logoUrl ? 'transparent' : '#EEF2FA',
-                      border: '2px solid var(--border)',
-                      overflow: 'hidden',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {logoUrl ? (
-                        <img
-                          src={logoUrl}
-                          alt="Logo"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          onError={() => setLogoUrl(null)}
-                        />
-                      ) : (
-                        <span style={{ fontSize: 24, fontWeight: 800, color: '#4C60AA' }}>
-                          {(formData.company.screen_name_natural || formData.company.name || '?').charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    {uploadingLogo && (
-                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Loader2 size={18} style={{ color: '#fff', animation: 'spin 1s linear infinite' }} />
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="logo-upload" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#4C60AA', background: '#EEF2FA', border: 'none', borderRadius: 8, padding: '7px 14px' }}>
-                      <Camera size={14} />
-                      {logoUrl ? 'Trocar foto' : 'Adicionar foto'}
-                    </label>
-                    <input
-                      id="logo-upload"
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={handleLogoUpload}
-                    />
-                    <p className="text-xs text-gray-500 mt-1.5">JPG, PNG ou WebP · max 5MB</p>
-                    {logoUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setLogoUrl(null)}
-                        className="text-xs text-red-500 hover:underline mt-1 flex items-center gap-1"
-                      >
-                        <X size={11} /> Remover foto
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500">Aparece no seu card e perfil público no Descobrir.</p>
-              </div>
-
-              {/* Capa / Cover photo */}
-              <div className="space-y-2">
-                <Label>Foto de capa</Label>
-                <div className="space-y-2">
-                  <div className="relative w-full" style={{ height: 120, borderRadius: 12, overflow: 'hidden', border: '2px dashed var(--border)', background: coverUrl ? 'transparent' : 'linear-gradient(135deg, #1E2440, #4C60AA)' }}>
-                    {coverUrl && (
-                      <img
-                        src={coverUrl}
-                        alt="Capa"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        onError={() => setCoverUrl(null)}
-                      />
-                    )}
-                    {!coverUrl && (
-                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
-                        Pré-visualização da capa
-                      </div>
-                    )}
-                    {uploadingCover && (
-                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Loader2 size={22} style={{ color: '#fff', animation: 'spin 1s linear infinite' }} />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <label htmlFor="cover-upload" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#4C60AA', background: '#EEF2FA', border: 'none', borderRadius: 8, padding: '7px 14px' }}>
-                      <Camera size={14} />
-                      {coverUrl ? 'Trocar capa' : 'Adicionar capa'}
-                    </label>
-                    <input
-                      id="cover-upload"
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={handleCoverUpload}
-                    />
-                    {coverUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setCoverUrl(null)}
-                        className="text-xs text-red-500 hover:underline flex items-center gap-1"
-                      >
-                        <X size={11} /> Remover capa
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500">Imagem horizontal · JPG, PNG ou WebP · max 10MB · aparece no topo do seu perfil público.</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="company_screen_name">
-                  Nome de exibição na vitrine
-                </Label>
-                <Input
-                  id="company_screen_name"
-                  name="screen_name_natural"
-                  value={formData.company.screen_name_natural}
-                  onChange={(e) => handleInputChange(e, 'company')}
-                  placeholder={formData.company.name || 'Ex: Dr. João Silva Psicólogo'}
-                  className="w-full sm:max-w-sm"
-                />
-                <p className="text-xs text-gray-500">
-                  Como seu perfil aparece no Descobrir. Se vazio, usa o nome da empresa.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="profession_category">Categoria profissional</Label>
-                <select
-                  id="profession_category"
-                  name="profession_category"
-                  value={formData.profession_category}
-                  onChange={handleInputChange}
-                  className="w-full sm:max-w-xs px-3 py-2 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value="">Selecione uma categoria</option>
-                  {[
-                    'Psicólogo', 'Advogado', 'Nutricionista', 'Personal Trainer',
-                    'Barbeiro', 'Cabeleireiro', 'Dentista', 'Médico', 'Fisioterapeuta',
-                    'Professor', 'Coach', 'Terapeuta', 'Contador', 'Veterinário',
-                    'Arquiteto', 'Designer', 'Outro',
-                  ].map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="directory_description">Descrição pública</Label>
-                <textarea
-                  id="directory_description"
-                  name="directory_description"
-                  value={formData.directory_description}
-                  onChange={handleInputChange}
-                  rows={3}
-                  placeholder="Descreva sua especialidade, forma de atendimento, diferenciais..."
-                  className="w-full px-3 py-2 rounded-md border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                />
-                <p className="text-xs text-gray-500">Esta descrição aparece no seu perfil público para clientes em potencial.</p>
-              </div>
-
-              <div className="p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-amber-800 dark:text-amber-200 space-y-1">
-                <p className="font-medium">Para o perfil funcionar completamente:</p>
-                <ul className="list-disc list-inside space-y-0.5 text-amber-700 dark:text-amber-300">
-                  <li>Preencha <strong>Cidade</strong> e <strong>Bairro</strong> no endereço acima — aparece nos filtros de localização</li>
-                  <li>Crie pelo menos um <strong>Serviço</strong> — aparece no card da vitrine</li>
-                  <li>Crie um <strong>Link de Agendamento</strong> ativo — habilita o botão "Agendar" no perfil público</li>
-                </ul>
-              </div>
-            </>
-          )}
         </CardContent>
       </Card>
 

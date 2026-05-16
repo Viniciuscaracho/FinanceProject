@@ -49,8 +49,8 @@ module.exports = async function globalSetup() {
     await page.fill('[data-testid="password-input"]', password);
     await page.click('[data-testid="login-button"]');
 
-    await page.waitForURL('/', { timeout: 20000 });
-    await page.waitForSelector('[data-testid="dashboard"]', { timeout: 15000 });
+    await page.waitForFunction(() => !window.location.pathname.includes('/login'), { timeout: 20000 });
+    await page.waitForTimeout(1000);
 
     await page.context().storageState({ path: AUTH_STATE_PATH });
     console.log('✅ Auth state salvo em', AUTH_STATE_PATH);

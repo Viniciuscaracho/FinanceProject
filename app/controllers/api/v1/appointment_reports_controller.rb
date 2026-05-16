@@ -11,7 +11,7 @@ module Api
         end_date   = params[:end_date]   ? Date.parse(params[:end_date])   : Date.today.end_of_month
 
         appointments = account.appointments
-                              .confirmed
+                              .where(status: [Appointment::APPOINTMENT_STATUS[:confirmed], Appointment::APPOINTMENT_STATUS[:completed]])
                               .by_date_range(start_date.beginning_of_day, end_date.end_of_day)
         appointments = appointments.by_professional(params[:professional_id]) if params[:professional_id].present?
 
@@ -89,7 +89,7 @@ module Api
         end_date   = params[:end_date]   ? Date.parse(params[:end_date])   : Date.today.end_of_month
 
         appointments           = account.appointments.by_date_range(start_date.beginning_of_day, end_date.end_of_day)
-        confirmed_appointments = appointments.confirmed
+        confirmed_appointments = appointments.where(status: [Appointment::APPOINTMENT_STATUS[:confirmed], Appointment::APPOINTMENT_STATUS[:completed]])
         total_revenue_cents    = confirmed_appointments.sum(:price_cents)
         appointment_ids        = confirmed_appointments.pluck(:id)
         total_commission_cents = appointment_ids.any? ?

@@ -47,6 +47,7 @@ function SheetContent({
   className,
   children,
   side = "right",
+  showCloseButton = true,
   ...props
 }) {
   return (
@@ -68,11 +69,13 @@ function SheetContent({
         )}
         {...props}>
         {children}
-        <SheetPrimitive.Close
-          className="absolute top-6 right-6 rounded-[var(--radius-sm)] opacity-60 transition-opacity duration-140 hover:opacity-100 focus:outline-2 focus:outline-accent focus:outline-offset-2 disabled:pointer-events-none text-text-secondary hover:text-text-primary">
-          <XIcon className="size-4" />
-          <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
+        {showCloseButton && (
+          <SheetPrimitive.Close
+            className="absolute top-6 right-6 rounded-[var(--radius-sm)] opacity-60 transition-opacity duration-140 hover:opacity-100 focus:outline-2 focus:outline-accent focus:outline-offset-2 disabled:pointer-events-none text-text-secondary hover:text-text-primary">
+            <XIcon className="size-4" />
+            <span className="sr-only">Close</span>
+          </SheetPrimitive.Close>
+        )}
       </SheetPrimitive.Content>
     </SheetPortal>
   );

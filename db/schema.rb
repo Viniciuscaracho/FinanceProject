@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_08_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_15_100001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -92,6 +92,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_08_120000) do
     t.boolean "directory_visible", default: false, null: false
     t.string "profession_category"
     t.text "directory_description"
+    t.string "abacate_pay_customer_id"
     t.index ["company_id"], name: "index_accounts_on_company_id"
     t.index ["directory_visible"], name: "index_accounts_on_directory_visible"
     t.index ["discarded_at"], name: "index_accounts_on_discarded_at"
@@ -161,6 +162,33 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_08_120000) do
     t.decimal "latitude", precision: 10, scale: 7
     t.decimal "longitude", precision: 10, scale: 7
     t.index ["addressable_type", "addressable_id"], name: "index_addresses_on_addressable"
+  end
+
+  create_table "anamnese_responses", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "appointment_id", null: false
+    t.bigint "contact_id"
+    t.bigint "anamnese_template_id"
+    t.jsonb "responses", default: {}, null: false
+    t.datetime "filled_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "appointment_id"], name: "index_anamnese_responses_on_account_id_and_appointment_id", unique: true
+    t.index ["account_id"], name: "index_anamnese_responses_on_account_id"
+    t.index ["anamnese_template_id"], name: "index_anamnese_responses_on_anamnese_template_id"
+    t.index ["appointment_id"], name: "index_anamnese_responses_on_appointment_id"
+    t.index ["contact_id"], name: "index_anamnese_responses_on_contact_id"
+  end
+
+  create_table "anamnese_templates", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.jsonb "fields", default: [], null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_anamnese_templates_on_account_id"
   end
 
   create_table "announcements", force: :cascade do |t|
@@ -270,10 +298,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_08_120000) do
     t.datetime "overdue_notification_sent_at"
     t.jsonb "additional_service_ids", default: [], null: false
     t.string "manage_token"
+    t.bigint "anamnese_template_id"
     t.index ["account_id", "account_user_id", "status", "start_time"], name: "index_appointments_on_account_professional_status_time"
     t.index ["account_id", "start_time", "status"], name: "index_appointments_on_account_time_status"
     t.index ["account_id"], name: "index_appointments_on_account_id"
     t.index ["account_user_id"], name: "index_appointments_on_account_user_id"
+    t.index ["anamnese_template_id"], name: "index_appointments_on_anamnese_template_id"
     t.index ["appointment_link_id"], name: "index_appointments_on_appointment_link_id"
     t.index ["billing_notification_sent"], name: "index_appointments_on_billing_notification_sent"
     t.index ["contact_id"], name: "index_appointments_on_contact_id"
@@ -655,6 +685,40 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_08_120000) do
     t.index ["discarded_at", "type", "account_id"], name: "index_offers_on_discarded_at_and_type_and_account_id"
   end
 
+  create_table "patient_documents", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "title", null: false
+    t.text "content"
+    t.string "document_type"
+    t.string "public_token", null: false
+    t.boolean "shared", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "contact_id"], name: "index_patient_documents_on_account_id_and_contact_id"
+    t.index ["account_id"], name: "index_patient_documents_on_account_id"
+    t.index ["contact_id"], name: "index_patient_documents_on_contact_id"
+    t.index ["public_token"], name: "index_patient_documents_on_public_token", unique: true
+  end
+
+  create_table "patient_goals", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "title", null: false
+    t.string "unit"
+    t.decimal "target_value", precision: 10, scale: 2
+    t.decimal "current_value", precision: 10, scale: 2
+    t.date "deadline"
+    t.text "notes"
+    t.integer "status", default: 0, null: false
+    t.jsonb "progress_history", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "contact_id"], name: "index_patient_goals_on_account_id_and_contact_id"
+    t.index ["account_id"], name: "index_patient_goals_on_account_id"
+    t.index ["contact_id"], name: "index_patient_goals_on_contact_id"
+  end
+
   create_table "payment_plans", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.bigint "amount_cents", default: 0, null: false
@@ -739,6 +803,25 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_08_120000) do
     t.index ["date"], name: "index_pg_search_documents_on_date"
     t.index ["searchable_type", "searchable_id"], name: "index_pg_search_documents_on_searchable"
     t.index ["tsv_body"], name: "index_pg_search_documents_on_tsv_body", using: :gin
+  end
+
+  create_table "pix_billings", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "billing_id", null: false
+    t.string "billing_url"
+    t.integer "amount", null: false
+    t.string "status", default: "PENDING", null: false
+    t.string "frequency", default: "MONTHLY", null: false
+    t.string "plan_id"
+    t.string "plan_name"
+    t.datetime "paid_at"
+    t.datetime "expires_at"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "status"], name: "index_pix_billings_on_account_id_and_status"
+    t.index ["account_id"], name: "index_pix_billings_on_account_id"
+    t.index ["billing_id"], name: "index_pix_billings_on_billing_id", unique: true
   end
 
   create_table "professional_commissions", force: :cascade do |t|
@@ -1219,6 +1302,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_08_120000) do
   add_foreign_key "active_storage_attachments", "accounts"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "anamnese_responses", "accounts"
+  add_foreign_key "anamnese_responses", "anamnese_templates"
+  add_foreign_key "anamnese_responses", "appointments"
+  add_foreign_key "anamnese_responses", "people", column: "contact_id"
+  add_foreign_key "anamnese_templates", "accounts"
   add_foreign_key "api_tokens", "accounts"
   add_foreign_key "api_tokens", "users"
   add_foreign_key "appointment_commissions", "account_users"
@@ -1230,6 +1318,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_08_120000) do
   add_foreign_key "appointment_notes", "appointments"
   add_foreign_key "appointments", "account_users"
   add_foreign_key "appointments", "accounts"
+  add_foreign_key "appointments", "anamnese_templates"
   add_foreign_key "appointments", "appointment_links", on_delete: :nullify
   add_foreign_key "appointments", "appointments", column: "parent_appointment_id", on_delete: :nullify
   add_foreign_key "appointments", "offers", column: "service_id"
@@ -1257,6 +1346,10 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_08_120000) do
   add_foreign_key "invoices", "people", column: "provider_id"
   add_foreign_key "invoices", "people", column: "recipient_id"
   add_foreign_key "offers", "accounts"
+  add_foreign_key "patient_documents", "accounts"
+  add_foreign_key "patient_documents", "people", column: "contact_id"
+  add_foreign_key "patient_goals", "accounts"
+  add_foreign_key "patient_goals", "people", column: "contact_id"
   add_foreign_key "payment_plans", "accounts"
   add_foreign_key "payouts", "account_users"
   add_foreign_key "payouts", "accounts"
@@ -1266,6 +1359,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_08_120000) do
   add_foreign_key "people", "users", column: "created_by_id"
   add_foreign_key "people", "users", column: "updated_by_id"
   add_foreign_key "pg_search_documents", "accounts"
+  add_foreign_key "pix_billings", "accounts"
   add_foreign_key "professional_commissions", "account_users"
   add_foreign_key "professional_commissions", "services"
   add_foreign_key "relationship_stores", "accounts"

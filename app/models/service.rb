@@ -66,7 +66,7 @@ class Service < Offer
   validates :cost_price_cents, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 999_999_999_999 }, allow_blank: true
   validates :selling_price_cents, numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 999_999_999_999 }, allow_blank: true
   validates :offer_type_cd, allow_blank: true, inclusion: { in: SERVICE_TYPES.values }
-  validates :modality, allow_blank: true, inclusion: { in: MODALITIES.values }
+  validates :modality, allow_blank: true, inclusion: { in: MODALITIES.keys }
 
   has_one :nfse_config, class_name: 'ServiceNfseConfig', dependent: :destroy, inverse_of: :service
   accepts_nested_attributes_for :nfse_config, allow_destroy: true

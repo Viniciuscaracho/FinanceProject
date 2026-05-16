@@ -71,6 +71,7 @@ import {
 } from '@/utils/appointmentUtils'
 import { formatCurrency } from '@/utils/format'
 import { ConsultationModal } from '@/components/appointments/ConsultationModal'
+import { T } from '@/lib/tokens'
 
 
 // Pure date helpers — defined outside component to avoid re-creation on each render
@@ -112,8 +113,6 @@ function AppointmentsPage() {
   } = useAppointmentsContext()
   
   // Estados para aba de Anotações
-  const [appointmentsWithNotes, setAppointmentsWithNotes] = useState([])
-  const [notesLoading, setNotesLoading] = useState(false)
   const [notesSearchTerm, setNotesSearchTerm] = useState('')
   const [notesStatusFilter, setNotesStatusFilter] = useState('all')
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false)
@@ -165,30 +164,13 @@ function AppointmentsPage() {
     setIsConsultationModalOpen(true)
   }
 
-  // Funções para aba de Anotações
-  const loadAppointmentsWithNotes = async () => {
-    try {
-      setNotesLoading(true)
-      const response = await apiService.getAppointments()
-      const appointmentsData = response.appointments || response || []
-      
-      // Filtrar apenas agendamentos que têm anotações (já vêm na resposta do backend)
-      const appointmentsWithNotesData = appointmentsData.filter(appointment => {
-        // A anotação já vem no appointment_note do backend
-        if (appointment.appointment_note) {
-          appointment.note = appointment.appointment_note
-          return true
-        }
-        return false
-      })
-      
-      setAppointmentsWithNotes(appointmentsWithNotesData)
-    } catch (err) {
-      toast.error('Erro ao carregar agendamentos com anotações')
-    } finally {
-      setNotesLoading(false)
-    }
-  }
+  // Aba de Anotações: deriva dos appointments já carregados pelo contexto (sem nova requisição)
+  const appointmentsWithNotes = useMemo(() =>
+    appointments
+      .filter(apt => apt.appointment_note)
+      .map(apt => ({ ...apt, note: apt.appointment_note })),
+    [appointments]
+  )
 
   const filteredAppointmentsWithNotes = useMemo(() => {
     let filtered = [...appointmentsWithNotes]
@@ -248,7 +230,7 @@ function AppointmentsPage() {
         await apiService.createAppointmentNote(selectedAppointment.id, { notes: noteText })
       }
       handleCloseNoteDialog()
-      loadAppointmentsWithNotes()
+      loadAppointments()
       toast.success('Anotação salva com sucesso!')
     } catch (err) {
       toast.error(err.message || 'Erro ao salvar anotação')
@@ -265,7 +247,7 @@ function AppointmentsPage() {
       await apiService.deleteAppointmentNote(selectedAppointment.id, currentNote.id)
       handleCloseNoteDialog()
       setIsNoteDeleteDialogOpen(false)
-      loadAppointmentsWithNotes()
+      loadAppointments()
       toast.success('Anotação excluída com sucesso!')
     } catch (err) {
       toast.error(err.message || 'Erro ao excluir anotação')
@@ -273,13 +255,6 @@ function AppointmentsPage() {
       setIsSubmitting(false)
     }
   }
-
-  // Carregar agendamentos com anotações quando a aba for ativada
-  useEffect(() => {
-    if (activeTab === 'notes') {
-      loadAppointmentsWithNotes()
-    }
-  }, [activeTab])
 
   // Handler para quando clicar em um slot/dia no calendário
   const handleSelectSlot = useCallback((slotInfo) => {
@@ -515,66 +490,56 @@ function AppointmentsPage() {
 
         {/* Anotações Tab */}
         <TabsContent value="notes" className="space-y-3 animate-in fade-in-50 duration-300">
-          <FluidSection
-            title="Anotações de Sessões"
-            subtitle="Agendamentos com anotações"
-            gradient="from-purple-500 to-pink-500"
-          >
             {/* Filtros */}
-            <Card className="mb-6">
-              <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-tertiary" />
-                      <Input
-                        placeholder="Buscar por cliente, serviço ou anotação..."
-                        value={notesSearchTerm}
-                        onChange={(e) => setNotesSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-                  <div className="w-full sm:w-48">
-                    <Select value={notesStatusFilter} onValueChange={setNotesStatusFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Filtrar por status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os status</SelectItem>
-                        <SelectItem value="completed">Concluídos</SelectItem>
-                        <SelectItem value="confirmed">Confirmados</SelectItem>
-                        <SelectItem value="pending">Pendentes</SelectItem>
-                        <SelectItem value="canceled">Cancelados</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={loadAppointmentsWithNotes}
-                    disabled={notesLoading}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${notesLoading ? 'animate-spin' : ''}`} />
-                    Atualizar
-                  </Button>
+            <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, padding: '14px 16px' }}>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: T.muted }} />
+                  <Input
+                    placeholder="Buscar por cliente, serviço ou anotação..."
+                    value={notesSearchTerm}
+                    onChange={(e) => setNotesSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
-              </CardContent>
-            </Card>
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { value: 'all', label: 'Todos' },
+                    { value: 'completed', label: 'Concluídos' },
+                    { value: 'confirmed', label: 'Confirmados' },
+                    { value: 'pending', label: 'Pendentes' },
+                    { value: 'canceled', label: 'Cancelados' },
+                  ].map(opt => (
+                    <button key={opt.value} type="button"
+                      onClick={() => setNotesStatusFilter(opt.value)}
+                      style={{
+                        padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                        cursor: 'pointer', border: '1px solid', fontFamily: 'inherit',
+                        borderColor: notesStatusFilter === opt.value ? T.brand : T.border,
+                        background: notesStatusFilter === opt.value ? T.chip : T.white,
+                        color: notesStatusFilter === opt.value ? T.brand : T.text,
+                        transition: 'all 150ms', whiteSpace: 'nowrap',
+                      }}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {/* Lista de Agendamentos com Anotações */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Agendamentos com Anotações ({filteredAppointmentsWithNotes.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {notesLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-accent" />
-                  </div>
-                ) : filteredAppointmentsWithNotes.length === 0 ? (
+            <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: `1px solid ${T.border}` }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <FileText className="h-4 w-4" style={{ color: T.brand }} />
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 600, color: T.text }}>Agendamentos com Anotações</span>
+                <span style={{ marginLeft: 4, fontSize: 12, color: T.muted, background: T.bg, border: `1px solid ${T.border}`, borderRadius: 20, padding: '2px 8px', fontWeight: 500 }}>
+                  {filteredAppointmentsWithNotes.length}
+                </span>
+              </div>
+              <div>
+                {filteredAppointmentsWithNotes.length === 0 ? (
                   <div className="text-center py-12">
                     <FileText className="h-12 w-12 mx-auto text-text-tertiary mb-4" />
                     <p className="text-text-secondary">
@@ -640,7 +605,7 @@ function AppointmentsPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleOpenConsultation(appointment)}
-                                title="Abrir sessão"
+                                title="Abrir atendimento"
                               >
                                 <FileText className="h-4 w-4" />
                               </Button>
@@ -675,34 +640,38 @@ function AppointmentsPage() {
                     </TableBody>
                   </Table>
                 )}
-              </CardContent>
-            </Card>
-          </FluidSection>
+              </div>
+            </div>
 
           {/* Dialog para criar/editar anotação */}
           <Dialog open={isNoteDialogOpen} onOpenChange={handleCloseNoteDialog}>
-            <DialogContent data-testid="note-dialog" className="sm:max-w-2xl">
+            <DialogContent data-testid="note-dialog" className="sm:max-w-2xl overflow-y-auto max-h-[90vh]">
               <DialogHeader>
-                <DialogTitle>
-                  {currentNote ? 'Editar Anotação' : 'Nova Anotação'}
-                </DialogTitle>
-                <DialogDescription>
-                  {currentNote ? 'Atualize o conteúdo desta anotação.' : 'Registre observações importantes sobre o atendimento.'}
-                </DialogDescription>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-10 h-10 rounded-[10px] bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center flex-shrink-0">
+                    <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <DialogTitle style={{ margin: 0 }}>
+                      {currentNote ? 'Editar Anotação' : 'Nova Anotação'}
+                    </DialogTitle>
+                    <DialogDescription style={{ margin: 0 }}>
+                      {currentNote ? 'Atualize o conteúdo desta anotação.' : 'Registre observações importantes sobre o atendimento.'}
+                    </DialogDescription>
+                  </div>
+                </div>
               </DialogHeader>
               {selectedAppointment && (
                 <div className="space-y-4">
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm font-medium mb-2">Agendamento:</p>
-                    <p className="text-sm text-text-secondary">
-                      <strong>Cliente:</strong> {selectedAppointment.contact?.name || selectedAppointment.whatsapp_number || '-'}
-                    </p>
-                    <p className="text-sm text-text-secondary">
-                      <strong>Serviço:</strong> {selectedAppointment.service?.name || '-'}
-                    </p>
-                    <p className="text-sm text-text-secondary">
-                      <strong>Data:</strong> {format(new Date(selectedAppointment.start_time), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </p>
+                  <div className="flex flex-wrap gap-3 p-3 rounded-lg bg-muted/50 border border-border/60 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5 flex-shrink-0" />
+                      {selectedAppointment.contact?.name || selectedAppointment.whatsapp_number || '-'}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <CalendarDays className="h-3.5 w-3.5 flex-shrink-0" />
+                      {format(new Date(selectedAppointment.start_time), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </span>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="notes">Anotação *</Label>

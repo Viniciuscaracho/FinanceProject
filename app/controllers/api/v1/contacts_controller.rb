@@ -3,7 +3,7 @@
 module Api
   module V1
     class ContactsController < ApplicationController
-      before_action :set_contact, only: [:show, :update, :destroy]
+      before_action :set_contact, only: [:show, :update, :destroy, :last_anamnese_response]
 
       def index
         @contacts = Current.account.contacts
@@ -46,6 +46,32 @@ module Api
       def destroy
         @contact.destroy
         render json: { message: 'Contato removido com sucesso' }
+      end
+
+      def last_anamnese_response
+        response = Current.account.anamnese_responses
+          .where(contact_id: @contact.id)
+          .includes(:anamnese_template)
+          .order(created_at: :desc)
+          .first
+
+        render json: { response: response&.as_json(include: :anamnese_template) }
+      end
+
+      def anamnese_history
+        responses = Current.account.anamnese_responses
+          .where(contact_id: @contact.id)
+          .includes(:anamnese_template, :appointment)
+          .order(created_at: :desc)
+          .limit(20)
+
+        render json: {
+          responses: responses.map do |r|
+            r.as_json(include: :anamnese_template).merge(
+              appointment_start_time: r.appointment&.start_time&.iso8601
+            )
+          end
+        }
       end
 
       private

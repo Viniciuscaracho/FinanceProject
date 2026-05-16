@@ -487,15 +487,7 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
 
   return (
     <div className="w-full space-y-6">
-      {/* Header da Página */}
-      <div className="space-y-1">
-        <h1 className="text-3xl font-semibold text-gray-900 dark:text-white">
-          Calendário de Agendamentos
-        </h1>
-        <p className="text-sm text-gray-700 dark:text-gray-300">
-          Veja e gerencie os agendamentos por dia e profissional
-        </p>
-      </div>
+
 
       {/* Filtros */}
       <div className="flex items-center justify-between gap-4">
@@ -813,7 +805,7 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
 
       {/* Modal Central - Agendamentos do Dia */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[520px] p-0 flex flex-col overflow-hidden [&>button]:top-6 [&>button]:right-6 [&>button]:z-10 rounded-[2rem] border-none shadow-2xl">
+        <DialogContent data-testid="day-sheet" className="sm:max-w-[520px] p-0 flex flex-col overflow-hidden [&>button]:top-6 [&>button]:right-6 [&>button]:z-10 rounded-[2rem] border-none shadow-2xl">
           {/* Header Fixo (estilo landing page) */}
           <DialogHeader className="px-8 pt-8 pb-6 border-b border-neutral-100 dark:border-gray-800 flex-shrink-0 bg-white dark:bg-[#1A1C1E] sticky top-0 z-10">
             <div className="flex items-center justify-between">
@@ -932,7 +924,7 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
                             }}
                             className="h-7 w-7 rounded-lg flex items-center justify-center transition-colors"
                             style={{ background: T.chip, color: T.brand }}
-                            title="Anotações da sessão"
+                            title="Anotações do atendimento"
                           >
                             <FileText className="size-3.5" />
                           </button>
@@ -1103,7 +1095,7 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
                     <div style={{ width: 40, height: 40, borderRadius: 10, background: T.brand + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <FileText size={20} style={{ color: T.brand }} />
                     </div>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: T.text }}>Anotações da sessão</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: T.text }}>Anotações do atendimento</span>
                   </button>
                 </div>
               </div>

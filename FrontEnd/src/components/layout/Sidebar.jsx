@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
 import {
   Home, CreditCard, Users, BarChart3, Upload, FileText,
   X, ChevronLeft, ChevronRight, ChevronDown,
-  Calendar, Scissors, Clock, Link2, Crown, Shield, Percent, FileEdit, Globe,
+  Calendar, Scissors, Clock, Link2, Crown, Shield, Percent, FileEdit, Globe, ClipboardList,
 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useAuth } from '../../contexts/AuthContext'
@@ -27,11 +27,12 @@ const NAV = [
     collapsible: true,
     storageKey: 'orbi_config_nav',
     items: [
-      { icon: Link2,    label: 'Links',          path: '/appointment-links' },
-      { icon: Users,    label: 'Profissionais',  path: '/professionals' },
-      { icon: Scissors, label: 'Serviços',       path: '/services' },
-      { icon: Clock,    label: 'Horários',       path: '/working-hours' },
-      { icon: FileEdit, label: 'Documentos',     path: '/document-templates' },
+      { icon: Link2,         label: 'Links',         path: '/appointment-links' },
+      { icon: Users,         label: 'Profissionais', path: '/professionals' },
+      { icon: Scissors,      label: 'Serviços',      path: '/services' },
+      { icon: Clock,         label: 'Horários',      path: '/working-hours' },
+      { icon: FileEdit,      label: 'Documentos',    path: '/document-templates' },
+      { icon: ClipboardList, label: 'Anamnese',      path: '/anamnese' },
     ],
   },
   {
@@ -107,8 +108,9 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen
     const Icon   = item.icon
     const active = isActive(item.path)
     return (
-      <div
-        onClick={() => handleNav(item.path)}
+      <Link
+        to={item.path}
+        onClick={() => { if (isMobile) setIsMobileOpen(false) }}
         title={collapsed ? item.label : undefined}
         style={{
           display: 'flex', alignItems: 'center',
@@ -120,6 +122,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen
           WebkitTapHighlightColor: 'transparent',
           touchAction: 'manipulation', userSelect: 'none',
           transition: 'background 120ms ease',
+          textDecoration: 'none',
         }}
         onMouseEnter={e => { if (!active) e.currentTarget.style.background = hoverBg }}
         onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
@@ -130,7 +133,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen
             {item.label}
           </span>
         )}
-      </div>
+      </Link>
     )
   }
 

@@ -433,7 +433,7 @@ export function Services() {
                         </TableCell>
                         <TableCell>
                           <span style={{ fontSize: 12, color: T.text }}>
-                            {formatCurrency(service.cost_price?.cents / 100 || 0)}
+                            {service.cost_price?.cents > 0 ? formatCurrency(service.cost_price.cents / 100) : <span style={{ color: T.muted }}>—</span>}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -469,6 +469,7 @@ export function Services() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              data-testid="delete-service-btn"
                               className="text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20"
                               disabled={deleteLoadingId === service.id}
                               onClick={() => handleRequestDelete(service)}
@@ -492,17 +493,22 @@ export function Services() {
 
       {/* Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent data-testid="service-dialog" className="sm:max-w-[600px]">
+        <DialogContent data-testid="service-dialog" className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>
-                {editingService ? 'Editar Serviço' : 'Novo Serviço'}
-              </DialogTitle>
-              <DialogDescription>
-                {editingService
-                  ? 'Atualize as informações do serviço'
-                  : 'Preencha os dados para cadastrar um novo serviço'}
-              </DialogDescription>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Scissors className="h-5 w-5" style={{ color: T.brand }} />
+                </div>
+                <div>
+                  <DialogTitle style={{ margin: 0 }}>
+                    {editingService ? 'Editar Serviço' : 'Novo Serviço'}
+                  </DialogTitle>
+                  <DialogDescription style={{ margin: 0 }}>
+                    {editingService ? 'Atualize as informações do serviço' : 'Preencha os dados do item oferecido'}
+                  </DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-1.5">
@@ -512,7 +518,7 @@ export function Services() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  placeholder="Ex: Corte de Cabelo"
+                  placeholder="Ex: Consulta Nutricional"
                 />
               </div>
               <div className="space-y-1.5">
@@ -529,27 +535,27 @@ export function Services() {
 
             <div className="space-y-4 pt-5 border-t border-gray-100 dark:border-gray-800">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Modalidade</p>
-              <div className="space-y-1.5">
-                <Label htmlFor="modality">Tipo de atendimento</Label>
-                <Select
-                  value={formData.modality}
-                  onValueChange={(val) => setFormData({ ...formData, modality: val, meeting_url: val === 'presencial' ? '' : formData.meeting_url })}
-                >
-                  <SelectTrigger id="modality">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="presencial">
-                      <span className="flex items-center gap-2"><MapPin className="w-4 h-4" /> Presencial</span>
-                    </SelectItem>
-                    <SelectItem value="online">
-                      <span className="flex items-center gap-2"><Video className="w-4 h-4" /> Online</span>
-                    </SelectItem>
-                    <SelectItem value="hybrid">
-                      <span className="flex items-center gap-2"><Layers className="w-4 h-4" /> Híbrido (presencial + online)</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {[
+                  { value: 'presencial', label: 'Presencial', Icon: MapPin },
+                  { value: 'online', label: 'Online', Icon: Video },
+                  { value: 'hybrid', label: 'Híbrido', Icon: Layers },
+                ].map(opt => (
+                  <button key={opt.value} type="button"
+                    onClick={() => setFormData({ ...formData, modality: opt.value, meeting_url: opt.value === 'presencial' ? '' : formData.meeting_url })}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500,
+                      cursor: 'pointer', border: '1px solid', fontFamily: 'inherit',
+                      borderColor: formData.modality === opt.value ? T.brand : T.border,
+                      background: formData.modality === opt.value ? T.chip : T.white,
+                      color: formData.modality === opt.value ? T.brand : T.text,
+                      transition: 'all 150ms',
+                    }}>
+                    <opt.Icon className="w-3.5 h-3.5" />
+                    {opt.label}
+                  </button>
+                ))}
               </div>
               {(formData.modality === 'online' || formData.modality === 'hybrid') && (
                 <div className="space-y-1.5">
@@ -603,7 +609,7 @@ export function Services() {
                   id="unit"
                   value={formData.unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                  placeholder="Ex: unidade, hora, sessão"
+                  placeholder="Ex: unidade, hora, consulta"
                 />
               </div>
             </div>

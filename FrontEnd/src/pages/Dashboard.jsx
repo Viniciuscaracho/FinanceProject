@@ -198,14 +198,14 @@ export function Dashboard() {
   const growthColor    = growthPositive ? T.green : T.red
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 360, ...DISPLAY }}>
+    <div data-testid="dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 360, ...DISPLAY }}>
       <Loader2 size={24} style={{ color: T.brand, animation: 'spin 1s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 
   if (error) return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 360, gap: 12, ...DISPLAY }}>
+    <div data-testid="dashboard" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 360, gap: 12, ...DISPLAY }}>
       <AlertCircle size={24} style={{ color: T.red }} />
       <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>Erro ao carregar dados</p>
       <button onClick={load} style={{ fontSize: 13, color: T.brand, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -219,11 +219,17 @@ export function Dashboard() {
 
       {/* ══ 1. HERO — compacto ════════════════════════ */}
       <div style={{
-        background: T.hero, borderRadius: 12,
-        padding: isNarrow ? '14px 16px' : '16px 22px',
+        background: 'linear-gradient(135deg, #1E2440 0%, #2C3560 60%, #1a2038 100%)',
+        borderRadius: 12,
+        padding: isNarrow ? '14px 16px' : '18px 24px',
         display: 'flex', flexWrap: 'wrap', alignItems: 'center',
         justifyContent: 'space-between', gap: 12,
+        boxShadow: '0 4px 20px rgba(30,36,64,0.18)',
+        position: 'relative', overflow: 'hidden',
       }}>
+        {/* subtle decorative ring */}
+        <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', right: -10, top: -10, width: 100, height: 100, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
           <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
             {greeting}, {firstName}.

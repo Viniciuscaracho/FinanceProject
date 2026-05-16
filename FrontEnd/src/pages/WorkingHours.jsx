@@ -1,66 +1,51 @@
 import { useState, useEffect, useCallback } from 'react'
-
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  Clock,
-  Loader2,
-  Save,
-  Calendar,
-  CheckCircle2,
-} from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Check, Clock, Loader2, Save, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiService } from '../lib/api'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { cn } from '@/lib/utils'
-import { FluidSection } from '@/components/design'
 import { T, DISPLAY } from '@/lib/tokens'
 
+function TimeInput({ value, onChange, disabled }) {
+  return (
+    <input
+      type="time"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      disabled={disabled}
+      style={{
+        width: 106, height: 34, padding: '0 10px',
+        border: `1px solid ${T.border}`, borderRadius: 8,
+        fontSize: 13, color: T.text, background: T.white,
+        fontFamily: 'inherit', outline: 'none', cursor: 'pointer',
+        opacity: disabled ? 0.5 : 1,
+      }}
+      onFocus={e => { e.target.style.borderColor = T.brand; e.target.style.boxShadow = `0 0 0 3px ${T.chip}` }}
+      onBlur={e => { e.target.style.borderColor = T.border; e.target.style.boxShadow = 'none' }}
+    />
+  )
+}
+
+/* ─── Data ─────────────────────────────────── */
 const DAYS_OF_WEEK = [
-  { value: 'monday',    label: 'Segunda-feira' },
-  { value: 'tuesday',   label: 'Terça-feira' },
-  { value: 'wednesday', label: 'Quarta-feira' },
-  { value: 'thursday',  label: 'Quinta-feira' },
-  { value: 'friday',    label: 'Sexta-feira' },
-  { value: 'saturday',  label: 'Sábado' },
-  { value: 'sunday',    label: 'Domingo' },
+  { value: 'monday',    label: 'Segunda-feira', short: 'Seg' },
+  { value: 'tuesday',   label: 'Terça-feira',   short: 'Ter' },
+  { value: 'wednesday', label: 'Quarta-feira',  short: 'Qua' },
+  { value: 'thursday',  label: 'Quinta-feira',  short: 'Qui' },
+  { value: 'friday',    label: 'Sexta-feira',   short: 'Sex' },
+  { value: 'saturday',  label: 'Sábado',        short: 'Sáb' },
+  { value: 'sunday',    label: 'Domingo',       short: 'Dom' },
 ]
 
 const DEFAULT_HOURS = () => {
   const h = {}
   DAYS_OF_WEEK.forEach(({ value }, i) => {
-    h[value] = {
-      enabled: i < 5,
-      start_time: '09:00',
-      end_time: '18:00',
-      has_break: i < 5,
-      break_start: '12:00',
-      break_end: '13:00',
-    }
+    h[value] = { enabled: i < 5, start_time: '09:00', end_time: '18:00', has_break: i < 5, break_start: '12:00', break_end: '13:00' }
   })
   return h
 }
 
-// Backend stores { start_hour: 9, end_hour: 18 } → frontend needs '09:00' / '18:00'
 const hourToTime = (h) => `${String(h ?? 9).padStart(2, '0')}:00`
 const timeToHour = (t) => parseInt((t || '09:00').split(':')[0], 10)
 
@@ -96,12 +81,13 @@ function frontendToBackend(hours) {
   return result
 }
 
+/* ─── Componente ────────────────────────────── */
 export function WorkingHours() {
   const isMobile = useIsMobile()
-  const [professionals, setProfessionals] = useState([])
+  const [professionals, setProfessionals]         = useState([])
   const [selectedProfessional, setSelectedProfessional] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [loading, setLoading]   = useState(true)
+  const [saving,  setSaving]    = useState(false)
   const [workingHours, setWorkingHours] = useState(DEFAULT_HOURS)
 
   const loadProfessionals = useCallback(async () => {
@@ -121,9 +107,7 @@ export function WorkingHours() {
   useEffect(() => { loadProfessionals() }, [loadProfessionals])
 
   useEffect(() => {
-    if (selectedProfessional) {
-      setWorkingHours(backendToFrontend(selectedProfessional.schedule))
-    }
+    if (selectedProfessional) setWorkingHours(backendToFrontend(selectedProfessional.schedule))
   }, [selectedProfessional])
 
   const handleDayChange = (day, field, value) => {
@@ -134,9 +118,7 @@ export function WorkingHours() {
     if (!selectedProfessional) return
     try {
       setSaving(true)
-      const payload = frontendToBackend(workingHours)
-      await apiService.updateProfessionalSchedule(selectedProfessional.id, payload)
-      // Refresh professional data so schedule is up-to-date
+      await apiService.updateProfessionalSchedule(selectedProfessional.id, frontendToBackend(workingHours))
       const updated = await apiService.getProfessionals()
       const list = Array.isArray(updated) ? updated : []
       setProfessionals(list)
@@ -150,281 +132,362 @@ export function WorkingHours() {
     }
   }
 
+  /* ── Loading ── */
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" style={{ color: T.brand }} />
-          <p style={{ color: T.muted }}>Carregando...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+        <div style={{ textAlign: 'center' }}>
+          <Loader2 style={{ width: 28, height: 28, color: T.brand, animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
+          <p style={{ color: T.muted, fontSize: 14, margin: 0 }}>Carregando...</p>
         </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     )
   }
 
-  return (
-    <div style={{ minHeight: '100vh', background: T.bg, ...DISPLAY }}>
-      <div className="relative z-10 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-0.5" style={{ color: T.text }}>
-              Horários de Trabalho
-            </h1>
-            <p style={{ fontSize: 14, color: T.muted }}>
-              Configure os horários de cada profissional
-            </p>
-          </div>
-          {selectedProfessional && (
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="hidden sm:flex"
-              style={{ background: T.brand, color: '#fff', border: 'none', borderRadius: 8 }}
-            >
-              {saving ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>
-              ) : (
-                <><Save className="w-4 h-4 mr-2" />Salvar Horários</>
-              )}
-            </Button>
-          )}
-        </div>
+  const usePills = professionals.length <= 6
+  const enabledCount = Object.values(workingHours).filter(d => d.enabled).length
 
-        {/* Professional Selector */}
-        <FluidSection
-          title="Selecione o Profissional"
-          subtitle="Escolha o profissional para configurar os horários"
-          gradient="from-blue-500 to-cyan-500"
-        >
-          <Select
-            value={selectedProfessional?.id?.toString() || ''}
-            onValueChange={(value) => {
-              const prof = professionals.find(p => p.id.toString() === value)
-              setSelectedProfessional(prof)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, ...DISPLAY }}>
+
+      {/* ── Cabeçalho ── */}
+      <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', gap: 10 }}>
+        <div>
+          <h1 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: T.text, margin: 0, letterSpacing: '-0.02em' }}>
+            Horários de Trabalho
+          </h1>
+          <p style={{ fontSize: 13, color: T.muted, margin: '3px 0 0' }}>
+            Configure os dias e horários de cada profissional
+          </p>
+        </div>
+        {selectedProfessional && !isMobile && (
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              padding: '9px 20px', background: T.brand, color: '#fff',
+              border: 'none', borderRadius: 9, fontSize: 13, fontWeight: 600,
+              cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+              opacity: saving ? 0.7 : 1, flexShrink: 0,
             }}
           >
-            <SelectTrigger className="backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-white/20">
-              <SelectValue placeholder="Selecione um profissional" />
-            </SelectTrigger>
-            <SelectContent>
-              {professionals.map((prof) => (
-                <SelectItem key={prof.id} value={prof.id.toString()}>
-                  {prof.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FluidSection>
-
-        {/* Working Hours */}
-        {selectedProfessional && (
-          <FluidSection
-            title={`Horários de ${selectedProfessional.name}`}
-            subtitle="Configure os horários para cada dia da semana"
-            gradient="from-[#5B7A9E] to-[#6B8FA3]"
-            icon={Clock}
-          >
-            <>
-              {/* Mobile Cards */}
-              <div className="block md:hidden space-y-2">
-                {DAYS_OF_WEEK.map((day) => {
-                  const d = workingHours[day.value]
-                  return (
-                    <Card
-                      key={day.value}
-                      style={{
-                        transition: 'all 200ms',
-                        borderColor: d.enabled ? T.green + '60' : T.border,
-                        opacity: d.enabled ? 1 : 0.65
-                      }}
-                    >
-                      <CardContent className="p-4">
-                        {/* Cabeçalho do dia */}
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                              <h3 style={{ fontWeight: 600, fontSize: 16, color: d.enabled ? T.text : T.muted }}>
-                                {day.label}
-                              </h3>
-                              <span style={{ borderRadius: 20, padding: '2px 7px', fontSize: 11, fontWeight: 600, background: d.enabled ? T.green + '18' : T.muted + '18', color: d.enabled ? T.green : T.muted }}>
-                                {d.enabled ? 'Aberto' : 'Fechado'}
-                              </span>
-                            </div>
-                            {d.enabled && (
-                              <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>
-                                {d.start_time} – {d.end_time}
-                                {d.has_break && ` · Intervalo ${d.break_start}–${d.break_end}`}
-                              </p>
-                            )}
-                          </div>
-                          <Switch
-                            checked={d.enabled}
-                            onCheckedChange={(checked) => handleDayChange(day.value, 'enabled', checked)}
-                          />
-                        </div>
-
-                        {d.enabled && (
-                          <div className="mt-4 space-y-3 pt-3" style={{ borderTop: `1px solid ${T.border}` }}>
-                            {/* Horários de trabalho */}
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <Label className="text-xs text-gray-500 mb-1 block">Entrada</Label>
-                                <Input
-                                  type="time"
-                                  value={d.start_time}
-                                  onChange={(e) => handleDayChange(day.value, 'start_time', e.target.value)}
-                                  className="h-10 text-sm"
-                                />
-                              </div>
-                              <div>
-                                <Label className="text-xs text-gray-500 mb-1 block">Saída</Label>
-                                <Input
-                                  type="time"
-                                  value={d.end_time}
-                                  onChange={(e) => handleDayChange(day.value, 'end_time', e.target.value)}
-                                  className="h-10 text-sm"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Toggle intervalo */}
-                            <div className="flex items-center justify-between py-1">
-                              <Label style={{ fontSize: 13, color: T.muted, cursor: 'pointer' }}>
-                                Intervalo / almoço
-                              </Label>
-                              <Switch
-                                checked={d.has_break}
-                                onCheckedChange={(checked) => handleDayChange(day.value, 'has_break', checked)}
-                              />
-                            </div>
-
-                            {d.has_break && (
-                              <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                  <Label className="text-xs text-gray-500 mb-1 block">Início pausa</Label>
-                                  <Input
-                                    type="time"
-                                    value={d.break_start}
-                                    onChange={(e) => handleDayChange(day.value, 'break_start', e.target.value)}
-                                    className="h-10 text-sm"
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-xs text-gray-500 mb-1 block">Fim pausa</Label>
-                                  <Input
-                                    type="time"
-                                    value={d.break_end}
-                                    onChange={(e) => handleDayChange(day.value, 'break_end', e.target.value)}
-                                    className="h-10 text-sm"
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
-
-              {/* Desktop Table */}
-              <div className="hidden md:block overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Dia da Semana</TableHead>
-                      <TableHead>Ativo</TableHead>
-                      <TableHead>Início</TableHead>
-                      <TableHead>Fim</TableHead>
-                      <TableHead>Intervalo</TableHead>
-                      <TableHead>Início Intervalo</TableHead>
-                      <TableHead>Fim Intervalo</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {DAYS_OF_WEEK.map((day) => {
-                      const d = workingHours[day.value]
-                      return (
-                        <TableRow key={day.value} style={{ transition: 'background 100ms' }}
-                          onMouseEnter={e => e.currentTarget.style.background = T.bg}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                        >
-                          <TableCell className="font-medium">{day.label}</TableCell>
-                          <TableCell>
-                            <input type="checkbox" checked={d.enabled}
-                              onChange={(e) => handleDayChange(day.value, 'enabled', e.target.checked)}
-                              className="w-4 h-4 text-green-600 rounded" />
-                          </TableCell>
-                          <TableCell>
-                            {d.enabled
-                              ? <Input type="time" value={d.start_time} className="w-32"
-                                  onChange={(e) => handleDayChange(day.value, 'start_time', e.target.value)} />
-                              : <span className="text-gray-400">-</span>}
-                          </TableCell>
-                          <TableCell>
-                            {d.enabled
-                              ? <Input type="time" value={d.end_time} className="w-32"
-                                  onChange={(e) => handleDayChange(day.value, 'end_time', e.target.value)} />
-                              : <span className="text-gray-400">-</span>}
-                          </TableCell>
-                          <TableCell>
-                            {d.enabled
-                              ? <input type="checkbox" checked={d.has_break}
-                                  onChange={(e) => handleDayChange(day.value, 'has_break', e.target.checked)}
-                                  className="w-4 h-4 text-green-600 rounded" />
-                              : <span className="text-gray-400">-</span>}
-                          </TableCell>
-                          <TableCell>
-                            {d.enabled && d.has_break
-                              ? <Input type="time" value={d.break_start} className="w-32"
-                                  onChange={(e) => handleDayChange(day.value, 'break_start', e.target.value)} />
-                              : <span className="text-gray-400">-</span>}
-                          </TableCell>
-                          <TableCell>
-                            {d.enabled && d.has_break
-                              ? <Input type="time" value={d.break_end} className="w-32"
-                                  onChange={(e) => handleDayChange(day.value, 'break_end', e.target.value)} />
-                              : <span className="text-gray-400">-</span>}
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </>
-          </FluidSection>
-        )}
-
-        {!selectedProfessional && professionals.length === 0 && (
-          <FluidSection
-            title="Nenhum profissional cadastrado"
-            subtitle="Cadastre profissionais primeiro para configurar horários"
-            gradient="from-gray-400 to-gray-500"
-          >
-            <div className="text-center py-8">
-              <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            </div>
-          </FluidSection>
+            {saving
+              ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+              : <Save size={14} />}
+            Salvar Horários
+          </button>
         )}
       </div>
 
-      {/* Botão salvar sticky — apenas mobile */}
-      {selectedProfessional && (
-        <div className="block sm:hidden mobile-sticky-footer">
-          <Button
+      {/* ── Seletor de profissional ── */}
+      <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ width: 36, height: 36, borderRadius: 9, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Users className="h-4 w-4" style={{ color: T.brand }} />
+          </div>
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0 }}>Profissional</p>
+            <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>Selecione para configurar os horários</p>
+          </div>
+        </div>
+
+        <div style={{ padding: '14px 20px' }}>
+          {professionals.length === 0 ? (
+            <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>Nenhum profissional cadastrado.</p>
+          ) : usePills ? (
+            /* Pills para até 6 profissionais */
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {professionals.map(prof => {
+                const active = selectedProfessional?.id === prof.id
+                return (
+                  <button
+                    key={prof.id}
+                    onClick={() => setSelectedProfessional(prof)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '7px 14px', borderRadius: 20, border: '1px solid',
+                      borderColor: active ? T.brand : T.border,
+                      background: active ? T.chip : T.white,
+                      cursor: 'pointer', fontFamily: 'inherit',
+                      transition: 'all 150ms',
+                    }}
+                  >
+                    <div style={{
+                      width: 24, height: 24, borderRadius: 6,
+                      background: active ? T.brand : T.border,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 11, fontWeight: 700,
+                      color: active ? '#fff' : T.muted,
+                      flexShrink: 0,
+                    }}>
+                      {(prof.name?.[0] || '?').toUpperCase()}
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? T.brand : T.text }}>
+                      {prof.name}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            /* Select para muitos profissionais */
+            <Select
+              value={selectedProfessional?.id?.toString() || ''}
+              onValueChange={value => setSelectedProfessional(professionals.find(p => p.id.toString() === value))}
+            >
+              <SelectTrigger style={{ height: 36, fontSize: 13, border: `1px solid ${T.border}`, borderRadius: 8 }}>
+                <SelectValue placeholder="Selecione um profissional" />
+              </SelectTrigger>
+              <SelectContent>
+                {professionals.map(prof => (
+                  <SelectItem key={prof.id} value={prof.id.toString()}>{prof.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      </div>
+
+      {/* ── Horários ── */}
+      {selectedProfessional ? (
+        <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+
+          {/* Header do painel */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', borderBottom: `1px solid ${T.border}` }}>
+            <div style={{ width: 36, height: 36, borderRadius: 9, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Clock className="h-4 w-4" style={{ color: T.brand }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0 }}>
+                Horários de {selectedProfessional.name}
+              </p>
+              <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>
+                {enabledCount} {enabledCount === 1 ? 'dia ativo' : 'dias ativos'} nesta semana
+              </p>
+            </div>
+          </div>
+
+          {/* ── Mobile: cartões por dia ── */}
+          {isMobile ? (
+            <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {DAYS_OF_WEEK.map((day, idx) => {
+                const d = workingHours[day.value]
+                return (
+                  <div
+                    key={day.value}
+                    style={{
+                      border: `1px solid ${d.enabled ? T.brand + '40' : T.border}`,
+                      borderRadius: 10, overflow: 'hidden',
+                      opacity: d.enabled ? 1 : 0.6,
+                      transition: 'opacity 150ms',
+                    }}
+                  >
+                    {/* Linha do título */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: d.enabled ? T.chip : T.bg }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: d.enabled ? T.text : T.muted }}>
+                          {day.label}
+                        </span>
+                        <span style={{
+                          borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 600,
+                          background: d.enabled ? T.green + '18' : T.border,
+                          color: d.enabled ? T.green : T.muted,
+                        }}>
+                          {d.enabled ? (d.start_time + ' – ' + d.end_time) : 'Fechado'}
+                        </span>
+                      </div>
+                      <Switch
+                        checked={d.enabled}
+                        onCheckedChange={v => handleDayChange(day.value, 'enabled', v)}
+                      />
+                    </div>
+
+                    {/* Controles quando ativo */}
+                    {d.enabled && (
+                      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                          <div>
+                            <p style={{ fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 5px' }}>Entrada</p>
+                            <input
+                              type="time"
+                              value={d.start_time}
+                              onChange={e => handleDayChange(day.value, 'start_time', e.target.value)}
+                              style={{ width: '100%', border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 10px', fontSize: 13, color: T.text, fontFamily: 'inherit', outline: 'none' }}
+                            />
+                          </div>
+                          <div>
+                            <p style={{ fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 5px' }}>Saída</p>
+                            <input
+                              type="time"
+                              value={d.end_time}
+                              onChange={e => handleDayChange(day.value, 'end_time', e.target.value)}
+                              style={{ width: '100%', border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 10px', fontSize: 13, color: T.text, fontFamily: 'inherit', outline: 'none' }}
+                            />
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 13, color: T.muted }}>Intervalo / almoço</span>
+                          <Switch
+                            checked={d.has_break}
+                            onCheckedChange={v => handleDayChange(day.value, 'has_break', v)}
+                          />
+                        </div>
+
+                        {d.has_break && (
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                            <div>
+                              <p style={{ fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 5px' }}>Início pausa</p>
+                              <input
+                                type="time"
+                                value={d.break_start}
+                                onChange={e => handleDayChange(day.value, 'break_start', e.target.value)}
+                                style={{ width: '100%', border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 10px', fontSize: 13, color: T.text, fontFamily: 'inherit', outline: 'none' }}
+                              />
+                            </div>
+                            <div>
+                              <p style={{ fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 5px' }}>Fim pausa</p>
+                              <input
+                                type="time"
+                                value={d.break_end}
+                                onChange={e => handleDayChange(day.value, 'break_end', e.target.value)}
+                                style={{ width: '100%', border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 10px', fontSize: 13, color: T.text, fontFamily: 'inherit', outline: 'none' }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            /* ── Desktop: lista de dias ── */
+            <div>
+              {/* Cabeçalho da lista */}
+              <div style={{ display: 'grid', gridTemplateColumns: '200px 260px 1fr', gap: 0, padding: '8px 20px', background: T.bg, borderBottom: `1px solid ${T.border}` }}>
+                {['Dia', 'Horário de trabalho', 'Intervalo'].map((h, i) => (
+                  <p key={i} style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>{h}</p>
+                ))}
+              </div>
+
+              {DAYS_OF_WEEK.map((day, idx) => {
+                const d = workingHours[day.value]
+                const isLast = idx === DAYS_OF_WEEK.length - 1
+                return (
+                  <div
+                    key={day.value}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '200px 260px 1fr',
+                      gap: 0,
+                      alignItems: 'center',
+                      padding: '13px 20px',
+                      borderBottom: isLast ? 'none' : `1px solid ${T.border}`,
+                      background: 'transparent',
+                      transition: 'background 100ms',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    {/* Dia + checkbox */}
+                    <button
+                      onClick={() => handleDayChange(day.value, 'enabled', !d.enabled)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: 0, background: 'none', border: 'none',
+                        cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                      }}
+                    >
+                      <div style={{
+                        width: 18, height: 18, borderRadius: 5, flexShrink: 0,
+                        border: `2px solid ${d.enabled ? T.brand : T.border}`,
+                        background: d.enabled ? T.brand : 'transparent',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 150ms',
+                      }}>
+                        {d.enabled && <Check size={11} color="#fff" strokeWidth={3} />}
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: d.enabled ? 600 : 400, color: d.enabled ? T.text : T.muted, transition: 'color 150ms' }}>
+                        {day.label}
+                      </span>
+                    </button>
+
+                    {/* Horário */}
+                    <div>
+                      {d.enabled ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <TimeInput value={d.start_time} onChange={v => handleDayChange(day.value, 'start_time', v)} />
+                          <span style={{ fontSize: 12, color: T.muted }}>até</span>
+                          <TimeInput value={d.end_time} onChange={v => handleDayChange(day.value, 'end_time', v)} />
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 13, color: T.muted }}>Fechado</span>
+                      )}
+                    </div>
+
+                    {/* Intervalo */}
+                    <div>
+                      {d.enabled ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <Switch
+                            checked={d.has_break}
+                            onCheckedChange={v => handleDayChange(day.value, 'has_break', v)}
+                          />
+                          {d.has_break && (
+                            <>
+                              <TimeInput value={d.break_start} onChange={v => handleDayChange(day.value, 'break_start', v)} />
+                              <span style={{ fontSize: 12, color: T.muted }}>→</span>
+                              <TimeInput value={d.break_end} onChange={v => handleDayChange(day.value, 'break_end', v)} />
+                            </>
+                          )}
+                          {!d.has_break && (
+                            <span style={{ fontSize: 12, color: T.muted }}>Sem intervalo</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 13, color: T.muted }}>—</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      ) : professionals.length === 0 ? (
+        /* Estado vazio */
+        <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, padding: '48px 24px', textAlign: 'center' }}>
+          <Clock style={{ width: 36, height: 36, margin: '0 auto 12px', color: T.border }} />
+          <p style={{ fontSize: 14, fontWeight: 600, color: T.text, margin: '0 0 4px' }}>Nenhum profissional cadastrado</p>
+          <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>Cadastre profissionais primeiro para configurar horários</p>
+        </div>
+      ) : null}
+
+      {/* Botão salvar — sticky mobile */}
+      {selectedProfessional && isMobile && (
+        <div className="mobile-sticky-footer">
+          <button
             onClick={handleSave}
             disabled={saving}
-            style={{ background: T.brand, color: '#fff', border: 'none', borderRadius: 8, width: '100%', height: 48, fontSize: 16, fontWeight: 600 }}
+            style={{
+              width: '100%', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              background: T.brand, color: '#fff', border: 'none', borderRadius: 9,
+              fontSize: 15, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit', opacity: saving ? 0.7 : 1,
+            }}
           >
-            {saving ? (
-              <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Salvando...</>
-            ) : (
-              <><Save className="w-5 h-5 mr-2" />Salvar Horários</>
-            )}
-          </Button>
+            {saving
+              ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />Salvando...</>
+              : <><Save size={16} />Salvar Horários</>}
+          </button>
         </div>
       )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }

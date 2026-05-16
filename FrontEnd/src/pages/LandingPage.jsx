@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import {
   Accordion,
   AccordionContent,
@@ -132,9 +132,9 @@ function BookingUI() {
       <div style={{ padding: 24 }}>
         <p style={{ fontSize: 11, fontWeight: 600, color: T.muted, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Escolha o serviço</p>
         {[
-          { name: 'Corte + Barba', price: 'R$ 55', min: '60min', active: true },
-          { name: 'Corte Simples',  price: 'R$ 35', min: '30min' },
-          { name: 'Barba',          price: 'R$ 25', min: '20min' },
+          { name: 'Consulta Inicial',     price: 'R$ 180', min: '60min', active: true },
+          { name: 'Retorno',             price: 'R$ 120', min: '45min' },
+          { name: 'Avaliação Corporal',  price: 'R$  90', min: '30min' },
         ].map(s => (
           <div key={s.name} style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -217,16 +217,13 @@ function WeekUI() {
 /* ─── AnimatedSection ────────────────────────────────────── */
 
 function AnimatedSection({ children, className, delay = 0, style }) {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: '-60px 0px' })
-
   return (
     <motion.div
-      ref={ref}
       className={className}
       style={style}
       initial={{ opacity: 0, y: 32 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px 0px' }}
       transition={{ duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
@@ -285,7 +282,7 @@ export function LandingPage() {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
               <p style={{ fontSize: 12, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1.25rem' }}>
-                Para psicólogos e profissionais de saúde
+                Para nutricionistas e profissionais de saúde
               </p>
 
               <h1 style={{
@@ -344,7 +341,7 @@ export function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
             {[
               { n: '3h',        label: 'por semana economizadas',      sub: 'em gestão administrativa' },
-              { n: '0 faltas',  label: 'com lembretes automáticos',    sub: 'via WhatsApp antes da sessão' },
+              { n: '0 faltas',  label: 'com lembretes automáticos',    sub: 'via WhatsApp antes da consulta' },
               { n: '14 dias',   label: 'de teste sem compromisso',     sub: 'sem cartão de crédito' },
             ].map((item, i) => (
               <AnimatedSection key={i} delay={i * 0.08}>
@@ -377,13 +374,13 @@ export function LandingPage() {
                   Um link.<br />O cliente agenda<br />sozinho.
                 </h2>
                 <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, marginBottom: '1.5rem', maxWidth: '40ch' }}>
-                  Compartilhe no Instagram, WhatsApp ou site. O paciente escolhe sessão e horário disponível — e recebe confirmação automática sem você precisar responder nada.
+                  Compartilhe no Instagram, WhatsApp ou site. O cliente escolhe o tipo de consulta e o horário disponível — e recebe confirmação automática sem você precisar responder nada.
                 </p>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {[
                     'Disponível 24h por dia, 7 dias por semana',
                     'Lembrete por WhatsApp antes da consulta',
-                    'Paciente cancela ou reagenda pelo próprio link',
+                    'Cliente cancela ou reagenda pelo próprio link',
                   ].map(item => (
                     <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#444', lineHeight: 1.5 }}>
                       <Check size={14} color="#16a34a" style={{ flexShrink: 0, marginTop: 3 }} />
@@ -414,7 +411,7 @@ export function LandingPage() {
                   {[
                     'Vista diária, semanal e mensal',
                     'Google Meet gerado automaticamente',
-                    'Notas de atendimento por sessão',
+                    'Anotações clínicas por atendimento',
                   ].map(item => (
                     <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#777', lineHeight: 1.5 }}>
                       <Check size={14} color={T.brand} style={{ flexShrink: 0, marginTop: 3 }} />
@@ -439,7 +436,7 @@ export function LandingPage() {
               </div>
               <div style={{ paddingTop: '0.25rem' }}>
                 <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, maxWidth: '48ch' }}>
-                  Cada sessão vira automaticamente uma entrada financeira. Honorários, pagamentos recebidos e inadimplências organizados em tempo real —
+                  Cada consulta vira automaticamente uma entrada financeira. Honorários, pagamentos recebidos e inadimplências organizados em tempo real —
                   o fechamento do mês leva menos de dois minutos.
                 </p>
               </div>
@@ -569,7 +566,7 @@ export function LandingPage() {
           <Accordion type="single" collapsible>
             {[
               { q: 'Preciso de cartão de crédito para testar?', a: 'Não. Você usa tudo por 14 dias sem precisar cadastrar nenhum cartão. Só pedimos dados de pagamento se quiser continuar depois.' },
-              { q: 'Funciona para qualquer profissional de saúde?', a: 'Sim. Psicólogos, psiquiatras, fisioterapeutas, nutricionistas, fonoaudiólogos, médicos — qualquer profissional que atende por hora marcada.' },
+              { q: 'Funciona para qualquer profissional de saúde?', a: 'Sim. Nutricionistas, fisioterapeutas, psicólogos, fonoaudiólogos, médicos — qualquer profissional que atende por hora marcada.' },
               { q: 'Posso ter mais de um profissional na mesma conta?', a: 'Sim. Cadastre sua equipe, configure comissões individualmente e acompanhe a agenda e financeiro de cada um separadamente.' },
               { q: 'O sistema funciona no celular?', a: 'Sim, é totalmente responsivo. Funciona em smartphones, tablets e computadores sem instalar nada.' },
               { q: 'Posso cancelar quando quiser?', a: 'Sim. Sem multa e sem fidelidade. Cancele pela própria plataforma a qualquer momento.' },

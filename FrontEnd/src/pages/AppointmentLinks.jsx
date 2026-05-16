@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react'
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { FluidSection } from '@/components/design'
-import { useIsMobile } from '@/hooks/use-mobile'
+import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,
@@ -15,14 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   Dialog,
   DialogContent,
@@ -44,6 +32,13 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
   Link2,
   Plus,
   Edit,
@@ -53,17 +48,62 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
-  Clock,
-  Calendar,
-  User,
-  Scissors,
   QrCode,
+  ChevronDown,
+  MoreHorizontal,
+  Code2,
+  Clock,
+  Scissors,
+  User,
+  CalendarDays,
+  ClipboardList,
 } from 'lucide-react'
 import { apiService } from '../lib/api'
 import { T, DISPLAY } from '@/lib/tokens'
 import { toast } from 'sonner'
 
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const LINK_COLORS = [
+  '#0069FF', '#00A2AD', '#8247F5', '#F08C00',
+  '#C2255C', '#00A87E', '#E03131', '#1971C2',
+]
+
+const HOUR_OPTIONS = Array.from({ length: 17 }, (_, i) => i + 6) // 6h–22h
+
+const DURATION_OPTIONS = [
+  { value: 15,  label: '15 minutos' },
+  { value: 30,  label: '30 minutos' },
+  { value: 45,  label: '45 minutos' },
+  { value: 60,  label: '1 hora' },
+  { value: 90,  label: '1h 30min' },
+  { value: 120, label: '2 horas' },
+]
+
+const INTERVAL_OPTIONS = [
+  { value: 15, label: '15 min' },
+  { value: 30, label: '30 min' },
+  { value: 45, label: '45 min' },
+  { value: 60, label: '60 min' },
+]
+
+const DAYS_OPTIONS = [
+  { value: 7,  label: '7 dias' },
+  { value: 14, label: '14 dias' },
+  { value: 21, label: '21 dias' },
+  { value: 30, label: '30 dias' },
+  { value: 45, label: '45 dias' },
+  { value: 60, label: '60 dias' },
+  { value: 90, label: '90 dias' },
+]
+
 const AUTOMATION_OPTIONS = [
+  {
+    key: 'reminder_24h',
+    label: 'Lembrete 24 horas antes',
+    description: '"Seu agendamento é amanhã." + link para gerenciar',
+    icon: '📅',
+  },
   {
     key: 'reminder_1h',
     label: 'Lembrete 1 hora antes',
@@ -97,78 +137,494 @@ const AUTOMATION_OPTIONS = [
   },
 ]
 
-function AutomacoesPanel({ formData, setAutomation, setFormData }) {
-  const automations = formData.settings?.automations || {}
-  const anyEnabled = AUTOMATION_OPTIONS.some(o => automations[o.key])
-  const needsPix = AUTOMATION_OPTIONS.some(o => o.requiresPix && automations[o.key])
+// ─── IntakeFormPanel ──────────────────────────────────────────────────────────
+
+function IntakeFormPanel({ formData, setFormData }) {
+  const intakeForm = formData.settings?.intake_form || []
+  const [open, setOpen] = useState(intakeForm.length > 0)
+
+  const setIntakeForm = (updater) =>
+    setFormData(prev => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        intake_form: typeof updater === 'function' ? updater(prev.settings?.intake_form || []) : updater,
+      },
+    }))
+
+  const addQuestion = () =>
+    setIntakeForm(prev => [...prev, { id: Date.now().toString(), question: '', type: 'text', required: false, options: [] }])
+
+  const updateQuestion = (id, updates) =>
+    setIntakeForm(prev => prev.map(q => q.id === id ? { ...q, ...updates } : q))
+
+  const removeQuestion = (id) =>
+    setIntakeForm(prev => prev.filter(q => q.id !== id))
 
   return (
     <div style={{ border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: T.chip }}>
-        <span className="text-base">🤖</span>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: T.chip, cursor: 'pointer', border: 'none', fontFamily: 'inherit', textAlign: 'left' }}
+      >
+        <span>📋</span>
         <div className="flex-1">
-          <p style={{ fontWeight: 600, fontSize: 14, color: T.brand }}>Automações WhatsApp</p>
-          <p style={{ fontSize: 12, color: T.muted }}>
-            Mensagens enviadas automaticamente para o cliente via WhatsApp
-          </p>
+          <p style={{ fontWeight: 600, fontSize: 14, color: T.brand, margin: 0 }}>Perguntas pré-agendamento</p>
+          <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>Colete informações do cliente antes de confirmar</p>
         </div>
-        {anyEnabled && (
-          <span style={{ fontSize: 11, fontWeight: 600, background: T.brand, color: '#fff', padding: '3px 8px', borderRadius: 20 }}>
-            {AUTOMATION_OPTIONS.filter(o => automations[o.key]).length} ativa{AUTOMATION_OPTIONS.filter(o => automations[o.key]).length !== 1 ? 's' : ''}
+        {intakeForm.length > 0 && (
+          <span style={{ fontSize: 11, fontWeight: 600, background: T.brand, color: '#fff', padding: '3px 8px', borderRadius: 20, flexShrink: 0 }}>
+            {intakeForm.length} pergunta{intakeForm.length !== 1 ? 's' : ''}
           </span>
         )}
-      </div>
+        <ChevronDown size={16} style={{ color: T.muted, flexShrink: 0, transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms' }} />
+      </button>
 
-      <div style={{ background: T.white }}>
-        {AUTOMATION_OPTIONS.map(option => (
-          <label
-            key={option.key}
-            style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px', cursor: 'pointer', borderBottom: `1px solid ${T.border}`, transition: 'background 100ms' }}
-            onMouseEnter={e => e.currentTarget.style.background = T.bg}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          >
-            <input
-              type="checkbox"
-              checked={automations[option.key] === true}
-              onChange={e => setAutomation(option.key, e.target.checked)}
-              style={{ marginTop: 2, accentColor: T.brand, flexShrink: 0 }}
-            />
-            <div className="flex-1 min-w-0">
-              <p style={{ fontSize: 14, fontWeight: 500, color: T.text }}>
-                {option.icon} {option.label}
-              </p>
-              <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>{option.description}</p>
-            </div>
-          </label>
-        ))}
-
-        {(automations.pix_reminder || automations.billing_notification || automations.overdue) && (
-          <div style={{ padding: '12px 16px', background: '#FFFBEB' }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#92400E', marginBottom: 6 }}>
-              🔑 Chave PIX
-            </label>
-            <input
-              type="text"
-              placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
-              value={automations.pix_key || ''}
-              onChange={e => setAutomation('pix_key', e.target.value)}
-              className="w-full rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
-            <p style={{ fontSize: 12, color: '#B45309', marginTop: 4 }}>
-              Incluída nas mensagens de cobrança pendente, lembrete PIX e atraso
-            </p>
+      {open && (
+        <div style={{ background: T.white, padding: 16 }}>
+          <div className="space-y-3">
+            {intakeForm.map((q, idx) => (
+              <div key={q.id} style={{ border: `1px solid ${T.border}`, borderRadius: 8, padding: 12, background: T.bg }}>
+                <div className="flex items-start gap-2">
+                  <span style={{ fontSize: 12, color: T.muted, fontWeight: 600, minWidth: 20, paddingTop: 8 }}>{idx + 1}.</span>
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      placeholder="Texto da pergunta"
+                      value={q.question}
+                      onChange={e => updateQuestion(q.id, { question: e.target.value })}
+                    />
+                    <div className="flex gap-2 flex-wrap">
+                      <Select
+                        value={q.type}
+                        onValueChange={type => updateQuestion(q.id, { type, options: type === 'select' ? (q.options?.length ? q.options : ['']) : [] })}
+                      >
+                        <SelectTrigger style={{ height: 32, fontSize: 12, width: 150 }}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Texto livre</SelectItem>
+                          <SelectItem value="yes_no">Sim / Não</SelectItem>
+                          <SelectItem value="select">Múltipla escolha</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, cursor: 'pointer', color: T.muted }}>
+                        <input
+                          type="checkbox"
+                          checked={q.required}
+                          onChange={e => updateQuestion(q.id, { required: e.target.checked })}
+                          style={{ accentColor: T.brand }}
+                        />
+                        Obrigatório
+                      </label>
+                    </div>
+                    {q.type === 'select' && (
+                      <div className="space-y-1.5">
+                        {(q.options || []).map((opt, optIdx) => (
+                          <div key={optIdx} className="flex gap-2">
+                            <Input
+                              value={opt}
+                              onChange={e => {
+                                const newOptions = [...q.options]
+                                newOptions[optIdx] = e.target.value
+                                updateQuestion(q.id, { options: newOptions })
+                              }}
+                              placeholder={`Opção ${optIdx + 1}`}
+                              style={{ height: 30, fontSize: 12 }}
+                            />
+                            {q.options.length > 1 && (
+                              <button type="button" onClick={() => updateQuestion(q.id, { options: q.options.filter((_, i) => i !== optIdx) })} style={{ color: T.muted, background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', fontSize: 16 }}>×</button>
+                            )}
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => updateQuestion(q.id, { options: [...q.options, ''] })} style={{ fontSize: 12, color: T.brand, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0' }}>+ Adicionar opção</button>
+                      </div>
+                    )}
+                  </div>
+                  <button type="button" onClick={() => removeQuestion(q.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
+          <button
+            type="button"
+            onClick={addQuestion}
+            style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: T.brand, background: 'none', border: `1px dashed ${T.brand}55`, borderRadius: 8, padding: '8px 14px', cursor: 'pointer', width: '100%', justifyContent: 'center' }}
+          >
+            <Plus size={14} /> Adicionar pergunta
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── AutomacoesPanel ──────────────────────────────────────────────────────────
+
+function AutomacoesPanel({ formData, setAutomation, setFormData }) {
+  const automations = formData.settings?.automations || {}
+  const anyEnabled = AUTOMATION_OPTIONS.some(o => automations[o.key])
+  const [open, setOpen] = useState(anyEnabled)
+  const activeCount = AUTOMATION_OPTIONS.filter(o => automations[o.key]).length
+
+  return (
+    <div style={{ border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: T.chip, cursor: 'pointer', border: 'none', fontFamily: 'inherit', textAlign: 'left' }}
+      >
+        <span>🤖</span>
+        <div className="flex-1">
+          <p style={{ fontWeight: 600, fontSize: 14, color: T.brand, margin: 0 }}>Automações WhatsApp</p>
+          <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>Mensagens automáticas para o cliente via WhatsApp</p>
+        </div>
+        {activeCount > 0 && (
+          <span style={{ fontSize: 11, fontWeight: 600, background: T.brand, color: '#fff', padding: '3px 8px', borderRadius: 20, flexShrink: 0 }}>
+            {activeCount} ativa{activeCount !== 1 ? 's' : ''}
+          </span>
         )}
+        <ChevronDown size={16} style={{ color: T.muted, flexShrink: 0, transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms' }} />
+      </button>
+
+      {open && (
+        <div style={{ background: T.white }}>
+          {AUTOMATION_OPTIONS.map(option => (
+            <label
+              key={option.key}
+              style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px', cursor: 'pointer', borderBottom: `1px solid ${T.border}`, transition: 'background 100ms' }}
+              onMouseEnter={e => e.currentTarget.style.background = T.bg}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <input
+                type="checkbox"
+                checked={automations[option.key] === true}
+                onChange={e => setAutomation(option.key, e.target.checked)}
+                style={{ marginTop: 2, accentColor: T.brand, flexShrink: 0 }}
+              />
+              <div className="flex-1 min-w-0">
+                <p style={{ fontSize: 14, fontWeight: 500, color: T.text }}>{option.icon} {option.label}</p>
+                <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>{option.description}</p>
+              </div>
+            </label>
+          ))}
+
+          {(automations.pix_reminder || automations.billing_notification || automations.overdue) && (
+            <div style={{ padding: '12px 16px', background: '#FFFBEB' }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#92400E', marginBottom: 6 }}>🔑 Chave PIX</label>
+              <input
+                type="text"
+                placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+                value={automations.pix_key || ''}
+                onChange={e => setAutomation('pix_key', e.target.value)}
+                className="w-full rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+              <p style={{ fontSize: 12, color: '#B45309', marginTop: 4 }}>Incluída nas mensagens de cobrança, lembrete PIX e atraso</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── AnamnesePanel ────────────────────────────────────────────────────────────
+
+function AnamnesePanel({ formData, setFormData, anamneseTemplates }) {
+  const selectedId = formData.settings?.anamnese_template_id ?? null
+  const hasTemplate = selectedId !== null
+  const [open, setOpen] = useState(hasTemplate)
+
+  const setTemplateId = (id) =>
+    setFormData(prev => ({
+      ...prev,
+      settings: { ...prev.settings, anamnese_template_id: id },
+    }))
+
+  const selectedTemplate = anamneseTemplates.find(t => t.id === selectedId)
+
+  return (
+    <div style={{ border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: T.chip, cursor: 'pointer', border: 'none', fontFamily: 'inherit', textAlign: 'left' }}
+      >
+        <ClipboardList size={16} style={{ color: T.brand, flexShrink: 0 }} />
+        <div className="flex-1">
+          <p style={{ fontWeight: 600, fontSize: 14, color: T.brand, margin: 0 }}>Anamnese</p>
+          <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>Formulário enviado ao paciente após o agendamento</p>
+        </div>
+        {hasTemplate && (
+          <span style={{ fontSize: 11, fontWeight: 600, background: T.brand, color: '#fff', padding: '3px 8px', borderRadius: 20, flexShrink: 0, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {selectedTemplate?.name ?? `Template #${selectedId}`}
+          </span>
+        )}
+        <ChevronDown size={16} style={{ color: T.muted, flexShrink: 0, transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms' }} />
+      </button>
+
+      {open && (
+        <div style={{ background: T.white, padding: 16 }}>
+          {anamneseTemplates.length === 0 ? (
+            <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '8px 0' }}>
+              Nenhum template de anamnese cadastrado.{' '}
+              <a href="/anamnese" style={{ color: T.brand, textDecoration: 'underline' }}>Criar agora →</a>
+            </p>
+          ) : (
+            <>
+              <Label style={{ fontSize: 13, marginBottom: 6, display: 'block' }}>Template de anamnese</Label>
+              <Select
+                value={selectedId !== null ? String(selectedId) : '__none__'}
+                onValueChange={v => setTemplateId(v === '__none__' ? null : parseInt(v))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Nenhum (não solicitar anamnese)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Nenhum (não solicitar anamnese)</SelectItem>
+                  {anamneseTemplates.map(t => (
+                    <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {hasTemplate && (
+                <p style={{ fontSize: 12, color: T.muted, marginTop: 8 }}>
+                  O link para preencher a anamnese será enviado junto com a confirmação do agendamento.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── LinkForm (shared between Create and Edit dialogs) ────────────────────────
+
+function LinkForm({ formData, setFormData, services, professionals, setAutomation, anamneseTemplates }) {
+  const s = formData.settings
+
+  const setSetting = (key, value) =>
+    setFormData(prev => ({ ...prev, settings: { ...prev.settings, [key]: value } }))
+
+  return (
+    <div className="space-y-5">
+      {/* Evento */}
+      <section>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Evento</h3>
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="lf-name">Nome do Link *</Label>
+            <Input
+              id="lf-name"
+              value={formData.name}
+              onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Ex: Consulta Inicial, Retorno, Avaliação Nutricional..."
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="lf-desc">Descrição <span style={{ fontWeight: 400, color: T.muted }}>(opcional)</span></Label>
+            <Textarea
+              id="lf-desc"
+              value={formData.description}
+              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Descrição interna para identificar este link"
+              rows={2}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label>Duração padrão</Label>
+            <Select
+              value={s.default_duration_minutes?.toString() || '60'}
+              onValueChange={v => setSetting('default_duration_minutes', parseInt(v))}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DURATION_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value.toString()}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </section>
+
+      {/* Filtros */}
+      <section style={{ borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Quem pode agendar</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Serviço</Label>
+            <Select
+              value={formData.service_id?.toString() || '__none__'}
+              onValueChange={v => setFormData(prev => ({ ...prev, service_id: v === '__none__' ? null : parseInt(v) }))}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[220px]">
+                <SelectItem value="__none__">Todos os serviços</SelectItem>
+                {services.map(s => (
+                  <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Profissional</Label>
+            <Select
+              value={formData.account_user_id?.toString() || '__none__'}
+              onValueChange={v => setFormData(prev => ({ ...prev, account_user_id: v === '__none__' ? null : parseInt(v) }))}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Todos os profissionais</SelectItem>
+                {professionals.map(p => (
+                  <SelectItem key={p.id} value={p.id.toString()}>
+                    {p.name || `${p.first_name || ''} ${p.last_name || ''}`.trim() || `Profissional ${p.id}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </section>
+
+      {/* Disponibilidade */}
+      <section style={{ borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Disponibilidade</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Início do atendimento</Label>
+            <Select
+              value={s.start_hour?.toString() || '9'}
+              onValueChange={v => setSetting('start_hour', parseInt(v))}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {HOUR_OPTIONS.map(h => (
+                  <SelectItem key={h} value={h.toString()}>{String(h).padStart(2,'0')}:00</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Fim do atendimento</Label>
+            <Select
+              value={s.end_hour?.toString() || '18'}
+              onValueChange={v => setSetting('end_hour', parseInt(v))}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {HOUR_OPTIONS.map(h => (
+                  <SelectItem key={h} value={h.toString()}>{String(h).padStart(2,'0')}:00</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Intervalo entre horários</Label>
+            <Select
+              value={s.slot_interval_minutes?.toString() || '30'}
+              onValueChange={v => setSetting('slot_interval_minutes', parseInt(v))}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {INTERVAL_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value.toString()}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Dias disponíveis no calendário</Label>
+            <Select
+              value={s.days_ahead?.toString() || '15'}
+              onValueChange={v => setSetting('days_ahead', parseInt(v))}
+            >
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DAYS_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value.toString()}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </section>
+
+      {/* Cancelamento */}
+      <section style={{ borderTop: `1px solid ${T.border}`, paddingTop: 16 }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Política de cancelamento</h3>
+        <div className="flex items-end gap-3">
+          <div className="flex-1">
+            <Label>Prazo mínimo para cancelar / reagendar</Label>
+            <p style={{ fontSize: 11, color: T.muted, marginBottom: 6, marginTop: 2 }}>O cliente não poderá cancelar após esse prazo</p>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min="1"
+                max="720"
+                value={s.cancel_reschedule_hours ?? 24}
+                onChange={e => setSetting('cancel_reschedule_hours', parseInt(e.target.value) || 24)}
+                style={{ maxWidth: 100 }}
+              />
+              <span style={{ fontSize: 14, color: T.muted }}>horas antes</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Perguntas pré-agendamento */}
+      <IntakeFormPanel formData={formData} setFormData={setFormData} />
+
+      {/* Anamnese */}
+      <AnamnesePanel formData={formData} setFormData={setFormData} anamneseTemplates={anamneseTemplates} />
+
+      {/* Automações */}
+      <AutomacoesPanel formData={formData} setAutomation={setAutomation} setFormData={setFormData} />
+
+      {/* Status */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: T.chip, borderRadius: 10 }}>
+        <Switch
+          checked={formData.active}
+          onCheckedChange={v => setFormData(prev => ({ ...prev, active: v }))}
+        />
+        <div>
+          <p style={{ fontSize: 14, fontWeight: 600, color: T.text, margin: 0 }}>Link {formData.active ? 'ativo' : 'inativo'}</p>
+          <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>
+            {formData.active ? 'Clientes podem agendar usando este link' : 'Link desativado, nenhum novo agendamento'}
+          </p>
+        </div>
       </div>
     </div>
   )
 }
 
+// ─── AppointmentLinks ─────────────────────────────────────────────────────────
+
 export function AppointmentLinks() {
-  const isMobile = useIsMobile()
   const [links, setLinks] = useState([])
   const [services, setServices] = useState([])
   const [professionals, setProfessionals] = useState([])
+  const [anamneseTemplates, setAnamneseTemplates] = useState([])
   const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isNewLinkOpen, setIsNewLinkOpen] = useState(false)
@@ -176,17 +632,20 @@ export function AppointmentLinks() {
   const [editingLink, setEditingLink] = useState(null)
   const [copiedLink, setCopiedLink] = useState(null)
   const [qrCodeLink, setQrCodeLink] = useState(null)
-  
+  const [embedLink, setEmbedLink] = useState(null)
+  const [embedCopied, setEmbedCopied] = useState(false)
+
   const DEFAULT_AUTOMATIONS = {
+    reminder_24h: false,
     reminder_1h: false,
     billing_notification: false,
     pix_reminder: false,
     overdue: false,
     payment_confirmation: false,
-    pix_key: ''
+    pix_key: '',
   }
 
-  const [formData, setFormData] = useState({
+  const blankForm = () => ({
     name: '',
     description: '',
     active: true,
@@ -199,1193 +658,480 @@ export function AppointmentLinks() {
       slot_interval_minutes: 30,
       default_duration_minutes: 60,
       days_ahead: 15,
-      automations: { ...DEFAULT_AUTOMATIONS }
-    }
+      cancel_reschedule_hours: 24,
+      intake_form: [],
+      automations: { ...DEFAULT_AUTOMATIONS },
+      anamnese_template_id: null,
+    },
   })
+
+  const [formData, setFormData] = useState(blankForm())
 
   const setAutomation = (key, value) =>
     setFormData(prev => ({
       ...prev,
       settings: {
         ...prev.settings,
-        automations: { ...(prev.settings.automations || DEFAULT_AUTOMATIONS), [key]: value }
-      }
+        automations: { ...(prev.settings.automations || DEFAULT_AUTOMATIONS), [key]: value },
+      },
     }))
-  
-  useEffect(() => {
-    loadData()
-  }, [])
-  
+
+  useEffect(() => { loadData() }, [])
+
   const loadData = async () => {
     try {
       setLoading(true)
-      
-      const [linksData, servicesData, professionalsData] = await Promise.all([
+      const [linksData, servicesData, professionalsData, templatesData] = await Promise.all([
         apiService.getAppointmentLinks(),
         apiService.getAppointmentServices(),
-        apiService.getProfessionals()
+        apiService.getProfessionals(),
+        apiService.getAnamneseTemplates().catch(() => []),
       ])
-      
-      // Garantir que os dados sejam arrays
-      const linksArray = Array.isArray(linksData) ? linksData : (linksData?.links || linksData?.data || [])
-      const servicesArray = Array.isArray(servicesData) 
-        ? servicesData 
-        : (servicesData?.services || servicesData?.data || [])
-      const professionalsArray = Array.isArray(professionalsData) 
-        ? professionalsData 
-        : (professionalsData?.professionals || professionalsData?.data || [])
-      
-      setLinks(linksArray)
-      setServices(servicesArray)
-      setProfessionals(professionalsArray)
+      setLinks(Array.isArray(linksData) ? linksData : (linksData?.links || linksData?.data || []))
+      setServices(Array.isArray(servicesData) ? servicesData : (servicesData?.services || servicesData?.data || []))
+      setProfessionals(Array.isArray(professionalsData) ? professionalsData : (professionalsData?.professionals || professionalsData?.data || []))
+      const rawTemplates = Array.isArray(templatesData) ? templatesData : (templatesData?.templates || templatesData?.anamnese_templates || templatesData?.data || [])
+      setAnamneseTemplates(rawTemplates.filter(t => t.active !== false))
     } catch (err) {
       toast.error(err.message || 'Erro ao carregar dados')
     } finally {
       setLoading(false)
     }
   }
-  
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      active: true,
-      service_id: null,
-      account_user_id: null,
-      link_type: 'normal',
-      settings: {
-        start_hour: 9,
-        end_hour: 18,
-        slot_interval_minutes: 30,
-        default_duration_minutes: 60,
-        days_ahead: 15,
-        automations: { ...DEFAULT_AUTOMATIONS }
-      }
-    })
-    setEditingLink(null)
-  }
-  
-  const handleCreate = async () => {
-    if (!formData.name || !formData.name.trim()) {
-      toast.error('Nome é obrigatório')
-      return
-    }
 
+  const resetForm = () => { setFormData(blankForm()); setEditingLink(null) }
+
+  const handleCreate = async () => {
+    if (!formData.name?.trim()) { toast.error('Nome é obrigatório'); return }
     try {
       setIsSubmitting(true)
-      const linkData = {
+      await apiService.createAppointmentLink({
         name: formData.name.trim(),
         description: formData.description?.trim() || '',
         active: formData.active !== false,
         service_id: formData.service_id || null,
         account_user_id: formData.account_user_id || null,
         link_type: formData.link_type || 'normal',
-        settings: {
-          ...(formData.settings || {
-            start_hour: 9,
-            end_hour: 18,
-            slot_interval_minutes: 30,
-            default_duration_minutes: 60
-          }),
-          days_ahead: formData.settings?.days_ahead || (formData.link_type === 'premium' ? 30 : 15)
-        }
-      }
-      await apiService.createAppointmentLink(linkData)
+        settings: formData.settings,
+      })
       await loadData()
       toast.success('Link criado com sucesso!')
       setIsNewLinkOpen(false)
       resetForm()
     } catch (err) {
-      const errorMessage = err.message || err.response?.data?.error || err.response?.data?.errors?.join(', ') || 'Erro ao criar link'
-      toast.error(errorMessage)
+      toast.error(err.message || 'Erro ao criar link')
     } finally {
       setIsSubmitting(false)
     }
   }
-  
+
   const handleEdit = (link) => {
     setEditingLink(link)
     const settings = link.settings || {}
-    const linkType = link.link_type || (settings.days_ahead >= 30 ? 'premium' : 'normal')
-    
     setFormData({
       name: link.name || '',
       description: link.description || '',
       active: link.active !== false,
       service_id: link.service?.id || link.service_id || null,
       account_user_id: link.professional?.id || link.account_user_id || null,
-      link_type: linkType,
+      link_type: link.link_type || 'normal',
       settings: {
         start_hour: settings.start_hour || 9,
         end_hour: settings.end_hour || 18,
         slot_interval_minutes: settings.slot_interval_minutes || 30,
         default_duration_minutes: settings.default_duration_minutes || 60,
-        days_ahead: settings.days_ahead || (linkType === 'premium' ? 30 : 15),
+        days_ahead: settings.days_ahead || 15,
         cancel_reschedule_hours: settings.cancel_reschedule_hours || 24,
-        automations: { ...DEFAULT_AUTOMATIONS, ...(settings.automations || {}) }
-      }
+        intake_form: settings.intake_form || [],
+        automations: { ...DEFAULT_AUTOMATIONS, ...(settings.automations || {}) },
+        anamnese_template_id: settings.anamnese_template_id ?? null,
+      },
     })
     setIsEditLinkOpen(true)
   }
-  
+
   const handleUpdate = async () => {
-    if (!formData.name || !formData.name.trim()) {
-      toast.error('Nome é obrigatório')
-      return
-    }
-
-    if (!editingLink) {
-      toast.error('Link não encontrado para edição')
-      return
-    }
-
+    if (!formData.name?.trim()) { toast.error('Nome é obrigatório'); return }
+    if (!editingLink) { toast.error('Link não encontrado para edição'); return }
     try {
       setIsSubmitting(true)
-      const linkData = {
+      await apiService.updateAppointmentLink(editingLink.id, {
         name: formData.name.trim(),
         description: formData.description?.trim() || '',
         active: formData.active !== false,
         service_id: formData.service_id || null,
         account_user_id: formData.account_user_id || null,
         link_type: formData.link_type || 'normal',
-        settings: {
-          ...(formData.settings || {}),
-          days_ahead: formData.settings?.days_ahead || (formData.link_type === 'premium' ? 30 : 15)
-        }
-      }
-      await apiService.updateAppointmentLink(editingLink.id, linkData)
+        settings: formData.settings,
+      })
       await loadData()
       toast.success('Link atualizado com sucesso!')
       setIsEditLinkOpen(false)
       resetForm()
     } catch (err) {
-      const errorMessage = err.message || err.response?.data?.error || err.response?.data?.errors?.join(', ') || 'Erro ao atualizar link'
-      toast.error(errorMessage)
+      toast.error(err.message || 'Erro ao atualizar link')
     } finally {
       setIsSubmitting(false)
     }
   }
-  
+
   const handleDelete = async (id) => {
     try {
       await apiService.deleteAppointmentLink(id)
       await loadData()
       toast.success('Link excluído')
     } catch (err) {
-      const errorMessage = err.message || err.response?.data?.error || err.response?.data?.errors?.join(', ') || 'Erro ao excluir link'
-      toast.error(errorMessage)
+      toast.error(err.message || 'Erro ao excluir link')
     }
   }
-  
+
   const handleCopyLink = async (url) => {
     try {
       await navigator.clipboard.writeText(url)
       setCopiedLink(url)
       setTimeout(() => setCopiedLink(null), 2000)
-    } catch (err) {
-    }
+    } catch {}
   }
-  
-  const handleOpenLink = (url) => {
-    window.open(url, '_blank')
-  }
-  
+
+  // ─── Loading skeleton ───────────────────────────────────────────────────────
+
   if (loading && links.length === 0) {
     return (
-      <div className="space-y-3">
-        <div className="h-8 w-48 bg-gray-100 dark:bg-gray-800 rounded-full animate-pulse" />
-        {[1,2,3].map(i => (
-          <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
-        ))}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="h-7 w-52 bg-gray-100 dark:bg-gray-800 rounded-full animate-pulse" />
+          <div className="h-9 w-28 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse h-48" />
+          ))}
+        </div>
       </div>
     )
   }
-  
+
+  // ─── Dialogs (shared) ───────────────────────────────────────────────────────
+
+  const dialogScrollClass = "max-h-[85vh] overflow-y-auto"
+
+  const createDialog = (
+    <Dialog open={isNewLinkOpen} onOpenChange={open => { setIsNewLinkOpen(open); if (!open) resetForm() }}>
+      <DialogTrigger asChild>
+        <Button
+          data-testid="new-link-btn"
+          onClick={() => { resetForm(); setIsNewLinkOpen(true) }}
+          style={{ background: T.brand, color: '#fff', border: 'none', borderRadius: 8 }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Link
+        </Button>
+      </DialogTrigger>
+      <DialogContent data-testid="appointment-link-dialog" className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Criar Novo Link de Agendamento</DialogTitle>
+          <DialogDescription>Configure como os clientes vão agendar com você.</DialogDescription>
+        </DialogHeader>
+        <div className={dialogScrollClass}>
+          <LinkForm formData={formData} setFormData={setFormData} services={services} professionals={professionals} setAutomation={setAutomation} anamneseTemplates={anamneseTemplates} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => { setIsNewLinkOpen(false); resetForm() }}>Cancelar</Button>
+          <Button onClick={handleCreate} disabled={isSubmitting} style={{ background: T.brand, color: '#fff' }}>
+            {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Criando...</> : 'Criar Link'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+
+  const editDialog = (
+    <Dialog open={isEditLinkOpen} onOpenChange={open => { setIsEditLinkOpen(open); if (!open) resetForm() }}>
+      <DialogContent data-testid="edit-link-dialog" className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Editar link</DialogTitle>
+          <DialogDescription>As alterações entram em vigor imediatamente.</DialogDescription>
+        </DialogHeader>
+        <div className={dialogScrollClass}>
+          <LinkForm formData={formData} setFormData={setFormData} services={services} professionals={professionals} setAutomation={setAutomation} anamneseTemplates={anamneseTemplates} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => { setIsEditLinkOpen(false); resetForm() }}>Cancelar</Button>
+          <Button onClick={handleUpdate} disabled={isSubmitting} style={{ background: T.brand, color: '#fff' }}>
+            {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Salvando...</> : 'Salvar'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
+
   return (
     <div data-testid="appointment-links-page" style={{ minHeight: '100vh', background: T.bg, ...DISPLAY }}>
-      <div className="relative z-10 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <div className="relative z-10 space-y-6">
+
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1" style={{ color: T.text }}>
-              Links de Agendamento
-            </h1>
-            <p style={{ fontSize: 14, color: T.muted }}>
-              Crie e gerencie links públicos para agendamento online
+            <h1 className="text-2xl font-bold" style={{ color: T.text }}>Links de Agendamento</h1>
+            <p style={{ fontSize: 14, color: T.muted, marginTop: 2 }}>
+              Links únicos que os clientes usam para agendar com você
             </p>
           </div>
-        <Dialog open={isNewLinkOpen} onOpenChange={(open) => {
-          setIsNewLinkOpen(open)
-          if (!open) resetForm()
-        }}>
-          <DialogTrigger asChild>
-            <Button
-              data-testid="new-link-btn"
-              onClick={() => {
-                resetForm()
-                setIsNewLinkOpen(true)
-              }}
-              style={{ background: T.brand, color: '#fff', border: 'none', borderRadius: 8 }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Link
-            </Button>
-          </DialogTrigger>
-          <DialogContent data-testid="appointment-link-dialog" className="sm:max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Criar Novo Link de Agendamento</DialogTitle>
-              <DialogDescription>
-                Crie um link personalizado (como Calendly) que você pode enviar para seus clientes. 
-                Eles acessarão uma página onde poderão escolher serviço, profissional, data e horário.
-              </DialogDescription>
-            </DialogHeader>
-            
-              <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Nome do Link *</Label>
-                <p className="text-sm text-gray-500 mb-2">
-                  Um nome para identificar este link (apenas para você, não aparece para o cliente)
-                </p>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Ex: Link para Corte de Cabelo"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Descrição (Opcional)</Label>
-                <p className="text-sm text-gray-500 mb-2">
-                  Descrição interna para você lembrar o propósito deste link
-                </p>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Ex: Link para enviar no Instagram"
-                  rows={2}
-                />
-              </div>
-              
-              <div style={{ background: T.chip, border: `1px solid ${T.brand}22`, borderRadius: 8, padding: 16 }}>
-                <h4 style={{ fontWeight: 600, color: T.brand, marginBottom: 8 }}>O que o cliente verá?</h4>
-                <p style={{ fontSize: 14, color: T.text }}>
-                  Quando o cliente acessar o link, ele verá uma página onde pode:
-                </p>
-                <ul style={{ fontSize: 14, color: T.text, marginTop: 8 }} className="list-disc list-inside space-y-1">
-                  <li>Escolher um serviço (se você não limitar abaixo)</li>
-                  <li>Escolher um profissional (se você não limitar abaixo)</li>
-                  <li>Selecionar data e horário disponível</li>
-                  <li>Preencher seus dados (nome, WhatsApp, email)</li>
-                </ul>
-              </div>
-              
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-3">Filtros (Opcional)</h4>
-                <p className="text-sm text-gray-600 mb-4">
-                  Limite quais serviços e profissionais aparecerão para o cliente. 
-                  Se deixar "Todos", o cliente poderá escolher qualquer opção.
-                </p>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="service">Limitar a um serviço específico?</Label>
-                    <Select
-                      value={formData.service_id?.toString() || '__none__'}
-                      onValueChange={(value) => setFormData({ ...formData, service_id: value === '__none__' ? null : parseInt(value) })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos os serviços" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
-                        <SelectItem value="__none__">Todos os serviços (cliente escolhe)</SelectItem>
-                        {services && services.length > 0 ? (
-                          services.map((service) => (
-                            <SelectItem key={service.id} value={service.id.toString()}>
-                              {service.name || `Serviço ${service.id}`}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="px-2 py-1.5 text-sm text-gray-500">Nenhum serviço disponível</div>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="professional">Limitar a um profissional específico?</Label>
-                    <Select
-                      value={formData.account_user_id?.toString() || '__none__'}
-                      onValueChange={(value) => setFormData({ ...formData, account_user_id: value === '__none__' ? null : parseInt(value) })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos os profissionais" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">Todos os profissionais (cliente escolhe)</SelectItem>
-                        {professionals && professionals.length > 0 ? (
-                          professionals.map((prof) => (
-                            <SelectItem key={prof.id} value={prof.id.toString()}>
-                              {prof.name || `${prof.first_name || ''} ${prof.last_name || ''}`.trim() || `Profissional ${prof.id}`}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <div className="px-2 py-1.5 text-sm text-gray-500">Nenhum profissional disponível</div>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-2">Horários Disponíveis</h4>
-                <p className="text-sm text-gray-600 mb-4">
-                  Configure quais horários aparecerão para o cliente escolher. 
-                  Estes são os horários padrão - horários já ocupados não aparecerão automaticamente.
-                </p>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="start_hour">Horário de início do atendimento</Label>
-                    <p className="text-xs text-gray-500 mb-1">Ex: 9 = 09:00</p>
-                    <Input
-                      id="start_hour"
-                      type="number"
-                      min="0"
-                      max="23"
-                      value={formData.settings.start_hour}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        settings: { ...formData.settings, start_hour: parseInt(e.target.value) || 9 }
-                      })}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="end_hour">Horário de término do atendimento</Label>
-                    <p className="text-xs text-gray-500 mb-1">Ex: 18 = 18:00</p>
-                    <Input
-                      id="end_hour"
-                      type="number"
-                      min="0"
-                      max="23"
-                      value={formData.settings.end_hour}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        settings: { ...formData.settings, end_hour: parseInt(e.target.value) || 18 }
-                      })}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="interval">Intervalo entre horários</Label>
-                    <p className="text-xs text-gray-500 mb-1">De quanto em quanto tempo aparecerão opções (15, 30, 45 ou 60 min)</p>
-                    <Input
-                      id="interval"
-                      type="number"
-                      min="15"
-                      max="60"
-                      step="15"
-                      value={formData.settings.slot_interval_minutes}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        settings: { ...formData.settings, slot_interval_minutes: parseInt(e.target.value) || 30 }
-                      })}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="duration">Duração padrão do agendamento</Label>
-                    <p className="text-xs text-gray-500 mb-1">Quanto tempo dura cada agendamento (em minutos)</p>
-                    <Input
-                      id="duration"
-                      type="number"
-                      min="15"
-                      max="240"
-                      step="15"
-                      value={formData.settings.default_duration_minutes}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        settings: { ...formData.settings, default_duration_minutes: parseInt(e.target.value) || 60 }
-                      })}
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-2">Configuração de Calendário</h4>
-                <p className="text-sm text-gray-600 mb-4">
-                  Configure quantos dias à frente os clientes poderão agendar. Links Premium permitem mais dias.
-                </p>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="link_type">Tipo de Link</Label>
-                    <p className="text-xs text-gray-500 mb-1">Normal: até 15 dias | Premium: até 30 dias (configurável)</p>
-                    <Select
-                      value={formData.link_type || 'normal'}
-                      onValueChange={(value) => {
-                        const defaultDays = value === 'premium' ? 30 : 15
-                        setFormData({
-                          ...formData,
-                          link_type: value,
-                          settings: {
-                            ...formData.settings,
-                            days_ahead: formData.settings?.days_ahead || defaultDays
-                          }
-                        })
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="normal">Normal (15 dias)</SelectItem>
-                        <SelectItem value="premium">Premium (30 dias configurável)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="days_ahead">Dias à frente para agendamento</Label>
-                    <p className="text-xs text-gray-500 mb-1">
-                      Quantos dias no futuro o calendário mostrará (máx: {formData.link_type === 'premium' ? '90' : '15'})
-                    </p>
-                    <Input
-                      id="days_ahead"
-                      type="number"
-                      min="1"
-                      max={formData.link_type === 'premium' ? 90 : 15}
-                      value={formData.settings?.days_ahead || (formData.link_type === 'premium' ? 30 : 15)}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value) || (formData.link_type === 'premium' ? 30 : 15)
-                        const maxDays = formData.link_type === 'premium' ? 90 : 15
-                        const daysAhead = Math.min(Math.max(1, value), maxDays)
-                        setFormData({
-                          ...formData,
-                          settings: {
-                            ...formData.settings,
-                            days_ahead: daysAhead
-                          }
-                        })
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-2">Cancelamento e Reagendamento</h4>
-                <p className="text-sm text-gray-600 mb-4">
-                  Defina até quantas horas antes do agendamento o cliente pode cancelar ou reagendar pelo link de gerenciamento enviado por WhatsApp e e-mail.
-                </p>
-                <div>
-                  <Label htmlFor="cancel_reschedule_hours">Prazo para cancelar/reagendar (horas antes)</Label>
-                  <p className="text-xs text-gray-500 mb-1">Ex: 24 = o cliente pode cancelar até 24h antes do horário</p>
-                  <Input
-                    id="cancel_reschedule_hours"
-                    type="number"
-                    min="1"
-                    max="720"
-                    value={formData.settings?.cancel_reschedule_hours ?? 24}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      settings: { ...formData.settings, cancel_reschedule_hours: parseInt(e.target.value) || 24 }
-                    })}
-                    className="max-w-[160px]"
-                  />
-                </div>
-              </div>
+          {createDialog}
+        </div>
 
-              <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <input
-                  type="checkbox"
-                  id="active"
-                  checked={formData.active}
-                  onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                  className="rounded border-gray-300"
-                />
-                <Label htmlFor="active" className="cursor-pointer">
-                  <span className="font-medium">Link ativo</span>
-                  <span className="text-sm text-gray-600 ml-2">
-                    (Se desativado, o link não funcionará para novos agendamentos)
-                  </span>
-                </Label>
-              </div>
+        {/* Empty state */}
+        {links.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '64px 24px' }}>
+            <div style={{ width: 64, height: 64, borderRadius: 16, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <Link2 size={28} style={{ color: T.brand }} />
             </div>
-
-            {/* Automações */}
-            <AutomacoesPanel formData={formData} setAutomation={setAutomation} setFormData={setFormData} />
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => {
-                setIsNewLinkOpen(false)
-                resetForm()
-              }}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreate} disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Criando...
-                  </>
-                ) : (
-                  'Criar Link'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      {links.length === 0 ? (
-        <FluidSection
-          title="Nenhum link criado ainda"
-          subtitle="Crie seu primeiro link de agendamento para começar a receber agendamentos online"
-          gradient="from-gray-400 to-gray-500"
-        >
-          <div className="text-center py-8">
-            <Link2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <Button 
-              onClick={() => setIsNewLinkOpen(true)}
-              style={{ background: T.brand, color: '#fff', border: 'none', borderRadius: 8 }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Criar Primeiro Link
-            </Button>
+            <p style={{ fontSize: 17, fontWeight: 700, color: T.text, marginBottom: 8 }}>Nenhum link criado ainda</p>
+            <p style={{ fontSize: 14, color: T.muted, marginBottom: 24, maxWidth: 340, margin: '0 auto 24px' }}>
+              Crie seu primeiro link e comece a receber agendamentos online — como o Calendly, mas integrado ao seu negócio.
+            </p>
+            <Dialog open={isNewLinkOpen} onOpenChange={open => { setIsNewLinkOpen(open); if (!open) resetForm() }}>
+              <DialogTrigger asChild>
+                <Button onClick={() => { resetForm(); setIsNewLinkOpen(true) }} style={{ background: T.brand, color: '#fff', border: 'none' }}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar primeiro link
+                </Button>
+              </DialogTrigger>
+            </Dialog>
           </div>
-        </FluidSection>
-      ) : (
-        <FluidSection
-          title={`Links de Agendamento (${links.length})`}
-          subtitle="Gerencie seus links públicos de agendamento"
-          gradient="from-blue-500 to-indigo-500"
-        >
-          <>
-            {/* Mobile: Cards Layout */}
-            <div className="block md:hidden space-y-3">
-              {links.map((link) => (
+        ) : (
+          /* Cards grid */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {links.map((link, idx) => {
+              const color = LINK_COLORS[idx % LINK_COLORS.length]
+              const duration = link.settings?.default_duration_minutes
+              const durationLabel = DURATION_OPTIONS.find(o => o.value === duration)?.label || (duration ? `${duration} min` : null)
+
+              return (
                 <div
                   key={link.id}
-                  style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, transition: 'background 100ms' }}
-                  onMouseEnter={e => e.currentTarget.style.background = T.bg}
-                  onMouseLeave={e => e.currentTarget.style.background = T.white}
+                  style={{ borderRadius: 14, border: `1px solid ${T.border}`, background: T.white, overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'box-shadow 150ms' }}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,.08)'}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
                 >
-                  <div>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 style={{ fontSize: 14, fontWeight: 600, color: T.text, marginBottom: 6 }}>
-                          {link.name}
-                        </h3>
-                        {link.description && (
-                          <p style={{ fontSize: 12, color: T.muted, marginBottom: 8 }}>
-                            {link.description}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap gap-2">
-                          <span style={{ borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, background: link.active ? T.green + '18' : T.muted + '18', color: link.active ? T.green : T.muted, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            {link.active ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
-                            {link.active ? 'Ativo' : 'Inativo'}
-                          </span>
-                          {link.service && (
-                            <span style={{ borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, background: T.chip, color: T.brand, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                              <Scissors size={10} />
-                              {link.service.name}
-                            </span>
-                          )}
-                          {link.professional && (
-                            <span style={{ borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, background: T.light, color: T.muted, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                              <User size={10} />
-                              {link.professional.name}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {link.public_url && (
-                      <div className="flex items-center gap-2 pt-3 border-t">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopyLink(link.public_url)}
-                          className="text-xs flex-1"
-                          style={{ color: T.brand }}
-                        >
-                          {copiedLink === link.public_url ? (
-                            <>
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Copiado!
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="h-3 w-3 mr-1" />
-                              Copiar Link
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenLink(link.public_url)}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t" onClick={(e) => e.stopPropagation()}>
-                      {link.public_url && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setQrCodeLink(link)}
-                          title="Ver QR Code"
-                        >
-                          <QrCode className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(link)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir Link?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja excluir o link "{link.name}"?
-                              Esta ação não pode ser desfeita.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(link.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  {/* Color bar */}
+                  <div style={{ height: 5, background: color }} />
 
-            {/* Desktop: Table Layout */}
-            <div className="hidden md:block overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Serviço</TableHead>
-                    <TableHead>Profissional</TableHead>
-                    <TableHead>Link Público</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {links.map((link) => (
-                    <TableRow key={link.id} style={{ transition: 'background 100ms' }}
-                      onMouseEnter={e => e.currentTarget.style.background = T.bg}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{link.name}</div>
-                          {link.description && (
-                            <div style={{ fontSize: 12, color: T.muted }}>{link.description}</div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span style={{ borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, background: link.active ? T.green + '18' : T.muted + '18', color: link.active ? T.green : T.muted, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          {link.active ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
-                          {link.active ? 'Ativo' : 'Inativo'}
+                  <div style={{ padding: '16px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    {/* Name + status */}
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 style={{ fontWeight: 700, fontSize: 16, color: T.text, lineHeight: '1.3', flex: 1 }}>{link.name}</h3>
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 20, flexShrink: 0,
+                        background: link.active ? '#ECFDF5' : '#F3F4F6',
+                        color: link.active ? '#059669' : '#6B7280',
+                      }}>
+                        {link.active ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </div>
+
+                    {/* Meta */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                      {durationLabel && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: T.muted }}>
+                          <Clock size={12} /> {durationLabel}
                         </span>
-                      </TableCell>
-                      <TableCell>
-                        {link.service ? (
-                          <div className="flex items-center">
-                            <Scissors className="h-4 w-4 mr-2 text-gray-400" />
-                            {link.service.name}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">Todos</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {link.professional ? (
-                          <div className="flex items-center">
-                            <User className="h-4 w-4 mr-2 text-gray-400" />
-                            {link.professional.name}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">Todos</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {link.public_url ? (
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleCopyLink(link.public_url)}
-                              className="text-xs"
-                              style={{ color: T.brand }}
-                            >
-                              {copiedLink === link.public_url ? (
-                                <>
-                                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                                  Copiado!
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="h-3 w-3 mr-1" />
-                                  Copiar
-                                </>
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleOpenLink(link.public_url)}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 text-sm">Gerando...</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          {link.public_url && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setQrCodeLink(link)}
-                              title="Ver QR Code"
-                            >
-                              <QrCode className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(link)}
+                      )}
+                      {link.service && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: T.muted }}>
+                          <Scissors size={12} /> {link.service.name}
+                        </span>
+                      )}
+                      {link.professional && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: T.muted }}>
+                          <User size={12} /> {link.professional.name}
+                        </span>
+                      )}
+                      {link.settings?.days_ahead && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: T.muted }}>
+                          <CalendarDays size={12} /> {link.settings.days_ahead} dias
+                        </span>
+                      )}
+                    </div>
+
+                    {/* URL */}
+                    {link.public_url && (
+                      <p style={{ fontSize: 11, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 16 }}>
+                        {link.public_url}
+                      </p>
+                    )}
+
+                    <div style={{ flex: 1 }} />
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      {/* Copy — primary action */}
+                      {link.public_url && (
+                        <button
+                          onClick={() => handleCopyLink(link.public_url)}
+                          style={{
+                            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                            padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${color}`,
+                            background: copiedLink === link.public_url ? color : 'transparent',
+                            color: copiedLink === link.public_url ? '#fff' : color,
+                            fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'all 150ms',
+                          }}
+                        >
+                          {copiedLink === link.public_url
+                            ? <><CheckCircle2 size={14} /> Copiado!</>
+                            : <><Copy size={14} /> Copiar link</>}
+                        </button>
+                      )}
+
+                      {/* Edit */}
+                      <button
+                        onClick={() => handleEdit(link)}
+                        title="Editar"
+                        style={{ padding: '8px 10px', borderRadius: 8, border: `1px solid ${T.border}`, background: 'transparent', cursor: 'pointer', color: T.muted, display: 'flex', alignItems: 'center', transition: 'background 100ms' }}
+                        onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <Edit size={15} />
+                      </button>
+
+                      {/* More */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            style={{ padding: '8px 10px', borderRadius: 8, border: `1px solid ${T.border}`, background: 'transparent', cursor: 'pointer', color: T.muted, display: 'flex', alignItems: 'center', transition: 'background 100ms' }}
+                            onMouseEnter={e => e.currentTarget.style.background = T.bg}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                           >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                            <MoreHorizontal size={15} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {link.public_url && (
+                            <DropdownMenuItem onClick={() => window.open(link.public_url, '_blank')}>
+                              <ExternalLink className="h-4 w-4 mr-2" /> Abrir link
+                            </DropdownMenuItem>
+                          )}
+                          {link.public_url && (
+                            <DropdownMenuItem onClick={() => setQrCodeLink(link)}>
+                              <QrCode className="h-4 w-4 mr-2" /> Ver QR Code
+                            </DropdownMenuItem>
+                          )}
+                          {link.public_url && (
+                            <DropdownMenuItem onClick={() => setEmbedLink(link)}>
+                              <Code2 className="h-4 w-4 mr-2" /> Incorporar no site
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </Button>
+                              <DropdownMenuItem onSelect={e => e.preventDefault()} className="text-red-600 focus:text-red-600">
+                                <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                              </DropdownMenuItem>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir Link?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja excluir o link "{link.name}"?
-                                  Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
+                                <AlertDialogTitle>Excluir "{link.name}"?</AlertDialogTitle>
+                                <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(link.id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  Excluir
-                                </AlertDialogAction>
+                                <AlertDialogAction onClick={() => handleDelete(link.id)} className="bg-red-600 hover:bg-red-700">Excluir</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </>
-        </FluidSection>
-      )}
-      
-      {/* Edit Dialog */}
-      <Dialog open={isEditLinkOpen} onOpenChange={(open) => {
-        setIsEditLinkOpen(open)
-        if (!open) resetForm()
-      }}>
-        <DialogContent data-testid="edit-link-dialog" className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Editar Link de Agendamento</DialogTitle>
-            <DialogDescription>
-              Atualize as configurações do link. O link continuará funcionando com as novas configurações.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-name">Nome do Link *</Label>
-              <p className="text-sm text-gray-500 mb-2">
-                Um nome para identificar este link (apenas para você, não aparece para o cliente)
-              </p>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Link para Corte de Cabelo"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="edit-description">Descrição (Opcional)</Label>
-              <p className="text-sm text-gray-500 mb-2">
-                Descrição interna para você lembrar o propósito deste link
-              </p>
-              <Textarea
-                id="edit-description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Ex: Link para enviar no Instagram"
-                rows={2}
-              />
-            </div>
-            
-            <div className="border-t pt-4">
-              <h4 className="font-semibold mb-3">Filtros (Opcional)</h4>
-              <p className="text-sm text-gray-600 mb-4">
-                Limite quais serviços e profissionais aparecerão para o cliente. 
-                Se deixar "Todos", o cliente poderá escolher qualquer opção.
-              </p>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-service">Limitar a um serviço específico?</Label>
-                  <Select
-                    value={formData.service_id?.toString() || '__none__'}
-                    onValueChange={(value) => setFormData({ ...formData, service_id: value === '__none__' ? null : parseInt(value) })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos os serviços" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      <SelectItem value="__none__">Todos os serviços (cliente escolhe)</SelectItem>
-                      {services && services.length > 0 ? (
-                        services.map((service) => (
-                          <SelectItem key={service.id} value={service.id.toString()}>
-                            {service.name || `Serviço ${service.id}`}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <div className="px-2 py-1.5 text-sm text-gray-500">Nenhum serviço disponível</div>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="edit-professional">Limitar a um profissional específico?</Label>
-                  <Select
-                    value={formData.account_user_id?.toString() || '__none__'}
-                    onValueChange={(value) => setFormData({ ...formData, account_user_id: value === '__none__' ? null : parseInt(value) })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos os profissionais" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Todos os profissionais (cliente escolhe)</SelectItem>
-                      {professionals && professionals.length > 0 ? (
-                        professionals.map((prof) => (
-                          <SelectItem key={prof.id} value={prof.id.toString()}>
-                            {prof.name || `${prof.first_name || ''} ${prof.last_name || ''}`.trim() || `Profissional ${prof.id}`}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <div className="px-2 py-1.5 text-sm text-gray-500">Nenhum profissional disponível</div>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-            
-            <div className="border-t pt-4">
-              <h4 className="font-semibold mb-2">Horários Disponíveis</h4>
-              <p className="text-sm text-gray-600 mb-4">
-                Configure quais horários aparecerão para o cliente escolher. 
-                Estes são os horários padrão - horários já ocupados não aparecerão automaticamente.
-              </p>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-start_hour">Horário de início do atendimento</Label>
-                  <p className="text-xs text-gray-500 mb-1">Ex: 9 = 09:00</p>
-                  <Input
-                    id="edit-start_hour"
-                    type="number"
-                    min="0"
-                    max="23"
-                    value={formData.settings.start_hour}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      settings: { ...formData.settings, start_hour: parseInt(e.target.value) || 9 }
-                    })}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="edit-end_hour">Horário de término do atendimento</Label>
-                  <p className="text-xs text-gray-500 mb-1">Ex: 18 = 18:00</p>
-                  <Input
-                    id="edit-end_hour"
-                    type="number"
-                    min="0"
-                    max="23"
-                    value={formData.settings.end_hour}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      settings: { ...formData.settings, end_hour: parseInt(e.target.value) || 18 }
-                    })}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="edit-interval">Intervalo entre horários</Label>
-                  <p className="text-xs text-gray-500 mb-1">De quanto em quanto tempo aparecerão opções (15, 30, 45 ou 60 min)</p>
-                  <Input
-                    id="edit-interval"
-                    type="number"
-                    min="15"
-                    max="60"
-                    step="15"
-                    value={formData.settings.slot_interval_minutes}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      settings: { ...formData.settings, slot_interval_minutes: parseInt(e.target.value) || 30 }
-                    })}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="edit-duration">Duração padrão do agendamento</Label>
-                  <p className="text-xs text-gray-500 mb-1">Quanto tempo dura cada agendamento (em minutos)</p>
-                  <Input
-                    id="edit-duration"
-                    type="number"
-                    min="15"
-                    max="240"
-                    step="15"
-                    value={formData.settings.default_duration_minutes}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      settings: { ...formData.settings, default_duration_minutes: parseInt(e.target.value) || 60 }
-                    })}
-                  />
-                </div>
-              </div>
-              
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-2">Configuração de Calendário</h4>
-                <p className="text-sm text-gray-600 mb-4">
-                  Configure quantos dias à frente os clientes poderão agendar. Links Premium permitem mais dias.
-                </p>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-link_type">Tipo de Link</Label>
-                    <p className="text-xs text-gray-500 mb-1">Normal: até 15 dias | Premium: até 30 dias (configurável)</p>
-                    <Select
-                      value={formData.link_type || 'normal'}
-                      onValueChange={(value) => {
-                        const defaultDays = value === 'premium' ? 30 : 15
-                        setFormData({
-                          ...formData,
-                          link_type: value,
-                          settings: {
-                            ...formData.settings,
-                            days_ahead: formData.settings?.days_ahead || defaultDays
-                          }
-                        })
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="normal">Normal (15 dias)</SelectItem>
-                        <SelectItem value="premium">Premium (30 dias configurável)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="edit-days_ahead">Dias à frente para agendamento</Label>
-                    <p className="text-xs text-gray-500 mb-1">
-                      Quantos dias no futuro o calendário mostrará (máx: {formData.link_type === 'premium' ? '90' : '15'})
-                    </p>
-                    <Input
-                      id="edit-days_ahead"
-                      type="number"
-                      min="1"
-                      max={formData.link_type === 'premium' ? 90 : 15}
-                      value={formData.settings?.days_ahead || (formData.link_type === 'premium' ? 30 : 15)}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value) || (formData.link_type === 'premium' ? 30 : 15)
-                        const maxDays = formData.link_type === 'premium' ? 90 : 15
-                        const daysAhead = Math.min(Math.max(1, value), maxDays)
-                        setFormData({
-                          ...formData,
-                          settings: {
-                            ...formData.settings,
-                            days_ahead: daysAhead
-                          }
-                        })
-                      }}
-                    />
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            
-            <div className="border-t pt-4">
-              <h4 className="font-semibold mb-2">Cancelamento e Reagendamento</h4>
-              <p className="text-sm text-gray-600 mb-4">
-                Defina até quantas horas antes do agendamento o cliente pode cancelar ou reagendar pelo link de gerenciamento.
-              </p>
-              <div>
-                <Label htmlFor="edit-cancel-hours">Prazo para cancelar/reagendar (horas antes)</Label>
-                <p className="text-xs text-gray-500 mb-1">Ex: 24 = o cliente pode cancelar até 24h antes do horário</p>
-                <Input
-                  id="edit-cancel-hours"
-                  type="number"
-                  min="1"
-                  max="720"
-                  value={formData.settings?.cancel_reschedule_hours ?? 24}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    settings: { ...formData.settings, cancel_reschedule_hours: parseInt(e.target.value) || 24 }
-                  })}
-                  className="max-w-[160px]"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
-              <input
-                type="checkbox"
-                id="edit-active"
-                checked={formData.active}
-                onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                className="rounded border-gray-300"
-              />
-              <Label htmlFor="edit-active" className="cursor-pointer">
-                <span className="font-medium">Link ativo</span>
-                <span className="text-sm text-gray-600 ml-2">
-                  (Se desativado, o link não funcionará para novos agendamentos)
-                </span>
-              </Label>
-            </div>
+              )
+            })}
           </div>
+        )}
 
-          {/* Automações */}
-          <AutomacoesPanel formData={formData} setAutomation={setAutomation} setFormData={setFormData} />
+        {/* Edit dialog */}
+        {editDialog}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsEditLinkOpen(false)
-              resetForm()
-            }}>
-              Cancelar
-            </Button>
-            <Button onClick={handleUpdate} disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Atualizando...
-                </>
-              ) : (
-                'Salvar Alterações'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* QR Code Dialog */}
-      <Dialog open={!!qrCodeLink} onOpenChange={(open) => { if (!open) setQrCodeLink(null) }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <QrCode className="h-5 w-5" />
-              QR Code do Link
-            </DialogTitle>
-            <DialogDescription>
-              {qrCodeLink?.name} — Escaneie para agendar
-            </DialogDescription>
-          </DialogHeader>
-          {qrCodeLink?.public_url && (
-            <div className="flex flex-col items-center gap-4 py-2">
-              <div className="p-3 bg-white rounded-xl border shadow-sm">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrCodeLink.public_url)}&size=220x220&margin=10`}
-                  alt="QR Code do link de agendamento"
-                  width={220}
-                  height={220}
-                  className="block"
-                />
-              </div>
-              <p className="text-xs text-gray-500 text-center break-all max-w-[260px]">
-                {qrCodeLink.public_url}
-              </p>
-              <div className="flex gap-2 w-full">
+        {/* Embed Dialog */}
+        <Dialog open={!!embedLink} onOpenChange={open => { if (!open) { setEmbedLink(null); setEmbedCopied(false) } }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><Code2 className="h-5 w-5" /> Incorporar no site</DialogTitle>
+              <DialogDescription>Cole este código HTML onde quiser exibir o calendário de agendamento.</DialogDescription>
+            </DialogHeader>
+            {embedLink?.public_url && (
+              <div className="flex flex-col gap-4 py-2">
+                <pre className="bg-gray-900 text-green-400 rounded-lg p-4 text-xs overflow-x-auto whitespace-pre leading-relaxed">
+{`<iframe
+  src="${embedLink.public_url}"
+  width="100%"
+  height="640"
+  frameborder="0"
+  style="border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.12);"
+  title="Agendamento Online"
+></iframe>`}
+                </pre>
+                <p style={{ fontSize: 12, color: T.muted }}>Compatível com WordPress, Webflow, Notion, Squarespace e qualquer site que aceite HTML.</p>
                 <Button
-                  variant="outline"
-                  className="flex-1 text-sm"
-                  onClick={() => handleCopyLink(qrCodeLink.public_url)}
-                >
-                  {copiedLink === qrCodeLink.public_url ? (
-                    <><CheckCircle2 className="h-4 w-4 mr-1" /> Copiado!</>
-                  ) : (
-                    <><Copy className="h-4 w-4 mr-1" /> Copiar Link</>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 text-sm"
                   onClick={() => {
-                    const imgUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrCodeLink.public_url)}&size=400x400&margin=10`
-                    const a = document.createElement('a')
-                    a.href = imgUrl
-                    a.download = `qrcode-${qrCodeLink.name.replace(/\s+/g, '-')}.png`
-                    a.target = '_blank'
-                    a.click()
+                    navigator.clipboard.writeText(`<iframe\n  src="${embedLink.public_url}"\n  width="100%"\n  height="640"\n  frameborder="0"\n  style="border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.12);"\n  title="Agendamento Online"\n></iframe>`)
+                    setEmbedCopied(true)
+                    setTimeout(() => setEmbedCopied(false), 2000)
                   }}
+                  style={{ background: T.brand, color: '#fff' }}
                 >
-                  <ExternalLink className="h-4 w-4 mr-1" /> Baixar QR
+                  {embedCopied ? <><CheckCircle2 className="h-4 w-4 mr-2" /> Copiado!</> : <><Copy className="h-4 w-4 mr-2" /> Copiar código</>}
                 </Button>
               </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* QR Code Dialog */}
+        <Dialog open={!!qrCodeLink} onOpenChange={open => { if (!open) setQrCodeLink(null) }}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><QrCode className="h-5 w-5" /> QR Code</DialogTitle>
+              <DialogDescription>{qrCodeLink?.name} — Escaneie para agendar</DialogDescription>
+            </DialogHeader>
+            {qrCodeLink?.public_url && (
+              <div className="flex flex-col items-center gap-4 py-2">
+                <div className="p-3 bg-white rounded-xl border shadow-sm">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrCodeLink.public_url)}&size=220x220&margin=10`}
+                    alt="QR Code"
+                    width={220}
+                    height={220}
+                    className="block"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 text-center break-all max-w-[260px]">{qrCodeLink.public_url}</p>
+                <div className="flex gap-2 w-full">
+                  <Button variant="outline" className="flex-1 text-sm" onClick={() => handleCopyLink(qrCodeLink.public_url)}>
+                    {copiedLink === qrCodeLink.public_url ? <><CheckCircle2 className="h-4 w-4 mr-1" /> Copiado!</> : <><Copy className="h-4 w-4 mr-1" /> Copiar link</>}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 text-sm"
+                    onClick={() => {
+                      const a = document.createElement('a')
+                      a.href = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrCodeLink.public_url)}&size=400x400&margin=10`
+                      a.download = `qrcode-${qrCodeLink.name.replace(/\s+/g, '-')}.png`
+                      a.target = '_blank'
+                      a.click()
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" /> Baixar QR
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
       </div>
     </div>
   )
 }
-

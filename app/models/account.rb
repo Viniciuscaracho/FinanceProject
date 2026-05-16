@@ -40,6 +40,7 @@
 #  trial_ends_at                                        :date
 #  created_at                                           :datetime         not null
 #  updated_at                                           :datetime         not null
+#  abacate_pay_customer_id                              :string
 #  company_id                                           :bigint           not null
 #  google_calendar_id                                   :string           default("primary")
 #  owner_id                                             :bigint
@@ -129,6 +130,10 @@ class Account < ApplicationRecord
   has_many :appointments,        dependent: :delete_all
   has_many :appointment_links,   dependent: :delete_all
   has_many :appointment_notes,   dependent: :delete_all
+  has_many :anamnese_templates,  dependent: :delete_all
+  has_many :anamnese_responses,  dependent: :delete_all
+  has_many :patient_goals,       dependent: :delete_all
+  has_many :patient_documents,   dependent: :delete_all
   has_many :imports,             dependent: :delete_all
   has_many :exports,             dependent: :delete_all
   has_many :document_templates,  dependent: :delete_all

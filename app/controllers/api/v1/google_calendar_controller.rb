@@ -22,13 +22,13 @@ module Api
       end
 
       def callback
-        return redirect_to "#{frontend_url}/configuracoes?google_calendar=error&reason=no_code" if params[:code].blank?
+        return redirect_to "#{frontend_url}/settings?google_calendar=error&reason=no_code" if params[:code].blank?
 
         account = decode_state(params[:state])
-        return redirect_to "#{frontend_url}/configuracoes?google_calendar=error&reason=invalid_state" if account.nil?
+        return redirect_to "#{frontend_url}/settings?google_calendar=error&reason=invalid_state" if account.nil?
 
         token_data = exchange_code(params[:code])
-        return redirect_to "#{frontend_url}/configuracoes?google_calendar=error&reason=token_exchange" if token_data[:error]
+        return redirect_to "#{frontend_url}/settings?google_calendar=error&reason=token_exchange" if token_data[:error]
 
         account.update_columns(
           google_access_token:       token_data[:access_token],
@@ -37,7 +37,7 @@ module Api
           google_calendar_connected: true
         )
 
-        redirect_to "#{frontend_url}/configuracoes?google_calendar=connected"
+        redirect_to "#{frontend_url}/settings?google_calendar=connected"
       end
 
       def disconnect

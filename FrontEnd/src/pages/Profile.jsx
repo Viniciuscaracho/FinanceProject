@@ -26,6 +26,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { isSupabaseAvailable } from '../lib/supabase'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { toast } from 'sonner'
+import { T } from '@/lib/tokens'
 
 export function Profile() {
   const isMobile = useIsMobile()
@@ -245,7 +246,7 @@ export function Profile() {
   }
 
   return (
-    <div className="space-y-3 max-w-4xl mx-auto">
+    <div className="space-y-3 max-w-4xl mx-auto pb-20">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
@@ -288,11 +289,11 @@ export function Profile() {
         <CardContent className="space-y-6">
           {/* Informações Pessoais */}
           <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center">
-                <User className="h-5 w-5 mr-2 text-blue-600" />
-                Informações Pessoais
-              </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <User className="h-4 w-4" style={{ color: T.brand }} />
+              </div>
+              <p style={{ fontSize: 15, fontWeight: 700, color: T.text, margin: 0 }}>Informações Pessoais</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -346,12 +347,14 @@ export function Profile() {
 
           {/* Alterar Senha */}
           <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center">
-                <Lock className="h-5 w-5 mr-2 text-blue-600" />
-                Alterar Senha
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Lock className="h-4 w-4" style={{ color: T.brand }} />
+                </div>
+                <p style={{ fontSize: 15, fontWeight: 700, color: T.text, margin: 0 }}>Alterar Senha</p>
+              </div>
+              <p className="text-sm text-muted-foreground">
                 Deixe em branco se não desejar alterar a senha
               </p>
             </div>
@@ -442,14 +445,16 @@ export function Profile() {
       {/* MFA / Segurança */}
       {isSupabaseAvailable && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Autenticação em duas etapas (MFA)
-            </CardTitle>
-            <CardDescription>
-              Adicione uma camada extra de segurança usando um app autenticador (Google Authenticator, Authy, etc).
-            </CardDescription>
+          <CardHeader className="pb-3">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 9, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Shield className="h-4 w-4" style={{ color: T.brand }} />
+              </div>
+              <div>
+                <CardTitle>Autenticação em duas etapas (MFA)</CardTitle>
+                <CardDescription style={{ margin: 0 }}>Adicione uma camada extra de segurança usando um app autenticador.</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {mfaError && (

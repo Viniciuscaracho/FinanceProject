@@ -37,7 +37,7 @@ test.describe('Serviços — dialog criar/editar', () => {
     await page.click('[data-testid="new-service-btn"]');
     const dialog = page.locator('[data-testid="service-dialog"]');
     await expect(dialog).toBeVisible({ timeout: 8000 });
-    await expect(dialog.locator('label:has-text("Nome do Serviço"), input#name')).toBeVisible();
+    await expect(dialog.locator('input#name')).toBeVisible();
   });
 
   test('dialog tem campo Preço de Venda', async ({ page }) => {
@@ -75,10 +75,8 @@ test.describe('Serviços — dialog de exclusão', () => {
   async function openDeleteDialog(page) {
     await page.goto('/services');
     await page.waitForLoadState('networkidle');
-    // O botão Trash2 é o último botão de ação em cada item da lista
-    const deleteBtn = page.locator('[data-testid="services-page"] button').filter({
-      has: page.locator('svg[style*="red"], svg.lucide-trash-2, svg.lucide-trash')
-    }).first();
+    // O botão Trash2 na tabela desktop (hidden md:block) tem data-testid="delete-service-btn"
+    const deleteBtn = page.locator('[data-testid="delete-service-btn"]').first();
     if (await deleteBtn.count() === 0) return null;
     await deleteBtn.click();
     const dialog = page.locator('[data-testid="delete-service-dialog"]');

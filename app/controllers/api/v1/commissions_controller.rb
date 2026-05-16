@@ -24,7 +24,8 @@ module Api
         result = commissions.group_by(&:account_user_id).map do |_id, prof_commissions|
           account_user = prof_commissions.first.account_user
           user         = account_user.user
-          total_cents  = prof_commissions.sum(&:commission_amount_cents)
+          total_commission_cents = prof_commissions.sum(&:commission_amount_cents)
+          total_revenue_cents    = prof_commissions.sum { |c| c.appointment.price_cents || 0 }
 
           {
             professional: {
@@ -32,10 +33,15 @@ module Api
               name:  "#{user.first_name || ''} #{user.last_name || ''}".strip.presence || user.email || 'N/A',
               email: user.email || ''
             },
-            total_commission: {
-              cents:     total_cents,
+            total_revenue: {
+              cents:     total_revenue_cents,
               currency:  'BRL',
-              formatted: Money.new(total_cents, 'BRL').format
+              formatted: Money.new(total_revenue_cents, 'BRL').format
+            },
+            total_commission: {
+              cents:     total_commission_cents,
+              currency:  'BRL',
+              formatted: Money.new(total_commission_cents, 'BRL').format
             },
             commissions: prof_commissions.map do |commission|
               appointment = commission.appointment
@@ -64,10 +70,16 @@ module Api
         end
 
         total_commissions_cents = commissions.sum(&:commission_amount_cents)
+        total_revenue_cents     = result.sum { |p| p[:total_revenue][:cents] }
 
         render json: {
           commissions: result,
           summary: {
+            total_revenue: {
+              cents:     total_revenue_cents,
+              currency:  'BRL',
+              formatted: Money.new(total_revenue_cents, 'BRL').format
+            },
             total_commissions: {
               cents:     total_commissions_cents,
               currency:  'BRL',

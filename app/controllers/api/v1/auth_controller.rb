@@ -168,6 +168,7 @@ module Api
         password = params[:password].to_s
         full_name = params[:name].to_s.strip
         account_name = params[:account_name].to_s.strip.presence || full_name
+        document = params[:document].to_s.strip.presence
 
         return render json: { success: false, error: 'Preencha todos os campos obrigatórios' }, status: :unprocessable_entity if email.blank? || password.blank? || full_name.blank?
         return render json: { success: false, error: 'Este e-mail já está cadastrado' }, status: :unprocessable_entity if User.exists?(email: email)
@@ -190,7 +191,11 @@ module Api
           user.save!
 
           account = user.account
-          account.company.update_columns(first_name: account_name, last_name: nil) if account&.company && account_name.present?
+          if account&.company
+            company_attrs = { first_name: account_name, last_name: nil }
+            company_attrs[:document_1] = document if document.present?
+            account.company.update_columns(**company_attrs)
+          end
 
           Current.user = user
           Current.account = account

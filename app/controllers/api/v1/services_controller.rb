@@ -73,7 +73,7 @@ module Api
           name: service.name,
           description: service.description,
           unit: service.unit,
-          modality: Service::MODALITIES.key(service.modality || 0)&.to_s || 'presencial',
+          modality: service.modality&.to_s || 'presencial',
           meeting_url: service.meeting_url,
           cost_price: {
             cents: service.cost_price_cents,

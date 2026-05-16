@@ -432,7 +432,7 @@ export function DocumentTemplateForm() {
               <span className="text-text-tertiary text-xs">/</span>
               <span className="text-text-tertiary text-xs">{docType.label}</span>
             </div>
-            <h1 className="text-xl font-semibold text-text-primary">
+            <h1 className="text-base sm:text-xl font-semibold text-text-primary">
               {isEditing ? `Editar ${docType.singular}` : `Novo ${docType.singular}`}
             </h1>
           </div>
@@ -460,7 +460,7 @@ export function DocumentTemplateForm() {
                           value={formData.name}
                           onChange={(e) => setFormData({...formData, name: e.target.value})}
                           required
-                          placeholder="Ex: Recibo Padrão"
+                          placeholder={`Ex: ${docType.singular} Padrão`}
                           className="h-8 text-sm"
                         />
                       </div>
@@ -494,7 +494,7 @@ export function DocumentTemplateForm() {
                           onCheckedChange={(checked) => setFormData({...formData, enable_sessions: checked})}
                         />
                         <Label htmlFor="enable_sessions" className="font-normal cursor-pointer text-xs">
-                          Habilitar sessões (para psicólogos, professores, nutricionistas, etc.)
+                          Habilitar acompanhamento por consultas (nutricionistas, fisioterapeutas, etc.)
                         </Label>
                       </div>
                       
@@ -512,15 +512,16 @@ export function DocumentTemplateForm() {
                                 <SelectValue placeholder="Selecione o tipo" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="psicologo">Psicólogo</SelectItem>
-                                <SelectItem value="professor">Professor</SelectItem>
                                 <SelectItem value="nutricionista">Nutricionista</SelectItem>
                                 <SelectItem value="fisioterapeuta">Fisioterapeuta</SelectItem>
                                 <SelectItem value="medico">Médico</SelectItem>
+                                <SelectItem value="psicologo">Psicólogo</SelectItem>
                                 <SelectItem value="dentista">Dentista</SelectItem>
                                 <SelectItem value="personal_trainer">Personal Trainer</SelectItem>
-                                <SelectItem value="coach">Coach</SelectItem>
+                                <SelectItem value="fonoaudiologo">Fonoaudiólogo</SelectItem>
                                 <SelectItem value="terapeuta">Terapeuta</SelectItem>
+                                <SelectItem value="professor">Professor</SelectItem>
+                                <SelectItem value="coach">Coach</SelectItem>
                                 <SelectItem value="outro">Outro</SelectItem>
                               </SelectContent>
                             </Select>
@@ -529,7 +530,7 @@ export function DocumentTemplateForm() {
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                               <Label htmlFor="session_count" className="text-xs font-medium">
-                                Total de Sessões
+                                Total de Consultas
                               </Label>
                               <Input
                                 id="session_count"
@@ -543,7 +544,7 @@ export function DocumentTemplateForm() {
                             </div>
                             <div className="space-y-1.5">
                               <Label htmlFor="session_number" className="text-xs font-medium">
-                                Número da Sessão Atual
+                                Número da Consulta Atual
                               </Label>
                               <Input
                                 id="session_number"
@@ -559,13 +560,13 @@ export function DocumentTemplateForm() {
                           
                           <div className="space-y-1.5">
                             <Label htmlFor="session_type" className="text-xs font-medium">
-                              Tipo de Sessão
+                              Tipo de Consulta
                             </Label>
                             <Input
                               id="session_type"
                               value={formData.session_type}
                               onChange={(e) => setFormData({...formData, session_type: e.target.value})}
-                              placeholder="Ex: Terapia individual, Aula particular, Sessão"
+                              placeholder="Ex: Consulta inicial, Retorno, Acompanhamento"
                               className="h-8 text-sm"
                             />
                           </div>
@@ -584,21 +585,26 @@ export function DocumentTemplateForm() {
                     <AccordionContent>
                       <div className="space-y-3 pb-2">
                         <div className="space-y-1.5">
-                          <Label htmlFor="transaction_type" className="text-xs font-medium">
-                            Tipo de Transação
-                          </Label>
-                          <Select
-                            value={formData.transaction_type_cd.toString()}
-                            onValueChange={(value) => setFormData({...formData, transaction_type_cd: parseInt(value)})}
-                          >
-                            <SelectTrigger id="transaction_type" className="h-8 text-sm">
-                              <SelectValue placeholder="Selecione o tipo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="0">Receita</SelectItem>
-                              <SelectItem value="1">Despesa</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <Label className="text-xs font-medium">Tipo de Transação</Label>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            {[
+                              { value: 0, label: 'Receita' },
+                              { value: 1, label: 'Despesa' },
+                            ].map(opt => (
+                              <button key={opt.value} type="button"
+                                onClick={() => setFormData({...formData, transaction_type_cd: opt.value})}
+                                style={{
+                                  flex: 1, padding: '6px 0', borderRadius: 8, fontSize: 12, fontWeight: 500,
+                                  cursor: 'pointer', border: '1px solid', fontFamily: 'inherit',
+                                  borderColor: formData.transaction_type_cd === opt.value ? '#4C60AA' : '#E5E7EB',
+                                  background: formData.transaction_type_cd === opt.value ? '#F0F2FF' : '#fff',
+                                  color: formData.transaction_type_cd === opt.value ? '#4C60AA' : '#374151',
+                                  transition: 'all 150ms',
+                                }}>
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox

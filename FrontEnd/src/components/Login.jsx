@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { apiService } from '../lib/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Alert, AlertDescription } from './ui/alert';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Search } from 'lucide-react';
 
 const GRADIENT = 'linear-gradient(to right, #5B7A9E, #6B8FA3)';
 const GRADIENT_HOVER = 'linear-gradient(to right, #4A5C7A, #5B7A9E)';
@@ -72,6 +73,9 @@ export function Login() {
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regPasswordConfirm, setRegPasswordConfirm] = useState('');
+  const [regDocument, setRegDocument] = useState('');
+  const [cnpjLookupLoading, setCnpjLookupLoading] = useState(false);
+  const cnpjLookupTimer = useRef(null);
 
   const { loginSimple, register, error } = useAuth();
 
@@ -84,6 +88,43 @@ export function Login() {
   const switchMode = (newMode) => {
     setLocalError(null);
     setMode(newMode);
+  };
+
+  const formatDocument = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 14);
+    if (digits.length <= 11) {
+      return digits
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+    return digits
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1/$2')
+      .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+  };
+
+  const handleDocumentChange = (e) => {
+    const formatted = formatDocument(e.target.value);
+    setRegDocument(formatted);
+
+    const digits = formatted.replace(/\D/g, '');
+    if (digits.length === 14) {
+      clearTimeout(cnpjLookupTimer.current);
+      cnpjLookupTimer.current = setTimeout(async () => {
+        setCnpjLookupLoading(true);
+        try {
+          const data = await apiService.lookupCnpj(digits);
+          const name = data.nome_fantasia || data.razao_social || '';
+          if (name && !regAccountName) setRegAccountName(name);
+        } catch {
+          // CNPJ inválido ou não encontrado — não bloquear
+        } finally {
+          setCnpjLookupLoading(false);
+        }
+      }, 600);
+    }
   };
 
   const handleLogin = async (e) => {
@@ -118,6 +159,7 @@ export function Login() {
         accountName: regAccountName || regName,
         email: regEmail,
         password: regPassword,
+        document: regDocument || undefined,
       });
       if (!result.success) setLocalError(result.error);
     } finally {
@@ -225,6 +267,29 @@ export function Login() {
 
               <form onSubmit={handleRegister} className="space-y-4">
                 <div>
+                  <label htmlFor="reg-document" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    CPF ou CNPJ <span className="text-gray-400 font-normal">(opcional)</span>
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="reg-document"
+                      type="text"
+                      value={regDocument}
+                      onChange={handleDocumentChange}
+                      placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                      className="h-11 text-base md:text-sm border-gray-300 focus:border-[#6B8FA3] focus:ring-[#6B8FA3] pr-10"
+                      autoComplete="off"
+                      inputMode="numeric"
+                    />
+                    {cnpjLookupLoading && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
                   <label htmlFor="reg-account-name" className="block text-sm font-medium text-gray-700 mb-1.5">
                     Nome do estabelecimento
                   </label>
@@ -233,7 +298,7 @@ export function Login() {
                     type="text"
                     value={regAccountName}
                     onChange={(e) => setRegAccountName(e.target.value)}
-                    placeholder="Ex: Escritório Silva Advocacia"
+                    placeholder="Ex: Consultório Dra. Ana Silva"
                     className="h-11 text-base md:text-sm border-gray-300 focus:border-[#6B8FA3] focus:ring-[#6B8FA3]"
                     required
                     autoComplete="organization"

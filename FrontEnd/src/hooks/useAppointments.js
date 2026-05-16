@@ -45,7 +45,9 @@ export function useAppointments() {
       const list = Array.isArray(res) ? res : (res.appointments || [])
       return normalizeAppointments(list)
     },
-    staleTime: 2 * 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
+    refetchOnWindowFocus: true,
   })
 
   const error = queryError?.message ?? null
@@ -97,7 +99,7 @@ export function useAppointments() {
   }, [qc])
 
   const loadMonth = useCallback(() => {
-    qc.invalidateQueries({ queryKey: appointmentsKeys.all })
+    return qc.invalidateQueries({ queryKey: appointmentsKeys.all })
   }, [qc])
 
   const updateAppointment = useCallback(
