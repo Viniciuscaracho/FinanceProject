@@ -1,21 +1,23 @@
 #!/bin/bash
 set -e
 # Remove PID
-rm -f tmp/pids/server.pid
+rm -f tmp/pids/server.pid tmp/pids/web.pid
 
-# Wait for database and run migrations
 if [ "${RAILS_DB_MIGRATE_ON_STARTUP}" = "true" ]
 then
-  echo "Waiting for database connection..."
-  until bundle exec ruby -e "require 'pg'; PG.connect(ENV.fetch('DATABASE_URL')); puts 'DB ready'" 2>/dev/null; do
+  # Extract host and port from DATABASE_URL
+  DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/]+).*|\1|')
+  DB_PORT=$(echo "$DATABASE_URL" | sed -E 's|.*:([0-9]+)/.*|\1|')
+  DB_PORT=${DB_PORT:-5432}
+
+  echo "Waiting for database at $DB_HOST:$DB_PORT..."
+  until timeout 2 bash -c ": < /dev/tcp/$DB_HOST/$DB_PORT" 2>/dev/null; do
     echo "Database not ready, retrying in 2s..."
     sleep 2
   done
-  echo "Creating database if needed..."
+  echo "Database TCP ready, running setup..."
   bundle exec rails db:create 2>/dev/null || true
-  echo "Running migrations..."
   bundle exec rails db:migrate
 fi
 
-# Call CMD
 exec "$@"
