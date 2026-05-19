@@ -26,11 +26,11 @@ const fmtBRL = (v) =>
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '—'
 
 const STATUS = {
-  pending:   { color: T.amber,   label: 'Pendente'   },
-  confirmed: { color: T.brand,   label: 'Confirmado' },
-  completed: { color: T.green,   label: 'Concluído'  },
-  canceled:  { color: '#D1D5DB', label: 'Cancelado'  },
-  no_show:   { color: '#D1D5DB', label: 'Não veio'   },
+  pending:   { color: T.amber,   label: 'Pendente',   short: 'Pend.' },
+  confirmed: { color: T.brand,   label: 'Confirmado', short: 'Conf.' },
+  completed: { color: T.green,   label: 'Concluído',  short: 'OK'    },
+  canceled:  { color: '#D1D5DB', label: 'Cancelado',  short: 'Canc.' },
+  no_show:   { color: '#D1D5DB', label: 'Não veio',   short: 'Falta' },
 }
 
 /* ─── Sub-componentes ────────────────────────────── */
@@ -377,18 +377,23 @@ export function Dashboard() {
           </p>
         </div>
 
-        {/* Métricas — sempre 3 slots fixos para evitar layout shift */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: isNarrow ? 16 : 28 }}>
-          {/* Hoje — de React Query (não bloqueia hero) */}
-          <div style={{ textAlign: 'right' }}>
+        {/* Métricas — no mobile ficam em linha abaixo do greeting, alinhadas à esquerda */}
+        <div style={{
+          display: 'flex',
+          gap: isMobile ? 20 : 28,
+          width: isMobile ? '100%' : 'auto',
+          justifyContent: isMobile ? 'flex-start' : 'flex-end',
+        }}>
+          {/* Hoje */}
+          <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
             <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: T.amber, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
               {todayApts.length > 0 ? String(todayApts.length) : '—'}
             </p>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Hoje</p>
           </div>
 
-          {/* Recebido — slot de tamanho fixo: skeleton ou valor */}
-          <div style={{ textAlign: 'right', minWidth: 80 }}>
+          {/* Recebido */}
+          <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
             {loading
               ? <Sk w={80} h={18} r={4} />
               : <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: T.green, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{fmtBRL(receitas)}</p>
@@ -396,8 +401,8 @@ export function Dashboard() {
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0, marginTop: loading ? 4 : 0 }}>Recebido</p>
           </div>
 
-          {/* Pendente — sempre presente; invisível quando zero para não remover espaço */}
-          <div style={{ textAlign: 'right', minWidth: 72, visibility: (!loading && pendente === 0) ? 'hidden' : 'visible' }}>
+          {/* Pendente */}
+          <div style={{ textAlign: isMobile ? 'left' : 'right', visibility: (!loading && pendente === 0) ? 'hidden' : 'visible' }}>
             {loading
               ? <Sk w={72} h={18} r={4} />
               : <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: '#F87171', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{fmtBRL(pendente)}</p>
@@ -408,12 +413,12 @@ export function Dashboard() {
       </div>
 
       {/* ══ 2. AÇÕES RÁPIDAS — antes do grid ══════════ */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 8 }}>
         {[
-          { icon: Calendar, label: isNarrow ? 'Consulta' : 'Nova consulta',  path: '/appointments' },
-          { icon: Plus,     label: isNarrow ? 'Transação' : 'Nova transação', path: '/transactions' },
-          { icon: User,     label: isNarrow ? 'Paciente' : 'Novo paciente',   path: '/contacts' },
-          { icon: FileText, label: 'Relatórios',                               path: '/reports' },
+          { icon: Calendar, label: 'Nova consulta',  path: '/appointments' },
+          { icon: Plus,     label: 'Nova transação', path: '/transactions' },
+          { icon: User,     label: 'Novo paciente',  path: '/contacts' },
+          { icon: FileText, label: 'Relatórios',     path: '/reports' },
         ].map((a, i) => {
           const Icon = a.icon
           return (
@@ -422,10 +427,10 @@ export function Dashboard() {
               onClick={() => navigate(a.path)}
               style={{
                 background: T.white, border: `1px solid ${T.border}`, borderRadius: 10,
-                padding: isNarrow ? '10px 6px' : '12px 14px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: isNarrow ? 'center' : 'flex-start',
-                flexDirection: isNarrow ? 'column' : 'row',
-                gap: isNarrow ? 6 : 10, textAlign: isNarrow ? 'center' : 'left',
+                padding: isMobile ? '12px 14px' : '12px 14px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
+                flexDirection: 'row',
+                gap: 10, textAlign: 'left',
                 fontFamily: 'inherit', transition: 'border-color 150ms',
               }}
               onMouseEnter={e => e.currentTarget.style.borderColor = T.brand}
@@ -434,7 +439,7 @@ export function Dashboard() {
               <div style={{ width: 30, height: 30, borderRadius: 8, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Icon size={14} style={{ color: T.brand }} />
               </div>
-              <p style={{ fontSize: isNarrow ? 11 : 13, fontWeight: 600, color: T.text, margin: 0, whiteSpace: isNarrow ? 'normal' : 'nowrap' }}>{a.label}</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: T.text, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.label}</p>
             </button>
           )
         })}
@@ -541,18 +546,19 @@ export function Dashboard() {
                             style={{
                               fontSize: 11, fontWeight: 600, color: T.brand,
                               background: T.chip, border: `1px solid #DDE3F5`, borderRadius: 6,
-                              padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+                              padding: isMobile ? '4px 8px' : '4px 10px',
+                              cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
                             }}
                           >
-                            Confirmar
+                            {isMobile ? 'OK' : 'Confirmar'}
                           </button>
                         ) : (
                           <span style={{
                             fontSize: 11, fontWeight: 600, color: meta.color,
                             background: meta.color + '18', borderRadius: 20,
-                            padding: '3px 8px', flexShrink: 0,
+                            padding: isMobile ? '3px 6px' : '3px 8px', flexShrink: 0,
                           }}>
-                            {meta.label}
+                            {isMobile ? meta.short : meta.label}
                           </span>
                         )}
                       </div>
@@ -600,7 +606,7 @@ export function Dashboard() {
                         key={tx.id}
                         onClick={() => navigate('/transactions', { state: { search: tx.description || tx.name } })}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: 12,
+                          display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: 12,
                           padding: '9px 0',
                           borderBottom: isLast ? 'none' : `1px solid ${T.border}`,
                           cursor: 'pointer', borderRadius: 6, transition: 'background 100ms',
@@ -610,7 +616,7 @@ export function Dashboard() {
                       >
                         {/* Indicador receita/despesa */}
                         <div style={{
-                          width: 3, height: 28, borderRadius: 2, flexShrink: 0,
+                          width: 3, borderRadius: 2, flexShrink: 0, alignSelf: 'stretch',
                           background: isRec ? T.green : '#E5E7EB',
                         }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -620,11 +626,18 @@ export function Dashboard() {
                           <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>
                             {tx.category?.name || 'Sem categoria'} · {fmtDate(tx.due_date)}
                           </p>
+                          {isMobile && (
+                            <p style={{ fontSize: 13, fontWeight: 700, color: isRec ? T.green : T.text, margin: '2px 0 0' }}>
+                              {isRec ? '+' : '−'}{fmtBRL(tx.amount_cents / 100)}
+                            </p>
+                          )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: isRec ? T.green : T.text }}>
-                            {isRec ? '+' : '−'}{fmtBRL(tx.amount_cents / 100)}
-                          </span>
+                          {!isMobile && (
+                            <span style={{ fontSize: 13, fontWeight: 700, color: isRec ? T.green : T.text }}>
+                              {isRec ? '+' : '−'}{fmtBRL(tx.amount_cents / 100)}
+                            </span>
+                          )}
                           <button
                             onClick={e => { e.stopPropagation(); handleTogglePaid(tx) }}
                             disabled={loadingTxId !== null}
@@ -768,7 +781,7 @@ export function Dashboard() {
                         key={c.id}
                         onClick={() => navigate('/transactions', { state: { search: c.description || c.name } })}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: 10,
+                          display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: 10,
                           padding: '8px 0',
                           borderBottom: isLast ? 'none' : `1px solid ${T.border}`,
                           cursor: 'pointer', borderRadius: 6, transition: 'background 100ms',
@@ -776,7 +789,7 @@ export function Dashboard() {
                         onMouseEnter={e => e.currentTarget.style.background = T.bg}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
-                        <div style={{ width: 3, height: 24, borderRadius: 2, background: T.red, flexShrink: 0 }} />
+                        <div style={{ width: 3, borderRadius: 2, background: T.red, flexShrink: 0, alignSelf: 'stretch' }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ fontSize: 13, fontWeight: 600, color: T.text, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {c.description || c.name || 'Sem descrição'}
@@ -784,21 +797,39 @@ export function Dashboard() {
                           <p style={{ fontSize: 12, color: T.red, margin: 0 }}>
                             Venceu {fmtDate(c.due_date)} · {fmtBRL(c.amount_cents / 100)}
                           </p>
+                          {isMobile && (
+                            <button
+                              onClick={e => { e.stopPropagation(); handleTogglePaid(c) }}
+                              disabled={loadingTxId !== null}
+                              style={{
+                                fontSize: 11, fontWeight: 600, color: T.brand,
+                                background: T.chip, border: '1px solid #DDE3F5', borderRadius: 6,
+                                padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit',
+                                display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6,
+                              }}
+                            >
+                              {loadingTxId === c.id
+                                ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />
+                                : 'Registrar pagamento'}
+                            </button>
+                          )}
                         </div>
-                        <button
-                          onClick={e => { e.stopPropagation(); handleTogglePaid(c) }}
-                          disabled={loadingTxId !== null}
-                          style={{
-                            fontSize: 11, fontWeight: 600, color: T.brand,
-                            background: T.chip, border: '1px solid #DDE3F5', borderRadius: 6,
-                            padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
-                            display: 'flex', alignItems: 'center', gap: 4,
-                          }}
-                        >
-                          {loadingTxId === c.id
-                            ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />
-                            : 'Registrar'}
-                        </button>
+                        {!isMobile && (
+                          <button
+                            onClick={e => { e.stopPropagation(); handleTogglePaid(c) }}
+                            disabled={loadingTxId !== null}
+                            style={{
+                              fontSize: 11, fontWeight: 600, color: T.brand,
+                              background: T.chip, border: '1px solid #DDE3F5', borderRadius: 6,
+                              padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+                              display: 'flex', alignItems: 'center', gap: 4,
+                            }}
+                          >
+                            {loadingTxId === c.id
+                              ? <Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />
+                              : 'Registrar'}
+                          </button>
+                        )}
                       </div>
                     )
                   })}

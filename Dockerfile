@@ -3,12 +3,12 @@ FROM buildpack-deps:20.04
 
 ARG RUBY_VERSION=3.1.4-jemalloc
 ENV RAILS_ENV=development
-ENV GEM_HOME /usr/local/bundle
+ENV GEM_HOME=/usr/local/bundle
 ENV BUNDLE_PATH="$GEM_HOME"
 ENV BUNDLE_SILENCE_ROOT_WARNING=1
 ENV BUNDLE_APP_CONFIG="$GEM_HOME"
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
-ENV PATH $GEM_HOME/bin:$BUNDLE_PATH/gems/bin:/usr/lib/fullstaq-ruby/versions/${RUBY_VERSION}/bin:$PATH
+ENV PATH="$GEM_HOME/bin:$BUNDLE_PATH/gems/bin:/usr/lib/fullstaq-ruby/versions/${RUBY_VERSION}/bin:$PATH"
 
 RUN apt-get update -qq && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends imagemagick libpq-dev \
