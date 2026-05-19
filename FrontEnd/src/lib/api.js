@@ -227,6 +227,13 @@ class ApiService {
     return response;
   }
 
+  async requestPasswordReset(email) {
+    return await this.request('/auth/password_reset', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
   async lookupCnpj(cnpj) {
     const digits = cnpj.replace(/\D/g, '')
     const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`)
@@ -408,6 +415,15 @@ class ApiService {
   // Tags
   async getTags() {
     return await this.request('/tags');
+  }
+
+  // Onboarding demo data
+  async seedDemoData() {
+    return await this.request('/onboarding/seed_demo', { method: 'POST' });
+  }
+
+  async clearDemoData() {
+    return await this.request('/onboarding/clear_demo', { method: 'DELETE' });
   }
 
   // Contacts
@@ -1833,6 +1849,96 @@ class ApiService {
     const res = await fetch(url)
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Documento não encontrado')
+    return data
+  }
+
+  // ── Planos Alimentares ────────────────────────────────────────────────────────
+
+  async getMealPlans(contactId) {
+    return this.request(`/contacts/${contactId}/meal_plans`)
+  }
+
+  async getMealPlan(contactId, planId) {
+    return this.request(`/contacts/${contactId}/meal_plans/${planId}`)
+  }
+
+  async createMealPlan(contactId, data) {
+    return this.request(`/contacts/${contactId}/meal_plans`, {
+      method: 'POST',
+      body: JSON.stringify({ meal_plan: data }),
+    })
+  }
+
+  async updateMealPlan(contactId, planId, data) {
+    return this.request(`/contacts/${contactId}/meal_plans/${planId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ meal_plan: data }),
+    })
+  }
+
+  async deleteMealPlan(contactId, planId) {
+    return this.request(`/contacts/${contactId}/meal_plans/${planId}`, { method: 'DELETE' })
+  }
+
+  async activateMealPlan(contactId, planId) {
+    return this.request(`/contacts/${contactId}/meal_plans/${planId}/activate`, { method: 'POST' })
+  }
+
+  async addMealPlanDay(contactId, planId) {
+    return this.request(`/contacts/${contactId}/meal_plans/${planId}/add_day`, { method: 'POST' })
+  }
+
+  async removeMealPlanDay(contactId, planId, dayId) {
+    return this.request(`/contacts/${contactId}/meal_plans/${planId}/days/${dayId}`, { method: 'DELETE' })
+  }
+
+  async addMeal(contactId, planId, dayId, name) {
+    return this.request(`/contacts/${contactId}/meal_plans/${planId}/days/${dayId}/meals`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    })
+  }
+
+  async removeMeal(contactId, planId, dayId, mealId) {
+    return this.request(`/contacts/${contactId}/meal_plans/${planId}/days/${dayId}/meals/${mealId}`, { method: 'DELETE' })
+  }
+
+  async addFoodToMeal(contactId, planId, dayId, mealId, data) {
+    return this.request(`/contacts/${contactId}/meal_plans/${planId}/days/${dayId}/meals/${mealId}/foods`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateMealFood(contactId, planId, dayId, mealId, foodItemId, data) {
+    return this.request(`/contacts/${contactId}/meal_plans/${planId}/days/${dayId}/meals/${mealId}/foods/${foodItemId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async removeMealFood(contactId, planId, dayId, mealId, foodItemId) {
+    return this.request(`/contacts/${contactId}/meal_plans/${planId}/days/${dayId}/meals/${mealId}/foods/${foodItemId}`, { method: 'DELETE' })
+  }
+
+  // ── Busca de Alimentos ────────────────────────────────────────────────────────
+
+  async searchFoods(q) {
+    return this.request(`/foods?q=${encodeURIComponent(q)}`)
+  }
+
+  async createCustomFood(data) {
+    return this.request('/foods', {
+      method: 'POST',
+      body: JSON.stringify({ food: data }),
+    })
+  }
+
+  async getPublicMealPlan(token) {
+    const url = `${this.baseURL}/public/meal-plans/${token}`
+    const res = await fetch(url)
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Plano não encontrado')
     return data
   }
 }

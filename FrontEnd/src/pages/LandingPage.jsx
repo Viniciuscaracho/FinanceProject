@@ -214,6 +214,185 @@ function WeekUI() {
   )
 }
 
+function ProntuarioUI() {
+  return (
+    <div style={{ background: T.white, borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}>
+      <div style={{ padding: '16px 20px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#EEF2FA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: T.brand, flexShrink: 0 }}>A</div>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0, ...DISPLAY }}>Ana Beatriz Santos</p>
+          <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>28 anos · Última consulta: 3 dias atrás</p>
+        </div>
+        <div style={{ background: '#ECFDF5', border: '1px solid #6EE7B7', borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 600, color: '#059669' }}>Ativo</div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: `1px solid ${T.border}` }}>
+        {[
+          { label: 'Peso', value: '62,4 kg', delta: '-1,2 kg', positive: true },
+          { label: 'IMC', value: '22,8', delta: 'Normal', positive: null },
+          { label: 'Gordura', value: '24,1%', delta: '-0,8%', positive: true },
+        ].map((m, i) => (
+          <div key={m.label} style={{ padding: '14px 16px', borderRight: i < 2 ? `1px solid ${T.border}` : 'none' }}>
+            <p style={{ fontSize: 10, color: T.muted, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{m.label}</p>
+            <p style={{ fontSize: 17, fontWeight: 700, color: T.text, margin: '0 0 2px', ...DISPLAY }}>{m.value}</p>
+            <p style={{ fontSize: 10, fontWeight: 600, color: m.positive === true ? '#16a34a' : m.positive === false ? '#dc2626' : T.muted, margin: 0 }}>{m.delta}</p>
+          </div>
+        ))}
+      </div>
+      <div style={{ padding: '16px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Última evolução</p>
+          <p style={{ fontSize: 10, color: T.muted, margin: 0 }}>15 mai 2026</p>
+        </div>
+        <div style={{ background: T.bg, borderRadius: 10, padding: '12px 14px', border: `1px solid ${T.border}`, marginBottom: 12 }}>
+          <p style={{ fontSize: 12, color: '#444', lineHeight: 1.7, margin: 0 }}>
+            Paciente relata boa adesão ao plano. Hidratação melhorou. Redução de 1,2 kg no período. Ajustar carboidratos no pré-treino para 30 g. Retorno em 21 dias.
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {[
+            { date: '24 abr', text: 'Início da dieta de emagrecimento. Meta: -4 kg em 90 dias.' },
+            { date: '03 abr', text: 'Avaliação inicial. Anamnese completa realizada.' },
+          ].map((n, i) => (
+            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 10, color: '#BDBDBD', flexShrink: 0, paddingTop: 2, width: 40 }}>{n.date}</span>
+              <p style={{ fontSize: 11, color: '#999', margin: 0, lineHeight: 1.5 }}>{n.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+
+function MealPlanUI() {
+  const days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex']
+  const meals = [
+    {
+      label: 'Café da manhã', kcal: 380,
+      items: ['Aveia com banana (1 xícara + 1 un.)', 'Iogurte grego sem açúcar (170 g)'],
+    },
+    {
+      label: 'Almoço', kcal: 620,
+      items: ['Arroz integral (3 col. sopa)', 'Frango grelhado (150 g)', 'Brócolis refogado (100 g)'],
+    },
+    {
+      label: 'Lanche', kcal: 180,
+      items: ['Maçã (1 unidade)', 'Amendoim sem sal (30 g)'],
+    },
+  ]
+  return (
+    <div style={{ background: T.white, borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}>
+      {/* header */}
+      <div style={{ padding: '16px 20px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontSize: 11, color: T.muted, margin: '0 0 2px' }}>Ana Beatriz Santos</p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: 0, ...DISPLAY }}>Plano Alimentar · Semana 3</p>
+        </div>
+        <div style={{ background: '#ECFDF5', border: '1px solid #6EE7B7', borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 600, color: '#059669' }}>Ao vivo</div>
+      </div>
+      {/* day tabs */}
+      <div style={{ display: 'flex', background: T.bg, borderBottom: `1px solid ${T.border}` }}>
+        {days.map((d, i) => (
+          <button key={d} style={{
+            flex: 1, padding: '9px 4px', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
+            background: i === 1 ? T.white : 'transparent',
+            color: i === 1 ? T.brand : T.muted,
+            borderBottom: i === 1 ? `2px solid ${T.brand}` : '2px solid transparent',
+            ...DISPLAY,
+          }}>{d}</button>
+        ))}
+      </div>
+      {/* meals */}
+      <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {meals.map(meal => (
+          <div key={meal.label} style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', background: T.bg, borderBottom: `1px solid ${T.border}` }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: T.text, ...DISPLAY }}>{meal.label}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: T.muted }}>{meal.kcal} kcal</span>
+            </div>
+            <div style={{ padding: '9px 14px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {meal.items.map(item => (
+                <p key={item} style={{ fontSize: 11, color: '#666', margin: 0, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <span style={{ color: '#BDBDBD', flexShrink: 0, lineHeight: 1.5 }}>·</span>{item}
+                </p>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* macros */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderTop: `1px solid ${T.border}` }}>
+        {[
+          { label: 'Proteína', val: '142 g' },
+          { label: 'Carboidrato', val: '198 g' },
+          { label: 'Gordura', val: '52 g' },
+        ].map((m, i) => (
+          <div key={m.label} style={{ padding: '12px 16px', borderRight: i < 2 ? `1px solid ${T.border}` : 'none' }}>
+            <p style={{ fontSize: 10, color: T.muted, margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{m.label}</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: T.text, margin: 0, ...DISPLAY }}>{m.val}</p>
+          </div>
+        ))}
+      </div>
+      {/* footer */}
+      <div style={{ borderTop: `1px solid ${T.border}`, padding: '9px 20px', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#6EE7B7', flexShrink: 0 }} />
+        <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>Atualizado às 14h22 · paciente acessa pelo app, sem PDF</p>
+      </div>
+    </div>
+  )
+}
+
+function VitrineProfileUI() {
+  return (
+    <div style={{ background: T.white, borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}>
+      <div style={{ background: T.bg, padding: '14px 18px', borderBottom: `1px solid ${T.border}` }}>
+        <p style={{ fontSize: 10, color: T.muted, margin: '0 0 8px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Descobrir · São Paulo</p>
+        <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: '9px 14px', fontSize: 12, color: T.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke={T.muted} strokeWidth="1.5"><circle cx="7" cy="7" r="5"/><path d="M12 12l2.5 2.5" strokeLinecap="round"/></svg>
+          Nutricionistas em São Paulo...
+        </div>
+      </div>
+      <div style={{ padding: '18px 20px' }}>
+        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+          <div style={{ width: 52, height: 52, borderRadius: 12, background: '#EEF2FA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800, color: T.brand, flexShrink: 0 }}>A</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: '0 0 1px', ...DISPLAY }}>Dra. Ana Lima</p>
+                <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>Nutricionista · CRN 12345</p>
+              </div>
+              <div style={{ background: '#EEF2FA', borderRadius: 6, padding: '3px 10px', fontSize: 10, fontWeight: 600, color: T.brand }}>Online</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, margin: '8px 0' }}>
+              {[...Array(5)].map((_, i) => (
+                <svg key={i} viewBox="0 0 12 12" width="11" height="11"><path d="M6 1l1.35 2.74L10.5 4.2l-2.25 2.19.53 3.11L6 8l-2.78 1.5.53-3.11L1.5 4.2l3.15-.46L6 1z" fill="#FBBF24"/></svg>
+              ))}
+              <span style={{ fontSize: 11, color: T.muted, marginLeft: 3 }}>5,0 · 47 avaliações</span>
+            </div>
+            <p style={{ fontSize: 12, color: '#555', lineHeight: 1.6, margin: '0 0 10px' }}>
+              Especialista em nutrição esportiva e emagrecimento. Atendimento online e presencial em SP.
+            </p>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12 }}>
+              {['Emagrecimento', 'Esportiva', 'Online'].map(tag => (
+                <span key={tag} style={{ fontSize: 11, padding: '3px 10px', background: T.bg, border: `1px solid ${T.border}`, borderRadius: 20, color: '#555', fontWeight: 500 }}>{tag}</span>
+              ))}
+            </div>
+            <button style={{ width: '100%', padding: '10px 0', background: T.brand, color: '#fff', borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', ...DISPLAY }}>
+              Agendar consulta
+            </button>
+          </div>
+        </div>
+      </div>
+      <div style={{ borderTop: `1px solid ${T.border}`, padding: '10px 20px', background: T.bg, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <p style={{ fontSize: 11, color: T.muted, margin: 0 }}>+38 nutricionistas disponíveis em SP</p>
+        <a href="/descobrir" style={{ fontSize: 11, fontWeight: 600, color: T.brand, textDecoration: 'none' }}>Ver todos →</a>
+      </div>
+    </div>
+  )
+}
+
 /* ─── AnimatedSection ────────────────────────────────────── */
 
 function AnimatedSection({ children, className, delay = 0, style }) {
@@ -257,15 +436,32 @@ export function LandingPage() {
         borderBottom: `1px solid ${scrolled ? T.border : 'transparent'}`,
         backdropFilter: scrolled ? 'blur(12px)' : 'none',
       }}>
-        <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 17, fontWeight: 700, color: T.text, letterSpacing: '-0.02em' }}>Orbi</span>
-          <a href="#cta" style={{
-            fontSize: 13, fontWeight: 600, color: T.white, background: T.text,
-            padding: '8px 18px', borderRadius: 8, textDecoration: 'none',
-            transition: 'background 0.15s',
-          }}>
-            Começar grátis
-          </a>
+        <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            <span style={{ fontSize: 17, fontWeight: 700, color: T.text, letterSpacing: '-0.02em' }}>Orbi</span>
+            <a href="/descobrir" style={{ fontSize: 13, fontWeight: 500, color: T.muted, textDecoration: 'none', transition: 'color 0.15s' }}
+              onMouseEnter={e => e.target.style.color = T.text}
+              onMouseLeave={e => e.target.style.color = T.muted}>
+              Descobrir nutricionistas
+            </a>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <a href="/login" style={{
+              fontSize: 13, fontWeight: 600, color: T.text,
+              padding: '8px 16px', borderRadius: 8, textDecoration: 'none',
+              border: `1px solid ${T.border}`, background: T.white,
+              transition: 'border-color 0.15s',
+            }}>
+              Entrar
+            </a>
+            <a href="#cta" style={{
+              fontSize: 13, fontWeight: 600, color: T.white, background: T.text,
+              padding: '8px 18px', borderRadius: 8, textDecoration: 'none',
+              transition: 'background 0.15s',
+            }}>
+              Começar grátis
+            </a>
+          </div>
         </div>
       </header>
 
@@ -293,14 +489,14 @@ export function LandingPage() {
                 letterSpacing: '-0.03em',
                 marginBottom: '1.5rem',
               }}>
-                Tudo que você precisa<br />
-                para organizar seus<br />
-                <em style={{ fontStyle: 'normal', color: T.brand }}>atendimentos.</em>
+                Pare de usar<br />
+                3 ferramentas<br />
+                <em style={{ fontStyle: 'normal', color: T.brand }}>para 1 trabalho.</em>
               </h1>
 
               <p style={{ fontSize: '1.05rem', color: T.muted, lineHeight: 1.7, maxWidth: '46ch', marginBottom: '2rem' }}>
-                Agenda online, pagamentos, lembretes, documentos e presença no Descobrir —
-                num único sistema feito para quem atende por hora marcada.
+                Plano alimentar ao vivo no app do paciente, agenda integrada ao Google Calendar
+                e financeiro sem planilha. Tudo conectado — sem exportar PDF, sem alternar telas.
               </p>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -312,10 +508,18 @@ export function LandingPage() {
                 }}>
                   Criar conta grátis <ArrowRight size={14} />
                 </a>
-                <a href="#produto" style={{ fontSize: 13, color: T.muted, textDecoration: 'none', fontWeight: 500 }}>
-                  Ver como funciona ↓
+                <a href="/descobrir" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  padding: '12px 20px', background: T.white, color: T.text,
+                  borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none',
+                  border: `1px solid ${T.border}`, transition: 'border-color 0.15s',
+                }}>
+                  Ver nutricionistas
                 </a>
               </div>
+              <a href="#produto" style={{ fontSize: 13, color: T.muted, textDecoration: 'none', fontWeight: 500 }}>
+                Ver como funciona ↓
+              </a>
 
               <p style={{ fontSize: 12, color: '#999', marginTop: '1rem' }}>
                 14 dias grátis · sem cartão · cancele quando quiser
@@ -400,18 +604,18 @@ export function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-12 lg:gap-20 items-start">
               <AnimatedSection><WeekUI /></AnimatedSection>
               <AnimatedSection delay={0.1} style={{ paddingTop: '1rem' }}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Agenda</p>
+                <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Agenda & Google Calendar</p>
                 <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
                   A semana<br />inteira de<br />um olhar.
                 </h2>
                 <p style={{ fontSize: '0.975rem', color: '#888', lineHeight: 1.75, marginBottom: '1.5rem', maxWidth: '38ch' }}>
-                  Vista diária, semanal e mensal. Horários bloqueiam automaticamente no link público quando ocupados. Sua agenda, sem buracos.
+                  Vista diária, semanal e mensal. Cada consulta confirmada sincroniza com seu Google Calendar — com o link do Meet já incluído e convite enviado ao paciente.
                 </p>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {[
                     'Vista diária, semanal e mensal',
-                    'Google Meet gerado automaticamente',
-                    'Anotações clínicas por atendimento',
+                    'Sincroniza com Google Calendar — Meet incluído',
+                    'Convite enviado ao paciente automaticamente',
                   ].map(item => (
                     <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#777', lineHeight: 1.5 }}>
                       <Check size={14} color={T.brand} style={{ flexShrink: 0, marginTop: 3 }} />
@@ -424,7 +628,67 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* — Feature 3: Financeiro — texto no topo, dashboard abaixo */}
+        {/* — Feature 3: Plano alimentar — branco, texto esquerda / UI direita */}
+        <section style={{ background: T.white, borderTop: `1px solid ${T.border}` }}>
+          <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-start">
+              <AnimatedSection style={{ paddingTop: '1rem' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Plano alimentar</p>
+                <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
+                  O plano que<br />atualiza sozinho.<br />
+                  <em style={{ fontStyle: 'normal', color: T.brand }}>Sem PDF.</em>
+                </h2>
+                <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, marginBottom: '1.5rem', maxWidth: '40ch' }}>
+                  O paciente acessa o plano pelo app — qualquer ajuste que você fizer aparece na hora. Sem criar PDF, sem reenviar arquivo, sem WhatsApp.
+                </p>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[
+                    'Plano acessível pelo app em tempo real',
+                    'Ajuste qualquer refeição — o paciente vê na hora',
+                    'Macros e kcal calculados automaticamente',
+                  ].map(item => (
+                    <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#444', lineHeight: 1.5 }}>
+                      <Check size={14} color="#16a34a" style={{ flexShrink: 0, marginTop: 3 }} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </AnimatedSection>
+              <AnimatedSection delay={0.1}><MealPlanUI /></AnimatedSection>
+            </div>
+          </div>
+        </section>
+        {/* — Feature 4: Prontuários — bg claro, texto esquerda / UI direita */}
+        <section style={{ background: T.bg, borderTop: `1px solid ${T.border}` }}>
+          <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-start">
+              <AnimatedSection style={{ paddingTop: '1rem' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Prontuários</p>
+                <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
+                  O histórico<br />completo de<br />cada paciente.
+                </h2>
+                <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, marginBottom: '1.5rem', maxWidth: '40ch' }}>
+                  Evoluções clínicas, medidas e documentos organizados por paciente. Tudo acessível em segundos — sem papel, sem pasta física, sem foto no WhatsApp.
+                </p>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[
+                    'Evolução clínica com histórico datado por consulta',
+                    'Indicadores e medidas rastreados ao longo do tempo',
+                    'Documentos e laudos anexados ao prontuário',
+                  ].map(item => (
+                    <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#444', lineHeight: 1.5 }}>
+                      <Check size={14} color="#16a34a" style={{ flexShrink: 0, marginTop: 3 }} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </AnimatedSection>
+              <AnimatedSection delay={0.1}><ProntuarioUI /></AnimatedSection>
+            </div>
+          </div>
+        </section>
+
+        {/* — Feature 5: Financeiro — texto no topo, dashboard abaixo */}
         <section style={{ background: T.white, borderTop: `1px solid ${T.border}` }}>
           <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem' }}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20" style={{ marginBottom: '3.5rem' }}>
@@ -441,10 +705,39 @@ export function LandingPage() {
                 </p>
               </div>
             </div>
-
             <AnimatedSection delay={0.05} style={{ borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
               <FinanceDashboard />
             </AnimatedSection>
+          </div>
+        </section>
+
+        {/* — Feature 6: Vitrine — bg quente, texto esquerda / UI direita */}
+        <section style={{ background: T.bg, borderTop: `1px solid ${T.border}` }}>
+          <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-start">
+              <AnimatedSection style={{ paddingTop: '1rem' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Vitrine pública</p>
+                <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
+                  Seja encontrado<br />por quem procura<br />você.
+                </h2>
+                <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, marginBottom: '1.5rem', maxWidth: '40ch' }}>
+                  Seu perfil aparece no Descobrir — o diretório do Orbi onde pacientes buscam profissionais por especialidade e cidade. Uma presença online pronta, sem precisar de site.
+                </p>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[
+                    'Perfil com especialidade, localização e serviços',
+                    'Botão de agendamento direto no perfil público',
+                    'Avaliações de clientes visíveis para novos pacientes',
+                  ].map(item => (
+                    <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#444', lineHeight: 1.5 }}>
+                      <Check size={14} color="#16a34a" style={{ flexShrink: 0, marginTop: 3 }} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </AnimatedSection>
+              <AnimatedSection delay={0.1}><VitrineProfileUI /></AnimatedSection>
+            </div>
           </div>
         </section>
       </div>

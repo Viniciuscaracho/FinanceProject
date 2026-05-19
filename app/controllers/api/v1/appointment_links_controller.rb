@@ -9,7 +9,7 @@ module Api
         return render json: { error: 'Account not found' }, status: :forbidden unless Current.account
 
         render json: Current.account.appointment_links
-          .includes(:service, :account_user)
+          .includes(:service, account_user: :user)
           .order(created_at: :desc)
           .map { |link| appointment_link_json(link) }
       rescue => e

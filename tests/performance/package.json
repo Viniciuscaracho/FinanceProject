@@ -9,6 +9,9 @@
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
     "test:headed": "playwright test --headed",
+    "test:ux-audit": "playwright test --project=ux-audit --headed",
+    "test:ux-audit:ci": "playwright test --project=ux-audit",
+    "seed:meal-plans": "cd ../.. && rails runner db/seeds/meal_plans_data.rb",
     "report": "playwright show-report",
     "lighthouse": "lhci autorun"
   },

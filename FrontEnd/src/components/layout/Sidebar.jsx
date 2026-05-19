@@ -17,7 +17,7 @@ const NAV = [
     items: [
       { icon: Home,       label: 'Início',       path: '/' },
       { icon: Calendar,   label: 'Agendamentos', path: '/appointments' },
-      { icon: Users,      label: 'Clientes',     path: '/contacts' },
+      { icon: Users,      label: 'Pacientes',    path: '/contacts' },
       { icon: CreditCard, label: 'Transações',   path: '/transactions' },
       { icon: Globe,      label: 'Vitrine',      path: '/vitrine' },
     ],
@@ -63,12 +63,13 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen
   const isAdmin   = user?.account?.admin === true
 
   // Persistir estado de cada grupo colapsável { storageKey → bool }
+  // Padrão: aberto (true) — seções fecham por preferência do usuário, não por default
   const [openSections, setOpenSections] = useState(() => {
     const result = {}
     NAV.forEach(s => {
       if (s.collapsible && s.storageKey) {
-        try { result[s.storageKey] = JSON.parse(localStorage.getItem(s.storageKey) ?? 'false') }
-        catch { result[s.storageKey] = false }
+        try { result[s.storageKey] = JSON.parse(localStorage.getItem(s.storageKey) ?? 'true') }
+        catch { result[s.storageKey] = true }
       }
     })
     return result

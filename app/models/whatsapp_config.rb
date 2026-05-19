@@ -5,6 +5,10 @@
 # Table name: whatsapp_configs
 #
 #  id                      :bigint           not null, primary key
+#  allowed_hours_end       :integer          default(20), not null
+#  allowed_hours_start     :integer          default(8), not null
+#  automations             :json
+#  cooldown_minutes        :integer          default(30), not null
 #  enabled                 :boolean          default(FALSE)
 #  evolution_api_key       :string
 #  evolution_api_url       :string
@@ -40,6 +44,10 @@ class WhatsappConfig < ApplicationRecord
     evolution_api_url.present? && 
     evolution_api_key.present? && 
     evolution_instance_name.present?
+  end
+
+  def automation_enabled?(event)
+    (automations || {})[event.to_s] != false
   end
 
   # Retorna a URL base sem barra no final

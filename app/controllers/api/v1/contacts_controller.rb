@@ -86,7 +86,8 @@ module Api
           phone: contact.phone_number,
           document: contact.document_1,
           notes: contact.description,
-          contact_type: contact.contact_type.to_s
+          contact_type: contact.contact_type.to_s,
+          is_demo: contact.is_demo
         )
       end
 

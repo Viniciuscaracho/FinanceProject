@@ -33,12 +33,14 @@ export const CompanySettings = lazy(() => import('../pages/CompanySettings').the
 export const Vitrine = lazy(() => import('../pages/Vitrine').then(m => ({ default: m.Vitrine })))
 export const AnamneseTemplates = lazy(() => import('../pages/AnamneseTemplates').then(m => ({ default: m.AnamneseTemplates })))
 export const PatientProfile = lazy(() => import('../pages/PatientProfile').then(m => ({ default: m.PatientProfile })))
+export const MealPlanBuilder = lazy(() => import('../pages/MealPlanBuilder'))
 
 export const protectedRoutes = [
   { path: '/',                              element: Dashboard },
   { path: '/transactions',                  element: Transactions },
   { path: '/contacts',                      element: Contacts },
   { path: '/contacts/:id',                  element: PatientProfile },
+  { path: '/contacts/:contactId/meal-plans/:planId', element: MealPlanBuilder },
   { path: '/appointments',                  element: Appointments },
   { path: '/appointment-links',             element: AppointmentLinks },
   { path: '/appointment-notes',             element: AppointmentNotes },

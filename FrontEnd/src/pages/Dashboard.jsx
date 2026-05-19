@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   isSameDay, isSameMonth, parseISO, format,
@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   AlertCircle, Loader2, Plus, User, FileText,
   CheckCircle2, Calendar, TrendingUp, TrendingDown,
+  X, Check,
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { apiService } from '../lib/api'
@@ -38,6 +39,18 @@ function Panel({ children, style }) {
     <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, ...style }}>
       {children}
     </div>
+  )
+}
+
+// Bloco pulsante para skeleton — tamanho fixo evita layout shift
+function Sk({ w = 80, h = 14, r = 6 }) {
+  return (
+    <div style={{
+      width: w, height: h, borderRadius: r,
+      background: 'rgba(255,255,255,0.12)',
+      animation: 'skpulse 1.4s ease-in-out infinite',
+      flexShrink: 0,
+    }} />
   )
 }
 
@@ -78,6 +91,141 @@ function Empty({ text }) {
   )
 }
 
+/* ─── Setup Checklist ────────────────────────────── */
+const CHECKLIST_KEY = 'setup_checklist_done'
+const ONBOARDING_KEY = 'onboarding_v1_done'
+
+function SetupChecklist({ allApts }) {
+  const navigate = useNavigate()
+  const [visible, setVisible] = useState(
+    () => localStorage.getItem(ONBOARDING_KEY) === '1' && !localStorage.getItem(CHECKLIST_KEY)
+  )
+  const [hasRealContact, setHasRealContact] = useState(false)
+
+  const hasRealApt = useMemo(
+    () => allApts.some(a => !a.is_demo),
+    [allApts]
+  )
+
+  const checkContacts = useCallback(async () => {
+    try {
+      const res = await apiService.getContacts(1, 20)
+      const list = res?.contacts || []
+      setHasRealContact(list.some(c => !c.is_demo))
+    } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => {
+    if (!visible) return
+    checkContacts()
+    const onCleared = () => checkContacts()
+    window.addEventListener('demo-cleared', onCleared)
+    return () => window.removeEventListener('demo-cleared', onCleared)
+  }, [visible, checkContacts])
+
+  useEffect(() => {
+    if (hasRealContact && hasRealApt && visible) {
+      const t = setTimeout(() => {
+        localStorage.setItem(CHECKLIST_KEY, '1')
+        setVisible(false)
+      }, 2000)
+      return () => clearTimeout(t)
+    }
+  }, [hasRealContact, hasRealApt, visible])
+
+  if (!visible) return null
+
+  const steps = [
+    { label: 'Criou sua conta',               done: true },
+    { label: 'Cadastrou um serviço',           done: true },
+    { label: 'Configurou seu horário',         done: true },
+    { label: 'Gerou seu link de agendamento',  done: true },
+    { label: 'Adicione um cliente real',       done: hasRealContact, action: () => navigate('/contacts') },
+    { label: 'Crie seu primeiro agendamento',  done: hasRealApt,     action: () => navigate('/appointments') },
+  ]
+
+  const done  = steps.filter(s => s.done).length
+  const total = steps.length
+  const pct   = Math.round((done / total) * 100)
+
+  const dismiss = () => {
+    localStorage.setItem(CHECKLIST_KEY, '1')
+    setVisible(false)
+  }
+
+  return (
+    <div style={{
+      background: T.white,
+      border: `1px solid ${T.border}`,
+      borderRadius: 12,
+      padding: '16px 20px',
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 700, color: T.text, margin: 0 }}>Primeiros passos</p>
+          <p style={{ fontSize: 12, color: T.muted, margin: '2px 0 0' }}>{done} de {total} concluídos</p>
+        </div>
+        <button
+          onClick={dismiss}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 4, display: 'flex' }}
+          title="Fechar"
+        >
+          <X size={14} />
+        </button>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ height: 4, background: T.border, borderRadius: 4, marginBottom: 14, overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', width: `${pct}%`,
+          background: pct === 100 ? T.green : '#4C60AA',
+          borderRadius: 4,
+          transition: 'width 600ms ease',
+        }} />
+      </div>
+
+      {/* Steps */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {steps.map((step, i) => (
+          <div
+            key={i}
+            onClick={!step.done && step.action ? step.action : undefined}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              cursor: !step.done && step.action ? 'pointer' : 'default',
+              opacity: step.done ? 0.6 : 1,
+            }}
+          >
+            <div style={{
+              width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+              background: step.done ? T.green : T.chip,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: step.done ? 'none' : `1px solid ${T.border}`,
+            }}>
+              {step.done
+                ? <Check size={10} strokeWidth={3} style={{ color: '#fff' }} />
+                : <div style={{ width: 6, height: 6, borderRadius: '50%', background: T.border }} />
+              }
+            </div>
+            <p style={{
+              fontSize: 13, margin: 0,
+              color: step.done ? T.muted : T.text,
+              fontWeight: step.done ? 400 : 500,
+              textDecoration: step.done ? 'line-through' : 'none',
+            }}>
+              {step.label}
+            </p>
+            {!step.done && step.action && (
+              <p style={{ fontSize: 11, color: '#4C60AA', margin: '0 0 0 auto', fontWeight: 600 }}>Fazer →</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /* ─── Dashboard ──────────────────────────────────── */
 export function Dashboard() {
   const isMobile   = useIsMobile()
@@ -89,7 +237,9 @@ export function Dashboard() {
 
   const hour      = new Date().getHours()
   const greeting  = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
+  // Capitaliza apenas a primeira letra — evita "18 De Maio" com textTransform:capitalize
   const todayLabel = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })
+    .replace(/^\w/, c => c.toUpperCase())
 
   const [dashData,     setDashData]     = useState(null)
   const [statsData,    setStatsData]    = useState(null)
@@ -103,7 +253,7 @@ export function Dashboard() {
   const PER_PAGE = 5
 
   const updateTx = useUpdateTransaction()
-  const { appointments: allApts } = useAppointments()
+  const { appointments: allApts, loading: aptsLoading } = useAppointments()
 
   const todayApts = useMemo(() =>
     allApts
@@ -197,22 +347,8 @@ export function Dashboard() {
   const GrowthIcon     = growthPositive ? TrendingUp : TrendingDown
   const growthColor    = growthPositive ? T.green : T.red
 
-  if (loading) return (
-    <div data-testid="dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 360, ...DISPLAY }}>
-      <Loader2 size={24} style={{ color: T.brand, animation: 'spin 1s linear infinite' }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-    </div>
-  )
-
-  if (error) return (
-    <div data-testid="dashboard" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 360, gap: 12, ...DISPLAY }}>
-      <AlertCircle size={24} style={{ color: T.red }} />
-      <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>Erro ao carregar dados</p>
-      <button onClick={load} style={{ fontSize: 13, color: T.brand, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-        Tentar novamente
-      </button>
-    </div>
-  )
+  // Não usar early-return de loading — troca total do DOM causa CLS alto.
+  // O layout é renderizado imediatamente; seções individuais mostram skeletons.
 
   return (
     <div data-testid="dashboard" style={{ display: 'flex', flexDirection: 'column', gap: 10, ...DISPLAY }}>
@@ -230,28 +366,44 @@ export function Dashboard() {
         {/* subtle decorative ring */}
         <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', right: -10, top: -10, width: 100, height: 100, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+
+        {/* Saudação — dados síncronos, renderiza imediatamente */}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
           <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
             {greeting}, {firstName}.
           </p>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0, textTransform: 'capitalize' }}>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
             {todayLabel}
           </p>
         </div>
 
+        {/* Métricas — sempre 3 slots fixos para evitar layout shift */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: isNarrow ? 16 : 28 }}>
-          {[
-            { label: 'Hoje', value: todayApts.length > 0 ? String(todayApts.length) : '—', accent: T.amber },
-            { label: 'Recebido',   value: fmtBRL(receitas),  accent: T.green },
-            ...(pendente > 0 ? [{ label: 'Pendente', value: fmtBRL(pendente), accent: '#F87171' }] : []),
-          ].map((s, i) => (
-            <div key={i} style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: s.accent, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-                {s.value}
-              </p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>{s.label}</p>
-            </div>
-          ))}
+          {/* Hoje — de React Query (não bloqueia hero) */}
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: T.amber, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+              {todayApts.length > 0 ? String(todayApts.length) : '—'}
+            </p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Hoje</p>
+          </div>
+
+          {/* Recebido — slot de tamanho fixo: skeleton ou valor */}
+          <div style={{ textAlign: 'right', minWidth: 80 }}>
+            {loading
+              ? <Sk w={80} h={18} r={4} />
+              : <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: T.green, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{fmtBRL(receitas)}</p>
+            }
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0, marginTop: loading ? 4 : 0 }}>Recebido</p>
+          </div>
+
+          {/* Pendente — sempre presente; invisível quando zero para não remover espaço */}
+          <div style={{ textAlign: 'right', minWidth: 72, visibility: (!loading && pendente === 0) ? 'hidden' : 'visible' }}>
+            {loading
+              ? <Sk w={72} h={18} r={4} />
+              : <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: '#F87171', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{fmtBRL(pendente)}</p>
+            }
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0, marginTop: loading ? 4 : 0 }}>Pendente</p>
+          </div>
         </div>
       </div>
 
@@ -288,6 +440,25 @@ export function Dashboard() {
         })}
       </div>
 
+      <SetupChecklist allApts={allApts} />
+
+      {/* Erro inline — não bloqueia layout, aparece como banner */}
+      {error && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          background: T.red + '10', border: `1px solid ${T.red}30`,
+          borderRadius: 10, padding: '10px 16px',
+        }}>
+          <AlertCircle size={15} style={{ color: T.red, flexShrink: 0 }} />
+          <p style={{ fontSize: 13, color: T.red, margin: 0 }}>
+            Erro ao carregar dados.{' '}
+            <button onClick={load} style={{ color: T.red, fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', fontSize: 'inherit', textDecoration: 'underline' }}>
+              Tentar novamente
+            </button>
+          </p>
+        </div>
+      )}
+
       {/* ══ 4. GRID ═══════════════════════════════════ */}
       <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '3fr 2fr', gap: 10, alignItems: 'start' }}>
 
@@ -302,7 +473,20 @@ export function Dashboard() {
               onAction={() => navigate('/appointments')}
             />
             <div style={{ padding: '0 20px 16px' }}>
-              {todayApts.length === 0 ? (
+              {(loading || aptsLoading) ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 4 }}>
+                  {[1, 2, 3].map(i => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 38, height: 14, borderRadius: 4, background: T.border, animation: 'skpulse 1.4s ease-in-out infinite', animationDelay: `${i * 80}ms` }} />
+                      <div style={{ width: 28, height: 28, borderRadius: 7, background: T.border, flexShrink: 0, animation: 'skpulse 1.4s ease-in-out infinite', animationDelay: `${i * 80}ms` }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ width: '60%', height: 13, borderRadius: 4, background: T.border, marginBottom: 4, animation: 'skpulse 1.4s ease-in-out infinite', animationDelay: `${i * 80}ms` }} />
+                        <div style={{ width: '40%', height: 11, borderRadius: 4, background: T.border, animation: 'skpulse 1.4s ease-in-out infinite', animationDelay: `${i * 80 + 60}ms` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : todayApts.length === 0 ? (
                 <div style={{ padding: '12px 0 8px' }}>
                   <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>Nenhum atendimento agendado para hoje.</p>
                 </div>
@@ -393,7 +577,20 @@ export function Dashboard() {
               onAction={() => navigate('/transactions', { state: { filter: 'overdue' } })}
             />
             <div style={{ padding: '0 20px 16px' }}>
-              {paginated.length === 0 ? <Empty text="Nenhuma transação recente" /> : (
+              {loading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 4 }}>
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 12, borderBottom: i < 5 ? `1px solid ${T.border}` : 'none' }}>
+                      <div style={{ width: 3, height: 28, borderRadius: 2, background: T.border, flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ width: `${50 + (i * 11 % 35)}%`, height: 13, borderRadius: 4, background: T.border, marginBottom: 4, animation: 'skpulse 1.4s ease-in-out infinite', animationDelay: `${i * 60}ms` }} />
+                        <div style={{ width: '35%', height: 11, borderRadius: 4, background: T.border, animation: 'skpulse 1.4s ease-in-out infinite', animationDelay: `${i * 60 + 50}ms` }} />
+                      </div>
+                      <div style={{ width: 72, height: 14, borderRadius: 4, background: T.border, animation: 'skpulse 1.4s ease-in-out infinite', animationDelay: `${i * 60}ms` }} />
+                    </div>
+                  ))}
+                </div>
+              ) : paginated.length === 0 ? <Empty text="Nenhuma transação recente" /> : (
                 <>
                   {paginated.map((tx, i) => {
                     const isRec  = tx.transaction_type_cd === 0
@@ -471,26 +668,28 @@ export function Dashboard() {
                 Fluxo do mês
               </p>
 
-              {/* Receitas + variação */}
+              {/* Receitas + variação — altura fixa para evitar CLS */}
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
-                <p style={{ fontSize: 24, fontWeight: 700, color: T.text, margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>
-                  {fmtBRL(receitas)}
-                </p>
-                {monthlyGrowth !== null && (
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 4, paddingBottom: 2,
-                    background: growthColor + '15', borderRadius: 20,
-                    padding: '3px 8px',
-                  }}>
-                    <GrowthIcon size={11} style={{ color: growthColor }} />
-                    <span style={{ fontSize: 12, fontWeight: 700, color: growthColor }}>
-                      {Math.abs(monthlyGrowth).toFixed(1)}%
-                    </span>
-                  </div>
-                )}
+                {loading
+                  ? <div style={{ width: 130, height: 28, borderRadius: 6, background: T.border, animation: 'skpulse 1.4s ease-in-out infinite' }} />
+                  : <p style={{ fontSize: 24, fontWeight: 700, color: T.text, margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>{fmtBRL(receitas)}</p>
+                }
+                {/* Badge de crescimento — visibilidade condicional, espaço sempre reservado */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  background: (!loading && monthlyGrowth !== null) ? growthColor + '15' : 'transparent',
+                  borderRadius: 20, padding: '3px 8px',
+                  visibility: (!loading && monthlyGrowth !== null) ? 'visible' : 'hidden',
+                  minWidth: 52,
+                }}>
+                  <GrowthIcon size={11} style={{ color: growthColor }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: growthColor }}>
+                    {monthlyGrowth !== null ? `${Math.abs(monthlyGrowth).toFixed(1)}%` : '0%'}
+                  </span>
+                </div>
               </div>
-              <p style={{ fontSize: 12, color: T.muted, margin: '0 0 12px' }}>
-                {monthlyGrowth !== null
+              <p style={{ fontSize: 12, color: T.muted, margin: '0 0 12px', minHeight: 18 }}>
+                {loading ? '' : monthlyGrowth !== null
                   ? `${growthPositive ? 'acima' : 'abaixo'} do mês anterior`
                   : `${fmtBRL(despesas)} em despesas`}
               </p>
@@ -609,16 +808,31 @@ export function Dashboard() {
           </Panel>
 
 
-          {/* Compromissos do dia */}
-          {todayCommits.length > 0 && (
-            <Panel>
-              <SectionHeader
-                label={`${todayCommits.length} compromisso${todayCommits.length > 1 ? 's' : ''} hoje`}
-                action="Ver"
-                onAction={() => navigate('/transactions', { state: { filter: 'today' } })}
-              />
-              <div style={{ padding: '0 20px 16px' }}>
-                {todayCommits.slice(0, 3).map((c, i) => {
+          {/* Compromissos do dia — sempre renderizado para evitar layout shift */}
+          <Panel>
+            <SectionHeader
+              label={loading
+                ? 'Compromissos hoje'
+                : `${todayCommits.length} compromisso${todayCommits.length !== 1 ? 's' : ''} hoje`}
+              action={!loading && todayCommits.length > 0 ? 'Ver' : undefined}
+              onAction={() => navigate('/transactions', { state: { filter: 'today' } })}
+            />
+            <div style={{ padding: '0 20px 16px' }}>
+              {loading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[1, 2].map(i => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 2 ? `1px solid ${T.border}` : 'none' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ width: `${55 + i * 20}%`, height: 13, borderRadius: 4, background: T.border, animation: 'skpulse 1.4s ease-in-out infinite', animationDelay: `${i * 80}ms` }} />
+                      </div>
+                      <div style={{ width: 60, height: 13, borderRadius: 4, background: T.border, animation: 'skpulse 1.4s ease-in-out infinite', animationDelay: `${i * 80}ms` }} />
+                    </div>
+                  ))}
+                </div>
+              ) : todayCommits.length === 0 ? (
+                <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>Sem compromissos para hoje.</p>
+              ) : (
+                todayCommits.slice(0, 3).map((c, i) => {
                   const isRec  = c.transaction_type_cd === 0
                   const isLast = i === Math.min(todayCommits.length, 3) - 1
                   return (
@@ -638,14 +852,17 @@ export function Dashboard() {
                       </span>
                     </div>
                   )
-                })}
-              </div>
-            </Panel>
-          )}
+                })
+              )}
+            </div>
+          </Panel>
         </div>
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg) } }
+        @keyframes skpulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.4 } }
+      `}</style>
     </div>
   )
 }

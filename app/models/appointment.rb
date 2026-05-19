@@ -10,6 +10,7 @@
 #  billing_notification_sent_at :datetime
 #  end_time                     :datetime
 #  google_meet_link             :string
+#  is_demo                      :boolean          default(FALSE), not null
 #  manage_token                 :string
 #  overdue_notification_sent    :boolean          default(FALSE), not null
 #  overdue_notification_sent_at :datetime
@@ -140,6 +141,9 @@ class Appointment < ApplicationRecord
   after_create :send_confirmation_email
   after_create :send_whatsapp_booking_receipt
   after_update :schedule_google_calendar_sync_on_change
+  after_commit :dispatch_whatsapp_confirmation_event, on: :create
+  after_commit :dispatch_whatsapp_confirmation_event_on_update, on: :update
+  after_commit :dispatch_whatsapp_payment_confirmed_event, on: :update
 
   # ── Client self-service ───────────────────────────────────────────────────
 
@@ -651,6 +655,46 @@ class Appointment < ApplicationRecord
       token = SecureRandom.urlsafe_base64(32)
       break token unless Appointment.exists?(manage_token: token)
     end
+  end
+
+  def dispatch_whatsapp_confirmation_event
+    return unless contact.present?
+    WhatsApp::EventHandler.call(
+      account:  account,
+      contact:  contact,
+      event:    :appointment_confirmation,
+      resource: self
+    )
+  rescue => e
+    Rails.logger.error "[WhatsApp::EventHandler] appointment_confirmation create: #{e.message}"
+  end
+
+  def dispatch_whatsapp_confirmation_event_on_update
+    return unless contact.present?
+    return unless previous_changes.key?(:status)
+    return unless previous_changes[:status]&.last == APPOINTMENT_STATUS[:confirmed]
+    WhatsApp::EventHandler.call(
+      account:  account,
+      contact:  contact,
+      event:    :appointment_confirmation,
+      resource: self
+    )
+  rescue => e
+    Rails.logger.error "[WhatsApp::EventHandler] appointment_confirmation update: #{e.message}"
+  end
+
+  def dispatch_whatsapp_payment_confirmed_event
+    return unless contact.present?
+    return unless previous_changes.key?(:payment_status)
+    return unless previous_changes[:payment_status]&.last == PAYMENT_STATUS[:paid]
+    WhatsApp::EventHandler.call(
+      account:  account,
+      contact:  contact,
+      event:    :payment_confirmed,
+      resource: self
+    )
+  rescue => e
+    Rails.logger.error "[WhatsApp::EventHandler] payment_confirmed: #{e.message}"
   end
 end
 

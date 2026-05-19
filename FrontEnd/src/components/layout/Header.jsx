@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Search, Bell, Menu, User, Settings, LogOut, ChevronDown, Landmark, X, TrendingUp, Moon, Sun, Home, RefreshCw, Building2 } from 'lucide-react'
+import { Search, Menu, User, LogOut, ChevronDown, Landmark, Moon, Sun, RefreshCw, Building2 } from 'lucide-react'
+import { useCommandPalette } from '@/contexts/CommandPaletteContext'
 import { useTheme } from '../../contexts/ThemeContext'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Badge } from '@/components/ui/badge'
 import { useAuth } from '../../contexts/AuthContext'
 import { useBankAccount } from '../../contexts/BankAccountContext'
 import { cn } from '@/lib/utils'
@@ -21,13 +20,11 @@ import { T } from '@/lib/tokens'
 const BRAND  = '#4C60AA'
 
 export function Header({ onMobileMenuClick, isMobile = false }) {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const { open: openSearch } = useCommandPalette()
   const { user, logout } = useAuth()
   const { isDarkMode, toggleTheme } = useTheme()
   const navigate  = useNavigate()
-  const location  = useLocation()
 
   const {
     selectedAccount,
@@ -45,11 +42,6 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
-
-  const clearSearch = () => {
-    setSearchQuery('')
-    setIsSearchExpanded(false)
-  }
 
   const handleLogout = async () => {
     await logout()
@@ -214,6 +206,53 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
             </DropdownMenu>
           ) : (
             <CaixaWidget hasAccounts={false} />
+          )}
+        </div>
+
+        {/* ── Centro: search trigger ────────── */}
+        <div className="flex-1 flex justify-center px-2" style={{ minWidth: 0 }}>
+          {isMobile ? (
+            <Button
+              variant="ghost" size="sm"
+              onClick={openSearch}
+              className="h-9 w-9 p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              title="Pesquisar (Ctrl K)"
+              aria-label="Pesquisar"
+            >
+              <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            </Button>
+          ) : (
+            <button
+              onClick={openSearch}
+              title="Pesquisar (Ctrl K)"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '7px 12px',
+                background: T.chip,
+                border: `1px solid ${T.border}`,
+                borderRadius: 10, cursor: 'pointer',
+                width: '100%', maxWidth: 380,
+                transition: 'border-color 120ms, box-shadow 120ms',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = T.brand
+                e.currentTarget.style.boxShadow = `0 0 0 3px ${T.brand}18`
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = T.border
+                e.currentTarget.style.boxShadow = 'none'
+              }}
+            >
+              <Search size={14} style={{ color: T.muted, flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: T.muted, flex: 1, textAlign: 'left', fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
+                Pesquisar tudo... (Ctrl K)
+              </span>
+              <kbd style={{
+                fontSize: 11, color: T.muted, background: T.white,
+                border: `1px solid ${T.border}`, borderRadius: 5,
+                padding: '1px 6px', fontFamily: 'monospace', flexShrink: 0, lineHeight: 1.6,
+              }}>Ctrl K</kbd>
+            </button>
           )}
         </div>
 

@@ -486,6 +486,7 @@ module Api
           anamnese_template_id: appointment.anamnese_template_id,
           anamnese_filled:      appointment.anamnese_response.present?,
           anamnese_filled_at:   appointment.anamnese_response&.filled_at&.iso8601,
+          is_demo:    appointment.is_demo,
           created_at: appointment.created_at.iso8601,
           updated_at: appointment.updated_at.iso8601
         }

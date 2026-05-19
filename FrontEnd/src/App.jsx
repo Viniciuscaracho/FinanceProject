@@ -10,9 +10,11 @@ import { Layout } from './components/layout/Layout'
 import { Login } from './components/Login'
 import { Toaster } from './components/ui/sonner'
 import { ModalProvider } from './components/ui/enhanced-modal'
+import { CommandPaletteProvider } from './contexts/CommandPaletteContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import { PageSkeleton } from './components/Skeleton'
 import { LandingPage, PublicAppointmentBooking, AppointmentManage, PublicDiscover, PublicProfessionalProfile, PublicAnamneseForm, PublicPatientDocument, protectedRoutes } from './config/routes'
+import PublicMealPlan from './pages/PublicMealPlan'
 import './App.css'
 
 function ProtectedRoute({ children }) {
@@ -56,6 +58,7 @@ function AppContent() {
         <Route path="/agendar/gerenciar/:manage_token" element={<AppointmentManage />} />
         <Route path="/anamnese/responder/:token" element={<PublicAnamneseForm />} />
         <Route path="/d/:token" element={<PublicPatientDocument />} />
+        <Route path="/plano/:token" element={<PublicMealPlan />} />
 
         {protectedRoutes.map(({ path, element: Page }) => (
           <Route
@@ -85,10 +88,12 @@ function App() {
           <ThemeProvider>
             <AuthProvider>
               <BankAccountProvider>
+                <CommandPaletteProvider>
                 <ModalProvider>
                   <AppContent />
                   <Toaster />
                 </ModalProvider>
+              </CommandPaletteProvider>
               </BankAccountProvider>
             </AuthProvider>
           </ThemeProvider>

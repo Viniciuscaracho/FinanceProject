@@ -66,6 +66,7 @@ export function CompanySettings() {
     invoice_due_days: 30,
     invoice_tax_percentage: 0,
     invoice_tax_already_applied: false,
+    pix_key: '',
   })
 
   useEffect(() => {
@@ -116,6 +117,7 @@ export function CompanySettings() {
           invoice_due_days: account.invoice_due_days || 30,
           invoice_tax_percentage: account.invoice_tax_percentage || 0,
           invoice_tax_already_applied: account.invoice_tax_already_applied || false,
+          pix_key: account.pix_key || '',
         })
       }
     } catch (error) {
@@ -179,6 +181,7 @@ export function CompanySettings() {
         invoice_due_days: parseInt(formData.invoice_due_days) || 30,
         invoice_tax_percentage: parseFloat(formData.invoice_tax_percentage) || 0,
         invoice_tax_already_applied: formData.invoice_tax_already_applied,
+        pix_key: formData.pix_key || null,
         company_attributes: {
           ...(formData.company.id ? { id: formData.company.id } : {}),
           name: formData.company.name,
@@ -562,6 +565,23 @@ export function CompanySettings() {
             <Label htmlFor="invoice_tax_already_applied" className="cursor-pointer">
               Imposto já aplicado nos valores
             </Label>
+          </div>
+
+          <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+
+          <div className="space-y-2">
+            <Label htmlFor="pix_key">Chave PIX</Label>
+            <Input
+              id="pix_key"
+              name="pix_key"
+              value={formData.pix_key}
+              onChange={handleInputChange}
+              placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+              className="w-full max-w-md"
+            />
+            <p style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+              Exibida para pacientes na confirmação do agendamento.
+            </p>
           </div>
         </CardContent>
       </Card>

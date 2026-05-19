@@ -197,3 +197,9 @@ load Rails.root.join('db', 'seeds', 'appointments_data.rb')
 # --- SEED DE DADOS EXPANDIDOS DE AGENDAMENTOS ---
 # Carrega dados expandidos com mais profissionais e agendamentos no mesmo dia
 load Rails.root.join('db', 'seeds', 'appointments_expanded_data.rb')
+
+# --- SEED TABELA TACO (alimentos) ---
+load Rails.root.join('db', 'seeds', 'taco_foods.rb')
+
+# --- SEED PLANOS ALIMENTARES (nutri MVP) ---
+load Rails.root.join('db', 'seeds', 'meal_plans_data.rb')

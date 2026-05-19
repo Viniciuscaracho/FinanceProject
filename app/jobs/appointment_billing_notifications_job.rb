@@ -55,7 +55,26 @@ class AppointmentBillingNotificationsJob < ApplicationJob
       .joins(:appointment_link)
       .where("appointment_links.settings->'automations'->>'reminder_1h' = 'true'")
 
-    run_service(scope, Appointments::Send1hReminder, 'lembrete 1h')
+    count = 0
+    scope.find_each do |appointment|
+      next unless appointment.contact.present?
+
+      WhatsApp::EventHandler.call(
+        account:  appointment.account,
+        contact:  appointment.contact,
+        event:    :appointment_reminder_1h,
+        resource: appointment
+      )
+
+      appointment.update_columns(
+        whatsapp_1h_reminder_sent:    true,
+        whatsapp_1h_reminder_sent_at: Time.current
+      )
+      count += 1
+    rescue StandardError => e
+      Rails.logger.error "[AppointmentBillingNotificationsJob 1h] ##{appointment.id}: #{e.message}"
+    end
+    Rails.logger.info "📨 [lembrete 1h] #{count} mensagens enfileiradas"
   end
 
   # Agendamentos já passados + pagamento pendente + até 48h atrás

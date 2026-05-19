@@ -4,6 +4,7 @@ import { Check, Copy, MessageCircle, ChevronRight, Briefcase, Clock, Link2, Load
 import { apiService } from '@/lib/api'
 import { T, DISPLAY } from '@/lib/tokens'
 import { toast } from 'sonner'
+import { useQueryClient } from '@tanstack/react-query'
 
 const STORAGE_KEY = 'onboarding_v1_done'
 
@@ -102,12 +103,32 @@ function validateCpf(cpf) {
 export function OnboardingWizard({ onDone }) {
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
+  const qc = useQueryClient()
 
   // Step 0 — document
-  const [document, setDocument]         = useState('')
+  const [docNumber, setDocNumber]        = useState('')
   const [docLookupLoading, setDocLookupLoading] = useState(false)
   const [docInfo, setDocInfo]           = useState(null) // { name, valid }
   const docLookupTimer                  = useRef(null)
+
+  // Pula step 0 se já tem documento cadastrado
+  useEffect(() => {
+    const cached = qc.getQueryData(['account-settings-doc-check'])
+    if (cached) {
+      sessionStorage.setItem('orbi_doc_status', 'ok')
+      setStep(1)
+      return
+    }
+    apiService.getAccountSettings().then(res => {
+      const doc = res?.account?.company?.document_1
+      if (doc) {
+        setDocNumber(doc)
+        sessionStorage.setItem('orbi_doc_status', 'ok')
+        qc.setQueryData(['account-settings-doc-check'], doc)
+        setStep(1)
+      }
+    }).catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Step 1 — service
   const [serviceName, setServiceName]   = useState('')
@@ -125,7 +146,14 @@ export function OnboardingWizard({ onDone }) {
 
   const STEPS = 4
 
-  const finish = () => {
+  const finish = async () => {
+    setSaving(true)
+    try {
+      await apiService.seedDemoData()
+      localStorage.setItem('demo_data_active', '1')
+      window.dispatchEvent(new CustomEvent('demo-seeded'))
+    } catch { /* não bloquear o onboarding se seed falhar */ }
+    setSaving(false)
     localStorage.setItem(STORAGE_KEY, '1')
     onDone()
   }
@@ -133,7 +161,7 @@ export function OnboardingWizard({ onDone }) {
   /* ── Document input handler ─────────────────── */
   const handleDocumentChange = (e) => {
     const formatted = formatDocument(e.target.value)
-    setDocument(formatted)
+    setDocNumber(formatted)
     setDocInfo(null)
 
     const digits = formatted.replace(/\D/g, '')
@@ -159,7 +187,7 @@ export function OnboardingWizard({ onDone }) {
 
   /* ── Step 0: save document ──────────────────── */
   const saveDocument = async () => {
-    const digits = document.replace(/\D/g, '')
+    const digits = docNumber.replace(/\D/g, '')
     if (digits.length !== 11 && digits.length !== 14) {
       toast.error('Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido')
       return
@@ -175,10 +203,12 @@ export function OnboardingWizard({ onDone }) {
     setSaving(true)
     try {
       await apiService.updateAccountSettings({
-        company_attributes: { document_1: document },
+        company_attributes: { document_1: docNumber },
       })
+      sessionStorage.setItem('orbi_doc_status', 'ok')
+      qc.invalidateQueries({ queryKey: ['account-settings-doc-check'] })
     } catch {
-      // Não bloqueamos o fluxo se falhar — o dado pode ser corrigido nas configurações
+      toast.error('Não foi possível salvar o documento. Você pode corrigir isso nas Configurações.')
     } finally {
       setSaving(false)
     }
@@ -227,29 +257,36 @@ export function OnboardingWizard({ onDone }) {
   /* ── Step 3: create booking link ───────────── */
   const createLink = async () => {
     setSaving(true)
+    let link = null
+
+    // 1. tenta achar um link existente
     try {
-      // Check if one already exists
       const existing = await apiService.getAppointmentLinks()
-      const links = existing?.appointment_links || existing || []
-      let link = links[0]
+      const arr = Array.isArray(existing) ? existing : (existing?.appointment_links || [])
+      link = arr[0] || null
+    } catch (err) {
+      console.error('[OnboardingWizard] getAppointmentLinks error:', err)
+    }
 
-      if (!link) {
+    // 2. se não tem, cria um novo
+    if (!link) {
+      try {
         const res = await apiService.createAppointmentLink({
-          name:        'Meus Agendamentos',
-          active:      true,
-          link_type:   'normal',
+          name:      'Meus Agendamentos',
+          active:    true,
+          link_type: 'normal',
         })
-        link = res?.appointment_link || res
+        link = res?.appointment_link || res || null
+      } catch (err) {
+        console.error('[OnboardingWizard] createAppointmentLink error:', err)
+        toast.error('Não foi possível criar o link. Crie manualmente em Links de Agendamento.')
       }
+    }
 
-      const base = window.location.origin
-      const url = link?.token
-        ? `${base}/agendar/${link.token}`
-        : `${base}/agendar`
-      setBookingUrl(url)
-    } catch {
-      setBookingUrl(window.location.origin + '/agendar')
-    } finally { setSaving(false) }
+    const base = window.location.origin
+    const url = link?.public_url || (link?.token ? `${base}/agendar/${link.token}` : null)
+    setBookingUrl(url || `${base}/agendar`)
+    setSaving(false)
     setStep(3)
   }
 
@@ -320,7 +357,7 @@ export function OnboardingWizard({ onDone }) {
                 <input
                   style={inputStyle}
                   placeholder="000.000.000-00 ou 00.000.000/0000-00"
-                  value={document}
+                  value={docNumber}
                   onChange={handleDocumentChange}
                   inputMode="numeric"
                   autoFocus
@@ -604,13 +641,19 @@ export function OnboardingWizard({ onDone }) {
 
             <button
               onClick={finish}
+              disabled={saving}
               style={{
                 width: '100%', padding: '13px', borderRadius: 10,
-                border: 'none', background: '#4C60AA',
-                color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+                border: 'none', background: saving ? 'var(--border)' : '#4C60AA',
+                color: '#fff', fontSize: 15, fontWeight: 700,
+                cursor: saving ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                transition: 'background 150ms',
               }}
             >
-              Entrar no sistema →
+              {saving
+                ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Preparando...</>
+                : 'Entrar no sistema →'}
             </button>
 
             <p style={{ textAlign: 'center', fontSize: 12, color: T.muted, marginTop: 12, margin: '12px 0 0' }}>

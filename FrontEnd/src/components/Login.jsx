@@ -59,9 +59,11 @@ function SubmitButton({ isLoading, label, loadingLabel, testId }) {
 }
 
 export function Login() {
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [mode, setMode] = useState('login'); // 'login' | 'register' | 'forgot'
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState(null);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSent, setForgotSent] = useState(false);
 
   // Login fields
   const [email, setEmail] = useState('');
@@ -87,7 +89,22 @@ export function Login() {
 
   const switchMode = (newMode) => {
     setLocalError(null);
+    setForgotSent(false);
     setMode(newMode);
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setLocalError(null);
+    try {
+      await apiService.requestPasswordReset(forgotEmail);
+    } catch {
+      // Silently ignore — never reveal whether email exists
+    } finally {
+      setIsLoading(false);
+      setForgotSent(true);
+    }
   };
 
   const formatDocument = (value) => {
@@ -204,7 +221,60 @@ export function Login() {
             </div>
           )}
 
-          {mode === 'login' ? (
+          {mode === 'forgot' ? (
+            <>
+              <div className="text-center mb-8">
+                <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Recuperar senha</h1>
+                <p className="text-sm text-gray-500 mt-1">Informe seu email para receber as instruções</p>
+              </div>
+
+              {forgotSent ? (
+                <div className="text-center space-y-5">
+                  <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto">
+                    <svg className="w-7 h-7 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Se este email estiver cadastrado, você receberá as instruções de recuperação em breve.
+                  </p>
+                  <button type="button" style={{ ...linkStyle, fontSize: 14 }} onClick={() => switchMode('login')}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = '#5B7A9E'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = '#6B8FA3'; }}
+                  >
+                    ← Voltar ao login
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPassword} className="space-y-5">
+                  <div>
+                    <label htmlFor="forgot-email" className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+                    <Input
+                      id="forgot-email"
+                      type="email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                      className="h-11 text-base md:text-sm border-gray-300 focus:border-[#6B8FA3] focus:ring-[#6B8FA3]"
+                      required
+                      autoComplete="email"
+                      autoCapitalize="none"
+                      inputMode="email"
+                    />
+                  </div>
+                  <SubmitButton isLoading={isLoading} label="Enviar instruções" loadingLabel="Enviando..." />
+                  <div className="text-center">
+                    <button type="button" style={{ ...linkStyle, fontSize: 13 }} onClick={() => switchMode('login')}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = '#5B7A9E'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = '#6B8FA3'; }}
+                    >
+                      ← Voltar ao login
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
+          ) : mode === 'login' ? (
             <>
               <div className="text-center mb-8">
                 <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Acesse sua conta</h1>
@@ -231,6 +301,12 @@ export function Login() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700">Senha</label>
+                    <button type="button" style={{ ...linkStyle, fontSize: 13 }} onClick={() => switchMode('forgot')}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = '#5B7A9E'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = '#6B8FA3'; }}
+                    >
+                      Esqueci minha senha
+                    </button>
                   </div>
                   <PasswordInput
                     id="password"

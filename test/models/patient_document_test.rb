@@ -1,5 +1,32 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: patient_documents
+#
+#  id            :bigint           not null, primary key
+#  content       :text
+#  document_type :string
+#  public_token  :string           not null
+#  shared        :boolean          default(FALSE), not null
+#  title         :string           not null
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  account_id    :bigint           not null
+#  contact_id    :bigint           not null
+#
+# Indexes
+#
+#  index_patient_documents_on_account_id                 (account_id)
+#  index_patient_documents_on_account_id_and_contact_id  (account_id,contact_id)
+#  index_patient_documents_on_contact_id                 (contact_id)
+#  index_patient_documents_on_public_token               (public_token) UNIQUE
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#  fk_rails_...  (contact_id => people.id)
+#
 require 'test_helper'
 
 class PatientDocumentTest < ActiveSupport::TestCase

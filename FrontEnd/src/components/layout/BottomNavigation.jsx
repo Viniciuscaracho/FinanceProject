@@ -44,7 +44,7 @@ const moreMenuGroups = [
   {
     title: 'Cadastros',
     items: [
-      { icon: Users,    label: 'Contatos',       path: '/contacts' },
+      { icon: Users,    label: 'Pacientes',      path: '/contacts' },
       { icon: Users,    label: 'Profissionais',  path: '/professionals' },
       { icon: Scissors, label: 'Serviços',        path: '/services' },
     ],
@@ -76,7 +76,7 @@ const moreMenuGroups = [
 const quickActions = [
   { icon: CalendarPlus, label: 'Novo agendamento', path: '/appointments', state: { openNew: true } },
   { icon: Wallet,       label: 'Nova transação',   path: '/transactions', state: { openNew: true } },
-  { icon: UserPlus,     label: 'Novo contato',      path: '/contacts',     state: { openNew: true } },
+  { icon: UserPlus,     label: 'Novo paciente',     path: '/contacts',     state: { openNew: true } },
 ]
 
 const moreMenuPaths = moreMenuGroups.flatMap(g => g.items.map(i => i.path))

@@ -52,6 +52,7 @@ module.exports = defineConfig({
         '**/imports.spec.js',
         '**/appointment-notes.spec.js',
         '**/subscription-pix.spec.js',
+        '**/meal-plan.spec.js',
       ],
     },
 
@@ -90,6 +91,16 @@ module.exports = defineConfig({
         viewport: { width: 1280, height: 720 },
       },
       testMatch: ['**/ui-tour-interactive.spec.js', '**/ui-interactive-batch*.spec.js'],
+    },
+
+    // UX Audit — auditoria completa de UX e performance (todas as telas + modais)
+    {
+      name: 'ux-audit',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 800 },
+      },
+      testMatch: '**/full-ux-audit.spec.js',
     },
   ],
 

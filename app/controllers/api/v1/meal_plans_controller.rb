@@ -1,0 +1,210 @@
+# frozen_string_literal: true
+
+module Api
+  module V1
+    class MealPlansController < ApplicationController
+      before_action :set_contact
+      before_action :set_plan, only: %i[show update destroy activate]
+
+      rescue_from ActiveRecord::RecordNotFound, with: -> { render json: { error: 'Não encontrado' }, status: :not_found }
+
+      def index
+        plans = @contact.meal_plans.recent.includes(:meal_plan_days)
+        render json: { meal_plans: plans.map { |p| plan_summary_json(p) } }
+      end
+
+      def show
+        render json: { meal_plan: plan_full_json(@plan) }
+      end
+
+      def create
+        plan = @contact.meal_plans.build(plan_params)
+        plan.account = Current.account
+
+        if plan.save
+          render json: { meal_plan: plan_summary_json(plan) }, status: :created
+        else
+          render json: { errors: plan.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      def update
+        if @plan.update(plan_params)
+          render json: { meal_plan: plan_full_json(@plan) }
+        else
+          render json: { errors: @plan.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      def destroy
+        @plan.destroy
+        render json: { message: 'Plano removido' }
+      end
+
+      def activate
+        @plan.update!(status: MealPlan::STATUSES[:active])
+        render json: { meal_plan: plan_summary_json(@plan) }
+      end
+
+      # POST /contacts/:contact_id/meal_plans/:id/days
+      def add_day
+        plan = @contact.meal_plans.find(params[:id])
+        next_number = (plan.meal_plan_days.maximum(:day_number) || 0) + 1
+        day = plan.meal_plan_days.create!(
+          day_number: next_number,
+          label:      MealPlanDay::DAY_LABELS[next_number]
+        )
+        render json: { day: day_json(day) }, status: :created
+      end
+
+      # DELETE /contacts/:contact_id/meal_plans/:plan_id/days/:id
+      def remove_day
+        plan = @contact.meal_plans.find(params[:id])
+        day  = plan.meal_plan_days.find(params[:day_id])
+        day.destroy
+        render json: { message: 'Dia removido' }
+      end
+
+      # POST /contacts/:contact_id/meal_plans/:plan_id/days/:day_id/meals
+      def add_meal
+        plan = @contact.meal_plans.find(params[:id])
+        day  = plan.meal_plan_days.find(params[:day_id])
+        position = (day.meals.maximum(:position) || -1) + 1
+        meal = day.meals.create!(
+          name:     params[:name] || 'Nova Refeição',
+          position: position
+        )
+        render json: { meal: meal_json(meal) }, status: :created
+      end
+
+      # DELETE /contacts/:contact_id/meal_plans/:plan_id/days/:day_id/meals/:meal_id
+      def remove_meal
+        plan = @contact.meal_plans.find(params[:id])
+        day  = plan.meal_plan_days.find(params[:day_id])
+        meal = day.meals.find(params[:meal_id])
+        meal.destroy
+        render json: { message: 'Refeição removida' }
+      end
+
+      # POST /contacts/:contact_id/meal_plans/:plan_id/days/:day_id/meals/:meal_id/foods
+      def add_food
+        plan = @contact.meal_plans.find(params[:id])
+        day  = plan.meal_plan_days.find(params[:day_id])
+        meal = day.meals.find(params[:meal_id])
+        food = Food.find(params[:food_id])
+
+        position   = (meal.meal_foods.maximum(:position) || -1) + 1
+        meal_food  = meal.meal_foods.create!(
+          food:     food,
+          quantity: params[:quantity] || 100,
+          unit:     params[:unit] || 'g',
+          notes:    params[:notes],
+          position: position
+        )
+        render json: { meal_food: meal_food_json(meal_food) }, status: :created
+      end
+
+      # PATCH /contacts/:contact_id/meal_plans/:plan_id/days/:day_id/meals/:meal_id/foods/:food_item_id
+      def update_food
+        plan      = @contact.meal_plans.find(params[:id])
+        day       = plan.meal_plan_days.find(params[:day_id])
+        meal      = day.meals.find(params[:meal_id])
+        meal_food = meal.meal_foods.find(params[:food_item_id])
+
+        meal_food.update!(
+          quantity: params[:quantity] || meal_food.quantity,
+          unit:     params[:unit]     || meal_food.unit,
+          notes:    params[:notes]
+        )
+        render json: { meal_food: meal_food_json(meal_food) }
+      end
+
+      # DELETE /contacts/:contact_id/meal_plans/:plan_id/days/:day_id/meals/:meal_id/foods/:food_item_id
+      def remove_food
+        plan      = @contact.meal_plans.find(params[:id])
+        day       = plan.meal_plan_days.find(params[:day_id])
+        meal      = day.meals.find(params[:meal_id])
+        meal_food = meal.meal_foods.find(params[:food_item_id])
+        meal_food.destroy
+        render json: { message: 'Alimento removido' }
+      end
+
+      private
+
+      def set_contact
+        @contact = Current.account.contacts.find(params[:contact_id])
+      end
+
+      def set_plan
+        @plan = @contact.meal_plans
+          .includes(meal_plan_days: { meals: { meal_foods: :food } })
+          .find(params[:id])
+      end
+
+      def plan_params
+        params.require(:meal_plan).permit(:title, :description, :notes, :start_date, :end_date, :status)
+      end
+
+      def plan_summary_json(plan)
+        {
+          id:           plan.id,
+          title:        plan.title,
+          description:  plan.description,
+          status:       plan.status,
+          public_token: plan.public_token,
+          total_days:   plan.total_days,
+          start_date:   plan.start_date,
+          end_date:     plan.end_date,
+          updated_at:   plan.updated_at.iso8601
+        }
+      end
+
+      def plan_full_json(plan)
+        plan_summary_json(plan).merge(
+          notes: plan.notes,
+          days:  plan.meal_plan_days.sort_by(&:day_number).map { |d| day_json(d) }
+        )
+      end
+
+      def day_json(day)
+        {
+          id:         day.id,
+          day_number: day.day_number,
+          label:      day.display_label,
+          meals:      day.meals.sort_by(&:position).map { |m| meal_json(m) }
+        }
+      end
+
+      def meal_json(meal)
+        {
+          id:              meal.id,
+          name:            meal.name,
+          time_suggestion: meal.time_suggestion,
+          notes:           meal.notes,
+          position:        meal.position,
+          total_kcal:      meal.total_kcal.round(1),
+          total_protein:   meal.total_protein.round(1),
+          total_carbs:     meal.total_carbs.round(1),
+          total_fat:       meal.total_fat.round(1),
+          foods:           meal.meal_foods.sort_by(&:position).map { |mf| meal_food_json(mf) }
+        }
+      end
+
+      def meal_food_json(mf)
+        {
+          id:              mf.id,
+          food_id:         mf.food_id,
+          food_name:       mf.food.name,
+          quantity:        mf.quantity.to_f,
+          unit:            mf.unit,
+          notes:           mf.notes,
+          kcal:            mf.kcal_snapshot.to_f,
+          protein:         mf.protein_snapshot.to_f,
+          carbs:           mf.carbs_snapshot.to_f,
+          fat:             mf.fat_snapshot.to_f,
+          position:        mf.position
+        }
+      end
+    end
+  end
+end

@@ -222,6 +222,7 @@ export function PublicAppointmentBooking() {
   // ── Online / recurrence ─────────────────────────────────────────────────────
   const [googleMeetLink, setGoogleMeetLink] = useState('')
   const [meetLinkCopied, setMeetLinkCopied] = useState(false)
+  const [pixKeyCopied, setPixKeyCopied] = useState(false)
   const [recurrenceEnabled, setRecurrenceEnabled] = useState(false)
   const [recurrenceFrequency, setRecurrenceFrequency] = useState('weekly')
   const [recurrenceOccurrences, setRecurrenceOccurrences] = useState(4)
@@ -542,6 +543,31 @@ export function PublicAppointmentBooking() {
                 >
                   Preencher agora →
                 </a>
+              </div>
+            </div>
+          )}
+
+          {/* PIX key */}
+          {companyInfo?.pix_key && (
+            <div style={{ border: '1px solid #BBF7D0', background: '#F0FDF4', borderRadius: 12, padding: '14px 18px', marginBottom: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>💸</span>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#14532D', marginBottom: 4 }}>Chave PIX para pagamento</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: '#166534', wordBreak: 'break-all', marginBottom: 8 }}>
+                  {companyInfo.pix_key}
+                </p>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(companyInfo.pix_key).then(() => {
+                      setPixKeyCopied(true)
+                      setTimeout(() => setPixKeyCopied(false), 2000)
+                    })
+                  }}
+                  style={{ fontSize: 13, fontWeight: 600, color: pixKeyCopied ? '#059669' : '#16A34A', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 5 }}
+                >
+                  <Copy size={13} />
+                  {pixKeyCopied ? 'Copiado!' : 'Copiar chave'}
+                </button>
               </div>
             </div>
           )}

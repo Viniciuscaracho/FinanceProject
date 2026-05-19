@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Mail, Phone, FileText, Target, ClipboardList, Calendar, TrendingUp, Copy, ExternalLink, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Link2 } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, FileText, Target, ClipboardList, Calendar, TrendingUp, Copy, ExternalLink, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Link2, UtensilsCrossed } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { toast } from 'sonner'
 import { apiService } from '@/lib/api'
@@ -22,16 +22,17 @@ const APT_STATUS_LABELS  = { scheduled: 'Agendado', completed: 'Concluído', can
 const APT_STATUS_COLORS  = { scheduled: '#3B82F6', completed: '#10B981', cancelled: '#EF4444', no_show: '#F59E0B' }
 const CONTACT_TYPE_LABELS = { customer: 'Cliente', employee: 'Colaborador', supplier: 'Fornecedor', partner: 'Sócio', associate: 'Associado' }
 
-function Section({ icon: Icon, title, count, children, defaultOpen = true }) {
+function Section({ icon: Icon, title, count, children, defaultOpen = true, collapsible = true }) {
   const [open, setOpen] = useState(defaultOpen)
-
 
   return (
     <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden' }}>
-      <button
-        type="button"
-        onClick={() => setOpen(p => !p)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+      <div
+        onClick={() => collapsible && setOpen(p => !p)}
+        role={collapsible ? 'button' : undefined}
+        tabIndex={collapsible ? 0 : undefined}
+        onKeyDown={collapsible ? (e => (e.key === 'Enter' || e.key === ' ') && setOpen(p => !p)) : undefined}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', cursor: collapsible ? 'pointer' : 'default' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Icon size={16} style={{ color: T.brand }} />
@@ -40,9 +41,9 @@ function Section({ icon: Icon, title, count, children, defaultOpen = true }) {
             <span style={{ fontSize: 11, fontWeight: 700, padding: '1px 8px', borderRadius: 20, background: T.chip, color: T.brand }}>{count}</span>
           )}
         </div>
-        {open ? <ChevronUp size={16} style={{ color: '#9CA3AF' }} /> : <ChevronDown size={16} style={{ color: '#9CA3AF' }} />}
-      </button>
-      {open && <div style={{ padding: '0 18px 18px' }}>{children}</div>}
+        {collapsible && (open ? <ChevronUp size={16} style={{ color: '#9CA3AF' }} /> : <ChevronDown size={16} style={{ color: '#9CA3AF' }} />)}
+      </div>
+      {(collapsible ? open : true) && <div style={{ padding: '0 18px 18px' }}>{children}</div>}
     </div>
   )
 }
@@ -217,6 +218,7 @@ export function PatientProfile() {
   const [docs, setDocs]           = useState([])
   const [anamneses, setAnamneses] = useState([])
   const [appointments, setAppointments] = useState([])
+  const [mealPlans, setMealPlans] = useState([])
   const [expandedAnamneseId, setExpandedAnamneseId] = useState(null)
 
   const [showNewGoal, setShowNewGoal]   = useState(false)
@@ -226,18 +228,20 @@ export function PatientProfile() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [contactRes, goalsRes, docsRes, anamneseRes, aptsRes] = await Promise.all([
+      const [contactRes, goalsRes, docsRes, anamneseRes, aptsRes, plansRes] = await Promise.all([
         apiService.getContact(id),
         apiService.getPatientGoals(id).catch(() => ({ goals: [] })),
         apiService.getPatientDocuments(id).catch(() => ({ documents: [] })),
         apiService.getAnamneseHistory(id).catch(() => ({ responses: [] })),
         apiService.getAppointments({ contact_id: id, per_page: 10 }).catch(() => []),
+        apiService.getMealPlans(id).catch(() => ({ meal_plans: [] })),
       ])
       setContact(contactRes.contact || contactRes)
       setGoals(goalsRes.goals || [])
       setDocs(docsRes.documents || [])
       setAnamneses(anamneseRes.responses || [])
       setAppointments(Array.isArray(aptsRes) ? aptsRes : (aptsRes.appointments || []))
+      setMealPlans(plansRes.meal_plans || [])
     } catch (e) {
       toast.error('Erro ao carregar perfil')
     } finally {
@@ -288,6 +292,27 @@ export function PatientProfile() {
       setDocs(prev => prev.filter(d => d.id !== docId))
       toast.success('Documento removido')
     } catch { toast.error('Erro ao remover documento') }
+  }
+
+  const handleCreateMealPlan = async () => {
+    try {
+      const res = await apiService.createMealPlan(id, { title: 'Novo Plano Alimentar' })
+      navigate(`/contacts/${id}/meal-plans/${res.meal_plan.id}`)
+    } catch { toast.error('Erro ao criar plano alimentar') }
+  }
+
+  const handleDeleteMealPlan = async (planId) => {
+    if (!window.confirm('Remover este plano alimentar?')) return
+    try {
+      await apiService.deleteMealPlan(id, planId)
+      setMealPlans(prev => prev.filter(p => p.id !== planId))
+      toast.success('Plano removido')
+    } catch { toast.error('Erro ao remover plano') }
+  }
+
+  const handleCopyMealPlanLink = (plan) => {
+    const url = `${window.location.origin}/plano/${plan.public_token}`
+    navigator.clipboard.writeText(url).then(() => toast.success('Link copiado!'))
   }
 
   const contactName = contact?.name || contact?.first_name || '...'
@@ -363,6 +388,48 @@ export function PatientProfile() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        {/* Meal Plans */}
+        <Section icon={UtensilsCrossed} title="Planos Alimentares" count={mealPlans.length} collapsible={false}>
+          {mealPlans.length === 0 ? (
+            <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '16px 0' }}>Nenhum plano alimentar criado</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+              {mealPlans.map(plan => (
+                <div key={plan.id} style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{plan.title}</div>
+                    <div style={{ fontSize: 11, color: T.muted, marginTop: 2, display: 'flex', gap: 6 }}>
+                      <span style={{ padding: '1px 6px', borderRadius: 20, fontSize: 10, fontWeight: 600, background: plan.status === 'active' ? '#ECFDF5' : '#F3F4F6', color: plan.status === 'active' ? '#10B981' : '#9CA3AF' }}>
+                        {plan.status === 'active' ? 'Ativo' : plan.status === 'draft' ? 'Rascunho' : 'Arquivado'}
+                      </span>
+                      <span>{plan.total_days} {plan.total_days === 1 ? 'dia' : 'dias'} · atualizado {new Date(plan.updated_at).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
+                    {plan.status === 'active' && (
+                      <button type="button" onClick={() => handleCopyMealPlanLink(plan)} title="Copiar link do paciente"
+                        style={{ background: T.chip, border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: T.brand }}>
+                        <Copy size={12} /> Link
+                      </button>
+                    )}
+                    <button type="button" onClick={() => navigate(`/contacts/${id}/meal-plans/${plan.id}`)} title="Editar plano"
+                      style={{ background: T.chip, border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: T.brand }}>
+                      <ExternalLink size={12} /> Abrir
+                    </button>
+                    <button type="button" onClick={() => handleDeleteMealPlan(plan.id)} title="Remover"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB', padding: '4px' }}>
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <Button size="sm" variant="outline" onClick={handleCreateMealPlan} style={{ fontSize: 12, gap: 6 }}>
+            <Plus size={13} /> Novo plano alimentar
+          </Button>
+        </Section>
 
         {/* Goals */}
         <Section icon={Target} title="Metas" count={goals.filter(g => g.status === 'active').length}>

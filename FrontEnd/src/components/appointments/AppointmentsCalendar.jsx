@@ -83,6 +83,78 @@ function StatusDot({ status }) {
   )
 }
 
+function MonthViewSkeleton({ currentDate }) {
+  const cells = useMemo(() => {
+    const monthStart = startOfMonth(currentDate)
+    const monthEnd   = endOfMonth(currentDate)
+    const start      = startOfWeek(monthStart, { weekStartsOn: 0 })
+    const end        = endOfWeek(monthEnd,   { weekStartsOn: 0 })
+    const result     = []
+    let d = start
+    while (d <= end) {
+      result.push({
+        dayNumber:      d.getDate(),
+        isCurrentMonth: isSameMonth(d, currentDate),
+        isToday:        isToday(d),
+      })
+      d = addDays(d, 1)
+    }
+    return result
+  }, [currentDate])
+
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-neutral-200 dark:border-gray-800 overflow-hidden shadow-sm">
+      <div className="grid grid-cols-7 border-b border-neutral-100 dark:border-gray-800">
+        {WEEKDAYS.map(day => (
+          <div key={day} className="text-center text-[10px] font-bold uppercase tracking-widest text-neutral-400 dark:text-gray-500 py-3">
+            {day}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 divide-x divide-y divide-neutral-100 dark:divide-gray-800/60">
+        {cells.map((cell, i) => {
+          const showBar = cell.isCurrentMonth && (i * 3 + cell.dayNumber) % 3 !== 0
+          const delay   = `${(i * 60) % 600}ms`
+          return (
+            <div
+              key={i}
+              className={cn(
+                'min-h-[84px] flex flex-col p-2 bg-white dark:bg-gray-900',
+                !cell.isCurrentMonth && 'opacity-30',
+              )}
+              style={cell.isToday ? { boxShadow: `inset 0 0 0 2px ${T.brand}` } : {}}
+            >
+              <span
+                className={cn(
+                  'text-sm font-semibold leading-none self-start text-neutral-300 dark:text-gray-600',
+                  cell.isToday && 'flex items-center justify-center w-6 h-6 rounded-full text-white font-bold text-xs',
+                )}
+                style={cell.isToday ? { background: T.brand } : {}}
+              >
+                {cell.dayNumber}
+              </span>
+              {showBar && (
+                <div className="mt-auto pt-2 flex gap-px">
+                  <div
+                    className="h-1 flex-1 rounded-full bg-neutral-200 dark:bg-gray-700 animate-pulse"
+                    style={{ animationDelay: delay }}
+                  />
+                  {(i + cell.dayNumber) % 2 === 0 && (
+                    <div
+                      className="h-1 flex-1 rounded-full bg-neutral-200 dark:bg-gray-700 animate-pulse"
+                      style={{ animationDelay: delay }}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone }) {
   const isMobile = useIsMobile()
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -644,8 +716,9 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
       </div>
 
       {/* Visualização Mensal com Scroll Horizontal */}
-      {viewMode === 'month' && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-neutral-200 dark:border-gray-800 overflow-hidden relative shadow-sm">
+      {viewMode === 'month' && (loading && allAppointments.length === 0
+        ? <MonthViewSkeleton currentDate={currentDate} />
+        : <div className="bg-white dark:bg-gray-900 rounded-2xl border border-neutral-200 dark:border-gray-800 overflow-hidden relative shadow-sm">
           {/* Container com scroll horizontal invisível */}
           <div
             ref={scrollContainerRef}
@@ -897,6 +970,14 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
                             >
                               {STATUS_COLORS[status]?.label || status}
                             </span>
+                            {apt.is_demo && (
+                              <span
+                                className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5"
+                                style={{ borderRadius: 20, background: '#F3F4F6', color: '#6B7280', border: '1px solid #E5E7EB' }}
+                              >
+                                Exemplo
+                              </span>
+                            )}
                           </div>
                         </div>
 

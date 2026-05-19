@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_15_100001) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_18_100003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -93,6 +93,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_15_100001) do
     t.string "profession_category"
     t.text "directory_description"
     t.string "abacate_pay_customer_id"
+    t.string "google_contacts_access_token"
+    t.string "google_contacts_refresh_token"
+    t.datetime "google_contacts_token_expires_at"
+    t.boolean "google_contacts_connected", default: false, null: false
+    t.string "pix_key"
     t.index ["company_id"], name: "index_accounts_on_company_id"
     t.index ["directory_visible"], name: "index_accounts_on_directory_visible"
     t.index ["discarded_at"], name: "index_accounts_on_discarded_at"
@@ -299,6 +304,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_15_100001) do
     t.jsonb "additional_service_ids", default: [], null: false
     t.string "manage_token"
     t.bigint "anamnese_template_id"
+    t.boolean "is_demo", default: false, null: false
     t.index ["account_id", "account_user_id", "status", "start_time"], name: "index_appointments_on_account_professional_status_time"
     t.index ["account_id", "start_time", "status"], name: "index_appointments_on_account_time_status"
     t.index ["account_id"], name: "index_appointments_on_account_id"
@@ -539,6 +545,23 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_15_100001) do
     t.index ["user_id"], name: "index_feedbacks_on_user_id"
   end
 
+  create_table "foods", force: :cascade do |t|
+    t.bigint "account_id"
+    t.string "name", null: false
+    t.decimal "kcal_per_100g", precision: 8, scale: 2, default: "0.0"
+    t.decimal "protein_per_100g", precision: 8, scale: 2, default: "0.0"
+    t.decimal "carbs_per_100g", precision: 8, scale: 2, default: "0.0"
+    t.decimal "fat_per_100g", precision: 8, scale: 2, default: "0.0"
+    t.decimal "fiber_per_100g", precision: 8, scale: 2, default: "0.0"
+    t.string "source", default: "custom", null: false
+    t.string "external_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_foods_on_account_id"
+    t.index ["name"], name: "index_foods_on_name"
+    t.index ["source"], name: "index_foods_on_source"
+  end
+
   create_table "help_users", force: :cascade do |t|
     t.string "type", null: false
     t.text "link", null: false
@@ -644,6 +667,63 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_15_100001) do
     t.index ["recipient_id"], name: "index_invoices_on_recipient_id"
     t.index ["record_type", "record_id"], name: "index_invoices_on_record"
     t.index ["tsv_body"], name: "index_invoices_on_tsv_body", using: :gin
+  end
+
+  create_table "meal_foods", force: :cascade do |t|
+    t.bigint "meal_id", null: false
+    t.bigint "food_id", null: false
+    t.decimal "quantity", precision: 8, scale: 2, default: "100.0", null: false
+    t.string "unit", default: "g", null: false
+    t.text "notes"
+    t.decimal "kcal_snapshot", precision: 8, scale: 2, default: "0.0"
+    t.decimal "protein_snapshot", precision: 8, scale: 2, default: "0.0"
+    t.decimal "carbs_snapshot", precision: 8, scale: 2, default: "0.0"
+    t.decimal "fat_snapshot", precision: 8, scale: 2, default: "0.0"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["food_id"], name: "index_meal_foods_on_food_id"
+    t.index ["meal_id"], name: "index_meal_foods_on_meal_id"
+  end
+
+  create_table "meal_plan_days", force: :cascade do |t|
+    t.bigint "meal_plan_id", null: false
+    t.integer "day_number", null: false
+    t.string "label"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["meal_plan_id", "day_number"], name: "index_meal_plan_days_on_meal_plan_id_and_day_number", unique: true
+    t.index ["meal_plan_id"], name: "index_meal_plan_days_on_meal_plan_id"
+  end
+
+  create_table "meal_plans", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "title", null: false
+    t.text "description"
+    t.text "notes"
+    t.integer "status", default: 0, null: false
+    t.string "public_token", null: false
+    t.date "start_date"
+    t.date "end_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "contact_id"], name: "index_meal_plans_on_account_id_and_contact_id"
+    t.index ["account_id"], name: "index_meal_plans_on_account_id"
+    t.index ["contact_id"], name: "index_meal_plans_on_contact_id"
+    t.index ["public_token"], name: "index_meal_plans_on_public_token", unique: true
+  end
+
+  create_table "meals", force: :cascade do |t|
+    t.bigint "meal_plan_day_id", null: false
+    t.string "name", null: false
+    t.string "time_suggestion"
+    t.text "notes"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["meal_plan_day_id", "position"], name: "index_meals_on_meal_plan_day_id_and_position"
+    t.index ["meal_plan_day_id"], name: "index_meals_on_meal_plan_day_id"
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -774,6 +854,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_15_100001) do
     t.bigint "cnae_id"
     t.string "document_3", comment: "Inscrição Municial (PJ) / CNH (PF)"
     t.string "screen_name", comment: "Nome fantasia para PJ / Nome social para PF"
+    t.boolean "is_demo", default: false, null: false
     t.index ["account_id", "contact_type_cd"], name: "index_people_on_account_id_and_contact_type_cd"
     t.index ["account_id", "type", "discarded_at"], name: "index_people_on_account_id_and_type_and_discarded_at"
     t.index ["account_id"], name: "index_people_on_account_id"
@@ -1263,7 +1344,36 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_15_100001) do
     t.boolean "enabled", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "allowed_hours_start", default: 8, null: false
+    t.integer "allowed_hours_end", default: 20, null: false
+    t.integer "cooldown_minutes", default: 30, null: false
+    t.json "automations", default: {"appointment_confirmation"=>true, "appointment_reminder_24h"=>true, "appointment_reminder_1h"=>true, "payment_link"=>true, "payment_confirmed"=>true, "meal_plan_updated"=>false, "form_pending"=>false, "return_reminder"=>false}
     t.index ["account_id"], name: "index_whatsapp_configs_on_account_id", unique: true
+  end
+
+  create_table "whatsapp_messages", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "event_type", null: false
+    t.string "channel", default: "bot", null: false
+    t.string "status", default: "pending", null: false
+    t.string "idempotency_key", null: false
+    t.text "body"
+    t.datetime "scheduled_for"
+    t.datetime "sent_at"
+    t.string "reference_type"
+    t.bigint "reference_id"
+    t.string "external_id"
+    t.string "error_message"
+    t.json "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_whatsapp_messages_on_account_id"
+    t.index ["contact_id", "scheduled_for"], name: "index_whatsapp_messages_on_contact_id_and_scheduled_for"
+    t.index ["contact_id"], name: "index_whatsapp_messages_on_contact_id"
+    t.index ["idempotency_key"], name: "index_whatsapp_messages_on_idempotency_key", unique: true
+    t.index ["reference_type", "reference_id"], name: "index_whatsapp_messages_on_reference_type_and_reference_id"
+    t.index ["status", "scheduled_for"], name: "index_whatsapp_messages_on_status_and_scheduled_for"
   end
 
   create_table "zero_paper_items", force: :cascade do |t|
@@ -1402,5 +1512,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_15_100001) do
   add_foreign_key "users", "accounts"
   add_foreign_key "webhooks", "accounts"
   add_foreign_key "whatsapp_configs", "accounts"
+  add_foreign_key "whatsapp_messages", "accounts"
+  add_foreign_key "whatsapp_messages", "people", column: "contact_id"
   add_foreign_key "zero_paper_items", "imports"
 end

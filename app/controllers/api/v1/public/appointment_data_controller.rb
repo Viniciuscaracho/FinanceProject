@@ -130,7 +130,7 @@ module Api
             services:      services.map { |s| service_json(s) },
             professionals: query.to_a.map { |au| professional_json(au) },
             config:        build_config_data(appointment_link),
-            company:       company_json(account.company)
+            company:       company_json(account.company, account.pix_key)
           }
         rescue => e
           render json: { error: e.message }, status: :internal_server_error
@@ -232,7 +232,7 @@ module Api
           }
         end
 
-        def company_json(company)
+        def company_json(company, pix_key = nil)
           return {} unless company
 
           whatsapp_source = company.cell_phone_number.presence || company.phone_number.presence
@@ -245,7 +245,8 @@ module Api
             phone_number:      company.phone_number,
             cell_phone_number: company.cell_phone_number,
             whatsapp_number:   whatsapp_source ? normalize_whatsapp_number(whatsapp_source) : nil,
-            email:             company.email
+            email:             company.email,
+            pix_key:           pix_key
           }
         end
 

@@ -16,6 +16,7 @@
 #  document_3(Inscrição Municial (PJ) / CNH (PF))           :string
 #  email                                                    :string
 #  first_name                                               :string           not null
+#  is_demo                                                  :boolean          default(FALSE), not null
 #  last_name                                                :string
 #  person_type_cd                                           :integer          default(0), not null
 #  phone_number                                             :string
@@ -86,6 +87,8 @@ class Contact < Person
   has_many :statement_items, dependent: :restrict_with_error
   has_many :contracts, dependent: :restrict_with_error
   has_many :patient_documents, foreign_key: :contact_id, dependent: :delete_all
+  has_many :patient_goals,     foreign_key: :contact_id, dependent: :delete_all
+  has_many :meal_plans,        foreign_key: :contact_id, dependent: :destroy
 
   validates :contact_type, presence: true, inclusion: { in: CONTACT_TYPES.keys }
   validates :document_1, allow_blank: true, cpf_or_cnpj: true, if: :validate_cpf_or_cnpj?

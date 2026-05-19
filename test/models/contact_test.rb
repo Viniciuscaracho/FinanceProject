@@ -16,6 +16,7 @@
 #  document_3(Inscrição Municial (PJ) / CNH (PF))           :string
 #  email                                                    :string
 #  first_name                                               :string           not null
+#  is_demo                                                  :boolean          default(FALSE), not null
 #  last_name                                                :string
 #  person_type_cd                                           :integer          default(0), not null
 #  phone_number                                             :string

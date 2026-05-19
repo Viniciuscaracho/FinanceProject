@@ -25,10 +25,15 @@
 #  free                                                 :boolean          default(FALSE), not null
 #  google_access_token                                  :string
 #  google_calendar_connected                            :boolean          default(FALSE), not null
+#  google_contacts_access_token                         :string
+#  google_contacts_connected                            :boolean          default(FALSE), not null
+#  google_contacts_refresh_token                        :string
+#  google_contacts_token_expires_at                     :datetime
 #  google_refresh_token                                 :string
 #  google_token_expires_at                              :datetime
 #  max_active_users                                     :integer          default(3), not null
 #  max_storage_size_in_bytes                            :bigint           default(5368709120), not null
+#  pix_key                                              :string
 #  preferences                                          :jsonb            not null
 #  processor_plan_name                                  :string
 #  profession_category                                  :string
@@ -134,6 +139,8 @@ class Account < ApplicationRecord
   has_many :anamnese_responses,  dependent: :delete_all
   has_many :patient_goals,       dependent: :delete_all
   has_many :patient_documents,   dependent: :delete_all
+  has_many :meal_plans,          dependent: :destroy
+  has_many :foods,               dependent: :destroy, foreign_key: :account_id
   has_many :imports,             dependent: :delete_all
   has_many :exports,             dependent: :delete_all
   has_many :document_templates,  dependent: :delete_all

@@ -10,6 +10,7 @@
 #  billing_notification_sent_at :datetime
 #  end_time                     :datetime
 #  google_meet_link             :string
+#  is_demo                      :boolean          default(FALSE), not null
 #  manage_token                 :string
 #  overdue_notification_sent    :boolean          default(FALSE), not null
 #  overdue_notification_sent_at :datetime

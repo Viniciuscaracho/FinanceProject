@@ -26,8 +26,17 @@ namespace :api, defaults: { format: 'json' } do
 
       # Documento vivo — visualização pública pelo paciente
       get 'documents/:token', to: 'patient_documents#show'
+
+      # Plano alimentar — visualização pública pelo paciente
+      get 'meal-plans/:token', to: 'meal_plans#show'
     end
     
+    # Onboarding
+    scope :onboarding do
+      post   'seed_demo',  to: 'onboarding#seed_demo'
+      delete 'clear_demo', to: 'onboarding#clear_demo'
+    end
+
     # Auth routes
     post 'auth/login', to: 'auth#login'
     post 'auth/login_simple', to: 'auth#login_simple'
@@ -81,11 +90,25 @@ namespace :api, defaults: { format: 'json' } do
           post :toggle_shared
         end
       end
+      resources :meal_plans, only: %i[index show create update destroy] do
+        member do
+          post :activate
+          post :add_day
+          delete 'days/:day_id', action: :remove_day
+          post 'days/:day_id/meals', action: :add_meal
+          delete 'days/:day_id/meals/:meal_id', action: :remove_meal
+          post 'days/:day_id/meals/:meal_id/foods', action: :add_food
+          patch 'days/:day_id/meals/:meal_id/foods/:food_item_id', action: :update_food
+          delete 'days/:day_id/meals/:meal_id/foods/:food_item_id', action: :remove_food
+        end
+      end
       member do
         get :last_anamnese_response
         get :anamnese_history
       end
     end
+
+    resources :foods, only: %i[index create destroy]
     resources :categories, only: %i[index show create update destroy]
     resources :cost_centers, only: %i[index show create update destroy]
     resources :tags, only: %i[index]

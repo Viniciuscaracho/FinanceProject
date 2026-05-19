@@ -18,7 +18,7 @@ module Api
       def update
         authorize! :manage, :account_settings
 
-        if @account.update(sanitized_params)
+        if @account.update(inject_company_id(sanitized_params))
           render json: {
             success: true,
             account: account_data(@account),
@@ -67,6 +67,20 @@ module Api
         @account = Current.account
       end
 
+      # Ensures company_attributes always carries the existing company id so
+      # accepts_nested_attributes_for updates (not creates) the company record.
+      # Also keeps document_1/document_1_natural in sync so the NaturalPerson
+      # concern's before_validation callback doesn't overwrite a new document_1
+      # with the stale value that after_initialize set on document_1_natural.
+      def inject_company_id(params)
+        return params unless params[:company_attributes].present? && @account.company_id.present?
+        ca = params[:company_attributes]
+        ca[:id] ||= @account.company_id
+        ca[:document_1_natural] ||= ca[:document_1] if ca[:document_1].present?
+        ca[:document_1]         ||= ca[:document_1_natural] if ca[:document_1_natural].present?
+        params
+      end
+
       # Strip address IDs that don't belong to the current company so stale
       # frontend state can never trigger a nested_attributes not-found error.
       def sanitized_params
@@ -101,6 +115,7 @@ module Api
           :directory_visible,
           :profession_category,
           :directory_description,
+          :pix_key,
           { company_attributes: }
         )
       end
@@ -120,6 +135,7 @@ module Api
           directory_visible: account.directory_visible,
           profession_category: account.profession_category,
           directory_description: account.directory_description,
+          pix_key: account.pix_key,
           company: company_data(account.company)
         }
       end

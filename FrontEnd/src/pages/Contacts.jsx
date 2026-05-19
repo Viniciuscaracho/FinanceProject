@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { GoogleContactsImport } from '@/components/contacts/GoogleContactsImport'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -53,7 +53,7 @@ import { T, DISPLAY } from '@/lib/tokens'
 
 const contactTypes = [
   { label: 'Todos', value: 'all' },
-  { label: 'Cliente', value: 'customer' },
+  { label: 'Paciente', value: 'customer' },
   { label: 'Colaborador', value: 'employee' },
   { label: 'Fornecedor', value: 'supplier' },
   { label: 'Sócio', value: 'partner' },
@@ -61,7 +61,7 @@ const contactTypes = [
 ]
 
 const contactTypeOptions = [
-  { label: 'Cliente', value: 'customer' },
+  { label: 'Paciente', value: 'customer' },
   { label: 'Colaborador', value: 'employee' },
   { label: 'Fornecedor', value: 'supplier' },
   { label: 'Sócio', value: 'partner' },
@@ -110,6 +110,8 @@ export function Contacts() {
 
   // — estado de exclusão —
   const [deleteLoadingId, setDeleteLoadingId] = useState(null)
+  const [deletePendingId, setDeletePendingId] = useState(null)
+  const deletePendingTimer = useRef(null)
 
   const [formData, setFormData] = useState(EMPTY_FORM)
 
@@ -141,7 +143,7 @@ export function Contacts() {
       setTotalPages(response.meta?.total_pages || 1)
       setTotalCount(response.meta?.total_count || 0)
     } catch (err) {
-      setPageError('Erro ao carregar contatos')
+      setPageError('Erro ao carregar pacientes')
     } finally {
       setPageLoading(false)
     }
@@ -163,12 +165,12 @@ export function Contacts() {
     try {
       setIsSubmitting(true)
       await apiService.createContact(formData)
-      toast.success(`Contato "${formData.name}" criado`)
+      toast.success(`Paciente "${formData.name}" criado`)
       resetForm()
       setIsNewContactOpen(false)
       loadContacts()
     } catch (err) {
-      setFormError(err.message || 'Erro ao criar contato')
+      setFormError(err.message || 'Erro ao criar paciente')
     } finally {
       setIsSubmitting(false)
     }
@@ -198,12 +200,12 @@ export function Contacts() {
     try {
       setIsSubmitting(true)
       await apiService.updateContact(editingContact.id, formData)
-      toast.success(`Contato "${formData.name}" atualizado`)
+      toast.success(`Paciente "${formData.name}" atualizado`)
       resetForm()
       setIsEditContactOpen(false)
       loadContacts()
     } catch (err) {
-      setFormError(err.message || 'Erro ao atualizar contato')
+      setFormError(err.message || 'Erro ao atualizar paciente')
     } finally {
       setIsSubmitting(false)
     }
@@ -211,15 +213,24 @@ export function Contacts() {
 
   const handleDeleteContact = async (contact) => {
     const name = contact.name || contact.first_name || 'Contato'
-    if (!confirm(`Excluir "${name}"?`)) return
+
+    if (deletePendingId !== contact.id) {
+      clearTimeout(deletePendingTimer.current)
+      setDeletePendingId(contact.id)
+      deletePendingTimer.current = setTimeout(() => setDeletePendingId(null), 3000)
+      return
+    }
+
+    clearTimeout(deletePendingTimer.current)
+    setDeletePendingId(null)
 
     try {
       setDeleteLoadingId(contact.id)
       await apiService.deleteContact(contact.id)
       setContacts((prev) => prev.filter((c) => c.id !== contact.id))
-      toast.success(`Contato "${name}" excluído`)
+      toast.success(`Paciente "${name}" excluído`)
     } catch (err) {
-      toast.error(err.message || 'Erro ao excluir contato')
+      toast.error(err.message || 'Erro ao excluir paciente')
     } finally {
       setDeleteLoadingId(null)
     }
@@ -242,13 +253,13 @@ export function Contacts() {
 
   const getContactTypeLabel = (type) => {
     const typeMap = {
-      customer: 'Cliente',
+      customer: 'Paciente',
       employee: 'Colaborador',
       supplier: 'Fornecedor',
       partner: 'Sócio',
       associate: 'Associado',
     }
-    return typeMap[type] || 'Contato'
+    return typeMap[type] || 'Paciente'
   }
 
   const handlePageChange = (newPage) => {
@@ -259,10 +270,34 @@ export function Contacts() {
 
   if (pageLoading && contacts.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" style={{ color: T.brand }} />
-          <p style={{ color: T.muted }}>Carregando contatos...</p>
+      <div className="relative min-h-screen space-y-3" style={{ background: T.bg }}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="h-7 w-28 rounded-lg bg-neutral-200 dark:bg-gray-700 animate-pulse" />
+          <div className="h-8 w-36 rounded-lg bg-neutral-200 dark:bg-gray-700 animate-pulse" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-xl p-6 border" style={{ background: T.white, borderColor: T.border }}>
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-lg bg-neutral-200 dark:bg-gray-700 animate-pulse" style={{ animationDelay: `${i * 80}ms` }} />
+                  <div className="space-y-2">
+                    <div className="h-4 w-28 rounded bg-neutral-200 dark:bg-gray-700 animate-pulse" style={{ animationDelay: `${i * 80}ms` }} />
+                    <div className="h-3 w-14 rounded-full bg-neutral-200 dark:bg-gray-700 animate-pulse" style={{ animationDelay: `${i * 80}ms` }} />
+                  </div>
+                </div>
+                <div className="flex space-x-1">
+                  {[0, 1, 2].map(j => (
+                    <div key={j} className="w-7 h-7 rounded bg-neutral-100 dark:bg-gray-800 animate-pulse" style={{ animationDelay: `${(i * 80) + (j * 40)}ms` }} />
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-3 w-3/4 rounded bg-neutral-200 dark:bg-gray-700 animate-pulse" style={{ animationDelay: `${i * 80 + 120}ms` }} />
+                <div className="h-3 w-1/2 rounded bg-neutral-200 dark:bg-gray-700 animate-pulse" style={{ animationDelay: `${i * 80 + 160}ms` }} />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     )
@@ -286,7 +321,7 @@ export function Contacts() {
         {/* Header compacto */}
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-lg sm:text-xl font-bold" style={{ color: T.text, ...DISPLAY }}>
-            Contatos
+            Pacientes
           </h1>
 
           <div style={{ display: 'flex', gap: 8 }}>
@@ -312,7 +347,7 @@ export function Contacts() {
             <DialogTrigger asChild>
               <Button data-testid="new-contact-btn" size="sm" style={{ background: T.brand, color: '#fff', border: 'none', borderRadius: 8 }}>
                 <Plus className="h-4 w-4 mr-1.5" />
-                Adicionar Contato
+                Novo Paciente
               </Button>
             </DialogTrigger>
             <DialogContent data-testid="contact-dialog">
@@ -322,8 +357,8 @@ export function Contacts() {
                     <Users className="h-5 w-5" style={{ color: T.brand }} />
                   </div>
                   <div>
-                    <DialogTitle style={{ margin: 0 }}>Novo Contato</DialogTitle>
-                    <DialogDescription style={{ margin: 0 }}>Preencha os dados para cadastrar um novo cliente.</DialogDescription>
+                    <DialogTitle style={{ margin: 0 }}>Novo Paciente</DialogTitle>
+                    <DialogDescription style={{ margin: 0 }}>Preencha os dados para cadastrar um novo paciente.</DialogDescription>
                   </div>
                 </div>
               </DialogHeader>
@@ -429,18 +464,18 @@ export function Contacts() {
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           <StatCard
-            title="Total de Contatos"
+            title="Total de Pacientes"
             value={totalCount}
             icon={Users}
             gradient="from-blue-400 to-cyan-500"
-            subtitle="Contatos cadastrados"
+            subtitle="Pacientes cadastrados"
           />
           <StatCard
-            title="Contatos Ativos"
+            title="Pacientes Ativos"
             value={contacts.length}
             icon={TrendingUp}
             gradient="from-green-400 to-emerald-500"
-            subtitle="Contatos carregados"
+            subtitle="Pacientes carregados"
           />
           <StatCard
             title="Página Atual"
@@ -454,7 +489,7 @@ export function Contacts() {
         {/* Filter Tabs */}
         <FluidSection
           title="Filtros e Busca"
-          subtitle="Encontre os contatos que você precisa"
+          subtitle="Encontre os pacientes que você precisa"
           gradient="from-[#5B7A9E] to-[#6B8FA3]"
         >
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
@@ -480,7 +515,7 @@ export function Contacts() {
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: T.muted }} />
               <Input
-                placeholder="Pesquisar contatos..."
+                placeholder="Pesquisar pacientes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-11 w-full md:w-64"
@@ -528,18 +563,33 @@ export function Contacts() {
                           </div>
                           <div>
                             <h3 className="font-semibold" style={{ color: T.text }}>{contactName}</h3>
-                            <span style={{
-                              borderRadius: 20,
-                              padding: '3px 8px',
-                              fontSize: 11,
-                              fontWeight: 600,
-                              display: 'inline-block',
-                              marginTop: 4,
-                              background: T.chip,
-                              color: T.brand,
-                            }}>
-                              {getContactTypeLabel(contactType)}
-                            </span>
+                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                              <span style={{
+                                borderRadius: 20,
+                                padding: '3px 8px',
+                                fontSize: 11,
+                                fontWeight: 600,
+                                display: 'inline-block',
+                                background: T.chip,
+                                color: T.brand,
+                              }}>
+                                {getContactTypeLabel(contactType)}
+                              </span>
+                              {contact.is_demo && (
+                                <span style={{
+                                  borderRadius: 20,
+                                  padding: '3px 8px',
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  display: 'inline-block',
+                                  background: '#F3F4F6',
+                                  color: '#6B7280',
+                                  border: '1px solid #E5E7EB',
+                                }}>
+                                  Exemplo
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
 
@@ -547,31 +597,27 @@ export function Contacts() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:text-indigo-400 dark:hover:bg-indigo-900/20"
-                            onClick={() => navigate(`/contacts/${contact.id}`)}
-                            title="Ver prontuário"
-                          >
-                            <ClipboardList className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
                             className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20"
                             onClick={() => handleEditContact(contact)}
-                            title="Editar contato"
+                            title="Editar paciente"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20"
+                            className={deletePendingId === contact.id
+                              ? "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 text-xs font-semibold px-2"
+                              : "text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20"
+                            }
                             disabled={deleteLoadingId === contact.id}
                             onClick={() => handleDeleteContact(contact)}
-                            title="Excluir contato"
+                            title={deletePendingId === contact.id ? 'Clique para confirmar exclusão' : 'Excluir paciente'}
                           >
                             {deleteLoadingId === contact.id ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : deletePendingId === contact.id ? (
+                              'Confirmar?'
                             ) : (
                               <Trash2 className="h-4 w-4" />
                             )}
@@ -603,8 +649,16 @@ export function Contacts() {
                         )}
                       </div>
 
-                      <div className="mt-4" style={{ fontSize: 12, color: T.muted }}>
-                        Criado em {formatDate(contact.created_at)}
+                      <div className="mt-4 pt-3 flex items-center justify-between" style={{ borderTop: `1px solid ${T.border}` }}>
+                        <span style={{ fontSize: 11, color: T.muted }}>Criado em {formatDate(contact.created_at)}</span>
+                        <Button
+                          size="sm"
+                          onClick={() => navigate(`/contacts/${contact.id}`)}
+                          style={{ background: T.chip, color: T.brand, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12, gap: 5 }}
+                        >
+                          <ClipboardList className="h-3.5 w-3.5" />
+                          Prontuário
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -669,10 +723,10 @@ export function Contacts() {
         {/* Empty State */}
         {!pageLoading && filteredContacts.length === 0 && (
           <FluidSection
-            title="Nenhum contato encontrado"
+            title="Nenhum paciente encontrado"
             subtitle={searchQuery || selectedType !== 'all'
               ? 'Tente ajustar os filtros de busca'
-              : 'Comece adicionando seu primeiro contato'
+              : 'Comece adicionando seu primeiro paciente'
             }
             gradient="from-gray-400 to-gray-500"
           >
@@ -684,7 +738,7 @@ export function Contacts() {
                   style={{ background: T.brand, color: '#fff', border: 'none', borderRadius: 8 }}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Contato
+                  Novo Paciente
                 </Button>
               )}
             </div>
@@ -703,8 +757,8 @@ export function Contacts() {
                   <Users className="h-5 w-5" style={{ color: T.brand }} />
                 </div>
                 <div>
-                  <DialogTitle style={{ margin: 0 }}>Editar Contato</DialogTitle>
-                  <DialogDescription style={{ margin: 0 }}>Atualize as informações do cliente.</DialogDescription>
+                  <DialogTitle style={{ margin: 0 }}>Editar Paciente</DialogTitle>
+                  <DialogDescription style={{ margin: 0 }}>Atualize as informações do paciente.</DialogDescription>
                 </div>
               </div>
             </DialogHeader>

@@ -25,10 +25,15 @@
 #  free                                                 :boolean          default(FALSE), not null
 #  google_access_token                                  :string
 #  google_calendar_connected                            :boolean          default(FALSE), not null
+#  google_contacts_access_token                         :string
+#  google_contacts_connected                            :boolean          default(FALSE), not null
+#  google_contacts_refresh_token                        :string
+#  google_contacts_token_expires_at                     :datetime
 #  google_refresh_token                                 :string
 #  google_token_expires_at                              :datetime
 #  max_active_users                                     :integer          default(3), not null
 #  max_storage_size_in_bytes                            :bigint           default(5368709120), not null
+#  pix_key                                              :string
 #  preferences                                          :jsonb            not null
 #  processor_plan_name                                  :string
 #  profession_category                                  :string
