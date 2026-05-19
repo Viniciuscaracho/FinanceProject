@@ -24,8 +24,8 @@ RUN curl -SLf https://raw.githubusercontent.com/fullstaq-labs/fullstaq-ruby-serv
     apt-get install --assume-yes -q --no-install-recommends fullstaq-ruby-${RUBY_VERSION} && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt
 
-ARG BUNDLER_VERSION=2.4.22
-RUN gem install "bundler:~>$BUNDLER_VERSION" --no-document && \
+ARG BUNDLER_VERSION=2.6.9
+RUN gem install "bundler:$BUNDLER_VERSION" --no-document && \
     gem update --system && \
     gem cleanup
 
@@ -51,11 +51,18 @@ COPY package.json yarn.lock /app/
 RUN yarn install
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 COPY . /app
+RUN rm -rf tmp/cache && mkdir -p tmp/pids tmp/cache tmp/sockets log
 
 RUN yarn build
 RUN yarn build:css
-RUN mkdir -p tmp/pids tmp/cache tmp/sockets log
 RUN chmod ug+x /app/docker-entrypoint.sh
+
+# Smoke-test Rails loads without crashing (no DB needed — connection is lazy)
+RUN RAILS_MASTER_KEY=787c3cddfc9742ed068896c57a96f3da \
+    SECRET_KEY_BASE=placeholder \
+    DISABLE_BOOTSNAP=1 \
+    bundle exec rails runner "puts 'Rails boot OK'" --environment staging 2>&1 || \
+    (echo "=== RAILS BOOT FAILED ===" && bundle exec rails runner "puts 'x'" --environment staging 2>&1; exit 1)
 
 ENTRYPOINT [ "/app/docker-entrypoint.sh" ]
 CMD [ "bin/rails", "s", "-p", "3000", "-b", "0.0.0.0" ]
