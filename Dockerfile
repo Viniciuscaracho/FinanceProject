@@ -54,6 +54,7 @@ COPY . /app
 
 RUN yarn build
 RUN yarn build:css
+RUN mkdir -p tmp/pids tmp/cache tmp/sockets log
 RUN chmod ug+x /app/docker-entrypoint.sh
 
 ENTRYPOINT [ "/app/docker-entrypoint.sh" ]
