@@ -17,7 +17,7 @@ then
   done
   echo "Database TCP ready, running setup..."
   bundle exec rails db:create 2>/dev/null || true
-  bundle exec rails db:migrate
+  bundle exec rails db:migrate || echo "⚠️  db:migrate failed — starting server anyway (check logs)"
 fi
 
 exec "$@"
