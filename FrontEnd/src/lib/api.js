@@ -21,7 +21,10 @@ const getApiBaseUrl = () => {
   }
 
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl) return envUrl;
+  if (envUrl) {
+    const base = envUrl.replace(/\/+$/, '');
+    return base.endsWith('/api/v1') ? base : `${base}/api/v1`;
+  }
 
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
