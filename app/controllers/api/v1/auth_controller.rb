@@ -205,7 +205,8 @@ module Api
       rescue ActiveRecord::RecordInvalid => e
         render json: { success: false, error: e.record.errors.full_messages.first || 'Erro ao criar conta' }, status: :unprocessable_entity
       rescue => e
-        render json: { success: false, error: 'Erro interno ao criar conta' }, status: :internal_server_error
+        Rails.logger.error "Register error: #{e.class}: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
+        render json: { success: false, error: "Erro interno ao criar conta: #{e.class}: #{e.message}" }, status: :internal_server_error
       end
 
       private
