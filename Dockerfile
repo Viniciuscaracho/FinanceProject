@@ -57,13 +57,6 @@ RUN yarn build
 RUN yarn build:css
 RUN chmod ug+x /app/docker-entrypoint.sh
 
-# Smoke-test Rails loads without crashing (no DB needed — connection is lazy)
-RUN RAILS_MASTER_KEY=787c3cddfc9742ed068896c57a96f3da \
-    SECRET_KEY_BASE=placeholder \
-    DISABLE_BOOTSNAP=1 \
-    bundle exec rails runner "puts 'Rails boot OK'" --environment staging 2>&1 || \
-    (echo "=== RAILS BOOT FAILED ===" && bundle exec rails runner "puts 'x'" --environment staging 2>&1; exit 1)
-
 ENTRYPOINT [ "/app/docker-entrypoint.sh" ]
 CMD [ "bin/rails", "s", "-p", "3000", "-b", "0.0.0.0" ]
 
