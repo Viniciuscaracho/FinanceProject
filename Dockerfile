@@ -1,7 +1,7 @@
 # This Dockerfile uses Fullstaq Ruby with jemalloc and only supports amd64.
 FROM buildpack-deps:20.04
 
-ARG RUBY_VERSION=3.1.4-jemalloc
+ARG RUBY_VERSION=3.2.3-jemalloc
 ENV RAILS_ENV=development
 ENV GEM_HOME=/usr/local/bundle
 ENV BUNDLE_PATH="$GEM_HOME"
