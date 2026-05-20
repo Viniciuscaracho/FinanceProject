@@ -7,7 +7,7 @@ const kpis = [
   { label: "Receitas",       value: "R$ 28.500", delta: "+12%", up: true  },
   { label: "Despesas",       value: "R$ 18.200", delta: "-5%",  up: false },
   { label: "Saldo",          value: "R$ 10.300", delta: "+18%", up: true  },
-  { label: "Agendamentos",   value: "142",        delta: "+8%",  up: true  },
+  { label: "Consultas",      value: "142",        delta: "+8%",  up: true  },
 ]
 
 const chartData = [
@@ -17,7 +17,7 @@ const chartData = [
   { name: "Jun", receitas: 5600, despesas: 3200 },
 ]
 
-const BRAND   = "#4C60AA"
+const BRAND   = "#1B6E3A"
 const EXPENSE = "#CBD5E1"
 
 function CustomTooltip({ active, payload, label }) {

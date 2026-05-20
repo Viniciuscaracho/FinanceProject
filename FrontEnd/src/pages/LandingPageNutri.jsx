@@ -31,9 +31,31 @@ const AGENDA = [
   { time: '16:30', name: 'Carla Mendes',    tag: 'Retorno',             price: 'R$ 130' },
 ]
 
+const PATIENTS_DATA = [
+  { initials: 'JF', name: 'Julia Ferreira',  tag: 'Emagrecimento', week: 'Semana 4', status: 'Ativo' },
+  { initials: 'ML', name: 'Marcos Lima',     tag: 'Esportivo',     week: 'Semana 1', status: 'Ativo', active: true },
+  { initials: 'AR', name: 'Ana Rodrigues',   tag: 'Funcional',     week: 'Semana 2', status: 'Ativo' },
+  { initials: 'PA', name: 'Pedro Alves',     tag: 'Emagrecimento', week: '—',        status: 'Novo'  },
+]
+
+const PLANS_DATA = [
+  { initials: 'ML', name: 'Marcos Lima',    plan: 'Hipertrofia + Controle', kcal: '2.400 kcal', updated: 'hoje',   active: true },
+  { initials: 'JF', name: 'Julia Ferreira', plan: 'Emagrecimento fase 2',   kcal: '1.600 kcal', updated: 'ontem' },
+  { initials: 'AR', name: 'Ana Rodrigues',  plan: 'Manutenção pós-dieta',   kcal: '1.900 kcal', updated: '3 dias' },
+]
+
+const SIDEBAR_PATHS = [
+  <path key="cal"  d="M8 2v3M16 2v3M3 8h18M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" strokeWidth="1.5" strokeLinecap="round" />,
+  <path key="usr"  d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeWidth="1.5" strokeLinecap="round" />,
+  <path key="meal" d="M3 2h18M3 7h18M3 12h9M3 17h9M16 17l2 2 4-4" strokeWidth="1.5" strokeLinecap="round" />,
+]
+
 function AppPreview() {
+  const [tab, setTab] = useState(0)
+
   return (
     <div style={{ background: T.white, borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.10)' }}>
+      {/* browser chrome */}
       <div style={{ background: T.light, borderBottom: `1px solid ${T.border}`, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ display: 'flex', gap: 5 }}>
           {['#FC6058','#FEC02F','#2ACA44'].map(c => <span key={c} style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'block' }} />)}
@@ -44,64 +66,134 @@ function AppPreview() {
           </div>
         </div>
       </div>
+
       <div style={{ display: 'flex', height: 400 }}>
+        {/* sidebar */}
         <div style={{ width: 52, background: '#0D1710', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 16, gap: 12 }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: T.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: '#fff', ...DISPLAY }}>N</div>
           <div style={{ width: '60%', height: 1, background: '#ffffff18', marginTop: 4 }} />
-          {[
-            <path key="cal" d="M8 2v3M16 2v3M3 8h18M4 3h16a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" strokeWidth="1.5" strokeLinecap="round" />,
-            <path key="usr" d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeWidth="1.5" strokeLinecap="round" />,
-            <path key="meal" d="M3 2h18M3 7h18M3 12h9M3 17h9M16 17l2 2 4-4" strokeWidth="1.5" strokeLinecap="round" />,
-          ].map((path, i) => (
-            <div key={i} style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: i === 0 ? '#ffffff14' : 'transparent' }}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke={i === 0 ? '#fff' : '#ffffff50'}>{path}</svg>
+          {SIDEBAR_PATHS.map((path, i) => (
+            <div key={i}
+              onClick={() => setTab(i)}
+              title={['Agenda', 'Pacientes', 'Planos'][i]}
+              style={{
+                width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: i === tab ? '#ffffff14' : 'transparent',
+                cursor: 'pointer', transition: 'background 0.15s',
+              }}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke={i === tab ? '#fff' : '#ffffff50'}>{path}</svg>
             </div>
           ))}
         </div>
+
+        {/* content */}
         <div style={{ flex: 1, padding: 20, overflowY: 'hidden' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
-            <div>
-              <p style={{ fontSize: 11, color: T.muted, marginBottom: 2, ...DISPLAY }}>Terça-feira, 20 Mai</p>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: T.text, margin: 0, ...DISPLAY }}>Agenda de hoje</h3>
-            </div>
-            <div style={{ display: 'flex', gap: 16 }}>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: 17, fontWeight: 700, color: T.text, margin: 0, lineHeight: 1, ...DISPLAY }}>5</p>
-                <p style={{ fontSize: 10, color: T.muted, margin: '2px 0 0' }}>consultas</p>
+
+          {/* ── Agenda ── */}
+          {tab === 0 && <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+              <div>
+                <p style={{ fontSize: 11, color: T.muted, marginBottom: 2, ...DISPLAY }}>Terça-feira, 20 Mai</p>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: T.text, margin: 0, ...DISPLAY }}>Agenda de hoje</h3>
               </div>
-              <div style={{ width: 1, background: T.border }} />
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: 17, fontWeight: 700, color: '#16a34a', margin: 0, lineHeight: 1, ...DISPLAY }}>R$ 750</p>
-                <p style={{ fontSize: 10, color: T.muted, margin: '2px 0 0' }}>previsto</p>
-              </div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {AGENDA.map(apt => (
-              <div key={apt.name} style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '9px 10px', borderRadius: 10,
-                background: apt.active ? '#EBF5EE' : 'transparent',
-                border: apt.active ? `1px solid #A7D4B6` : '1px solid transparent',
-              }}>
-                <span style={{ fontSize: 10, fontWeight: 700, width: 36, flexShrink: 0, color: apt.done ? '#BDBDBD' : apt.active ? T.brand : T.muted, ...DISPLAY }}>{apt.time}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: apt.done ? '#BDBDBD' : T.text, margin: 0, textDecoration: apt.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...DISPLAY }}>{apt.name}</p>
-                  <p style={{ fontSize: 10, color: apt.done ? '#DCDCDC' : T.muted, margin: 0 }}>{apt.tag}</p>
+              <div style={{ display: 'flex', gap: 16 }}>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ fontSize: 17, fontWeight: 700, color: T.text, margin: 0, lineHeight: 1, ...DISPLAY }}>5</p>
+                  <p style={{ fontSize: 10, color: T.muted, margin: '2px 0 0' }}>consultas</p>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, color: apt.done ? '#BDBDBD' : '#374151', flexShrink: 0 }}>{apt.price}</span>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: apt.done ? '#6ee7b7' : apt.active ? T.brand : T.border }} />
+                <div style={{ width: 1, background: T.border }} />
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ fontSize: 17, fontWeight: 700, color: '#16a34a', margin: 0, lineHeight: 1, ...DISPLAY }}>R$ 750</p>
+                  <p style={{ fontSize: 10, color: T.muted, margin: '2px 0 0' }}>previsto</p>
+                </div>
               </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: T.muted, marginBottom: 6 }}>
-              <span>1 de 5 concluídas</span><span>20%</span>
             </div>
-            <div style={{ height: 4, background: T.light, borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ width: '20%', height: '100%', background: '#6ee7b7', borderRadius: 4 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {AGENDA.map(apt => (
+                <div key={apt.name} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 10px', borderRadius: 10,
+                  background: apt.active ? '#EBF5EE' : 'transparent',
+                  border: apt.active ? `1px solid #A7D4B6` : '1px solid transparent',
+                }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, width: 36, flexShrink: 0, color: apt.done ? '#BDBDBD' : apt.active ? T.brand : T.muted, ...DISPLAY }}>{apt.time}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: apt.done ? '#BDBDBD' : T.text, margin: 0, textDecoration: apt.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...DISPLAY }}>{apt.name}</p>
+                    <p style={{ fontSize: 10, color: apt.done ? '#DCDCDC' : T.muted, margin: 0 }}>{apt.tag}</p>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: apt.done ? '#BDBDBD' : '#374151', flexShrink: 0 }}>{apt.price}</span>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: apt.done ? '#6ee7b7' : apt.active ? T.brand : T.border }} />
+                </div>
+              ))}
             </div>
-          </div>
+            <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: T.muted, marginBottom: 6 }}>
+                <span>1 de 5 concluídas</span><span>20%</span>
+              </div>
+              <div style={{ height: 4, background: T.light, borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ width: '20%', height: '100%', background: '#6ee7b7', borderRadius: 4 }} />
+              </div>
+            </div>
+          </>}
+
+          {/* ── Pacientes ── */}
+          {tab === 1 && <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: T.text, margin: 0, ...DISPLAY }}>Pacientes</h3>
+              <span style={{ fontSize: 11, color: T.muted }}>4 ativos</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {PATIENTS_DATA.map(p => (
+                <div key={p.name} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 10px', borderRadius: 10,
+                  background: p.active ? '#EBF5EE' : 'transparent',
+                  border: p.active ? `1px solid #A7D4B6` : `1px solid ${T.border}`,
+                }}>
+                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: p.active ? T.brand : '#E5F0EA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: p.active ? '#fff' : T.brand, flexShrink: 0 }}>{p.initials}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: T.text, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...DISPLAY }}>{p.name}</p>
+                    <p style={{ fontSize: 10, color: T.muted, margin: 0 }}>{p.tag} · {p.week}</p>
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: p.status === 'Novo' ? '#FFF7ED' : '#ECFDF5', color: p.status === 'Novo' ? '#EA580C' : '#059669', flexShrink: 0 }}>{p.status}</span>
+                </div>
+              ))}
+            </div>
+          </>}
+
+          {/* ── Planos ── */}
+          {tab === 2 && <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: T.text, margin: 0, ...DISPLAY }}>Planos ativos</h3>
+              <span style={{ fontSize: 11, color: T.muted }}>3 pacientes</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {PLANS_DATA.map(p => (
+                <div key={p.name} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 10px', borderRadius: 10,
+                  background: p.active ? '#EBF5EE' : 'transparent',
+                  border: p.active ? `1px solid #A7D4B6` : `1px solid ${T.border}`,
+                }}>
+                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: p.active ? T.brand : '#E5F0EA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: p.active ? '#fff' : T.brand, flexShrink: 0 }}>{p.initials}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: T.text, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...DISPLAY }}>{p.name}</p>
+                    <p style={{ fontSize: 10, color: T.muted, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.plan}</p>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, margin: 0 }}>{p.kcal}</p>
+                    <p style={{ fontSize: 9, color: T.muted, margin: 0 }}>Atualizado {p.updated}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 12, padding: '10px 14px', background: '#ECFDF5', borderRadius: 10, border: '1px solid #A7D4B6' }}>
+              <p style={{ fontSize: 11, color: '#059669', margin: 0 }}>
+                <span style={{ fontWeight: 600 }}>Marcos Lima</span> acessou o plano alimentar há 2 horas — sem precisar de PDF.
+              </p>
+            </div>
+          </>}
+
         </div>
       </div>
     </div>
@@ -434,14 +526,14 @@ export function LandingPageNutri() {
             </a>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <a href="https://orbinutri.com.br/login" className="hidden sm:block" style={{
+            <a href="/login" className="hidden sm:block" style={{
               fontSize: 13, fontWeight: 600, color: T.text,
               padding: '8px 16px', borderRadius: 8, textDecoration: 'none',
               border: `1px solid ${T.border}`, background: T.white,
             }}>
               Entrar
             </a>
-            <a href="https://orbinutri.com.br/login?tab=register" style={{
+            <a href="/login?tab=register" style={{
               fontSize: 13, fontWeight: 600, color: T.white, background: T.brand,
               padding: '8px 18px', borderRadius: 8, textDecoration: 'none',
             }}>
@@ -486,7 +578,7 @@ export function LandingPageNutri() {
               </p>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: '1rem' }}>
-                <a href="https://orbinutri.com.br/login?tab=register" style={{
+                <a href="/login?tab=register" style={{
                   display: 'inline-flex', alignItems: 'center', gap: 8,
                   padding: '12px 24px', background: T.brand, color: T.white,
                   borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none',
@@ -810,7 +902,7 @@ export function LandingPageNutri() {
                   </div>
                   <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>ou R$ 190/ano — 2 meses grátis</p>
                 </div>
-                <a href="https://orbinutri.com.br/login?tab=register" style={{
+                <a href="/login?tab=register" style={{
                   display: 'block', width: '100%', padding: '13px 0',
                   background: T.brand, color: T.white, borderRadius: 10,
                   fontSize: 14, fontWeight: 600, textDecoration: 'none',
@@ -869,7 +961,7 @@ export function LandingPageNutri() {
           <p style={{ fontSize: '0.975rem', color: 'rgba(255,255,255,0.65)', marginBottom: '2rem' }}>
             14 dias grátis. Sem cartão. Cancele quando quiser.
           </p>
-          <form onSubmit={e => { e.preventDefault(); window.location.href = 'https://orbinutri.com.br/login?tab=register' }}
+          <form onSubmit={e => { e.preventDefault(); window.location.href = '/login?tab=register' }}
             style={{ display: 'flex', gap: 8, maxWidth: 420, margin: '0 auto', flexWrap: 'wrap' }}>
             <input
               type="email"

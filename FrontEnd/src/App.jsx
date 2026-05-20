@@ -67,8 +67,10 @@ function AppContent() {
     <Router>
       <Routes>
         {isNutriDomain && <Route path="/" element={<NutriRoot />} />}
-        <Route path="/landing" element={<LandingPage />} />
-        <Route path="/landing-nutri" element={<LandingPageNutri />} />
+        {isNutriDomain && <Route path="/landing" element={<Navigate to="/" replace />} />}
+        {isNutriDomain && <Route path="/landing-nutri" element={<Navigate to="/" replace />} />}
+        {!isNutriDomain && <Route path="/landing" element={<LandingPage />} />}
+        {!isNutriDomain && <Route path="/landing-nutri" element={<LandingPageNutri />} />}
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/descobrir" element={<PublicDiscover />} />
         <Route path="/descobrir/:id" element={<PublicProfessionalProfile />} />
