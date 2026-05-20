@@ -8,6 +8,20 @@ module Rack
     # Use Redis as cache store when available for distributed rate limiting
     self.cache.store = Rails.cache
 
+    ### ALLOWLISTS ###
+
+    # Trusted IPs bypass all throttles (for E2E test runners, office IPs, etc.)
+    # Set RACK_ATTACK_TRUSTED_IPS=1.2.3.4,5.6.7.8 in env
+    safelist('allow/trusted_ips') do |req|
+      trusted = ENV.fetch('RACK_ATTACK_TRUSTED_IPS', '').split(',').map(&:strip).reject(&:empty?)
+      trusted.include?(req.ip)
+    end
+
+    # Always allow internal/health requests
+    safelist('allow/health') do |req|
+      req.path == '/health_check'
+    end
+
     ### THROTTLES ###
 
     # Global: 60 req/10s per IP (6 req/s) — allows burst but stops floods

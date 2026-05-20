@@ -1,0 +1,13 @@
+{
+  "name": "orbi-e2e",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:auth": "playwright test e2e/auth.spec.js --project=orbi-staging",
+    "test:nutri": "playwright test --project=orbinutri",
+    "test:all": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
+  }
+}
