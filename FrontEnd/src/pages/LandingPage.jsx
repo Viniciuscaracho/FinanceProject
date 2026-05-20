@@ -920,7 +920,7 @@ export function LandingPage() {
           FOOTER — dois níveis, minimal
       ══════════════════════════════════════════════════ */}
       <footer style={{ background: T.white, borderTop: `1px solid ${T.border}` }}>
-        <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ padding: '3rem 0 1.5rem' }}>
+        <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '2rem', marginBottom: '3rem' }}>
             <div style={{ maxWidth: 280 }}>
               <p style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 8 }}>Orbi</p>

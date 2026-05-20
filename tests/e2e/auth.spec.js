@@ -48,6 +48,7 @@ test.describe('Registro', () => {
     await page.getByRole('button', { name: /crie uma conta/i }).click();
     await expect(page.locator('#reg-name')).toBeVisible();
 
+    await page.locator('#reg-account-name').fill('Clínica E2E');
     await page.locator('#reg-name').fill('E2E Tester');
     await page.locator('#reg-email').fill(email);
     await page.getByTestId('reg-password-input').fill(LOGIN_PASSWORD);
@@ -63,6 +64,7 @@ test.describe('Registro', () => {
     await page.goto('/login');
     await page.getByRole('button', { name: /crie uma conta/i }).click();
 
+    await page.locator('#reg-account-name').fill('Clínica Teste');
     await page.locator('#reg-name').fill('Teste');
     await page.locator('#reg-email').fill(`${REG_EMAIL_BASE}_short@gmail.com`);
     await page.getByTestId('reg-password-input').fill('123');
@@ -76,6 +78,7 @@ test.describe('Registro', () => {
     await page.goto('/login');
     await page.getByRole('button', { name: /crie uma conta/i }).click();
 
+    await page.locator('#reg-account-name').fill('Clínica Teste');
     await page.locator('#reg-name').fill('Teste');
     await page.locator('#reg-email').fill(`${REG_EMAIL_BASE}_mismatch@gmail.com`);
     await page.getByTestId('reg-password-input').fill(LOGIN_PASSWORD);
