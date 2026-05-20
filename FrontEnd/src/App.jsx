@@ -50,7 +50,7 @@ function ProtectedRoute({ children }) {
 function NutriRoot() {
   const { isAuthenticated, loading } = useAuth()
   if (loading) return <PageSkeleton />
-  if (!isAuthenticated) return <LandingPageNutri />
+  if (!isAuthenticated) return <LandingPage />
   return (
     <Layout>
       <Suspense fallback={<PageSkeleton />}>
