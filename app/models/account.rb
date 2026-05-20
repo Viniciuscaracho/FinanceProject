@@ -178,7 +178,7 @@ class Account < ApplicationRecord
     ApplicationRecord.transaction { connected_users.each(&:change_to_personal_account) }
   end
 
-  after_create do
+  after_create_commit do
     SeedDocumentTemplatesJob.perform_later(self)
   end
 

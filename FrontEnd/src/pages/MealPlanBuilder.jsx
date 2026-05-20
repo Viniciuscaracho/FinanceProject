@@ -34,7 +34,10 @@ function FoodSearch({ onSelect, onClose }) {
       try {
         const res = await apiService.searchFoods(query)
         setResults(res.foods || [])
-      } catch { setResults([]) }
+      } catch {
+        setResults([])
+        toast.error('Erro ao buscar alimentos. Tente novamente.')
+      }
       finally { setLoading(false) }
     }, 300)
     return () => clearTimeout(timer)
