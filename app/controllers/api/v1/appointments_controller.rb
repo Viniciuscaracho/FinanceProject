@@ -3,12 +3,10 @@
 module Api
   module V1
     class AppointmentsController < ApplicationController
-      # Endpoint público para n8n (usa API key em vez de autenticação de usuário)
-      # services e professionals devem usar autenticação de usuário normal
+      # create e available_slots aceitam tanto usuário autenticado (frontend) quanto n8n (API key)
       skip_before_action :authenticate_user!, only: [:create, :available_slots]
       skip_before_action :set_current_account, only: [:create, :available_slots]
-      before_action :authenticate_api_key, only: [:create, :available_slots]
-      before_action :set_account_from_api, only: [:create, :available_slots]
+      before_action :authenticate_user_or_api_key, only: [:create, :available_slots]
       before_action :set_appointment, only: [:show, :update, :destroy, :generate_professional_document, :send_anamnese]
 
       def index
@@ -345,6 +343,43 @@ module Api
           recurrence_pattern: {}
         ]
         params[:appointment].present? ? params.require(:appointment).permit(*permitted) : params.permit(*permitted)
+      end
+
+      # Aceita autenticação via JWT do frontend OU via API key do n8n
+      def authenticate_user_or_api_key
+        if request.headers['Authorization'].present?
+          user = try_authenticate_from_token
+          if user
+            @current_user = user
+            Current.user  = user
+            Current.account = user.account || user.accounts.first
+            return true
+          end
+        end
+
+        # Fallback: API key para n8n e integrações externas
+        if authenticate_api_key
+          set_account_from_api unless performed?
+        end
+      end
+
+      def try_authenticate_from_token
+        token = request.headers['Authorization'].to_s.sub(/\ABearer\s+/i, '')
+        return nil if token.blank?
+
+        if Rails.application.config.supabase[:jwt_secret].present?
+          user = Supabase::Auth.get_user_from_token(token) rescue nil
+          return user if user
+        end
+
+        begin
+          decoded = JSON.parse(Base64.strict_decode64(token))
+          user_id = decoded['user_id']
+          exp     = decoded['exp']
+          User.find_by(id: user_id) if exp && Time.current.to_i <= exp.to_i
+        rescue
+          nil
+        end
       end
 
       def authenticate_api_key
