@@ -1,4 +1,4 @@
-CORS_ALLOWED_PATTERN = /\Ahttps?:\/\/(localhost(:\d+)?|127\.0\.0\.1(:\d+)?|.*\.easypanel\.host|.*\.useorbi\.app)\z/
+CORS_ALLOWED_PATTERN = /\Ahttps?:\/\/(localhost(:\d+)?|127\.0\.0\.1(:\d+)?|.*\.easypanel\.host|.*\.useorbi\.app|.*\.orbinutri\.com\.br|orbinutri\.com\.br)\z/
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
