@@ -68,7 +68,8 @@ module Api
 
           render json: { results: accounts.map { |a| card_json(a) }, total: total, page: page }
         rescue StandardError => e
-          render json: { error: e.message }, status: :internal_server_error
+          Rails.logger.error "Discover error: #{e.class}: #{e.message}"
+          render json: { error: 'Erro interno do servidor' }, status: :internal_server_error
         end
 
         def show
@@ -78,7 +79,8 @@ module Api
 
           render json: profile_json(account)
         rescue StandardError => e
-          render json: { error: e.message }, status: :internal_server_error
+          Rails.logger.error "Discover error: #{e.class}: #{e.message}"
+          render json: { error: 'Erro interno do servidor' }, status: :internal_server_error
         end
 
         def categories

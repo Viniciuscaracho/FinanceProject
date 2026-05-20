@@ -22,7 +22,7 @@ module Api
         render json: subscription_json(subscription)
       rescue StandardError => e
         Rails.logger.error "Error syncing subscription: #{e.message}"
-        render json: { error: 'Erro ao sincronizar assinatura', message: e.message }, status: :internal_server_error
+        render_internal_error(e, message: 'Erro ao sincronizar assinatura')
       end
 
       def plans
@@ -58,7 +58,7 @@ module Api
         end
       rescue StandardError => e
         Rails.logger.error "Error fetching plans: #{e.message}"
-        render json: { error: 'Erro ao buscar planos', message: e.message }, status: :internal_server_error
+        render_internal_error(e, message: 'Erro ao buscar planos')
       end
 
       def create_checkout
@@ -70,7 +70,7 @@ module Api
             ::Stripe::Price.retrieve(plan_id)
           end
         rescue ::Stripe::InvalidRequestError => e
-          return render json: { error: 'Plano inválido', message: e.message }, status: :bad_request
+          return render_internal_error(e, message: 'Plano inválido', status: :bad_request)
         end
 
         result = BarberManagement::Stripe::CreateCheckoutSession.call(
@@ -93,12 +93,7 @@ module Api
           }, status: :internal_server_error
         end
       rescue StandardError => e
-        Rails.logger.error "Error creating checkout: #{e.message}"
-        render json: {
-          error: 'Erro ao criar checkout',
-          message: e.message,
-          class: e.class.name
-        }, status: :internal_server_error
+        render_internal_error(e, message: 'Erro ao criar checkout')
       end
 
       def billing_portal
@@ -119,7 +114,7 @@ module Api
         end
       rescue StandardError => e
         Rails.logger.error "Error creating billing portal: #{e.message}"
-        render json: { error: 'Erro ao criar portal de billing', message: e.message }, status: :internal_server_error
+        render_internal_error(e, message: 'Erro ao criar portal de billing')
       end
 
       def cancel
@@ -141,11 +136,11 @@ module Api
           render json: subscription_json(subscription)
         else
           Rails.logger.error "Error canceling subscription: #{e.message}"
-          render json: { error: 'Erro ao cancelar assinatura', message: e.message }, status: :internal_server_error
+          render_internal_error(e, message: 'Erro ao cancelar assinatura')
         end
       rescue StandardError => e
         Rails.logger.error "Error canceling subscription: #{e.message}"
-        render json: { error: 'Erro ao cancelar assinatura', message: e.message }, status: :internal_server_error
+        render_internal_error(e, message: 'Erro ao cancelar assinatura')
       end
 
       def reactivate
@@ -167,11 +162,11 @@ module Api
           render json: subscription_json(subscription)
         else
           Rails.logger.error "Error reactivating subscription: #{e.message}"
-          render json: { error: 'Erro ao reativar assinatura', message: e.message }, status: :internal_server_error
+          render_internal_error(e, message: 'Erro ao reativar assinatura')
         end
       rescue StandardError => e
         Rails.logger.error "Error reactivating subscription: #{e.message}"
-        render json: { error: 'Erro ao reativar assinatura', message: e.message }, status: :internal_server_error
+        render_internal_error(e, message: 'Erro ao reativar assinatura')
       end
 
       private

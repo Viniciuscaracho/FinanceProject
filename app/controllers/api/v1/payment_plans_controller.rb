@@ -77,7 +77,7 @@ module Api
       rescue => e
         Rails.logger.error "Erro ao atualizar parcelas: #{e.message}"
         Rails.logger.error e.backtrace.join("\n")
-        render json: { error: e.message }, status: :unprocessable_entity
+        render_internal_error(e, status: :unprocessable_entity)
       end
 
       private

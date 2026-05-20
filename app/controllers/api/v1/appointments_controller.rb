@@ -46,7 +46,7 @@ module Api
         render json: appointments.map { |apt| appointment_json(apt) }
       rescue => e
         Rails.logger.error "appointments#index: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def services
@@ -56,7 +56,7 @@ module Api
         render json: account.services.provideds.where(enabled: 't').order(:name).map { |s| service_json(s) }
       rescue => e
         Rails.logger.error "appointments#services: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def professionals
@@ -66,7 +66,7 @@ module Api
         render json: account.account_users.includes(:user).order('users.first_name').map { |au| professional_json(au) }
       rescue => e
         Rails.logger.error "appointments#professionals: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def available_slots
@@ -111,7 +111,7 @@ module Api
         render json: { available_slots: available_slots }
       rescue => e
         Rails.logger.error "appointments#available_slots: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def create
@@ -157,7 +157,7 @@ module Api
         end
       rescue => e
         Rails.logger.error "appointments#create: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def show
@@ -184,7 +184,7 @@ module Api
         end
       rescue => e
         Rails.logger.error "appointments#update: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def destroy
@@ -192,7 +192,7 @@ module Api
         render json: appointment_json(@appointment.reload)
       rescue => e
         Rails.logger.error "appointments#destroy: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def send_reminder
@@ -210,7 +210,7 @@ module Api
         end
       rescue => e
         Rails.logger.error "appointments#send_reminder: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def generate_google_meet
@@ -223,7 +223,7 @@ module Api
         end
       rescue => e
         Rails.logger.error "appointments#generate_google_meet: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def send_anamnese
@@ -267,7 +267,7 @@ module Api
         }
       rescue => e
         Rails.logger.error "appointments#send_anamnese: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def professional_document_templates
@@ -285,7 +285,7 @@ module Api
         }
       rescue => e
         Rails.logger.error "appointments#professional_document_templates: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def generate_professional_document
@@ -323,7 +323,7 @@ module Api
         render json: { success: false, error: 'Template não encontrado' }, status: :not_found
       rescue => e
         Rails.logger.error "appointments#generate_professional_document: #{e.message}"
-        render json: { success: false, error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       private

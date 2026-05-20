@@ -13,7 +13,7 @@ module Api
           .order(created_at: :desc)
           .map { |link| appointment_link_json(link) }
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def show
@@ -30,7 +30,7 @@ module Api
           render json: { errors: link.errors.full_messages }, status: :unprocessable_entity
         end
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def update
@@ -40,7 +40,7 @@ module Api
           render json: { errors: @appointment_link.errors.full_messages }, status: :unprocessable_entity
         end
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def destroy

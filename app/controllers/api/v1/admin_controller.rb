@@ -378,7 +378,7 @@ module Api
           }
         }
       rescue => e
-        render json: { error: 'Internal Server Error', message: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       # ─── WEBHOOK LOGS ──────────────────────────────────────────────────────────
@@ -410,7 +410,7 @@ module Api
           }
         }
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def retry_webhook
@@ -427,7 +427,7 @@ module Api
           webhook: webhook_json(@webhook)
         }
       rescue => e
-        render json: { success: false, error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       # ─── STRIPE SYNC ───────────────────────────────────────────────────────────
@@ -461,7 +461,7 @@ module Api
           message: "Email de confirmação reenviado para #{@target_user.email}"
         }
       rescue => e
-        render json: { success: false, error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       # ─── AUDIT LOGS ────────────────────────────────────────────────────────────
@@ -487,7 +487,7 @@ module Api
           models: @account.associated_audits.distinct.pluck(:auditable_type)
         }
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def extend_trial
@@ -512,7 +512,7 @@ module Api
           account: detailed_account_json(@account)
         }
       rescue => e
-        render json: { success: false, error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       # ─── ANNOUNCEMENTS ─────────────────────────────────────────────────────────
@@ -521,7 +521,7 @@ module Api
         announcements = Announcement.order(published_at: :desc)
         render json: { announcements: announcements.map { |a| announcement_json(a) } }
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def create_announcement
@@ -532,7 +532,7 @@ module Api
           render json: { success: false, errors: announcement.errors.full_messages }, status: :unprocessable_entity
         end
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def update_announcement
@@ -542,14 +542,14 @@ module Api
           render json: { success: false, errors: @announcement.errors.full_messages }, status: :unprocessable_entity
         end
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def destroy_announcement
         @announcement.destroy
         render json: { success: true }
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       # ─── REFERRAL CODES ────────────────────────────────────────────────────────
@@ -564,7 +564,7 @@ module Api
           }
         }
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def create_referral_code
@@ -576,7 +576,7 @@ module Api
           render json: { success: false, errors: code.errors.full_messages }, status: :unprocessable_entity
         end
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def update_referral_code
@@ -586,14 +586,14 @@ module Api
           render json: { success: false, errors: @referral_code.errors.full_messages }, status: :unprocessable_entity
         end
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def destroy_referral_code
         @referral_code.discard
         render json: { success: true }
       rescue => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def impersonate

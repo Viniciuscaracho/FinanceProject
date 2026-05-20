@@ -23,7 +23,8 @@ module Api
 
           render json: services.map { |s| service_json(s) }
         rescue => e
-          render json: { error: e.message }, status: :internal_server_error
+          Rails.logger.error "AppointmentData error: #{e.class}: #{e.message}"
+          render json: { error: 'Erro interno do servidor' }, status: :internal_server_error
         end
 
         def professionals
@@ -35,7 +36,8 @@ module Api
 
           render json: query.to_a.map { |au| professional_json(au) }
         rescue => e
-          render json: { error: e.message }, status: :internal_server_error
+          Rails.logger.error "AppointmentData error: #{e.class}: #{e.message}"
+          render json: { error: 'Erro interno do servidor' }, status: :internal_server_error
         end
 
         def available_slots
@@ -79,7 +81,8 @@ module Api
             service_id:      service_id
           }
         rescue => e
-          render json: { error: e.message }, status: :internal_server_error
+          Rails.logger.error "AppointmentData error: #{e.class}: #{e.message}"
+          render json: { error: 'Erro interno do servidor' }, status: :internal_server_error
         end
 
         def link_config
@@ -88,7 +91,8 @@ module Api
 
           render json: build_config_data(appointment_link)
         rescue => e
-          render json: { error: e.message }, status: :internal_server_error
+          Rails.logger.error "AppointmentData error: #{e.class}: #{e.message}"
+          render json: { error: 'Erro interno do servidor' }, status: :internal_server_error
         end
 
         def ping
@@ -103,7 +107,8 @@ module Api
             account_user_id: appointment_link.account_user_id
           }
         rescue => e
-          render json: { error: e.message }, status: :internal_server_error
+          Rails.logger.error "AppointmentData error: #{e.class}: #{e.message}"
+          render json: { error: 'Erro interno do servidor' }, status: :internal_server_error
         end
 
         def full
@@ -133,7 +138,8 @@ module Api
             company:       company_json(account.company, account.pix_key)
           }
         rescue => e
-          render json: { error: e.message }, status: :internal_server_error
+          Rails.logger.error "AppointmentData error: #{e.class}: #{e.message}"
+          render json: { error: 'Erro interno do servidor' }, status: :internal_server_error
         end
 
         private

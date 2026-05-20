@@ -35,7 +35,7 @@ module Api
           statistics: statistics
         }
       rescue => e
-        render json: { error: 'Internal Server Error', message: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def recent_transactions
@@ -49,7 +49,7 @@ module Api
             .map { |t| serialize_transaction(t) }
         }
       rescue => e
-        render json: { error: 'Internal Server Error', message: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def statistics
@@ -72,7 +72,7 @@ module Api
           monthly_growth: calculate_monthly_growth
         }
       rescue => e
-        render json: { error: 'Internal Server Error', message: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def overdue_commitments
@@ -87,7 +87,7 @@ module Api
 
         render json: { commitments: commitments, count: commitments.length }
       rescue => e
-        render json: { error: 'Internal Server Error', message: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def today_commitments
@@ -102,7 +102,7 @@ module Api
 
         render json: { commitments: commitments, count: commitments.length }
       rescue => e
-        render json: { error: 'Internal Server Error', message: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       private

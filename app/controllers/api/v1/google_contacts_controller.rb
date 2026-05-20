@@ -58,7 +58,7 @@ module Api
         contacts = fetch_google_contacts(token)
         render json: { contacts: contacts }
       rescue => e
-        render json: { error: "Erro ao buscar contatos: #{e.message}" }, status: :internal_server_error
+        render_internal_error(e, message: "Erro ao buscar contatos")
       end
 
       # Importa contatos selecionados como Contact no sistema
@@ -93,7 +93,7 @@ module Api
 
         render json: { success: true, imported: imported, skipped: skipped, errors: errors }
       rescue => e
-        render json: { error: "Erro ao importar: #{e.message}" }, status: :internal_server_error
+        render_internal_error(e, message: "Erro ao importar")
       end
 
       private

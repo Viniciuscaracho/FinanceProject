@@ -120,7 +120,7 @@ module Api
         render json: { success: true, schedule: @professional.schedule, message: 'Horários atualizados com sucesso' }
       rescue => e
         Rails.logger.error "Error updating schedule: #{e.message}"
-        render json: { error: e.message }, status: :unprocessable_entity
+        render_internal_error(e, status: :unprocessable_entity)
       end
 
       def commission_configs

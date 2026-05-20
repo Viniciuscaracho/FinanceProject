@@ -62,7 +62,7 @@ module Api
         render json: { message: 'Dados de exemplo criados com sucesso' }, status: :created
       rescue => e
         Rails.logger.error "onboarding#seed_demo: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def clear_demo
@@ -75,7 +75,7 @@ module Api
         render json: { message: 'Dados de exemplo removidos' }, status: :ok
       rescue => e
         Rails.logger.error "onboarding#clear_demo: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
     end
   end

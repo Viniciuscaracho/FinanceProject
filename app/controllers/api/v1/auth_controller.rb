@@ -19,13 +19,13 @@ module Api
         Rails.logger.error "=== Erro em AuthController ==="
         Rails.logger.error "Exception: #{exception.class.name}"
         Rails.logger.error "Message: #{exception.message}"
+        Rails.logger.error exception.backtrace.first(10).join("\n")
 
         return if performed?
 
         render json: {
           success: false,
-          error: "Erro interno do servidor: #{exception.message}",
-          message: exception.message,
+          error: Rails.env.development? ? "Erro interno do servidor: #{exception.message}" : "Erro interno do servidor",
           details: Rails.env.development? ? exception.backtrace.first(10) : nil
         }, status: :internal_server_error
       end
@@ -80,6 +80,7 @@ module Api
 
         render json: { success: true, user: user_data(user), token: generate_token(user) }
       rescue => e
+        Rails.logger.error "Firebase login error: #{e.class}: #{e.message}"
         render json: { success: false, error: 'Erro interno do servidor' }, status: :internal_server_error
       end
 
@@ -134,7 +135,8 @@ module Api
 
         render json: { user: user_data(@user) }
       rescue => e
-        render json: { error: "Erro ao obter dados do usuário: #{e.message}" }, status: :internal_server_error
+        Rails.logger.error "me action error: #{e.class}: #{e.message}"
+        render json: { error: "Erro ao obter dados do usuário" }, status: :internal_server_error
       end
 
       def logout
@@ -159,8 +161,9 @@ module Api
 
         render json: { success: true, user: user_data(user), token: generate_token(user) }
       rescue => e
+        Rails.logger.error "login_simple error: #{e.class}: #{e.message}"
         return if performed?
-        render json: { success: false, error: 'Erro ao processar login', message: e.message }, status: :internal_server_error
+        render json: { success: false, error: 'Erro ao processar login' }, status: :internal_server_error
       end
 
       def register
@@ -206,7 +209,7 @@ module Api
         render json: { success: false, error: e.record.errors.full_messages.first || 'Erro ao criar conta' }, status: :unprocessable_entity
       rescue => e
         Rails.logger.error "Register error: #{e.class}: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
-        render json: { success: false, error: "Erro interno ao criar conta: #{e.class}: #{e.message}" }, status: :internal_server_error
+        render json: { success: false, error: "Erro interno ao criar conta. Tente novamente." }, status: :internal_server_error
       end
 
       private

@@ -78,7 +78,7 @@ module Api
         }
       rescue => e
         Rails.logger.error "Error in appointment_reports#by_professional: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def summary
@@ -121,7 +121,7 @@ module Api
         }
       rescue => e
         Rails.logger.error "Error in appointment_reports#summary: #{e.message}"
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
     end
   end

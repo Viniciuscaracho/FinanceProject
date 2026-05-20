@@ -55,7 +55,7 @@ module Api
         end
       rescue => e
         Rails.logger.error "Error in Reports#show: #{e.class.name}: #{e.message}"
-        render json: { error: "Erro ao processar relatório: #{e.message}" }, status: :internal_server_error
+        render_internal_error(e, message: "Erro ao processar relatório")
       end
 
       private
@@ -116,10 +116,10 @@ module Api
           }
         }
       rescue ArgumentError => e
-        render json: { error: "Data inválida: #{e.message}" }, status: :bad_request
+        render_internal_error(e, message: "Data inválida", status: :bad_request)
       rescue => e
         Rails.logger.error "Error in render_income_expense_report: #{e.class.name}: #{e.message}"
-        render json: { error: "Erro ao gerar relatório de receitas vs despesas: #{e.message}" }, status: :internal_server_error
+        render_internal_error(e, message: "Erro ao gerar relatório de receitas vs despesas")
       end
 
       def render_category_analysis_report
@@ -367,7 +367,7 @@ module Api
           }
         }
       rescue StandardError => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def render_financial_with_appointments_report
@@ -395,7 +395,7 @@ module Api
           }
         }
       rescue StandardError => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def render_dre_report
@@ -516,7 +516,7 @@ module Api
           }
         }
       rescue StandardError => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def render_per_category_report
@@ -568,7 +568,7 @@ module Api
           }
         }
       rescue StandardError => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def render_per_description_report
@@ -620,7 +620,7 @@ module Api
           }
         }
       rescue StandardError => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def render_per_period_report
@@ -672,7 +672,7 @@ module Api
           }
         }
       rescue StandardError => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def render_financial_history_report
@@ -726,7 +726,7 @@ module Api
           }
         }
       rescue StandardError => e
-        render json: { error: e.message }, status: :internal_server_error
+        render_internal_error(e)
       end
 
       def parse_date_range

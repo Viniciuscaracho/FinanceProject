@@ -55,7 +55,7 @@ module Api
         rescue => e
           Rails.logger.error "Error attaching files: #{e.message}"
           Rails.logger.error e.backtrace.join("\n")
-          render json: { error: e.message }, status: :internal_server_error
+          render_internal_error(e)
         end
 
         # DELETE /api/v1/appointments/:appointment_id/attachments/:id
@@ -69,7 +69,7 @@ module Api
           render json: { error: 'Anexo não encontrado' }, status: :not_found
         rescue => e
           Rails.logger.error "Error removing attachment: #{e.message}"
-          render json: { error: e.message }, status: :internal_server_error
+          render_internal_error(e)
         end
 
         private

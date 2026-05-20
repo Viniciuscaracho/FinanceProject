@@ -6,6 +6,7 @@ module Api
       include ActionController::HttpAuthentication::Token::ControllerMethods
       include SessionManagement
       include AccountCache
+      include SafeErrorHandling
       
       before_action :authenticate_user!
       before_action :set_current_account
@@ -24,14 +25,12 @@ module Api
         Rails.logger.error "Message: #{exception.message}"
         Rails.logger.error "Backtrace:"
         Rails.logger.error exception.backtrace.join("\n")
-        
-        # Verificar se já foi renderizado para evitar double render
+
         return if performed?
-        
+
         render json: {
           success: false,
-          error: "Erro interno do servidor: #{exception.message}",
-          message: exception.message,
+          error: Rails.env.development? ? "Erro interno do servidor: #{exception.message}" : "Erro interno do servidor",
           details: Rails.env.development? ? exception.backtrace.first(5) : nil
         }, status: :internal_server_error
       end
@@ -118,9 +117,8 @@ module Api
         rescue => e
           Rails.logger.error "Erro em authenticate_user!: #{e.class}: #{e.message}"
           Rails.logger.error e.backtrace.join("\n")
-          render json: { 
+          render json: {
             error: 'Erro interno na autenticação',
-            message: e.message,
             details: Rails.env.development? ? e.backtrace.first(5) : nil
           }, status: :internal_server_error
           false

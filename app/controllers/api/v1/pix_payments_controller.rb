@@ -35,7 +35,7 @@ module Api
         end
       rescue StandardError => e
         Rails.logger.error "PixPayments#create_billing: #{e.message}"
-        render json: { error: 'Erro ao criar cobrança PIX', message: e.message }, status: :internal_server_error
+        render_internal_error(e, message: "Erro ao criar cobrança PIX")
       end
 
       def status

@@ -91,7 +91,7 @@ module Api
           }
         }
       rescue ArgumentError => e
-        render json: { error: "Data inválida: #{e.message}" }, status: :bad_request
+        render_internal_error(e, message: "Data inválida", status: :bad_request)
       rescue => e
         render json: {
           error:   "Erro ao processar comissões: #{e.message}",
@@ -153,7 +153,7 @@ module Api
           }
         }
       rescue ArgumentError => e
-        render json: { error: "Data inválida: #{e.message}" }, status: :bad_request
+        render_internal_error(e, message: "Data inválida", status: :bad_request)
       rescue => e
         render json: {
           error:   "Erro ao processar resumo de comissões: #{e.message}",

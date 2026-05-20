@@ -45,7 +45,7 @@ module Api
             render json: { response: response.as_json, message: 'Anamnese enviada com sucesso!' }, status: :created
           end
         rescue ActiveRecord::RecordInvalid => e
-          render json: { error: e.message }, status: :unprocessable_entity
+          render_internal_error(e, status: :unprocessable_entity)
         end
 
         private
