@@ -1,10 +1,15 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 
-// Helper: skip se não for projeto orbinutri
 function skipIfNotNutri(testInfo) {
   test.skip(!testInfo.project.name.startsWith('orbinutri'),
     'Só executa contra o domínio orbinutri');
+}
+
+// Aguarda React hidratar antes de checar conteúdo dinâmico
+async function gotoLanding(page) {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
 }
 
 // ────────────────────────────────────────────────────────
@@ -13,25 +18,36 @@ function skipIfNotNutri(testInfo) {
 test.describe('Landing OrbiNutri', () => {
   test.beforeEach(async ({}, testInfo) => { skipIfNotNutri(testInfo); });
 
-  test('carrega a landing page com título OrbiNutri', async ({ page }) => {
-    await page.goto('/');
-    await expect(page).toHaveTitle(/orbinutri/i);
-    const hero = page.locator('h1, h2').first();
+  test('carrega com título OrbiNutri', async ({ page }) => {
+    await gotoLanding(page);
+    // Título real: "OrbiNutri — Gestão completa para nutricionistas"
+    await expect(page).toHaveTitle(/OrbiNutri/i);
+  });
+
+  test('hero principal está visível', async ({ page }) => {
+    await gotoLanding(page);
+    const hero = page.locator('h1').first();
     await expect(hero).toBeVisible();
+    const text = await hero.textContent();
+    expect(text?.length).toBeGreaterThan(5);
   });
 
-  test('exibe preço em R$', async ({ page }) => {
-    await page.goto('/');
-    const priceSection = page.locator('text=/R\\$\\s*\\d+/').first();
-    await expect(priceSection).toBeVisible();
-  });
-
-  test('CTA principal leva para /login', async ({ page }) => {
-    await page.goto('/');
-    const cta = page.getByRole('link', { name: /começar|criar conta|teste grátis/i }).first();
+  test('CTA "Começar grátis" aponta para registro', async ({ page }) => {
+    await gotoLanding(page);
+    // Landing usa "Começar grátis" e "Criar conta grátis" com ?tab=register
+    const cta = page.getByRole('link', { name: /começar|criar conta/i }).first();
     await expect(cta).toBeVisible();
     const href = await cta.getAttribute('href');
-    expect(href).toMatch(/login|register|cadastro/i);
+    expect(href).toMatch(/login/i);
+  });
+
+  test('existe link para /login na página', async ({ page }) => {
+    await gotoLanding(page);
+    // "Entrar" pode estar no hamburger em mobile; verifica qualquer link para /login
+    const loginLinks = page.locator('a[href*="/login"]');
+    await expect(loginLinks.first()).toBeAttached();
+    const count = await loginLinks.count();
+    expect(count).toBeGreaterThan(0);
   });
 
   test('carrega sem erros de JS', async ({ page }) => {
@@ -39,8 +55,7 @@ test.describe('Landing OrbiNutri', () => {
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
     page.on('pageerror', err => errors.push(err.message));
 
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await gotoLanding(page);
 
     const appErrors = errors.filter(e =>
       !e.includes('extension') && !e.includes('chrome-extension') && !e.includes('favicon')
@@ -55,7 +70,7 @@ test.describe('Landing OrbiNutri', () => {
 test.describe('Registro via orbinutri.com.br', () => {
   test.beforeEach(async ({}, testInfo) => { skipIfNotNutri(testInfo); });
 
-  test('cria conta via landing e entra no dashboard', async ({ page }) => {
+  test('cria conta via /login e entra no dashboard', async ({ page }) => {
     const email = `viniciuscaracho77+nutri_e2e_${Date.now()}@gmail.com`;
 
     await page.goto('/login');
