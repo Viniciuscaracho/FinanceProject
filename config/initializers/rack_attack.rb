@@ -1,119 +1,101 @@
 # frozen_string_literal: true
 
 module Rack
-  # Configuração do Rack Attack
   class Attack
-    # Temporariamente desabilitado para depuração de endpoints públicos
     default_enabled = Rails.env.production? || Rails.env.staging?
     self.enabled = ActiveModel::Type::Boolean.new.cast(ENV.fetch('RACK_ATTACK_ENABLED', default_enabled))
 
-    # Limita o acesso a 40 requests a cada 3 segundos
-    throttle('req/ip', limit: 90, period: 3.seconds) do |req|
-      req.ip unless req.path.start_with?('/assets', '/rails/active_storage', '/cable', '/webhooks')
+    # Use Redis as cache store when available for distributed rate limiting
+    self.cache.store = Rails.cache
+
+    ### THROTTLES ###
+
+    # Global: 60 req/10s per IP (6 req/s) — allows burst but stops floods
+    throttle('req/ip/global', limit: 60, period: 10.seconds) do |req|
+      req.ip unless req.path.start_with?('/assets', '/rails/active_storage', '/cable')
     end
 
-    # Limita em 40 requests por 3 segundos aos endpoints de api/*
-    throttle('req/api', limit: 40, period: 3.seconds) do |req|
+    # API: 30 req/10s per IP
+    throttle('req/ip/api', limit: 30, period: 10.seconds) do |req|
       req.ip if req.path.start_with?('/api')
     end
 
-    # Limita tentativas de login/register por IP — 10 por minuto
-    throttle('auth/ip', limit: 10, period: 1.minute) do |req|
-      req.ip if req.post? && req.path.match?(%r{/api/v1/auth/(login|register)})
+    # Auth endpoints: 5 attempts/minute per IP
+    throttle('auth/ip', limit: 5, period: 1.minute) do |req|
+      req.ip if req.post? && req.path.match?(%r{/api/v1/auth/(login|register|login_simple|firebase_login|supabase_login)})
     end
 
-    # Limita tentativas de login por email — 5 por minuto
+    # Auth endpoints: 5 attempts/minute per email (brute force on specific accounts)
     throttle('auth/email', limit: 5, period: 1.minute) do |req|
-      if req.post? && req.path.match?(%r{/api/v1/auth/(login|register)})
+      if req.post? && req.path.match?(%r{/api/v1/auth/(login|register|login_simple)})
         body = req.body.read
         req.body.rewind
-        JSON.parse(body)['email'].to_s.downcase.strip rescue nil
+        email = JSON.parse(body)['email'].to_s.downcase.strip rescue nil
+        email.presence
       end
     end
 
-    # Limita em 10 requests por minuto aos endpoints de login e cadastro de usuários para o mesmo e-mail
-    throttle('req/users/email', limit: 10, period: 1.minute) do |req|
-      if req.post? && req.path.include?('/users') && req.params.dig('user', 'email').present?
-        Rails.logger.debug "Rack::Attack.throttle('req/users/email') do |req|: #{req.params.dig('user', 'email')}"
-        req.params.dig('user', 'email').to_s.downcase.strip
+    # Register specifically: 3 accounts/hour per IP (prevent mass account creation)
+    throttle('register/ip/hour', limit: 3, period: 1.hour) do |req|
+      req.ip if req.post? && req.path.include?('/auth/register')
+    end
+
+    # Public booking endpoints: 20 req/10s per IP (protect scheduler from scraping)
+    throttle('req/ip/public_booking', limit: 20, period: 10.seconds) do |req|
+      req.ip if req.path.start_with?('/api/v1/public/')
+    end
+
+    # Public discover/search: 10 req/30s per IP (prevent directory scraping)
+    throttle('req/ip/discover', limit: 10, period: 30.seconds) do |req|
+      req.ip if req.path.start_with?('/api/v1/public/discover')
+    end
+
+    # Webhooks: stricter, only known IPs should call (150/min is generous for Stripe/AbacatePay)
+    throttle('req/ip/webhooks', limit: 150, period: 1.minute) do |req|
+      req.ip if req.path.start_with?('/webhooks')
+    end
+
+    ### BLOCKLISTS ###
+
+    # Block and auto-ban IPs probing for known vulnerabilities / scanner patterns
+    blocklist('block/scanners') do |req|
+      Fail2Ban.filter("scanners/#{req.ip}", maxretry: 3, findtime: 5.minutes, bantime: 1.hour) do
+        path = req.path.downcase
+        qs   = CGI.unescape(req.query_string).downcase rescue ''
+
+        path.match?(%r{/etc/passwd|/etc/shadow|\.env|\.git/config|wp-admin|wp-login|phpmyadmin|xmlrpc|actuator/|\.php$}) ||
+          qs.include?('/etc/passwd') ||
+          req.user_agent.to_s.match?(/sqlmap|nikto|masscan|zgrab|nmap|dirbuster|gobuster|wfuzz|nuclei/i)
       end
     end
 
-    # Evitar ataques de força bruta com emails dummy
-    # throttle('req/users/dummy', limit: 5, period: 1.minute) do |req|
-    #   next unless req.post? && req.path.include?('/users') && req.params.dig('user', 'email').present?
-    #
-    #   email = req.params.dig('user', 'email').to_s.downcase.strip
-    #   next unless email.split('@').last.in?(EmailVerificationHelper::DUMMY_EMAIL_DOMAINS)
-    #
-    #   Rails.logger.info "Rack::Attack.throttle('req/users/dummy') do |req|: #{email}"
-    #   email
-    # end
-
-    # Limita em 10 requests por minuto aos endpoints de login e cadastro de usuários
-    throttle('req/users/ip', limit: 30, period: 1.minute) do |req|
-      if req.path.include?('/users') && req.post?
-        Rails.logger.debug "Rack::Attack.throttle('req/users/ip', limit: 30, period: 1.minute) do |req|: #{req.ip}"
-        req.ip
+    # Ban IPs hammering login after limit breach (additional layer on top of throttle)
+    blocklist('block/login_bruteforce') do |req|
+      Allow2Ban.filter("login_bruteforce/#{req.ip}", maxretry: 10, findtime: 1.minute, bantime: 30.minutes) do
+        req.post? && req.path.match?(%r{/api/v1/auth/(login|login_simple)})
       end
     end
 
-    # Block suspicious requests for '/etc/password' or wordpress specific paths.
-    # After 3 blocked requests in 10 minutes, block all requests from that IP for 5 minutes.
-    blocklist('block/pen_testers') do |req|
-      # `filter` returns truthy value if request fails, or if it's from a previously banned IP
-      # so the request is blocked
-      Fail2Ban.filter("pen_testers/#{req.ip}", maxretry: 3, findtime: 10.minutes, bantime: 5.minutes) do
-        # The count for the IP is incremented if the return value is truthy
-        CGI.unescape(req.query_string) =~ %r{/etc/passwd} ||
-          req.path.include?('/etc/passwd') ||
-          req.path.include?('wp-admin') ||
-          req.path.include?('wp-login')
+    # Block POST flood on any single path
+    blocklist('block/post_flood') do |req|
+      Allow2Ban.filter("post_flood/#{req.ip}", maxretry: 100, findtime: 1.minute, bantime: 10.minutes) do
+        req.post?
       end
     end
 
-    # Lockout IP addresses that are hammering your login page.
-    # After 30 requests in 1 minute, block all requests from that IP for 5 minutes.
-    blocklist('block/scrapers') do |req|
-      # `filter` returns false value if request is to your login page (but still
-      # increments the count) so request below the limit are not blocked until
-      # they hit the limit.  At that point, filter will return true and block.
-      Allow2Ban.filter("scrapers/#{req.ip}", maxretry: 30, findtime: 1.minute, bantime: 3.minutes) do
-        # The count for the IP is incremented if the return value is truthy.
-        req.path.include?('/users') && req.post?
-      end
-    end
+    ### RESPONSES ###
 
-    # Using 503 because it may make attacker think that they have successfully
-    # DOSed the site. Rack::Attack returns 403 for blocklists by default
-    self.blocklisted_responder = lambda do |_request|
-      # Using 503 because it may make attacker think that they have successfully
-      # DOSed the site. Rack::Attack returns 403 for blocklists by default
-      [503, {}, ['(Blocked) Service Unavailable']]
-    end
-
-    # Using 503 because it may make attacker think that they have successfully
-    # DOSed the site. Rack::Attack returns 429 for throttling by default
-    self.throttled_responder = lambda do |_request|
-      # NB: you have access to the name and other data about the matched throttle
-      #  in `request.env['rack.attack.matched']`
-      # Using 503 because it may make attacker think that they have successfully
-      # DOSed the site. Rack::Attack returns 429 for throttling by default
-      [503, {}, ['(Throttled) Service Unavailable']]
-    end
-
-    # Always allow requests from localhost
-    # safelist('allow from localhost') do |req|
-    #   req.ip.in?(['127.0.0.1'])
-    # end
-
-    # Log blocked requests to Rails.logger using a custom formatter object
+    # Return 503 so attackers think they succeeded (don't reveal rate limiting)
+    self.blocklisted_responder = ->(_req) { [503, { 'Content-Type' => 'text/plain' }, ['Service Unavailable']] }
+    self.throttled_responder   = ->(_req) { [503, { 'Content-Type' => 'text/plain' }, ['Service Unavailable']] }
   end
 end
 
-# ActiveSupport::Notifications.subscribe('throttle.rack_attack') do |name, _start, _finish, _request_id, payload|
-#   # request object available in payload[:request]
-#   Sentry.capture_message(name, **payload) if Rails.env.production?
-#   Rails.logger.error "[Rack::Attack][#{name}] #{payload.inspect}"
-#   # Your code here
-# end
+# Log all blocked/throttled requests to Rails.logger
+ActiveSupport::Notifications.subscribe('rack.attack') do |_name, _start, _finish, _req_id, payload|
+  req = payload[:request]
+  match_type = req.env['rack.attack.match_type']
+  next unless %i[throttle blocklist].include?(match_type)
+
+  Rails.logger.warn "[RackAttack][#{match_type}] IP=#{req.ip} Path=#{req.path} Rule=#{req.env['rack.attack.matched']}"
+end
