@@ -148,6 +148,19 @@ test.describe('Transações — criar receita', () => {
 // ─────────────────────────────────────────────────────────
 
 test.describe('Agendamentos — criar via formulário', () => {
+  let createdAppointmentId = null;
+
+  test.afterEach(async ({ page }) => {
+    if (!createdAppointmentId) return;
+    const token = await page.evaluate(() => localStorage.getItem('auth_token')).catch(() => null);
+    if (!token) return;
+    const apiBase = 'https://orbiproject-orbiapp.dzkxmb.easypanel.host/api/v1';
+    await page.request.delete(`${apiBase}/appointments/${createdAppointmentId}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    }).catch(() => {});
+    createdAppointmentId = null;
+  });
+
   test('abre o formulário, seleciona profissional, serviço, data e salva', async ({ page }) => {
     // Captura resposta da API de criação de agendamento para diagnóstico
     let apiResponse = null;
@@ -183,24 +196,37 @@ test.describe('Agendamentos — criar via formulário', () => {
     // Abre calendário de início (primeiro botão "Selecione a data")
     await dialog.getByRole('button', { name: /selecione a data/i }).first().click();
     await page.waitForTimeout(300);
-    // react-day-picker v8: o BOTÃO tem role="gridcell" + atributo HTML disabled (não aria-disabled)
-    // .nth(0) = hoje, .nth(1) = amanhã — usa amanhã para garantir que 08:00 ainda está no futuro
+    // Foca um botão de dia (necessário para PageDown funcionar no react-day-picker)
+    const firstDay = page.locator('button[role="gridcell"]:not([disabled])').first();
+    await expect(firstDay).toBeVisible({ timeout: 5_000 });
+    await firstDay.focus();
+    // Navega 2 meses à frente via teclado para garantir slot sem conflitos históricos
+    await page.keyboard.press('PageDown');
+    await page.waitForTimeout(200);
+    await page.keyboard.press('PageDown');
+    await page.waitForTimeout(300);
+    // Em Julho 2026 (jul/1 = qua): .nth(0) = 1/jul (seg) ou último dia do mês anterior
     const availableDays = page.locator('button[role="gridcell"]:not([disabled])');
     await expect(availableDays.first()).toBeVisible({ timeout: 5_000 });
+    // Pega o 2º dia disponível para evitar feriados/fins-de-semana do início do mês
     const dayCount = await availableDays.count();
     await availableDays.nth(Math.min(1, dayCount - 1)).click();
 
-    // Usa botão preset de horário — atualiza estado React diretamente via onClick
-    // O primeiro '08:00' está na seção start_time; '10:00' é o 1º da seção end_time mas também existe na start_time
-    // Para garantir: clica em '08:00' (disponível apenas na seção de início)
-    const timePreset = dialog.getByRole('button', { name: '08:00' }).first();
+    // Usa '09:00' (início do horário de trabalho 9h-18h, sem conflito em junho)
+    // '09:00' aparece só nos presets de start_time; end_time presets começam em 10:00
+    const timePreset = dialog.getByRole('button', { name: '09:00' }).first();
     await expect(timePreset).toBeVisible({ timeout: 5_000 });
     await timePreset.click();
     // Aguarda o useEffect calcular end_time automaticamente a partir do start_time + service
     await page.waitForTimeout(1_000);
 
+    // Preenche WhatsApp (obrigatório no modelo) — rola para encontrar o campo
+    const whatsappInput = dialog.getByPlaceholder(/98765-4321|whatsapp/i);
+    await expect(whatsappInput).toBeVisible({ timeout: 5_000 });
+    await whatsappInput.fill('(11) 99999-1234');
+
     // Clica no título do diálogo para garantir que o foco saia de qualquer input nativo
-    await dialog.locator('h2, h3').first().click({ force: true }).catch(() => {});
+    await dialog.locator('h2').first().click({ force: true }).catch(() => {});
     await page.waitForTimeout(300);
 
     // Salva — force:true ignora qualquer overlay residual
@@ -208,10 +234,12 @@ test.describe('Agendamentos — criar via formulário', () => {
     // Aguarda resposta da API e loga para diagnóstico
     await page.waitForTimeout(3_000);
     if (apiResponse) {
-      console.log('API response:', JSON.stringify(apiResponse));
+      console.log('API response status:', apiResponse.status);
+      createdAppointmentId = apiResponse.body?.id ?? null;
     } else {
       console.log('API: nenhuma requisição POST /appointments capturada');
     }
     await expect(dialog).not.toBeVisible({ timeout: 15_000 });
+    // afterEach cuida da limpeza do agendamento criado
   });
 });
