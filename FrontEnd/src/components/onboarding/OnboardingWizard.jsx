@@ -285,7 +285,7 @@ export function OnboardingWizard({ onDone }) {
 
     const base = window.location.origin
     const url = link?.public_url || (link?.token ? `${base}/agendar/${link.token}` : null)
-    setBookingUrl(url || `${base}/agendar`)
+    setBookingUrl(url || null)
     setSaving(false)
     setStep(3)
   }
@@ -599,45 +599,57 @@ export function OnboardingWizard({ onDone }) {
             </div>
 
             {/* URL box */}
-            <div style={{
-              background: T.bg, border: `1px solid var(--border)`,
-              borderRadius: 10, padding: '12px 14px',
-              display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
-            }}>
-              <Link2 size={16} style={{ color: '#4C60AA', flexShrink: 0 }} />
-              <span style={{ fontSize: 13, color: T.text, flex: 1, wordBreak: 'break-all', lineHeight: 1.4 }}>
-                {bookingUrl || 'Gerando link…'}
-              </span>
-            </div>
+            {bookingUrl ? (
+              <>
+                <div style={{
+                  background: T.bg, border: `1px solid var(--border)`,
+                  borderRadius: 10, padding: '12px 14px',
+                  display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
+                }}>
+                  <Link2 size={16} style={{ color: '#4C60AA', flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, color: T.text, flex: 1, wordBreak: 'break-all', lineHeight: 1.4 }}>
+                    {bookingUrl}
+                  </span>
+                </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-              <button
-                onClick={copyLink}
-                style={{
-                  width: '100%', padding: '12px', borderRadius: 10,
-                  border: `1px solid ${copied ? '#10B981' : 'var(--border)'}`,
-                  background: copied ? '#ECFDF5' : T.white,
-                  color: copied ? '#10B981' : T.text,
-                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  transition: 'all 200ms',
-                }}
-              >
-                {copied ? <><Check size={16} /> Copiado!</> : <><Copy size={16} /> Copiar link</>}
-              </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+                  <button
+                    onClick={copyLink}
+                    style={{
+                      width: '100%', padding: '12px', borderRadius: 10,
+                      border: `1px solid ${copied ? '#10B981' : 'var(--border)'}`,
+                      background: copied ? '#ECFDF5' : T.white,
+                      color: copied ? '#10B981' : T.text,
+                      fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      transition: 'all 200ms',
+                    }}
+                  >
+                    {copied ? <><Check size={16} /> Copiado!</> : <><Copy size={16} /> Copiar link</>}
+                  </button>
 
-              <button
-                onClick={whatsappShare}
-                style={{
-                  width: '100%', padding: '12px', borderRadius: 10,
-                  border: 'none', background: '#25D366',
-                  color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                }}
-              >
-                <MessageCircle size={16} /> Compartilhar no WhatsApp
-              </button>
-            </div>
+                  <button
+                    onClick={whatsappShare}
+                    style={{
+                      width: '100%', padding: '12px', borderRadius: 10,
+                      border: 'none', background: '#25D366',
+                      color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    }}
+                  >
+                    <MessageCircle size={16} /> Compartilhar no WhatsApp
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div style={{
+                background: '#FFFBEB', border: `1px solid #FDE68A`,
+                borderRadius: 10, padding: '12px 14px', marginBottom: 24,
+                fontSize: 13, color: '#92400E', lineHeight: 1.5,
+              }}>
+                Não foi possível gerar o link automaticamente. Acesse <strong>Links de Agendamento</strong> para criar o seu link.
+              </div>
+            )}
 
             <button
               onClick={finish}
@@ -656,9 +668,11 @@ export function OnboardingWizard({ onDone }) {
                 : 'Entrar no sistema →'}
             </button>
 
-            <p style={{ textAlign: 'center', fontSize: 12, color: T.muted, marginTop: 12, margin: '12px 0 0' }}>
-              Você pode personalizar o link depois em <strong>Links de Agendamento</strong>.
-            </p>
+            {bookingUrl && (
+              <p style={{ textAlign: 'center', fontSize: 12, color: T.muted, marginTop: 12, margin: '12px 0 0' }}>
+                Você pode personalizar o link depois em <strong>Links de Agendamento</strong>.
+              </p>
+            )}
           </>
         )}
       </div>

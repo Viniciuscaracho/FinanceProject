@@ -3,9 +3,14 @@ const { test, expect } = require('@playwright/test');
 
 const API = 'https://orbiproject-orbiapp.dzkxmb.easypanel.host/api/v1';
 
-// Único email de login reutilizado por toda a suite (criado uma vez via API)
-const LOGIN_EMAIL    = `e2e_login_fixed@gmail.com`;
-const LOGIN_PASSWORD = 'TestE2E@2026';
+// Usuário de teste fixo (já criado em staging, gmail passa pela validação Mailgun)
+// Senha: test123456 — criado manualmente em sessão anterior
+const LOGIN_EMAIL    = 'viniciuscaracho77+nutritest@gmail.com';
+const LOGIN_PASSWORD = 'test123456';
+
+// Para registro, usa alias Gmail +e2e_TIMESTAMP para garantir email "novo" aceito pelo Mailgun
+const RUN_ID = Date.now();
+const REG_EMAIL_BASE = `viniciuscaracho77+e2e_${RUN_ID}`;
 
 async function apiRegister(email, password = LOGIN_PASSWORD, name = 'E2E Tester') {
   const res = await fetch(`${API}/auth/register`, {
@@ -17,12 +22,16 @@ async function apiRegister(email, password = LOGIN_PASSWORD, name = 'E2E Tester'
   try { return JSON.parse(text); } catch { return { raw: text, status: res.status }; }
 }
 
-// Garante que o usuário de login existe antes da suite inteira
+// Verifica que o usuário de login existe (já pre-criado em staging)
 test.beforeAll(async () => {
-  const result = await apiRegister(LOGIN_EMAIL);
-  // Aceita tanto sucesso quanto "e-mail já cadastrado"
-  if (!result.success && !result.error?.includes('já está cadastrado')) {
-    throw new Error(`Falha ao criar usuário de teste: ${JSON.stringify(result)}`);
+  const res = await fetch(`${API}/auth/login_simple`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: LOGIN_EMAIL, password: LOGIN_PASSWORD }),
+  });
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(`Usuário de teste não encontrado em staging. Rode: POST /api/v1/auth/register com email=${LOGIN_EMAIL}`);
   }
 });
 
@@ -30,11 +39,8 @@ test.beforeAll(async () => {
 // REGISTRO (UI)
 // ────────────────────────────────────────────────────────
 test.describe('Registro', () => {
-  // Email único por run para não colidir com runs anteriores
-  const RUN_ID = Date.now();
-
   test('usuário consegue criar conta e entra no dashboard', async ({ page }) => {
-    const email = `e2e_reg_${RUN_ID}@gmail.com`;
+    const email = `${REG_EMAIL_BASE}@gmail.com`;
 
     await page.goto('/login');
     await expect(page.getByTestId('login-page')).toBeVisible();
@@ -44,15 +50,13 @@ test.describe('Registro', () => {
 
     await page.locator('#reg-name').fill('E2E Tester');
     await page.locator('#reg-email').fill(email);
-    await page.getByTestId('password-input').nth(0).fill(LOGIN_PASSWORD);
-    await page.getByTestId('password-input').nth(1).fill(LOGIN_PASSWORD);
+    await page.getByTestId('reg-password-input').fill(LOGIN_PASSWORD);
+    await page.getByTestId('reg-password-confirm-input').fill(LOGIN_PASSWORD);
 
-    await Promise.all([
-      page.waitForURL(/\/(dashboard|$)/, { timeout: 15_000 }),
-      page.getByTestId('register-button').click(),
-    ]);
+    await page.getByTestId('register-button').click();
 
-    await expect(page).not.toHaveURL(/login/);
+    // Mailgun call em staging pode levar alguns segundos; aguarda até 25s para sair do /login
+    await expect(page).not.toHaveURL(/login/, { timeout: 25_000 });
   });
 
   test('exibe erro para senha curta (menos de 6 caracteres)', async ({ page }) => {
@@ -60,12 +64,11 @@ test.describe('Registro', () => {
     await page.getByRole('button', { name: /crie uma conta/i }).click();
 
     await page.locator('#reg-name').fill('Teste');
-    await page.locator('#reg-email').fill(`fail_short_${RUN_ID}@gmail.com`);
-    await page.getByTestId('password-input').nth(0).fill('123');
-    await page.getByTestId('password-input').nth(1).fill('123');
+    await page.locator('#reg-email').fill(`${REG_EMAIL_BASE}_short@gmail.com`);
+    await page.getByTestId('reg-password-input').fill('123');
+    await page.getByTestId('reg-password-confirm-input').fill('123');
     await page.getByTestId('register-button').click();
 
-    // Permanece na tela de cadastro
     await expect(page).toHaveURL(/login/);
   });
 
@@ -74,9 +77,9 @@ test.describe('Registro', () => {
     await page.getByRole('button', { name: /crie uma conta/i }).click();
 
     await page.locator('#reg-name').fill('Teste');
-    await page.locator('#reg-email').fill(`fail_mismatch_${RUN_ID}@gmail.com`);
-    await page.getByTestId('password-input').nth(0).fill(LOGIN_PASSWORD);
-    await page.getByTestId('password-input').nth(1).fill('Diferente@2026');
+    await page.locator('#reg-email').fill(`${REG_EMAIL_BASE}_mismatch@gmail.com`);
+    await page.getByTestId('reg-password-input').fill(LOGIN_PASSWORD);
+    await page.getByTestId('reg-password-confirm-input').fill('Diferente@2026');
     await page.getByTestId('register-button').click();
 
     await expect(page).toHaveURL(/login/);

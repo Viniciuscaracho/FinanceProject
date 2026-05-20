@@ -59,7 +59,8 @@ function SubmitButton({ isLoading, label, loadingLabel, testId }) {
 }
 
 export function Login() {
-  const [mode, setMode] = useState('login'); // 'login' | 'register' | 'forgot'
+  const initialMode = new URLSearchParams(window.location.search).get('tab') === 'register' ? 'register' : 'login'
+  const [mode, setMode] = useState(initialMode); // 'login' | 'register' | 'forgot'
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState(null);
   const [forgotEmail, setForgotEmail] = useState('');

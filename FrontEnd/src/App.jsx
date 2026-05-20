@@ -13,8 +13,11 @@ import { ModalProvider } from './components/ui/enhanced-modal'
 import { CommandPaletteProvider } from './contexts/CommandPaletteContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import { PageSkeleton } from './components/Skeleton'
-import { LandingPage, PublicAppointmentBooking, AppointmentManage, PublicDiscover, PublicProfessionalProfile, PublicAnamneseForm, PublicPatientDocument, protectedRoutes } from './config/routes'
+import { LandingPage, Dashboard, PublicAppointmentBooking, AppointmentManage, PublicDiscover, PublicProfessionalProfile, PublicAnamneseForm, PublicPatientDocument, protectedRoutes } from './config/routes'
 import PublicMealPlan from './pages/PublicMealPlan'
+import { LandingPageNutri } from './pages/LandingPageNutri'
+
+const isNutriDomain = window.location.hostname.includes('orbinutri')
 import './App.css'
 
 function ProtectedRoute({ children }) {
@@ -44,13 +47,28 @@ function ProtectedRoute({ children }) {
   return children
 }
 
+function NutriRoot() {
+  const { isAuthenticated, loading } = useAuth()
+  if (loading) return <PageSkeleton />
+  if (!isAuthenticated) return <LandingPageNutri />
+  return (
+    <Layout>
+      <Suspense fallback={<PageSkeleton />}>
+        <Dashboard />
+      </Suspense>
+    </Layout>
+  )
+}
+
 function AppContent() {
   const { isAuthenticated } = useAuth()
 
   return (
     <Router>
       <Routes>
+        {isNutriDomain && <Route path="/" element={<NutriRoot />} />}
         <Route path="/landing" element={<LandingPage />} />
+        <Route path="/landing-nutri" element={<LandingPageNutri />} />
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/descobrir" element={<PublicDiscover />} />
         <Route path="/descobrir/:id" element={<PublicProfessionalProfile />} />

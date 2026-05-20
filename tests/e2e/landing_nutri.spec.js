@@ -80,8 +80,8 @@ test.describe('Registro via orbinutri.com.br', () => {
 
     await page.locator('#reg-name').fill('Nutricionista E2E');
     await page.locator('#reg-email').fill(email);
-    await page.getByTestId('password-input').nth(0).fill('TestE2E@2026');
-    await page.getByTestId('password-input').nth(1).fill('TestE2E@2026');
+    await page.getByTestId('reg-password-input').fill('TestE2E@2026');
+    await page.getByTestId('reg-password-confirm-input').fill('TestE2E@2026');
 
     await Promise.all([
       page.waitForURL(/\/(dashboard|$)/, { timeout: 15_000 }),
