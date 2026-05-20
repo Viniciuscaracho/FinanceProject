@@ -19,6 +19,12 @@ module Api
             status: "OK"
           }
         end
+
+        def schema_debug
+          cols = ActiveRecord::Base.connection.columns(:account_users).map(&:name)
+          pending = ActiveRecord::Base.connection.select_values("SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 20")
+          render json: { account_user_columns: cols, recent_migrations: pending }
+        end
       end
     end
   end

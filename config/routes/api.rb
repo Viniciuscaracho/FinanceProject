@@ -9,6 +9,7 @@ namespace :api, defaults: { format: 'json' } do
     # Public appointment booking routes
     namespace :public do
       get 'health', to: 'public#health_check'
+      get 'schema_debug', to: 'public#schema_debug'
       get 'appointment_data/:token/services', to: 'appointment_data#services'
       get 'appointment_data/:token/professionals', to: 'appointment_data#professionals'
       get 'appointment_data/:token/available_slots', to: 'appointment_data#available_slots'
