@@ -46,18 +46,23 @@ class AppointmentBillingNotificationsJob < ApplicationJob
     run_service(scope, Appointments::SendPixReminder, 'lembrete PIX')
   end
 
-  # Agendamentos confirmados que começam em 1h–2h
+  # Agendamentos confirmados que começam em 1h–2h (manual + link público)
   def process_1h_reminders
     scope = Appointment
       .confirmed
       .where(whatsapp_1h_reminder_sent: false)
       .where('start_time > ? AND start_time <= ?', 1.hour.from_now, 2.hours.from_now)
-      .joins(:appointment_link)
-      .where("appointment_links.settings->'automations'->>'reminder_1h' = 'true'")
 
     count = 0
     scope.find_each do |appointment|
       next unless appointment.contact.present?
+
+      # Para agendamentos com link: respeita a configuração de automação do link
+      if appointment.appointment_link_id.present?
+        settings = appointment.appointment_link&.settings || {}
+        automations = settings['automations'] || {}
+        next unless automations['reminder_1h'] == true
+      end
 
       WhatsApp::EventHandler.call(
         account:  appointment.account,

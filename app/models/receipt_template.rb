@@ -53,8 +53,7 @@ class ReceiptTemplate < DocumentTemplate
   end
 
   def self.create_default_templates(account)
-    ActsAsTenant.with_tenant(account) do
-      ReceiptTemplate.transaction do
+    ReceiptTemplate.transaction do
         # Recibo de Recebimento - Modelo Profissional
         receipt_template = account.receipt_templates.new(
           name: "Recebimento Padrão",
@@ -98,7 +97,6 @@ class ReceiptTemplate < DocumentTemplate
         )
         receipt_template.settings(:receipt).header = true
         receipt_template.save!
-      end
     end
   end
 end

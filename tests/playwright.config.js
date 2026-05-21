@@ -52,6 +52,17 @@ module.exports = defineConfig({
       },
     },
 
+    // ── Integration tests — fluxos cruzando features (autenticado)
+    {
+      name: 'integration-orbi',
+      testMatch: /integration\.spec\.js/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: STAGING_FRONT,
+        storageState: AUTH_FILE,
+      },
+    },
+
     // ── OrbiNutri — landing + auth (sem storage state)
     {
       name: 'orbinutri',

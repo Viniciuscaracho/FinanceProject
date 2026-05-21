@@ -175,6 +175,8 @@ module Public
           end
         end
 
+        trigger_whatsapp_confirmation(appointment)
+
         # Criar payment link do Stripe se configurado
         begin
           payment_link = create_stripe_payment_link(appointment, account)
@@ -219,6 +221,19 @@ module Public
     
     private
     
+    def trigger_whatsapp_confirmation(appointment)
+      return unless appointment.contact&.cell_phone_number.present?
+
+      WhatsApp::EventHandler.call(
+        account:  appointment.account,
+        contact:  appointment.contact,
+        event:    :appointment_confirmation,
+        resource: appointment
+      )
+    rescue StandardError => e
+      Rails.logger.error "[AppointmentBookingController] WhatsApp confirmation failed for ##{appointment.id}: #{e.message}"
+    end
+
     def appointment_params
       params.require(:appointment).permit(
         :account_user_id, :service_id, :start_time, :end_time,

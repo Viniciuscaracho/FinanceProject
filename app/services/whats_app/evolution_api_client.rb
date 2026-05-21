@@ -3,81 +3,49 @@
 module WhatsApp
   class EvolutionApiClient
     class << self
-      # Envia uma mensagem de texto via Evolution API usando configuração da conta
-      #
-      # @param account [Account] Conta/empresa que possui a configuração
-      # @param phone [String] Número de telefone (com ou sem formatação)
-      # @param message [String] Mensagem a ser enviada
-      # @param retries [Integer] Número de tentativas em caso de falha (padrão: 2)
-      # @return [Hash] Resultado com :success (boolean) e :response (Hash) ou :error (String)
+      # Envia via bot da conta; se não configurado, cai no bot da plataforma.
       def send_message(account:, phone:, message:, retries: 2)
         return error_response('Account é obrigatório') unless account.present?
         return error_response('Número de telefone é obrigatório') unless phone.present?
         return error_response('Mensagem é obrigatória') unless message.present?
 
         config = get_config(account)
-        return error_response('Configuração WhatsApp não encontrada ou desabilitada') unless config&.configured?
 
-        normalized_phone = normalize_phone(phone)
-        base_url = config.normalized_api_url
-        api_key = config.evolution_api_key
-        instance = config.evolution_instance_name
-
-        attempt = 0
-        last_error = nil
-
-        while attempt <= retries
-          begin
-            response = HTTParty.post(
-              "#{base_url}/message/sendText/#{instance}",
-              headers: {
-                'Content-Type' => 'application/json',
-                'apikey' => api_key
-              },
-              body: {
-                number: normalized_phone,
-                text: message
-              }.to_json,
-              timeout: 30
-            )
-
-            if response.success?
-              Rails.logger.info "✅ WhatsApp message sent successfully to #{normalized_phone}"
-              return success_response(response.parsed_response)
-            else
-              error_msg = response.parsed_response&.dig('message') || response.body || 'Erro desconhecido'
-              last_error = "Erro ao enviar mensagem: #{error_msg} (Status: #{response.code})"
-              
-              # Se for erro 4xx (cliente), não tentar novamente
-              if response.code >= 400 && response.code < 500
-                Rails.logger.error "❌ WhatsApp API client error: #{last_error}"
-                return error_response(last_error)
-              end
-              
-              Rails.logger.warn "⚠️ WhatsApp API error (tentativa #{attempt + 1}/#{retries + 1}): #{last_error}"
-            end
-          rescue HTTParty::Error => e
-            last_error = "Erro de conexão com API: #{e.message}"
-            Rails.logger.warn "⚠️ WhatsApp HTTP error (tentativa #{attempt + 1}/#{retries + 1}): #{last_error}"
-          rescue StandardError => e
-            last_error = "Erro inesperado: #{e.message}"
-            Rails.logger.error "❌ WhatsApp unexpected error: #{last_error}"
-            Rails.logger.error e.backtrace.join("\n")
-          end
-
-          attempt += 1
-          
-          # Aguardar antes de tentar novamente (exponential backoff)
-          if attempt <= retries
-            sleep_time = 2 ** attempt # 2s, 4s, 8s...
-            Rails.logger.info "⏳ Aguardando #{sleep_time}s antes de tentar novamente..."
-            sleep(sleep_time)
-          end
+        if config&.configured?
+          post_text_message(
+            base_url: config.normalized_api_url,
+            api_key:  config.evolution_api_key,
+            instance: config.evolution_instance_name,
+            phone:    phone,
+            message:  message,
+            retries:  retries,
+            tag:      "conta ##{account.id}"
+          )
+        else
+          send_via_platform(phone: phone, message: message, retries: retries)
         end
+      end
 
-        # Se chegou aqui, todas as tentativas falharam
-        Rails.logger.error "❌ WhatsApp message failed after #{retries + 1} attempts: #{last_error}"
-        error_response(last_error)
+      # Envia exclusivamente pelo bot central da plataforma (ENV: PLATFORM_WA_*).
+      def send_via_platform(phone:, message:, retries: 2)
+        return error_response('Plataforma não configurada') unless platform_configured?
+
+        post_text_message(
+          base_url: ENV['PLATFORM_WA_API_URL'].chomp('/'),
+          api_key:  ENV['PLATFORM_WA_API_KEY'],
+          instance: ENV['PLATFORM_WA_INSTANCE'],
+          phone:    phone,
+          message:  message,
+          retries:  retries,
+          tag:      'plataforma'
+        )
+      end
+
+      # Verdadeiro se o bot central da plataforma estiver configurado via ENV.
+      def platform_configured?
+        ENV['PLATFORM_WA_API_URL'].present? &&
+          ENV['PLATFORM_WA_API_KEY'].present? &&
+          ENV['PLATFORM_WA_INSTANCE'].present?
       end
 
       # Verifica se a instância está conectada
@@ -134,10 +102,50 @@ module WhatsApp
 
       private
 
-      # Busca ou cria a configuração WhatsApp para a conta
-      #
-      # @param account [Account] Conta/empresa
-      # @return [WhatsappConfig, nil]
+      def post_text_message(base_url:, api_key:, instance:, phone:, message:, retries:, tag:)
+        normalized_phone = normalize_phone(phone)
+        attempt = 0
+        last_error = nil
+
+        while attempt <= retries
+          begin
+            response = HTTParty.post(
+              "#{base_url}/message/sendText/#{instance}",
+              headers: { 'Content-Type' => 'application/json', 'apikey' => api_key },
+              body: { number: normalized_phone, text: message }.to_json,
+              timeout: 30
+            )
+
+            if response.success?
+              Rails.logger.info "✅ [WhatsApp #{tag}] Mensagem enviada para #{normalized_phone}"
+              return success_response(response.parsed_response)
+            else
+              error_msg = response.parsed_response&.dig('message') || response.body || 'Erro desconhecido'
+              last_error = "Erro: #{error_msg} (#{response.code})"
+
+              if response.code >= 400 && response.code < 500
+                Rails.logger.error "❌ [WhatsApp #{tag}] #{last_error}"
+                return error_response(last_error)
+              end
+
+              Rails.logger.warn "⚠️ [WhatsApp #{tag}] #{last_error} (tentativa #{attempt + 1}/#{retries + 1})"
+            end
+          rescue HTTParty::Error => e
+            last_error = "Erro de conexão: #{e.message}"
+            Rails.logger.warn "⚠️ [WhatsApp #{tag}] #{last_error}"
+          rescue StandardError => e
+            last_error = "Erro inesperado: #{e.message}"
+            Rails.logger.error "❌ [WhatsApp #{tag}] #{last_error}"
+          end
+
+          attempt += 1
+          sleep(2**attempt) if attempt <= retries
+        end
+
+        Rails.logger.error "❌ [WhatsApp #{tag}] Falha após #{retries + 1} tentativas: #{last_error}"
+        error_response(last_error)
+      end
+
       def get_config(account)
         account.whatsapp_config || account.build_whatsapp_config
       end

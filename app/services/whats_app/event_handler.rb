@@ -6,8 +6,15 @@ module WhatsApp
       return unless contact&.cell_phone_number.present?
 
       config = account.whatsapp_config
-      return unless config&.enabled?
-      return unless config.automation_enabled?(event)
+      account_bot = config&.enabled?
+      platform_bot = WhatsApp::EvolutionApiClient.platform_configured?
+
+      # Nenhum canal disponível
+      return unless account_bot || platform_bot
+
+      # Se a conta tem config explícita, respeita suas automações
+      return if account_bot && !config.automation_enabled?(event)
+
       return unless StateValidator.valid?(event, resource)
 
       key = idempotency_key(account, contact, event, resource)

@@ -142,6 +142,8 @@ module Api
             Rails.logger.error "Erro ao criar recorrência: #{recurring_result.error}" unless recurring_result.success?
           end
 
+          trigger_whatsapp_confirmation(appointment)
+
           begin
             payment_link = create_stripe_payment_link(appointment)
             appointment.update!(stripe_payment_link_id: payment_link.id, stripe_payment_intent_id: payment_link.payment_intent)
@@ -559,6 +561,19 @@ module Api
           email: user.email,
           schedule: account_user.schedule
         }
+      end
+
+      def trigger_whatsapp_confirmation(appointment)
+        return unless appointment.contact&.cell_phone_number.present?
+
+        WhatsApp::EventHandler.call(
+          account:  appointment.account,
+          contact:  appointment.contact,
+          event:    :appointment_confirmation,
+          resource: appointment
+        )
+      rescue StandardError => e
+        Rails.logger.error "[AppointmentsController] WhatsApp confirmation failed for ##{appointment.id}: #{e.message}"
       end
 
       def appointment_from_whatsapp(account, whatsapp_number)

@@ -86,3 +86,5 @@ secrets.yml
 /tests/performance/.auth/
 /tests/performance/.env.test
 
+tests/.auth/
+tests/test-results/
