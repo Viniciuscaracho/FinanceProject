@@ -135,6 +135,9 @@ namespace :api, defaults: { format: 'json' } do
         get :check_connection
       end
     end
+
+    # WhatsApp Messages (leitura para monitoramento e testes)
+    resources :whatsapp_messages, only: %i[index]
     
     # Professionals routes
     resources :professionals, only: %i[index show create update destroy] do

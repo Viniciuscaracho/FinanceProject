@@ -52,6 +52,17 @@ module.exports = defineConfig({
       },
     },
 
+    // ── WhatsApp integration tests (autenticado)
+    {
+      name: 'whatsapp-orbi',
+      testMatch: /whatsapp\.spec\.js/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: STAGING_FRONT,
+        storageState: AUTH_FILE,
+      },
+    },
+
     // ── Integration tests — fluxos cruzando features (autenticado)
     {
       name: 'integration-orbi',
