@@ -26720,7 +26720,7 @@
           1,
           null,
           2,
-          1,
+          2,
           null,
           null,
           1,
@@ -47453,8 +47453,8 @@
           null,
           null,
           1,
-          0,
-          0,
+          1,
+          1,
           null,
           null,
           1,
@@ -60103,20 +60103,37 @@
           null
         ]
       },
-      "/home/baby/Documents/BarberManagement/lib/nuvem_fiscal_model/nfse/cancelamento.rb": {
+      "/home/baby/Documents/BarberManagement/lib/nuvem_fiscal_model/empresa.rb": {
         "lines": [
           null,
           null,
           1,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1,
           1,
           null,
           null,
-          null,
-          null,
-          1,
           1,
           null,
           1,
+          8,
+          56,
+          56,
+          null,
+          8,
           null,
           null,
           null
@@ -60154,7 +60171,7 @@
           null
         ]
       },
-      "/home/baby/Documents/BarberManagement/lib/nuvem_fiscal_model/certificado.rb": {
+      "/home/baby/Documents/BarberManagement/lib/nuvem_fiscal_model/endereco.rb": {
         "lines": [
           null,
           null,
@@ -60165,10 +60182,39 @@
           null,
           null,
           null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          1,
+          null,
+          1,
+          null,
+          null,
+          1,
+          null,
+          null
+        ]
+      },
+      "/home/baby/Documents/BarberManagement/lib/nuvem_fiscal_model/nfse/cancelamento.rb": {
+        "lines": [
+          null,
+          null,
+          1,
+          1,
+          null,
+          null,
+          null,
+          null,
           1,
           1,
           null,
           1,
+          null,
           null,
           null
         ]
@@ -60268,7 +60314,7 @@
           null
         ]
       },
-      "/home/baby/Documents/BarberManagement/lib/nuvem_fiscal_model/empresa.rb": {
+      "/home/baby/Documents/BarberManagement/lib/nuvem_fiscal_model/certificado.rb": {
         "lines": [
           null,
           null,
@@ -60279,54 +60325,8 @@
           null,
           null,
           null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
           1,
           1,
-          null,
-          null,
-          1,
-          null,
-          1,
-          8,
-          56,
-          56,
-          null,
-          8,
-          null,
-          null,
-          null
-        ]
-      },
-      "/home/baby/Documents/BarberManagement/lib/nuvem_fiscal_model/endereco.rb": {
-        "lines": [
-          null,
-          null,
-          1,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          1,
-          null,
-          1,
-          null,
           null,
           1,
           null,
@@ -60789,7 +60789,7 @@
         ]
       }
     },
-    "timestamp": 1779405268
+    "timestamp": 1779405825
   },
   "Minitest": {
     "coverage": {
