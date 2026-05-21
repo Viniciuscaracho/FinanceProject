@@ -44,7 +44,7 @@ namespace :api, defaults: { format: 'json' } do
     post 'auth/logout', to: 'auth#logout'
     get 'auth/me', to: 'auth#me'
     post 'auth/register', to: 'auth#register'
-    get 'oauth/google_oauth_url', to: 'public#google_oauth_url'
+    get 'oauth/google_oauth_url', to: 'auth#google_oauth_url'
     get 'auth/google_oauth_callback', to: 'auth#google_oauth_callback'
 
     # Google Calendar integration

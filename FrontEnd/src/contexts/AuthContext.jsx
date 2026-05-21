@@ -19,6 +19,8 @@ export const useAuth = () => {
       login: async () => ({ success: false, error: 'AuthProvider ausente' }),
       loginSimple: async () => ({ success: false, error: 'AuthProvider ausente' }),
       loginWithSupabase: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      loginWithGoogle: async () => {},
+      loginWithToken: async () => ({ success: false, error: 'AuthProvider ausente' }),
       signUpWithSupabase: async () => ({ success: false, error: 'AuthProvider ausente' }),
       register: async () => ({ success: false, error: 'AuthProvider ausente' }),
       enrollMfa: async () => ({ success: false, error: 'AuthProvider ausente' }),
@@ -318,6 +320,37 @@ export const AuthProvider = ({ children }) => {
     return { factors: data?.totp ?? [] }
   }
 
+  const loginWithGoogle = async () => {
+    try {
+      setError(null);
+      const response = await apiService.getGoogleAuthUrl();
+      if (response?.auth_url) {
+        window.location.href = response.auth_url;
+      } else {
+        setError('Erro ao obter URL de autenticação Google');
+      }
+    } catch (err) {
+      setError('Erro ao iniciar login com Google');
+    }
+  };
+
+  const loginWithToken = async (token) => {
+    try {
+      setError(null);
+      apiService.setToken(token);
+      const response = await apiService.getCurrentUser();
+      if (response?.user) {
+        setUser(response.user);
+        return { success: true };
+      }
+      apiService.clearToken();
+      return { success: false, error: 'Usuário não encontrado' };
+    } catch {
+      apiService.clearToken();
+      return { success: false, error: 'Erro ao autenticar com Google' };
+    }
+  };
+
   const stopImpersonating = async () => {
     try {
       setError(null);
@@ -345,6 +378,8 @@ export const AuthProvider = ({ children }) => {
     login,
     loginSimple,
     loginWithSupabase,
+    loginWithGoogle,
+    loginWithToken,
     signUpWithSupabase,
     register,
     enrollMfa,

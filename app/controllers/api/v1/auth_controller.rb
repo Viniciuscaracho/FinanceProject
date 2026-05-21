@@ -101,32 +101,35 @@ module Api
       end
 
       def google_oauth_url
+        redirect_uri = "#{request.base_url}/api/v1/auth/google_oauth_callback"
         render json: {
-          auth_url: "https://accounts.google.com/o/oauth2/v2/auth?" \
-                    "client_id=#{ENV['GOOGLE_CLIENT_ID'] || 'test_client_id'}&" \
-                    "redirect_uri=#{CGI.escape("#{request.base_url}/oauth/callback")}&" \
-                    "scope=#{CGI.escape('email profile')}&" \
-                    "response_type=code&" \
-                    "access_type=offline&" \
-                    "prompt=consent"
+          auth_url: "https://accounts.google.com/o/oauth2/v2/auth?" + URI.encode_www_form(
+            client_id:     ENV.fetch('GOOGLE_CLIENT_ID', ''),
+            redirect_uri:  redirect_uri,
+            scope:         'openid email profile',
+            response_type: 'code',
+            access_type:   'offline',
+            prompt:        'consent'
+          )
         }
       end
 
       def google_oauth_callback
-        return render json: { error: 'Código de autorização não fornecido' }, status: :bad_request if params[:code].blank?
+        return redirect_to "#{frontend_url}/auth/google?error=no_code", allow_other_host: true if params[:code].blank?
 
         token_response = exchange_code_for_token(params[:code])
-        return render json: { error: token_response[:error] }, status: :bad_request if token_response[:error]
+        return redirect_to "#{frontend_url}/auth/google?error=token_exchange", allow_other_host: true if token_response[:error]
 
         user_info = get_google_user_info(token_response[:access_token])
-        return render json: { error: user_info[:error] }, status: :bad_request if user_info[:error]
+        return redirect_to "#{frontend_url}/auth/google?error=user_info", allow_other_host: true if user_info[:error]
 
         user = User.from_omniauth_data(user_info)
 
         if user.persisted?
-          render json: { success: true, user: user_data(user), token: generate_token(user) }
+          redirect_to "#{frontend_url}/auth/google?token=#{CGI.escape(generate_token(user))}", allow_other_host: true
         else
-          render json: { error: 'Erro ao criar usuário', details: user.errors.full_messages }, status: :unprocessable_entity
+          error_msg = CGI.escape(user.errors.full_messages.join(', '))
+          redirect_to "#{frontend_url}/auth/google?error=#{error_msg}", allow_other_host: true
         end
       end
 
@@ -283,28 +286,32 @@ module Api
       end
 
       def exchange_code_for_token(code)
-        redirect_uri = "#{request.base_url}/oauth/callback"
+        redirect_uri = "#{request.base_url}/api/v1/auth/google_oauth_callback"
 
         uri = URI('https://oauth2.googleapis.com/token')
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true
 
-        request = Net::HTTP::Post.new(uri)
-        request['Content-Type'] = 'application/x-www-form-urlencoded'
-        request.body = URI.encode_www_form({
-          client_id: ENV['GOOGLE_CLIENT_ID'],
+        http_request = Net::HTTP::Post.new(uri)
+        http_request['Content-Type'] = 'application/x-www-form-urlencoded'
+        http_request.body = URI.encode_www_form({
+          client_id:     ENV['GOOGLE_CLIENT_ID'],
           client_secret: ENV['GOOGLE_CLIENT_SECRET'],
-          code: code,
-          grant_type: 'authorization_code',
-          redirect_uri: redirect_uri
+          code:          code,
+          grant_type:    'authorization_code',
+          redirect_uri:  redirect_uri
         })
 
-        response = http.request(request)
+        response = http.request(http_request)
         data = JSON.parse(response.body)
 
         response.code == '200' ? { access_token: data['access_token'] } : { error: data['error_description'] || 'Erro ao trocar código por token' }
       rescue => e
         { error: "Erro na comunicação com Google: #{e.message}" }
+      end
+
+      def frontend_url
+        ENV.fetch('FRONTEND_URL', 'http://localhost:5173')
       end
 
       def get_google_user_info(access_token)

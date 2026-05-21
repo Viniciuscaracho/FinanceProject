@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() => window.innerWidth < 640)
+  useEffect(() => {
+    const fn = () => setMobile(window.innerWidth < 640)
+    window.addEventListener('resize', fn, { passive: true })
+    return () => window.removeEventListener('resize', fn)
+  }, [])
+  return mobile
+}
 import { Helmet } from 'react-helmet-async'
 import { ArrowLeft, MapPin, Phone, Mail, Clock, Loader2, Calendar, MessageCircle, ChevronRight, Star } from 'lucide-react'
 import { apiService } from '../lib/api'
@@ -8,13 +18,13 @@ import { apiService } from '../lib/api'
 const T = {
   bg:     '#F9F8F5',
   white:  '#FFFFFF',
-  brand:  '#4C60AA',
+  brand:  '#5B52D9',
   dark:   '#1E2440',
   text:   '#111111',
-  muted:  '#6B6B6B',
-  border: '#E3E2DF',
-  light:  '#EFEFEC',
-  chip:   '#EEF2FA',
+  muted:  '#6B7280',
+  border: '#E5E7EB',
+  light:  '#F3F4F6',
+  chip:   '#EEEDFB',
   green:  '#25D366',
 }
 const DISPLAY = { fontFamily: "'Space Grotesk', system-ui, sans-serif" }
@@ -109,10 +119,12 @@ function SchemaOrg({ professional }) {
 export function PublicProfessionalProfile() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const [professional, setProfessional] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [coverError, setCoverError] = useState(false)
+  const [selectedSvc, setSelectedSvc] = useState(null)
 
   useEffect(() => { loadProfile() }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -182,9 +194,8 @@ export function PublicProfessionalProfile() {
 
       <style>{`
         @keyframes spin    { to { transform: rotate(360deg) } }
-        @keyframes fadeUp  { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes fadeUp  { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
         @keyframes fadeIn  { from { opacity:0 } to { opacity:1 } }
-        .svc-card:hover    { background: #F5F7FF !important; }
         .contact-chip:hover { opacity: .78; }
       `}</style>
 
@@ -213,7 +224,7 @@ export function PublicProfessionalProfile() {
       </header>
 
       {/* ── Hero cover ──────────────────────────── */}
-      <div style={{ position: 'relative', height: 260, overflow: 'hidden', animation: 'fadeIn 500ms ease both' }}>
+      <div style={{ position: 'relative', height: isMobile ? 200 : 260, overflow: 'hidden', animation: 'fadeIn 500ms ease both' }}>
         {hasCover ? (
           <>
             <img src={professional.cover_url} alt="" onError={() => setCoverError(true)}
@@ -231,52 +242,67 @@ export function PublicProfessionalProfile() {
       </div>
 
       {/* ── Identity block ──────────────────────── */}
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 20px', animation: 'fadeUp 420ms ease both' }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '0 16px' : '0 20px', animation: 'fadeUp 420ms ease both' }}>
 
         {/* Avatar + actions row */}
-        <div style={{ marginTop: -56, marginBottom: 18, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ marginTop: isMobile ? -44 : -56, marginBottom: 14, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10 }}>
           <div style={{
-            width: 112, height: 112, borderRadius: '50%', flexShrink: 0,
-            border: '4px solid #fff', boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+            width: isMobile ? 88 : 112, height: isMobile ? 88 : 112,
+            borderRadius: '50%', flexShrink: 0,
+            border: `${isMobile ? 3 : 4}px solid #fff`,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
             background: T.chip, overflow: 'hidden',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <ProfilePhoto name={professional.name} src={professional.logo_url} size={112} />
+            <ProfilePhoto name={professional.name} src={professional.logo_url} size={isMobile ? 88 : 112} />
           </div>
 
-          <div style={{ display: 'flex', gap: 8, paddingBottom: 4 }}>
+          {/* Ações — ícone+texto no desktop, só ícone no mobile */}
+          <div style={{ display: 'flex', gap: 8, paddingBottom: 4, flexShrink: 0 }}>
             {professional.phone && (
               <button
                 onClick={() => openWA(professional.phone, professional.name)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 7,
-                  padding: '9px 16px', background: T.green, color: '#fff',
-                  border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', gap: isMobile ? 0 : 7,
+                  padding: isMobile ? '9px 12px' : '9px 16px',
+                  background: T.green, color: '#fff',
+                  border: 'none', borderRadius: 10,
+                  fontSize: 13, fontWeight: 700,
                   cursor: 'pointer', fontFamily: 'inherit',
                   boxShadow: '0 2px 12px rgba(37,211,102,0.3)',
+                  minHeight: 40, minWidth: isMobile ? 42 : 'auto',
+                  justifyContent: 'center',
+                  WebkitTapHighlightColor: 'transparent',
                 }}
               >
-                <MessageCircle size={14} /> WhatsApp
+                <MessageCircle size={16} />
+                {!isMobile && <span style={{ marginLeft: 6 }}>WhatsApp</span>}
               </button>
             )}
             {professional.booking_token && (
               <button
                 onClick={() => navigate(`/agendar/${professional.booking_token}`)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '9px 16px', background: T.brand + '16', color: T.brand,
-                  border: `1.5px solid ${T.brand}30`, borderRadius: 10, fontSize: 13, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', gap: isMobile ? 0 : 6,
+                  padding: isMobile ? '9px 12px' : '9px 16px',
+                  background: T.brand + '16', color: T.brand,
+                  border: `1.5px solid ${T.brand}30`, borderRadius: 10,
+                  fontSize: 13, fontWeight: 700,
                   cursor: 'pointer', fontFamily: 'inherit',
+                  minHeight: 40, minWidth: isMobile ? 42 : 'auto',
+                  justifyContent: 'center',
+                  WebkitTapHighlightColor: 'transparent',
                 }}
               >
-                <Calendar size={14} /> Agendar
+                <Calendar size={16} />
+                {!isMobile && <span style={{ marginLeft: 5 }}>Agendar</span>}
               </button>
             )}
           </div>
         </div>
 
         {/* Name */}
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: T.text, margin: '0 0 6px', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
+        <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: T.text, margin: '0 0 6px', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
           {professional.name}
         </h1>
 
@@ -308,31 +334,35 @@ export function PublicProfessionalProfile() {
       </div>
 
       {/* ── Sections ────────────────────────────── */}
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px 140px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '16px 16px 140px' : '24px 20px 140px', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
         {/* Serviços */}
         {professional.services?.length > 0 && (
           <section>
             <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.muted }}>
-              Serviços
+              ESCOLHA O SERVIÇO
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {professional.services.map((svc) => {
                 const price    = formatPrice(svc.price_cents)
                 const duration = formatDuration(svc.duration_minutes)
+                const isSel    = selectedSvc?.id === svc.id
                 return (
                   <div
                     key={svc.id}
-                    className="svc-card"
+                    onClick={() => setSelectedSvc(isSel ? null : svc)}
                     style={{
-                      background: T.white, border: `1px solid ${T.border}`, borderRadius: 14,
-                      padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 16,
-                      transition: 'background 160ms',
-                      borderLeft: `4px solid ${T.brand}`,
+                      background: isSel ? T.chip : T.white,
+                      border: `1.5px solid ${isSel ? T.brand : T.border}`,
+                      borderRadius: 14,
+                      padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16,
+                      cursor: 'pointer',
+                      transition: 'border-color 160ms, background 160ms, box-shadow 160ms',
+                      boxShadow: isSel ? `0 0 0 3px ${T.brand}20` : 'none',
                     }}
                   >
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 15, fontWeight: 700, color: T.text, margin: '0 0 3px' }}>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: isSel ? T.brand : T.text, margin: '0 0 3px', transition: 'color 160ms' }}>
                         {svc.name}
                       </p>
                       {svc.description && (
@@ -359,18 +389,20 @@ export function PublicProfessionalProfile() {
                           {price}
                         </p>
                       )}
-                      {professional.booking_token && (
+                      {isSel && professional.booking_token && (
                         <button
-                          onClick={() => navigate(`/agendar/${professional.booking_token}`)}
+                          onClick={e => { e.stopPropagation(); navigate(`/agendar/${professional.booking_token}`) }}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 5,
-                            fontSize: 12, fontWeight: 700, color: T.brand,
-                            background: T.chip, border: `1px solid ${T.brand}22`,
-                            borderRadius: 8, padding: '6px 12px',
+                            fontSize: 12, fontWeight: 700, color: '#fff',
+                            background: T.brand, border: 'none',
+                            borderRadius: 8, padding: '7px 14px',
                             cursor: 'pointer', fontFamily: 'inherit',
+                            boxShadow: `0 2px 10px ${T.brand}40`,
+                            animation: 'fadeUp 180ms ease both',
                           }}
                         >
-                          Agendar <ChevronRight size={11} />
+                          Ver horários <ChevronRight size={11} />
                         </button>
                       )}
                     </div>
@@ -460,37 +492,49 @@ export function PublicProfessionalProfile() {
       {professional.booking_token && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
-          background: 'rgba(249,248,245,0.96)', backdropFilter: 'blur(16px)',
+          background: 'rgba(249,248,245,0.97)', backdropFilter: 'blur(16px)',
           borderTop: `1px solid ${T.border}`,
-          padding: '12px 20px',
-          paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+          padding: isMobile ? '10px 16px' : '12px 20px',
+          paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
         }}>
-          <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', gap: 10 }}>
+          <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', gap: 8 }}>
             {professional.phone && (
               <button
                 onClick={() => openWA(professional.phone, professional.name)}
                 style={{
-                  flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 7,
-                  padding: '13px 18px',
+                  flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  gap: isMobile ? 0 : 7,
+                  padding: isMobile ? '13px 14px' : '13px 18px',
                   background: '#25D36615', color: T.green,
                   border: `1.5px solid ${T.green}35`, borderRadius: 12,
                   fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                  minHeight: 48, minWidth: isMobile ? 48 : 'auto',
+                  WebkitTapHighlightColor: 'transparent',
                 }}
               >
-                <MessageCircle size={16} /> WhatsApp
+                <MessageCircle size={18} />
+                {!isMobile && <span style={{ marginLeft: 6 }}>WhatsApp</span>}
               </button>
             )}
             <button
               onClick={() => navigate(`/agendar/${professional.booking_token}`)}
               style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                padding: '13px 0', background: T.brand, color: '#fff',
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                padding: '13px 12px',
+                background: T.brand, color: '#fff',
                 border: 'none', borderRadius: 12,
-                fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: isMobile ? 13 : 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                 letterSpacing: '-0.01em', boxShadow: `0 4px 16px ${T.brand}55`,
+                transition: 'box-shadow 200ms',
+                minHeight: 48,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                WebkitTapHighlightColor: 'transparent',
               }}
             >
-              <Calendar size={16} /> Agendar atendimento
+              <Calendar size={16} style={{ flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {selectedSvc ? `Agendar — ${selectedSvc.name}` : 'Agendar atendimento'}
+              </span>
             </button>
           </div>
         </div>

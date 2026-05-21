@@ -16,6 +16,7 @@ import { PageSkeleton } from './components/Skeleton'
 import { LandingPage, Dashboard, PublicAppointmentBooking, AppointmentManage, PublicDiscover, PublicProfessionalProfile, PublicAnamneseForm, PublicPatientDocument, protectedRoutes } from './config/routes'
 import PublicMealPlan from './pages/PublicMealPlan'
 import { LandingPageNutri } from './pages/LandingPageNutri'
+import { GoogleAuthCallback } from './pages/GoogleAuthCallback'
 
 const isNutriDomain = window.location.hostname.includes('orbinutri')
 import './App.css'
@@ -72,6 +73,7 @@ function AppContent() {
         {!isNutriDomain && <Route path="/landing" element={<LandingPage />} />}
         {!isNutriDomain && <Route path="/landing-nutri" element={<LandingPageNutri />} />}
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
+        <Route path="/auth/google" element={<GoogleAuthCallback />} />
         <Route path="/descobrir" element={<PublicDiscover />} />
         <Route path="/descobrir/:id" element={<PublicProfessionalProfile />} />
         <Route path="/agendar/:token" element={<PublicAppointmentBooking />} />

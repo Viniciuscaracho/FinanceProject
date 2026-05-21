@@ -158,6 +158,10 @@ class ApiService {
     return await this.request('/health');
   }
 
+  async getGoogleAuthUrl() {
+    return this.request('/oauth/google_oauth_url');
+  }
+
   // Auth methods
   async login(email, password) {
     const response = await this.request('/auth/login', {
