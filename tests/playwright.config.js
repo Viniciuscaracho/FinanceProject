@@ -52,6 +52,28 @@ module.exports = defineConfig({
       },
     },
 
+    // ── Mobile responsiveness tests (autenticado) — Chrome com viewport móvel
+    {
+      name: 'mobile-orbi',
+      testMatch: /mobile_responsive\.spec\.js/,
+      use: {
+        ...devices['Pixel 5'],         // 393×851, Chrome, isMobile:true
+        baseURL: STAGING_FRONT,
+        storageState: AUTH_FILE,
+      },
+    },
+
+    // ── Mobile screenshots — captura visual para inspeção
+    {
+      name: 'mobile-screenshots',
+      testMatch: /mobile_screenshots\.spec\.js/,
+      use: {
+        ...devices['Pixel 5'],
+        baseURL: STAGING_FRONT,
+        storageState: AUTH_FILE,
+      },
+    },
+
     // ── WhatsApp integration tests (autenticado)
     {
       name: 'whatsapp-orbi',
