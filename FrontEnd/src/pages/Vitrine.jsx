@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { T, DISPLAY } from '@/lib/tokens'
 import { useIsMobile } from '@/hooks/use-mobile'
 
-const BASE_URL = window.location.origin
+const BASE_URL = import.meta.env.VITE_PUBLIC_URL || window.location.origin
 
 /* ─── Layout tokens ───────────────────────────── */
 const CHECKS = (acct, co, addr) => [

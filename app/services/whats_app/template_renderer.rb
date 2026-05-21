@@ -75,11 +75,7 @@ module WhatsApp
     end
 
     def self.manage_url(resource)
-      token = resource.try(:manage_token)
-      return "" unless token.present?
-
-      frontend_url = ENV.fetch('FRONTEND_URL', 'http://localhost:5173')
-      "#{frontend_url}/agendamento/gerenciar/#{token}"
+      resource.try(:manage_url) || ""
     end
   end
 end

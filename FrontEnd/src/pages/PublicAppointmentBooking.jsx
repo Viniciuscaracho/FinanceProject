@@ -1069,7 +1069,7 @@ export function PublicAppointmentBooking() {
                                 value={val}
                                 onChange={e => { setAnamneseAnswers(prev => ({ ...prev, [key]: e.target.value })); setFormError(null) }}
                                 placeholder="Sua resposta..."
-                                style={{ width: '100%', padding: '9px 12px', border: '1px solid #DDD6FE', borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: 'inherit', background: '#fff' }}
+                                style={{ width: '100%', padding: '9px 12px', border: '1px solid #DDD6FE', borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: 'inherit', background: '#fff', color: '#111827' }}
                                 onFocus={e => e.currentTarget.style.borderColor = '#7C3AED'}
                                 onBlur={e => e.currentTarget.style.borderColor = '#DDD6FE'}
                               />
@@ -1080,7 +1080,7 @@ export function PublicAppointmentBooking() {
                                 onChange={e => { setAnamneseAnswers(prev => ({ ...prev, [key]: e.target.value })); setFormError(null) }}
                                 placeholder="Sua resposta..."
                                 rows={3}
-                                style={{ width: '100%', padding: '9px 12px', border: '1px solid #DDD6FE', borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'vertical', background: '#fff' }}
+                                style={{ width: '100%', padding: '9px 12px', border: '1px solid #DDD6FE', borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'vertical', background: '#fff', color: '#111827' }}
                                 onFocus={e => e.currentTarget.style.borderColor = '#7C3AED'}
                                 onBlur={e => e.currentTarget.style.borderColor = '#DDD6FE'}
                               />
@@ -1115,7 +1115,7 @@ export function PublicAppointmentBooking() {
                                 value={val}
                                 onChange={e => { setAnamneseAnswers(prev => ({ ...prev, [key]: e.target.value })); setFormError(null) }}
                                 placeholder="0"
-                                style={{ width: '100%', padding: '9px 12px', border: '1px solid #DDD6FE', borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: 'inherit', background: '#fff' }}
+                                style={{ width: '100%', padding: '9px 12px', border: '1px solid #DDD6FE', borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: 'inherit', background: '#fff', color: '#111827' }}
                                 onFocus={e => e.currentTarget.style.borderColor = '#7C3AED'}
                                 onBlur={e => e.currentTarget.style.borderColor = '#DDD6FE'}
                               />

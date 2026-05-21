@@ -9,7 +9,7 @@ function FieldInput({ field, value, onChange }) {
   const inputStyle = {
     width: '100%', padding: '10px 12px', borderRadius: 8,
     border: '1px solid #E5E7EB', fontSize: 14, boxSizing: 'border-box',
-    fontFamily: 'inherit', background: '#fff', outline: 'none',
+    fontFamily: 'inherit', background: '#fff', outline: 'none', color: '#111827',
   }
 
   if (field.type === 'textarea') {
@@ -276,19 +276,22 @@ function FieldList({ template, answers, setAnswers }) {
   if (!template?.fields?.length) return null
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {template.fields.map(field => (
-        <div key={field.id}>
-          <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#222', marginBottom: 6 }}>
-            {field.label}
-            {field.required && <span style={{ color: '#EF4444', marginLeft: 3 }}>*</span>}
-          </label>
-          <FieldInput
-            field={field}
-            value={answers[field.id]}
-            onChange={val => setAnswers(prev => ({ ...prev, [field.id]: val }))}
-          />
-        </div>
-      ))}
+      {template.fields.map((field, idx) => {
+        const key = field.id || field.label || idx
+        return (
+          <div key={key}>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#222', marginBottom: 6 }}>
+              {field.label}
+              {field.required && <span style={{ color: '#EF4444', marginLeft: 3 }}>*</span>}
+            </label>
+            <FieldInput
+              field={field}
+              value={answers[key]}
+              onChange={val => setAnswers(prev => ({ ...prev, [key]: val }))}
+            />
+          </div>
+        )
+      })}
     </div>
   )
 }

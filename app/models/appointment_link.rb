@@ -51,27 +51,14 @@ class AppointmentLink < ApplicationRecord
   end
 
   def public_url
-    # Usar FRONTEND_URL se disponível, senão usar DEFAULT_HOST_NAME
     frontend_url = ENV.fetch('FRONTEND_URL', nil)
-    if frontend_url.present?
-      # Se FRONTEND_URL já inclui protocolo, usar diretamente
-      if frontend_url.start_with?('http://', 'https://')
-        "#{frontend_url}/agendar/#{token}"
-      else
-        protocol = Rails.env.production? ? 'https' : 'http'
-        "#{protocol}://#{frontend_url}/agendar/#{token}"
-      end
+    base = if frontend_url.present?
+      frontend_url.start_with?('http://', 'https://') ? frontend_url : "https://#{frontend_url}"
     else
-      # Fallback para DEFAULT_HOST_NAME (backend)
-      host = ENV.fetch('DEFAULT_HOST_NAME', 'localhost:3000')
-      protocol = Rails.env.production? ? 'https' : 'http'
-      # Se for localhost:3000, redirecionar para frontend
-      if host.include?('localhost:3000') || host.include?('127.0.0.1:3000')
-        "#{protocol}://localhost:5173/agendar/#{token}"
-      else
-        "#{protocol}://#{host}/agendar/#{token}"
-      end
+      (Rails.env.development? || Rails.env.test?) ? 'http://localhost:5173' : nil
     end
+    raise 'FRONTEND_URL env var must be set in production' if base.nil?
+    "#{base}/agendar/#{token}"
   end
 
   private
