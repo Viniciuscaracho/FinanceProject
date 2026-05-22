@@ -283,7 +283,7 @@ export function OnboardingWizard({ onDone }) {
       }
     }
 
-    const base = window.location.origin
+    const base = import.meta.env.VITE_PUBLIC_URL || window.location.origin
     const url = link?.public_url || (link?.token ? `${base}/agendar/${link.token}` : null)
     setBookingUrl(url || null)
     setSaving(false)

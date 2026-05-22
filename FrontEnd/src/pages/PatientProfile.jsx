@@ -281,7 +281,7 @@ export function PatientProfile() {
   }
 
   const handleCopyDocLink = (doc) => {
-    const url = `${window.location.origin}/d/${doc.public_token}`
+    const url = `${import.meta.env.VITE_PUBLIC_URL || window.location.origin}/d/${doc.public_token}`
     navigator.clipboard.writeText(url).then(() => toast.success('Link copiado!'))
   }
 
@@ -311,7 +311,7 @@ export function PatientProfile() {
   }
 
   const handleCopyMealPlanLink = (plan) => {
-    const url = `${window.location.origin}/plano/${plan.public_token}`
+    const url = `${import.meta.env.VITE_PUBLIC_URL || window.location.origin}/plano/${plan.public_token}`
     navigator.clipboard.writeText(url).then(() => toast.success('Link copiado!'))
   }
 

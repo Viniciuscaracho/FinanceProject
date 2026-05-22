@@ -49,6 +49,11 @@ class MealPlan < ApplicationRecord
     meal_plan_days.size
   end
 
+  def public_url
+    base = ENV.fetch('FRONTEND_URL', 'http://localhost:5173')
+    "#{base}/plano/#{public_token}"
+  end
+
   private
 
   def generate_public_token

@@ -357,7 +357,7 @@ export default function MealPlanBuilder() {
   }
 
   const handleCopyLink = () => {
-    const url = `${window.location.origin}/plano/${plan.public_token}`
+    const url = `${import.meta.env.VITE_PUBLIC_URL || window.location.origin}/plano/${plan.public_token}`
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true)
       toast.success('Link copiado!')

@@ -162,6 +162,11 @@ class Appointment < ApplicationRecord
     "#{ENV.fetch('FRONTEND_URL', 'http://localhost:5173')}/agendar/gerenciar/#{manage_token}"
   end
 
+  def anamnese_link
+    return nil unless manage_token.present?
+    "#{ENV.fetch('FRONTEND_URL', 'http://localhost:5173')}/anamnese/responder/#{manage_token}"
+  end
+
   def manage_window_deadline
     return nil unless appointment_link.present? && start_time.present?
     hours = (appointment_link.settings&.dig('cancel_reschedule_hours')&.to_i || 24).clamp(1, 720)

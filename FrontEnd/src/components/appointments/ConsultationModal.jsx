@@ -478,7 +478,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
 
   const handleCopyAnamneseLink = () => {
     if (!appointment?.manage_token) return
-    const link = `${window.location.origin}/anamnese/responder/${appointment.manage_token}`
+    const link = `${import.meta.env.VITE_PUBLIC_URL || window.location.origin}/anamnese/responder/${appointment.manage_token}`
     navigator.clipboard.writeText(link).then(() => toast.success('Link copiado!'))
   }
 
@@ -496,7 +496,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
       }
     } catch (e) {
       // Fallback: open WhatsApp Web directly from frontend
-      const link = `${window.location.origin}/anamnese/responder/${appointment.manage_token}`
+      const link = `${import.meta.env.VITE_PUBLIC_URL || window.location.origin}/anamnese/responder/${appointment.manage_token}`
       const phone = getContactPhone(appointment.contact)
       if (!phone) { toast.error('Paciente sem número de WhatsApp cadastrado'); return }
       const msg = `Olá! Por favor, preencha o formulário antes da nossa consulta:\n${link}`
@@ -640,7 +640,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
   }
 
   const handleCopyDocLink = (doc) => {
-    const link = `${window.location.origin}/d/${doc.public_token}`
+    const link = `${import.meta.env.VITE_PUBLIC_URL || window.location.origin}/d/${doc.public_token}`
     navigator.clipboard.writeText(link).then(() => toast.success('Link copiado!'))
   }
 

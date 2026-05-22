@@ -56,6 +56,11 @@ class PatientDocument < ApplicationRecord
     DOCUMENT_TYPES[document_type] || document_type
   end
 
+  def public_url
+    base = ENV.fetch('FRONTEND_URL', 'http://localhost:5173')
+    "#{base}/d/#{public_token}"
+  end
+
   private
 
   def generate_public_token
