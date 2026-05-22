@@ -101,7 +101,7 @@ module Api
       end
 
       def google_oauth_url
-        redirect_uri = "#{request.base_url}/api/v1/auth/google_oauth_callback"
+        redirect_uri = "#{ENV.fetch('API_BASE_URL', request.base_url)}/api/v1/auth/google_oauth_callback"
         render json: {
           auth_url: "https://accounts.google.com/o/oauth2/v2/auth?" + URI.encode_www_form(
             client_id:     ENV.fetch('GOOGLE_CLIENT_ID', ''),
@@ -286,7 +286,7 @@ module Api
       end
 
       def exchange_code_for_token(code)
-        redirect_uri = "#{request.base_url}/api/v1/auth/google_oauth_callback"
+        redirect_uri = "#{ENV.fetch('API_BASE_URL', request.base_url)}/api/v1/auth/google_oauth_callback"
 
         uri = URI('https://oauth2.googleapis.com/token')
         http = Net::HTTP.new(uri.host, uri.port)
