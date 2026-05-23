@@ -82,7 +82,7 @@ module Api
       end
 
       def calendar_callback_url
-        "#{request.base_url}/api/v1/google_calendar/callback"
+        "#{ENV.fetch('API_BASE_URL', request.base_url)}/api/v1/google_calendar/callback"
       end
 
       def build_state(account)
