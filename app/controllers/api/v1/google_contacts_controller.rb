@@ -64,6 +64,8 @@ module Api
       # Importa contatos selecionados como Contact no sistema
       def import
         account = Current.account
+        return render json: { error: 'Google Contacts não conectado' }, status: :unprocessable_entity unless account.google_contacts_connected?
+
         contacts_data = params[:contacts]
         return render json: { error: 'Nenhum contato selecionado' }, status: :unprocessable_entity if contacts_data.blank?
 
@@ -73,7 +75,10 @@ module Api
 
         contacts_data.each do |c|
           email = c[:email].to_s.strip.downcase.presence
-          next if email && account.contacts.exists?(email: email)
+          if email && account.contacts.exists?(email: email)
+            skipped += 1
+            next
+          end
 
           contact = account.contacts.build(
             first_name:   c[:name].to_s.split(' ', 2).first || 'Sem nome',

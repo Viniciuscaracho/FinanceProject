@@ -96,6 +96,17 @@ module.exports = defineConfig({
       },
     },
 
+    // ── Google Integrations — Contacts + Calendar (autenticado, API mockada)
+    {
+      name: 'google-integrations',
+      testMatch: /google_integrations\.spec\.js/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: STAGING_FRONT,
+        storageState: AUTH_FILE,
+      },
+    },
+
     // ── OrbiNutri — landing + auth (sem storage state)
     {
       name: 'orbinutri',
