@@ -276,14 +276,22 @@ class User < ApplicationRecord
   end
 
   def self.from_omniauth_data(auth_data)
-    where(provider: auth_data[:provider], uid: auth_data[:uid]).first_or_create do |user|
-      user.email = auth_data[:email]
-      user.password = Devise.friendly_token[0, 20]
-      user.first_name = auth_data[:first_name] || auth_data[:name].split(' ').first
-      user.last_name = auth_data[:last_name] || auth_data[:name].split(' ').last || ''
-      user.preferred_language = :'pt-BR'
-      user.skip_confirmation!
-    end
+    existing = where(provider: auth_data[:provider], uid: auth_data[:uid]).first
+    return existing if existing
+
+    user = new(
+      provider:           auth_data[:provider],
+      uid:                auth_data[:uid],
+      email:              auth_data[:email],
+      password:           Devise.friendly_token[0, 20],
+      first_name:         auth_data[:first_name] || auth_data[:name]&.split(' ')&.first || '',
+      last_name:          auth_data[:last_name]  || auth_data[:name]&.split(' ')&.last  || '',
+      preferred_language: :'pt-BR'
+    )
+    user.skip_confirmation!
+    # Skip terms validation — user will accept via modal on first login
+    user.save(validate: false)
+    user
   end
 
   private

@@ -6,7 +6,7 @@ module Api
       skip_before_action :authenticate_user!, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register]
       skip_before_action :set_current_account, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register]
       skip_before_action :create_or_refresh_session, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register]
-      before_action :set_user, only: [:me, :logout]
+      before_action :set_user, only: [:me, :logout, :accept_terms]
       before_action :force_json_format
 
       rescue_from StandardError, with: :handle_error
@@ -156,6 +156,14 @@ module Api
         render json: { success: true, message: 'Logout realizado com sucesso' }
       end
 
+      def accept_terms
+        @user.update_columns(
+          accepted_terms_at:   Time.current,
+          accepted_privacy_at: Time.current
+        )
+        render json: { success: true, user: user_data(@user) }
+      end
+
       def login_simple
         user = User.find_by(email: params[:email])
 
@@ -274,7 +282,8 @@ module Api
           account_owner: is_account_owner,
           account_user_id: account_user&.id,
           role: account_user&.role,
-          account: account_data
+          account: account_data,
+          needs_terms_acceptance: user.accepted_terms_at.nil?
         }
       rescue => e
         {

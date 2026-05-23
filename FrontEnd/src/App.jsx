@@ -17,6 +17,7 @@ import { LandingPage, Dashboard, PublicAppointmentBooking, AppointmentManage, Pu
 import PublicMealPlan from './pages/PublicMealPlan'
 import { LandingPageNutri } from './pages/LandingPageNutri'
 import { GoogleAuthCallback } from './pages/GoogleAuthCallback'
+import { TermsAcceptanceModal } from './components/TermsAcceptanceModal'
 
 const isNutriDomain = window.location.hostname.includes('orbinutri')
 import './App.css'
@@ -62,7 +63,7 @@ function NutriRoot() {
 }
 
 function AppContent() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, needsTermsAcceptance } = useAuth()
 
   return (
     <Router>
@@ -98,6 +99,7 @@ function AppContent() {
           />
         ))}
       </Routes>
+      {needsTermsAcceptance && <TermsAcceptanceModal />}
     </Router>
   )
 }

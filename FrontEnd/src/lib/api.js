@@ -162,6 +162,10 @@ class ApiService {
     return this.request('/oauth/google_oauth_url');
   }
 
+  async acceptTerms() {
+    return this.request('/auth/accept_terms', { method: 'POST' });
+  }
+
   // Auth methods
   async login(email, password) {
     const response = await this.request('/auth/login', {

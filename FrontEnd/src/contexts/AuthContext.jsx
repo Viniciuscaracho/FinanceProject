@@ -30,7 +30,9 @@ export const useAuth = () => {
       logout: async () => {},
       createTestUser: async () => ({ success: false, error: 'AuthProvider ausente' }),
       impersonate: async () => ({ success: false, error: 'AuthProvider ausente' }),
-      stopImpersonating: async () => ({ success: false, error: 'AuthProvider ausente' })
+      stopImpersonating: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      acceptTerms: async () => ({ success: false }),
+      needsTermsAcceptance: false,
     };
   }
 
@@ -351,6 +353,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const acceptTerms = async () => {
+    try {
+      const response = await apiService.acceptTerms();
+      if (response?.success && response.user) {
+        setUser(response.user);
+        return { success: true };
+      }
+      return { success: false };
+    } catch {
+      return { success: false };
+    }
+  };
+
   const stopImpersonating = async () => {
     try {
       setError(null);
@@ -390,8 +405,10 @@ export const AuthProvider = ({ children }) => {
     createTestUser,
     impersonate,
     stopImpersonating,
+    acceptTerms,
     isAuthenticated: !!user,
     isImpersonating: user?.impersonating === true,
+    needsTermsAcceptance: !!user && user.needs_terms_acceptance === true,
   };
 
   return (
