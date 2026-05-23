@@ -1692,6 +1692,10 @@ class ApiService {
     return this.request('/google_calendar/sync', { method: 'POST' })
   }
 
+  async getGoogleCalendarEvents(startDate, endDate) {
+    return this.request(`/google_calendar/events?start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(endDate)}`)
+  }
+
   // ── Google Contacts ──────────────────────────────────────────────────────────
 
   async getGoogleContactsStatus() {
@@ -1714,6 +1718,38 @@ class ApiService {
     return this.request('/google_contacts/import', {
       method: 'POST',
       body: JSON.stringify({ contacts }),
+    })
+  }
+
+  // ── WhatsApp Connection ──────────────────────────────────────────────────────
+
+  async getWhatsappConnectionStatus() {
+    return this.request('/whatsapp_config/connection_status')
+  }
+
+  async getWhatsappQrCode() {
+    return this.request('/whatsapp_config/qr_code')
+  }
+
+  async requestWhatsappPairingCode(phone) {
+    return this.request('/whatsapp_config/pairing_code', {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    })
+  }
+
+  async disconnectWhatsapp() {
+    return this.request('/whatsapp_config/disconnect_instance', { method: 'DELETE' })
+  }
+
+  async getWhatsappConfig() {
+    return this.request('/whatsapp_config')
+  }
+
+  async updateWhatsappConfig(data) {
+    return this.request('/whatsapp_config', {
+      method: 'PATCH',
+      body: JSON.stringify({ whatsapp_config: data }),
     })
   }
 

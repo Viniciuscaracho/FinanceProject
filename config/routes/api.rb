@@ -53,6 +53,7 @@ namespace :api, defaults: { format: 'json' } do
       get    'status',      to: 'google_calendar#status'
       get    'oauth_url',   to: 'google_calendar#oauth_url'
       get    'callback',    to: 'google_calendar#callback'
+      get    'events',      to: 'google_calendar#events'
       delete 'disconnect',  to: 'google_calendar#disconnect'
       post   'sync',        to: 'google_calendar#sync'
     end
@@ -133,7 +134,11 @@ namespace :api, defaults: { format: 'json' } do
     # WhatsApp Configuration
     resource :whatsapp_config, only: %i[show create update] do
       member do
-        get :check_connection
+        get  :check_connection   # legado
+        get  :connection_status
+        get  :qr_code
+        post :pairing_code
+        delete :disconnect_instance
       end
     end
 

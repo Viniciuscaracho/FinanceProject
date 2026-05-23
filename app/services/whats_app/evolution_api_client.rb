@@ -48,6 +48,118 @@ module WhatsApp
           ENV['PLATFORM_WA_INSTANCE'].present?
       end
 
+      # Retorna o QR Code (base64) para o usuário escanear.
+      # Cria a instância na Evolution API se ela ainda não existir.
+      #
+      # @return [Hash] { success: true, base64: "data:image/png;base64,..." }
+      #              | { success: false, error: "..." }
+      #              | { success: true, already_connected: true, phone: "..." }
+      def fetch_qr_code(account:)
+        params = effective_params(account)
+        return error_response('Evolution API não configurada') unless params
+
+        ensure_instance(**params)
+
+        state = connection_state(**params)
+        if state == 'open'
+          phone = fetch_connected_phone(**params)
+          return success_response({ already_connected: true, phone: phone })
+        end
+
+        response = HTTParty.get(
+          "#{params[:base_url]}/instance/connect/#{params[:instance]}",
+          headers: { 'apikey' => params[:api_key] },
+          timeout: 15
+        )
+
+        return error_response("Erro ao gerar QR: #{response.body}") unless response.success?
+
+        body = response.parsed_response
+        base64 = body['base64'] || body['qrcode']
+        return error_response('QR code não retornado pela API') if base64.blank?
+
+        success_response({ base64: base64, status: 'connecting' })
+      rescue StandardError => e
+        Rails.logger.error "❌ fetch_qr_code error: #{e.message}"
+        error_response("Erro ao buscar QR: #{e.message}")
+      end
+
+      # Solicita um código de pareamento por número de telefone (alternativa ao QR).
+      # O usuário deve digitar o código de 8 dígitos no WhatsApp → Dispositivos → Usar número.
+      #
+      # @param phone [String] Número completo com DDI, ex: "5511999990000"
+      # @return [Hash] { success: true, code: "ABCD-EFGH" }
+      def request_pairing_code(account:, phone:)
+        params = effective_params(account)
+        return error_response('Evolution API não configurada') unless params
+
+        normalized = normalize_phone(phone)
+        return error_response('Número inválido') if normalized.length < 12
+
+        ensure_instance(**params)
+
+        response = HTTParty.post(
+          "#{params[:base_url]}/instance/pairingCode/#{params[:instance]}",
+          headers: { 'Content-Type' => 'application/json', 'apikey' => params[:api_key] },
+          body: { number: normalized }.to_json,
+          timeout: 15
+        )
+
+        return error_response("Erro ao solicitar código: #{response.body}") unless response.success?
+
+        body = response.parsed_response
+        code = body['code'] || body['pairingCode']
+        return error_response('Código não retornado pela API') if code.blank?
+
+        success_response({ code: code })
+      rescue StandardError => e
+        Rails.logger.error "❌ request_pairing_code error: #{e.message}"
+        error_response("Erro ao solicitar código: #{e.message}")
+      end
+
+      # Status detalhado da conexão, incluindo telefone e nome do perfil.
+      #
+      # @return [Hash] { connected: bool, status: string, phone: string, profile_name: string }
+      def connection_status_detailed(account:)
+        params = effective_params(account)
+        return error_response('Evolution API não configurada') unless params
+
+        response = HTTParty.get(
+          "#{params[:base_url]}/instance/connectionState/#{params[:instance]}",
+          headers: { 'apikey' => params[:api_key] },
+          timeout: 10
+        )
+
+        if response.success?
+          body    = response.parsed_response
+          state   = body.dig('instance', 'state') || body['state'] || 'close'
+          connected = state == 'open'
+          phone   = connected ? fetch_connected_phone(**params) : nil
+          success_response({ connected: connected, status: state, phone: phone })
+        else
+          success_response({ connected: false, status: 'close', phone: nil })
+        end
+      rescue StandardError => e
+        Rails.logger.error "❌ connection_status_detailed error: #{e.message}"
+        error_response("Erro ao verificar status: #{e.message}")
+      end
+
+      # Desconecta a instância (logout do WhatsApp).
+      def disconnect_instance(account:)
+        params = effective_params(account)
+        return error_response('Evolution API não configurada') unless params
+
+        response = HTTParty.delete(
+          "#{params[:base_url]}/instance/logout/#{params[:instance]}",
+          headers: { 'apikey' => params[:api_key] },
+          timeout: 10
+        )
+
+        response.success? ? success_response({}) : error_response("Erro ao desconectar: #{response.body}")
+      rescue StandardError => e
+        error_response("Erro ao desconectar: #{e.message}")
+      end
+
       # Verifica se a instância está conectada
       #
       # @param account [Account] Conta/empresa que possui a configuração
@@ -148,6 +260,83 @@ module WhatsApp
 
       def get_config(account)
         account.whatsapp_config || account.build_whatsapp_config
+      end
+
+      # Retorna { base_url:, api_key:, instance: } priorizando config da conta,
+      # com fallback para credenciais da plataforma (ENV).
+      def effective_params(account)
+        config = get_config(account)
+
+        if config.evolution_api_url.present? && config.evolution_api_key.present?
+          {
+            base_url: config.normalized_api_url,
+            api_key:  config.evolution_api_key,
+            instance: config.evolution_instance_name.presence || "orbi_#{account.id}"
+          }
+        elsif ENV['PLATFORM_WA_API_URL'].present? && ENV['PLATFORM_WA_API_KEY'].present?
+          {
+            base_url: ENV['PLATFORM_WA_API_URL'].chomp('/'),
+            api_key:  ENV['PLATFORM_WA_API_KEY'],
+            instance: "orbi_#{account.id}"
+          }
+        end
+      end
+
+      # Cria a instância na Evolution API se ela ainda não existir.
+      def ensure_instance(base_url:, api_key:, instance:)
+        list_response = HTTParty.get(
+          "#{base_url}/instance/fetchInstances",
+          headers: { 'apikey' => api_key },
+          timeout: 10
+        )
+
+        return unless list_response.success?
+
+        instances = list_response.parsed_response || []
+        exists = instances.any? { |i| i['instanceName'] == instance }
+        return if exists
+
+        HTTParty.post(
+          "#{base_url}/instance/create",
+          headers: { 'Content-Type' => 'application/json', 'apikey' => api_key },
+          body: { instanceName: instance, integration: 'WHATSAPP-BAILEYS' }.to_json,
+          timeout: 15
+        )
+      rescue StandardError => e
+        Rails.logger.warn "⚠️ ensure_instance: #{e.message}"
+      end
+
+      # Estado bruto da conexão ('open', 'connecting', 'close').
+      def connection_state(base_url:, api_key:, instance:)
+        response = HTTParty.get(
+          "#{base_url}/instance/connectionState/#{instance}",
+          headers: { 'apikey' => api_key },
+          timeout: 10
+        )
+        return 'close' unless response.success?
+
+        body = response.parsed_response
+        body.dig('instance', 'state') || body['state'] || 'close'
+      rescue StandardError
+        'close'
+      end
+
+      # Busca o número de telefone da instância conectada.
+      def fetch_connected_phone(base_url:, api_key:, instance:)
+        response = HTTParty.get(
+          "#{base_url}/instance/fetchInstances",
+          headers: { 'apikey' => api_key },
+          timeout: 10
+        )
+        return nil unless response.success?
+
+        instances = response.parsed_response || []
+        data = instances.find { |i| i['instanceName'] == instance }
+        data&.dig('instance', 'profilePictureUrl') # número fica em 'owner' ou 'profileName'
+        owner = data&.dig('instance', 'owner') || data&.dig('owner')
+        owner&.split('@')&.first
+      rescue StandardError
+        nil
       end
 
       def normalize_phone(phone)

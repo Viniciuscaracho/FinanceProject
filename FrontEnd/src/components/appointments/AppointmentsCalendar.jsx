@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef, startTransition } from 'react'
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isSameMonth, isSameDay, isToday, parseISO, getDaysInMonth, addDays, startOfDay, setHours, setMinutes } from 'date-fns'
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isSameMonth, isSameDay, isToday, parseISO, getDaysInMonth, addDays, startOfDay, endOfDay, setHours, setMinutes } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, User, Phone, FileText, Check, X, AlertCircle, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -194,6 +194,34 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
       return profId === selectedProfessional
     })
   }, [allAppointments, selectedProfessional])
+
+  // Google Calendar events (externos — não criados pelo sistema)
+  const [googleEvents, setGoogleEvents] = useState([])
+  const [gcalConnected, setGcalConnected] = useState(false)
+
+  useEffect(() => {
+    apiService.getGoogleCalendarStatus()
+      .then(res => setGcalConnected(res?.connected === true))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!gcalConnected) return
+    let start, end
+    if (viewMode === 'day') {
+      start = startOfDay(currentDate)
+      end   = endOfDay(currentDate)
+    } else if (viewMode === 'week') {
+      start = startOfWeek(currentDate, { weekStartsOn: 1 })
+      end   = endOfWeek(currentDate, { weekStartsOn: 1 })
+    } else {
+      start = startOfMonth(currentDate)
+      end   = endOfMonth(currentDate)
+    }
+    apiService.getGoogleCalendarEvents(start.toISOString(), end.toISOString())
+      .then(res => setGoogleEvents(res?.events || []))
+      .catch(() => {})
+  }, [gcalConnected, currentDate, viewMode])
 
   // Carregar profissionais
   useEffect(() => {
@@ -841,6 +869,7 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
         <WeekView
           currentDate={currentDate}
           appointments={appointments}
+          googleEvents={googleEvents}
           onReschedule={handleReschedule}
           onDayClick={(day) => {
             setSelectedDay(day)
@@ -860,6 +889,7 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
         <DayView
           currentDate={currentDate}
           appointments={appointments}
+          googleEvents={googleEvents}
           professionals={professionals}
           selectedProfessional={selectedProfessional}
           onDateChange={setCurrentDate}
@@ -1189,7 +1219,7 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
 }
 
 // Componente de Visualização Diária (grade completa de horários com drag & drop)
-function DayView({ currentDate, appointments, professionals, selectedProfessional, onDateChange, onAppointmentClick, highlightedAptId, onReschedule }) {
+function DayView({ currentDate, appointments, googleEvents = [], professionals, selectedProfessional, onDateChange, onAppointmentClick, highlightedAptId, onReschedule }) {
   const [isDragging, setIsDragging] = useState(false)
   const [draggedAptId, setDraggedAptId] = useState(null)
   const [dragOverSlot, setDragOverSlot] = useState(null)
@@ -1217,6 +1247,20 @@ function DayView({ currentDate, appointments, professionals, selectedProfessiona
     })
     return grouped
   }, [filteredAppointments])
+
+  const googleEventsBySlot = useMemo(() => {
+    const grouped = {}
+    googleEvents
+      .filter(ev => ev.start_time && !ev.all_day && isSameDay(parseISO(ev.start_time), currentDate))
+      .forEach(ev => {
+        const d = parseISO(ev.start_time)
+        const h = d.getHours()
+        const m = d.getMinutes() < 30 ? 0 : 30
+        const key = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+        grouped[key] = grouped[key] ? [...grouped[key], ev] : [ev]
+      })
+    return grouped
+  }, [googleEvents, currentDate])
 
   // Slots de 30 min de 6h às 23h
   const timeSlots = useMemo(() => {
@@ -1307,6 +1351,7 @@ function DayView({ currentDate, appointments, professionals, selectedProfessiona
           {timeSlots.map(slot => {
             const isHour = slot.endsWith(':00')
             const slotApts = appointmentsBySlot[slot] || []
+            const slotGoogleEvents = googleEventsBySlot[slot] || []
             const isDropTarget = isDragging && dragOverSlot === slot
 
             return (
@@ -1387,6 +1432,32 @@ function DayView({ currentDate, appointments, professionals, selectedProfessiona
                     </div>
                   )})}
 
+                  {/* Eventos do Google Calendar (read-only) */}
+                  {slotGoogleEvents.map(ev => {
+                    const evEnd = ev.end_time ? format(parseISO(ev.end_time), 'HH:mm') : null
+                    const evStart = format(parseISO(ev.start_time), 'HH:mm')
+                    return (
+                      <div
+                        key={ev.id}
+                        className="flex items-center gap-3 px-3 py-2 rounded-2xl select-none"
+                        style={{ borderLeft: '3px solid #4285F4', background: '#EEF3FD' }}
+                        title={ev.title}
+                      >
+                        <div className="flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold" style={{ width: 30, height: 30, background: '#4285F420', color: '#4285F4' }}>
+                          G
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate" style={{ color: '#1a3a6b' }}>{ev.title}</p>
+                          <p className="text-[11px]" style={{ color: '#4285F4' }}>
+                            {evEnd ? `${evStart} – ${evEnd}` : evStart}
+                            {ev.location ? ` · ${ev.location}` : ''}
+                          </p>
+                        </div>
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: '#4285F415', color: '#4285F4' }}>Google</span>
+                      </div>
+                    )
+                  })}
+
                   {/* Indicador de soltar para slots vazios */}
                   {isDropTarget && slotApts.length === 0 && (
                     <div className="h-9 rounded-xl border-2 border-dashed flex items-center justify-center" style={{ borderColor: T.brand + '80' }}>
@@ -1461,7 +1532,7 @@ function WeekAppointmentCard({ apt, onDragStart, onDragEnd, isDragging, onClick 
 }
 
 // View semanal com 7 colunas, barra de capacidade e drag & drop
-function WeekView({ currentDate, appointments, onDayClick, onAppointmentClick, onReschedule }) {
+function WeekView({ currentDate, appointments, googleEvents = [], onDayClick, onAppointmentClick, onReschedule }) {
   const [dragOverDayKey, setDragOverDayKey] = useState(null)
   const [draggedAptId, setDraggedAptId] = useState(null)
 
@@ -1480,9 +1551,12 @@ function WeekView({ currentDate, appointments, onDayClick, onAppointmentClick, o
       const activeCount = dayApts.filter(
         apt => !INACTIVE_STATUSES.has(normalizeStatus(apt.status))
       ).length
-      return { day, apts: dayApts, activeCount }
+      const dayGoogleEvents = googleEvents
+        .filter(ev => ev.start_time && !ev.all_day && isSameDay(parseISO(ev.start_time), day))
+        .sort((a, b) => parseISO(a.start_time) - parseISO(b.start_time))
+      return { day, apts: dayApts, activeCount, googleEvents: dayGoogleEvents }
     })
-  }, [days, appointments])
+  }, [days, appointments, googleEvents])
 
   const handleDragStart = (e, apt) => {
     e.dataTransfer.setData('text/plain', String(apt.id))
@@ -1518,7 +1592,7 @@ function WeekView({ currentDate, appointments, onDayClick, onAppointmentClick, o
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-neutral-200 dark:border-gray-800 overflow-hidden shadow-sm">
       <div className="grid grid-cols-7 divide-x divide-neutral-100 dark:divide-gray-800">
-        {aptsByDay.map(({ day, apts, activeCount }) => {
+        {aptsByDay.map(({ day, apts, activeCount, googleEvents: dayGoogleEvents }) => {
           const dayKey = day.toISOString()
           const isDropTarget = dragOverDayKey === dayKey && draggedAptId !== null
 
@@ -1564,13 +1638,29 @@ function WeekView({ currentDate, appointments, onDayClick, onAppointmentClick, o
                   />
                 ))}
 
+                {dayGoogleEvents.map(ev => (
+                  <div
+                    key={ev.id}
+                    className="px-2 py-1.5 rounded-lg select-none"
+                    style={{ borderLeft: '2px solid #4285F4', background: '#EEF3FD' }}
+                    title={ev.title}
+                  >
+                    <p className="text-[9px] font-bold" style={{ color: '#4285F4' }}>
+                      {ev.start_time ? format(parseISO(ev.start_time), 'HH:mm') : ''} · Google
+                    </p>
+                    <p className="text-[11px] font-semibold truncate leading-tight" style={{ color: '#1a3a6b' }}>
+                      {ev.title}
+                    </p>
+                  </div>
+                ))}
+
                 {isDropTarget && (
                   <div className="h-9 rounded-lg border-2 border-dashed flex items-center justify-center" style={{ borderColor: T.brand + '80' }}>
                     <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: T.brand }}>Reagendar aqui</span>
                   </div>
                 )}
 
-                {apts.length === 0 && !isDropTarget && (
+                {apts.length === 0 && dayGoogleEvents.length === 0 && !isDropTarget && (
                   <p className="text-center text-[10px] text-neutral-200 dark:text-gray-700 pt-6 font-medium select-none">—</p>
                 )}
               </div>

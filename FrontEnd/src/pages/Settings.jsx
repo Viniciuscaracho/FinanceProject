@@ -25,6 +25,7 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { toast } from 'sonner'
 import { T } from '@/lib/tokens'
 import { apiService } from '@/lib/api'
+import { WhatsAppConnectionCard } from '@/components/whatsapp/WhatsAppConnectionCard'
 
 function GoogleCalendarCard() {
   const [status, setStatus] = useState(null)
@@ -250,6 +251,9 @@ export function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      {/* WhatsApp */}
+      <WhatsAppConnectionCard />
 
       {/* Google Calendar */}
       <GoogleCalendarCard />

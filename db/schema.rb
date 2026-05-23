@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_19_000001) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_23_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -1348,6 +1348,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_19_000001) do
     t.integer "allowed_hours_end", default: 20, null: false
     t.integer "cooldown_minutes", default: 30, null: false
     t.json "automations", default: {"appointment_confirmation"=>true, "appointment_reminder_24h"=>true, "appointment_reminder_1h"=>true, "payment_link"=>true, "payment_confirmed"=>true, "meal_plan_updated"=>false, "form_pending"=>false, "return_reminder"=>false}
+    t.string "connected_phone"
+    t.string "instance_status", default: "close"
     t.index ["account_id"], name: "index_whatsapp_configs_on_account_id", unique: true
   end
 

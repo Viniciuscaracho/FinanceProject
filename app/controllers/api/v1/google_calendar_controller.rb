@@ -51,6 +51,23 @@ module Api
         render json: { success: true, message: 'Google Calendar desconectado com sucesso' }
       end
 
+      def events
+        time_min = Time.zone.parse(params[:start]) rescue 1.week.ago
+        time_max = Time.zone.parse(params[:end])   rescue 1.week.from_now
+
+        result = GoogleCalendar::ListEvents.call(
+          account:  Current.account,
+          time_min: time_min,
+          time_max: time_max
+        )
+
+        if result.success?
+          render json: { events: result.events }
+        else
+          render json: { events: [], error: result.message }, status: :ok
+        end
+      end
+
       def sync
         account = Current.account
         return render json: { error: 'Google Calendar não está conectado' }, status: :unprocessable_entity unless account.google_calendar_connected?
