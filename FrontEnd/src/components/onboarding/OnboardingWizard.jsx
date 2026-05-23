@@ -264,8 +264,9 @@ export function OnboardingWizard({ onDone }) {
       const existing = await apiService.getAppointmentLinks()
       const arr = Array.isArray(existing) ? existing : (existing?.appointment_links || [])
       link = arr[0] || null
+      console.log('[OnboardingWizard] getAppointmentLinks:', arr.length, 'links found, using:', link?.id)
     } catch (err) {
-      console.error('[OnboardingWizard] getAppointmentLinks error:', err)
+      console.error('[OnboardingWizard] getAppointmentLinks error:', err?.message, err?.status)
     }
 
     // 2. se não tem, cria um novo
@@ -277,14 +278,16 @@ export function OnboardingWizard({ onDone }) {
           link_type: 'normal',
         })
         link = res?.appointment_link || res || null
+        console.log('[OnboardingWizard] createAppointmentLink result:', link?.id, link?.public_url)
       } catch (err) {
-        console.error('[OnboardingWizard] createAppointmentLink error:', err)
+        console.error('[OnboardingWizard] createAppointmentLink error:', err?.message, err?.status, err?.data)
         toast.error('Não foi possível criar o link. Crie manualmente em Links de Agendamento.')
       }
     }
 
     const base = import.meta.env.VITE_PUBLIC_URL || window.location.origin
     const url = link?.public_url || (link?.token ? `${base}/agendar/${link.token}` : null)
+    console.log('[OnboardingWizard] bookingUrl resolved:', url)
     setBookingUrl(url || null)
     setSaving(false)
     setStep(3)

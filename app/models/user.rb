@@ -279,6 +279,13 @@ class User < ApplicationRecord
     existing = where(provider: auth_data[:provider], uid: auth_data[:uid]).first
     return existing if existing
 
+    # User exists with same email but registered via email/password — link Google account
+    by_email = find_by(email: auth_data[:email])
+    if by_email
+      by_email.update_columns(provider: auth_data[:provider], uid: auth_data[:uid])
+      return by_email
+    end
+
     user = new(
       provider:           auth_data[:provider],
       uid:                auth_data[:uid],
@@ -323,6 +330,7 @@ class User < ApplicationRecord
     account.save!
 
     # Definir esta account como a account atual do usuário
-    update!(account: account)
+    # update_column pula validações — necessário pois pode ser chamado antes de accepted_terms_at ser setado
+    update_column(:account_id, account.id)
   end
 end
