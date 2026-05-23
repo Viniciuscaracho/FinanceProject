@@ -92,13 +92,21 @@ module Api
         settings  = link.settings || {}
         link_type = settings['link_type'] || (settings['days_ahead'].to_i >= 30 ? 'premium' : 'normal')
 
+        url = link.public_url
+        if url.nil?
+          base = ENV.fetch('FRONTEND_URL', 'https://orbinutri.com.br').then { |u|
+            u.start_with?('http://', 'https://') ? u : "https://#{u}"
+          }
+          url = "#{base}/agendar/#{link.token}"
+        end
+
         {
           id:                link.id,
           name:              link.name,
           description:       link.description,
           active:            link.active,
           token:             link.token,
-          public_url:        link.public_url,
+          public_url:        url,
           link_type:         link_type,
           enable_google_meet: link.enable_google_meet || false,
           service:           link.service ? { id: link.service.id, name: link.service.name } : nil,

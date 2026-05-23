@@ -54,10 +54,10 @@ class AppointmentLink < ApplicationRecord
     frontend_url = ENV.fetch('FRONTEND_URL', nil)
     base = if frontend_url.present?
       frontend_url.start_with?('http://', 'https://') ? frontend_url : "https://#{frontend_url}"
-    else
-      (Rails.env.development? || Rails.env.test?) ? 'http://localhost:5173' : nil
+    elsif Rails.env.development? || Rails.env.test?
+      'http://localhost:5173'
     end
-    raise 'FRONTEND_URL env var must be set in production' if base.nil?
+    return nil if base.nil?
     "#{base}/agendar/#{token}"
   end
 
