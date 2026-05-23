@@ -115,19 +115,29 @@ module Api
       end
 
       def google_oauth_callback
-        return redirect_to "#{frontend_url}/auth/google?error=no_code", allow_other_host: true if params[:code].blank?
+        if params[:code].blank?
+          Rails.logger.error "[GoogleOAuth] No code received. params: #{params.to_unsafe_h.except('controller', 'action').inspect}"
+          return redirect_to "#{frontend_url}/auth/google?error=no_code", allow_other_host: true
+        end
 
         token_response = exchange_code_for_token(params[:code])
-        return redirect_to "#{frontend_url}/auth/google?error=token_exchange", allow_other_host: true if token_response[:error]
+        if token_response[:error]
+          Rails.logger.error "[GoogleOAuth] Token exchange failed: #{token_response[:error]}"
+          return redirect_to "#{frontend_url}/auth/google?error=#{CGI.escape("token_exchange: #{token_response[:error]}")}", allow_other_host: true
+        end
 
         user_info = get_google_user_info(token_response[:access_token])
-        return redirect_to "#{frontend_url}/auth/google?error=user_info", allow_other_host: true if user_info[:error]
+        if user_info[:error]
+          Rails.logger.error "[GoogleOAuth] User info failed: #{user_info[:error]}"
+          return redirect_to "#{frontend_url}/auth/google?error=#{CGI.escape("user_info: #{user_info[:error]}")}", allow_other_host: true
+        end
 
         user = User.from_omniauth_data(user_info)
 
         if user.persisted?
           redirect_to "#{frontend_url}/auth/google?token=#{CGI.escape(generate_token(user))}", allow_other_host: true
         else
+          Rails.logger.error "[GoogleOAuth] User save failed: #{user.errors.full_messages.inspect}"
           error_msg = CGI.escape(user.errors.full_messages.join(', '))
           redirect_to "#{frontend_url}/auth/google?error=#{error_msg}", allow_other_host: true
         end

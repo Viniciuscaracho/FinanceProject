@@ -63,6 +63,7 @@ export function Login() {
   const initialMode = searchParams.get('tab') === 'register' ? 'register' : 'login'
   const [mode, setMode] = useState(initialMode); // 'login' | 'register' | 'forgot'
   const [googleError] = useState(searchParams.get('google_error') === '1');
+  const googleErrorDetail = searchParams.get('detail');
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState(null);
   const [forgotEmail, setForgotEmail] = useState('');
@@ -187,7 +188,7 @@ export function Login() {
     }
   };
 
-  const displayError = localError || error || (googleError ? 'Não foi possível autenticar com Google. Tente novamente.' : null);
+  const displayError = localError || error || (googleError ? `Não foi possível autenticar com Google. Tente novamente.${googleErrorDetail ? ` (${googleErrorDetail})` : ''}` : null);
 
   const cardStyle = {
     width: '100%',
