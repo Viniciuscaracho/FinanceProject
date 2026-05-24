@@ -242,13 +242,17 @@ function WaIcon({ size = 16 }) {
 }
 
 function WhatsAppDashboardCard({ isMobile }) {
-  const [mode, setMode] = useState('checking') // checking | hidden | cta | qr | connected
-  const [qrBase64, setQrBase64] = useState(null)
-  const [qrLoading, setQrLoading] = useState(false)
-  const [countdown, setCountdown] = useState(WA_QR_COUNTDOWN)
-  const [waPhone, setWaPhone] = useState(null)
-  const [dismissed, setDismissed] = useState(() => localStorage.getItem(WA_DASH_DISMISS) === '1')
-  const pollRef = useRef(null)
+  // checking | hidden | cta | qr | pairing | connected
+  const [mode, setMode]               = useState('checking')
+  const [qrBase64, setQrBase64]       = useState(null)
+  const [qrLoading, setQrLoading]     = useState(false)
+  const [countdown, setCountdown]     = useState(WA_QR_COUNTDOWN)
+  const [waPhone, setWaPhone]         = useState(null)
+  const [phoneInput, setPhoneInput]   = useState('')
+  const [pairingCode, setPairingCode] = useState(null)
+  const [pairingLoading, setPairingLoading] = useState(false)
+  const [dismissed, setDismissed]     = useState(() => localStorage.getItem(WA_DASH_DISMISS) === '1')
+  const pollRef      = useRef(null)
   const countdownRef = useRef(null)
 
   const checkStatus = useCallback(async (silent = false) => {
@@ -268,12 +272,16 @@ function WhatsAppDashboardCard({ isMobile }) {
     return () => { clearInterval(pollRef.current); clearInterval(countdownRef.current) }
   }, [dismissed, checkStatus])
 
+  // Poll quando QR ou pairing estão ativos
   useEffect(() => {
     clearInterval(pollRef.current)
-    if (mode === 'qr') pollRef.current = setInterval(() => checkStatus(true), 3000)
+    if (mode === 'qr' || mode === 'pairing') {
+      pollRef.current = setInterval(() => checkStatus(true), 3000)
+    }
     return () => clearInterval(pollRef.current)
   }, [mode, checkStatus])
 
+  // Countdown do QR
   useEffect(() => {
     clearInterval(countdownRef.current)
     if (mode !== 'qr' || !qrBase64 || qrLoading) return
@@ -299,6 +307,17 @@ function WhatsAppDashboardCard({ isMobile }) {
     finally { setQrLoading(false) }
   }
 
+  const requestPairingCode = async () => {
+    const digits = phoneInput.replace(/\D/g, '')
+    if (digits.length < 10) return
+    setPairingLoading(true)
+    try {
+      const res = await apiService.requestWhatsappPairingCode(digits)
+      if (res?.code) setPairingCode(res.code)
+    } catch { /* ignore */ }
+    finally { setPairingLoading(false) }
+  }
+
   const dismiss = () => {
     localStorage.setItem(WA_DASH_DISMISS, '1')
     setDismissed(true)
@@ -307,7 +326,7 @@ function WhatsAppDashboardCard({ isMobile }) {
 
   if (dismissed || mode === 'hidden' || mode === 'checking') return null
 
-  // ── Conectado: banner compacto verde ──
+  // ── Conectado ──
   if (mode === 'connected') {
     return (
       <div style={{
@@ -322,13 +341,109 @@ function WhatsAppDashboardCard({ isMobile }) {
     )
   }
 
-  // ── QR expandido ──
+  // ── Pairing: conectar por número (padrão no mobile) ──
+  if (mode === 'pairing') {
+    return (
+      <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 16px', borderBottom: `1px solid ${T.border}`,
+          background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <WaIcon size={18} />
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#14532D', margin: 0 }}>Conectar por número</p>
+              <p style={{ fontSize: 11, color: '#166534', margin: 0 }}>Você receberá um código de 8 dígitos no WhatsApp</p>
+            </div>
+          </div>
+          <button onClick={() => setMode('cta')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#86EFAC', padding: 4, flexShrink: 0 }}>
+            <X size={14} />
+          </button>
+        </div>
+
+        <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {!pairingCode ? (
+            <>
+              <p style={{ fontSize: 13, color: T.muted, margin: 0, lineHeight: 1.5 }}>
+                Digite seu número. No WhatsApp vá em <strong>Configurações → Dispositivos vinculados → Usar número</strong> e insira o código.
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <span style={{
+                    position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+                    fontSize: 13, color: T.muted, pointerEvents: 'none',
+                  }}>+55</span>
+                  <input
+                    type="tel"
+                    placeholder="(11) 99999-0000"
+                    value={phoneInput}
+                    onChange={e => setPhoneInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && requestPairingCode()}
+                    autoFocus
+                    style={{
+                      width: '100%', padding: '9px 10px 9px 42px',
+                      borderRadius: 8, border: `1px solid ${T.border}`,
+                      fontSize: 14, color: T.text, background: T.white,
+                      boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit',
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={requestPairingCode}
+                  disabled={pairingLoading || phoneInput.replace(/\D/g, '').length < 10}
+                  style={{
+                    padding: '9px 16px', borderRadius: 8, background: '#25D366', border: 'none',
+                    color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                    fontFamily: 'inherit', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
+                    opacity: phoneInput.replace(/\D/g, '').length < 10 ? 0.5 : 1,
+                  }}
+                >
+                  {pairingLoading
+                    ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                    : 'Enviar'}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+              <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>Digite este código no WhatsApp:</p>
+              <div style={{
+                fontSize: 28, fontWeight: 800, letterSpacing: 6, color: T.text,
+                padding: '12px 24px', borderRadius: 10,
+                background: '#F0FDF4', border: '2px solid #BBF7D0',
+                fontVariantNumeric: 'tabular-nums', fontFamily: 'monospace',
+              }}>
+                {pairingCode}
+              </div>
+              <p style={{ fontSize: 12, color: T.muted, margin: 0, textAlign: 'center' }}>
+                Aguardando conexão… o código expira em alguns minutos.
+              </p>
+              <button onClick={() => { setPairingCode(null); setPhoneInput('') }}
+                style={{ fontSize: 12, color: T.muted, background: 'none', border: 'none', cursor: 'pointer' }}>
+                Tentar outro número
+              </button>
+            </div>
+          )}
+
+          {/* Alternativa: QR (apenas no desktop) */}
+          {!isMobile && (
+            <button
+              onClick={loadQr}
+              style={{ fontSize: 12, color: T.brand, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit', padding: 0, alignSelf: 'flex-start' }}
+            >
+              <SmartphoneNfc size={12} /> Usar QR Code
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── QR expandido (desktop) ──
   if (mode === 'qr') {
     return (
-      <div style={{
-        background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden',
-      }}>
-        {/* Topo do banner QR */}
+      <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '12px 16px', borderBottom: `1px solid ${T.border}`,
@@ -348,12 +463,7 @@ function WhatsAppDashboardCard({ isMobile }) {
           </button>
         </div>
 
-        {/* QR + instruções */}
-        <div style={{
-          display: 'flex', flexDirection: isMobile ? 'column' : 'row',
-          alignItems: 'center', gap: 20, padding: '20px 24px',
-        }}>
-          {/* QR frame */}
+        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 20, padding: '20px 24px' }}>
           <div style={{
             position: 'relative', padding: 8, borderRadius: 12, background: '#fff',
             border: `2px solid ${T.border}`, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', flexShrink: 0,
@@ -367,8 +477,7 @@ function WhatsAppDashboardCard({ isMobile }) {
             )}
             {!qrLoading && qrBase64 && (
               <div style={{
-                position: 'absolute', bottom: 10, right: 10,
-                minWidth: 28, height: 28, borderRadius: 14,
+                position: 'absolute', bottom: 10, right: 10, minWidth: 28, height: 28, borderRadius: 14,
                 background: countdown <= 10 ? '#FEE2E2' : T.chip,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 10, fontWeight: 700, padding: '0 5px',
@@ -379,11 +488,8 @@ function WhatsAppDashboardCard({ isMobile }) {
             )}
           </div>
 
-          {/* Instruções */}
           <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: T.text, margin: '0 0 10px' }}>
-              Como conectar:
-            </p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: T.text, margin: '0 0 10px' }}>Como conectar:</p>
             {[
               'Abra o WhatsApp no celular',
               'Toque em ⋮ → Dispositivos vinculados',
@@ -400,19 +506,25 @@ function WhatsAppDashboardCard({ isMobile }) {
                 <p style={{ fontSize: 13, color: T.text, margin: 0, lineHeight: 1.5 }}>{step}</p>
               </div>
             ))}
-            <button
-              onClick={loadQr}
-              style={{ fontSize: 12, color: T.brand, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit', marginTop: 4, padding: 0 }}
-            >
-              <RefreshCw size={11} /> Gerar novo QR
-            </button>
+            <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+              <button onClick={loadQr}
+                style={{ fontSize: 12, color: T.brand, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit', padding: 0 }}>
+                <RefreshCw size={11} /> Novo QR
+              </button>
+              <button onClick={() => { setMode('pairing'); setPairingCode(null) }}
+                style={{ fontSize: 12, color: T.muted, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit', padding: 0 }}>
+                Usar número
+              </button>
+            </div>
           </div>
         </div>
       </div>
     )
   }
 
-  // ── CTA: banner horizontal (modo padrão) ──
+  // ── CTA: banner horizontal ──
+  // Mobile → botão primário = número (não pode escanear o próprio celular)
+  // Desktop → botão primário = QR
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
@@ -424,24 +536,52 @@ function WhatsAppDashboardCard({ isMobile }) {
         <WaIcon size={18} />
       </div>
       <div style={{ flex: 1, minWidth: 160 }}>
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#14532D', margin: 0 }}>
-          Conecte o WhatsApp
-        </p>
+        <p style={{ fontSize: 13, fontWeight: 700, color: '#14532D', margin: 0 }}>Conecte o WhatsApp</p>
         <p style={{ fontSize: 12, color: '#166534', margin: 0 }}>
-          Confirmações, lembretes e cobranças enviados automaticamente
+          {isMobile
+            ? 'Insira seu número e receba um código de conexão'
+            : 'Confirmações, lembretes e cobranças automáticos'}
         </p>
       </div>
-      <button
-        onClick={loadQr}
-        style={{
-          padding: '8px 16px', borderRadius: 8, background: '#25D366', border: 'none',
-          color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit', flexShrink: 0,
-          whiteSpace: 'nowrap',
-        }}
-      >
-        <SmartphoneNfc size={14} /> Escanear QR Code
-      </button>
+      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+        {isMobile ? (
+          // Mobile: número como primário, QR como link secundário
+          <button
+            onClick={() => setMode('pairing')}
+            style={{
+              padding: '8px 14px', borderRadius: 8, background: '#25D366', border: 'none',
+              color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit',
+            }}
+          >
+            Conectar por número
+          </button>
+        ) : (
+          // Desktop: QR como primário, número como link
+          <>
+            <button
+              onClick={loadQr}
+              style={{
+                padding: '8px 14px', borderRadius: 8, background: '#25D366', border: 'none',
+                color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit',
+              }}
+            >
+              <SmartphoneNfc size={14} /> QR Code
+            </button>
+            <button
+              onClick={() => setMode('pairing')}
+              style={{
+                padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.7)',
+                border: '1px solid #BBF7D0', color: '#166534',
+                fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Número
+            </button>
+          </>
+        )}
+      </div>
       <button onClick={dismiss} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#86EFAC', padding: 2, flexShrink: 0 }}>
         <X size={14} />
       </button>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { apiService } from '@/lib/api'
 import { T } from '@/lib/tokens'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 // view: 'loading' | 'not_configured' | 'idle' | 'qr' | 'pairing' | 'connected'
 
@@ -39,25 +40,48 @@ function ViewNotConfigured() {
 }
 
 /* ── Tela: idle (configurado, sem conexão ativa) ────────────────────────────── */
-function ViewIdle({ onQr, onPairing }) {
+function ViewIdle({ onQr, onPairing, isMobile }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>
         Conecte seu WhatsApp para que o sistema envie confirmações de agendamento, lembretes e avisos de cobrança automaticamente pelo seu número.
       </p>
+      {isMobile && (
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 8,
+          padding: '10px 12px', borderRadius: 8,
+          background: '#FEF9C3', border: '1px solid #FDE68A',
+          fontSize: 12, color: '#92400E',
+        }}>
+          <AlertCircle size={14} style={{ color: '#D97706', flexShrink: 0, marginTop: 1 }} />
+          <span>No celular, use <strong>Conectar por número</strong> — não é possível escanear o QR Code da própria tela.</span>
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <Button
-          size="sm"
-          onClick={onQr}
-          style={{ background: '#25D366', color: '#fff', gap: 6 }}
-        >
-          <SmartphoneNfc size={14} />
-          Conectar via QR Code
-        </Button>
-        <Button size="sm" variant="outline" onClick={onPairing} style={{ gap: 6 }}>
-          <Phone size={14} />
-          Conectar por número
-        </Button>
+        {/* Mobile: número primeiro; Desktop: QR primeiro */}
+        {isMobile ? (
+          <>
+            <Button size="sm" onClick={onPairing} style={{ background: '#25D366', color: '#fff', gap: 6 }}>
+              <Phone size={14} />
+              Conectar por número
+            </Button>
+            <Button size="sm" variant="outline" onClick={onQr} style={{ gap: 6 }}>
+              <SmartphoneNfc size={14} />
+              QR Code (outro celular)
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button size="sm" onClick={onQr} style={{ background: '#25D366', color: '#fff', gap: 6 }}>
+              <SmartphoneNfc size={14} />
+              Conectar via QR Code
+            </Button>
+            <Button size="sm" variant="outline" onClick={onPairing} style={{ gap: 6 }}>
+              <Phone size={14} />
+              Conectar por número
+            </Button>
+          </>
+        )}
       </div>
     </div>
   )
@@ -262,6 +286,7 @@ function ViewConnected({ phone, onDisconnect, disconnecting }) {
    Card principal
 ══════════════════════════════════════════════════════════════════════════════ */
 export function WhatsAppConnectionCard() {
+  const isMobile = useIsMobile()
   const [view, setView]         = useState('loading')
   const [phone, setPhone]       = useState(null)
   const [qrBase64, setQrBase64] = useState(null)
@@ -282,6 +307,8 @@ export function WhatsAppConnectionCard() {
       } else {
         if (!silent) setView('idle')
       }
+      // No mobile, pula direto para pairing quando idle (não é possível escanear QR do próprio celular)
+      // Isso é feito na renderização, não aqui, para não sobrescrever estados válidos
     } catch {
       if (!silent) setView('idle')
     }
@@ -374,6 +401,7 @@ export function WhatsAppConnectionCard() {
           <ViewIdle
             onQr={loadQr}
             onPairing={() => setView('pairing')}
+            isMobile={isMobile}
           />
         )}
 
