@@ -271,28 +271,52 @@ module WhatsApp
         account.whatsapp_config || account.build_whatsapp_config
       end
 
-      # Retorna { base_url:, api_key:, instance: } priorizando config da conta,
-      # com fallback para credenciais da plataforma (ENV).
+      # Retorna { base_url:, api_key:, instance:, account_id: } priorizando config
+      # da conta, com fallback para credenciais da plataforma (ENV).
       def effective_params(account)
         config = get_config(account)
 
         if config.evolution_api_url.present? && config.evolution_api_key.present?
           {
-            base_url: config.normalized_api_url,
-            api_key:  config.evolution_api_key,
-            instance: config.evolution_instance_name.presence || "orbi_#{account.id}"
+            base_url:   config.normalized_api_url,
+            api_key:    config.evolution_api_key,
+            instance:   config.evolution_instance_name.presence || "orbi_#{account.id}",
+            account_id: account.id
           }
         elsif ENV['PLATFORM_WA_API_URL'].present? && ENV['PLATFORM_WA_API_KEY'].present?
           {
-            base_url: ENV['PLATFORM_WA_API_URL'].chomp('/'),
-            api_key:  ENV['PLATFORM_WA_API_KEY'],
-            instance: "orbi_#{account.id}"
+            base_url:   ENV['PLATFORM_WA_API_URL'].chomp('/'),
+            api_key:    ENV['PLATFORM_WA_API_KEY'],
+            instance:   "orbi_#{account.id}",
+            account_id: account.id
           }
         end
       end
 
+      # URL do webhook para esta conta — Evolution API vai notificar aqui nos eventos de conexão.
+      def webhook_url_for(account_id)
+        host = ENV.fetch('DEFAULT_HOST_NAME', 'localhost:3000')
+        scheme = host.include?('localhost') ? 'http' : 'https'
+        "#{scheme}://#{host}/api/v1/whatsapp/webhook/#{account_id}"
+      end
+
+      # Payload de criação de instância com webhook configurado.
+      def instance_create_body(instance:, account_id:)
+        {
+          instanceName: instance,
+          integration:  'WHATSAPP-BAILEYS',
+          webhook: {
+            enabled:      true,
+            url:          webhook_url_for(account_id),
+            byEvents:     true,
+            base64:       false,
+            events:       %w[CONNECTION_UPDATE MESSAGES_UPSERT QRCODE_UPDATED]
+          }
+        }.to_json
+      end
+
       # Deleta a instância e a recria do zero (usada quando está presa em "connecting").
-      def delete_and_recreate_instance(base_url:, api_key:, instance:)
+      def delete_and_recreate_instance(base_url:, api_key:, instance:, account_id:, **)
         HTTParty.delete(
           "#{base_url}/instance/delete/#{instance}",
           headers: { 'apikey' => api_key },
@@ -302,7 +326,7 @@ module WhatsApp
         HTTParty.post(
           "#{base_url}/instance/create",
           headers: { 'Content-Type' => 'application/json', 'apikey' => api_key },
-          body: { instanceName: instance, integration: 'WHATSAPP-BAILEYS' }.to_json,
+          body: instance_create_body(instance: instance, account_id: account_id),
           timeout: 15
         )
       rescue StandardError => e
@@ -310,7 +334,7 @@ module WhatsApp
       end
 
       # Cria a instância na Evolution API se ela ainda não existir.
-      def ensure_instance(base_url:, api_key:, instance:)
+      def ensure_instance(base_url:, api_key:, instance:, account_id:, **)
         list_response = HTTParty.get(
           "#{base_url}/instance/fetchInstances",
           headers: { 'apikey' => api_key },
@@ -320,13 +344,13 @@ module WhatsApp
         return unless list_response.success?
 
         instances = list_response.parsed_response || []
-        exists = instances.any? { |i| i['instanceName'] == instance }
+        exists = instances.any? { |i| i['instanceName'] == instance || i['name'] == instance }
         return if exists
 
         HTTParty.post(
           "#{base_url}/instance/create",
           headers: { 'Content-Type' => 'application/json', 'apikey' => api_key },
-          body: { instanceName: instance, integration: 'WHATSAPP-BAILEYS' }.to_json,
+          body: instance_create_body(instance: instance, account_id: account_id),
           timeout: 15
         )
       rescue StandardError => e
@@ -349,6 +373,7 @@ module WhatsApp
       end
 
       # Busca o número de telefone da instância conectada.
+      # Evolution API v2 retorna o número em `ownerJid` no nível raiz do objeto.
       def fetch_connected_phone(base_url:, api_key:, instance:)
         response = HTTParty.get(
           "#{base_url}/instance/fetchInstances",
@@ -358,10 +383,11 @@ module WhatsApp
         return nil unless response.success?
 
         instances = response.parsed_response || []
-        data = instances.find { |i| i['instanceName'] == instance }
-        data&.dig('instance', 'profilePictureUrl') # número fica em 'owner' ou 'profileName'
-        owner = data&.dig('instance', 'owner') || data&.dig('owner')
-        owner&.split('@')&.first
+        data = instances.find { |i| i['instanceName'] == instance || i['name'] == instance }
+        owner_jid = data&.dig('ownerJid') ||
+                    data&.dig('instance', 'owner') ||
+                    data&.dig('owner')
+        owner_jid&.split('@')&.first
       rescue StandardError
         nil
       end

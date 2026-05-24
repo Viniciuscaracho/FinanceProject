@@ -8,6 +8,13 @@ module Api
       def webhook
         return render json: { error: 'Invalid webhook' }, status: :unauthorized unless valid_webhook?
 
+        # Evolution API: roteamento por tipo de evento
+        if evolution_api_request?
+          handle_evolution_event
+          return render json: { status: 'received' }, status: :ok
+        end
+
+        # Meta / Twilio: mensagens recebidas
         message_data = extract_message_data
         account      = identify_account(message_data)
 
@@ -20,7 +27,8 @@ module Api
         )
 
         render json: { status: 'received' }, status: :ok
-      rescue StandardError
+      rescue StandardError => e
+        Rails.logger.error "❌ WhatsApp webhook error: #{e.message}"
         render json: { error: 'Internal server error' }, status: :internal_server_error
       end
 
@@ -34,7 +42,94 @@ module Api
 
       private
 
+      def evolution_api_request?
+        # Evolution API envia 'event' como campo top-level no body
+        params[:event].present? || request.headers['apikey'].present?
+      end
+
+      def handle_evolution_event
+        event    = params[:event].to_s
+        instance = params[:instance].to_s
+
+        account = account_from_instance(instance)
+        return Rails.logger.warn("⚠️ Webhook Evolution: conta não encontrada para instância #{instance}") unless account
+
+        case event
+        when 'CONNECTION_UPDATE'
+          handle_connection_update(account, params[:data] || {})
+        when 'MESSAGES_UPSERT'
+          handle_incoming_message(account, params[:data] || {})
+        end
+      end
+
+      def handle_connection_update(account, data)
+        state = data[:state].to_s
+
+        if state == 'open'
+          phone = extract_phone_from_connection_data(data)
+          config = account.whatsapp_config || account.build_whatsapp_config
+
+          was_disconnected = config.instance_status != 'open'
+          config.update_columns(instance_status: 'open', connected_phone: phone) if config.persisted?
+
+          # Mensagem de boas-vindas apenas na primeira conexão
+          if was_disconnected && phone.present?
+            Rails.logger.info "✅ WhatsApp conectado para conta ##{account.id} — número #{phone}"
+            WhatsApp::EvolutionApiClient.send_message(
+              account: account,
+              phone:   phone,
+              message: "✅ *WhatsApp conectado com sucesso!*\n\nA partir de agora você receberá confirmações de agendamentos, lembretes e avisos de cobrança diretamente aqui."
+            )
+          end
+        elsif %w[close connecting].include?(state)
+          config = account.whatsapp_config
+          config&.update_columns(instance_status: state)
+        end
+      end
+
+      def handle_incoming_message(account, data)
+        messages = data.is_a?(Array) ? data : [data]
+        messages.each do |msg|
+          from    = msg.dig(:key, :remoteJid) || msg[:remoteJid]
+          body    = msg.dig(:message, :conversation) || msg.dig(:message, :extendedTextMessage, :text)
+          next if from.blank? || body.blank?
+
+          WhatsApp::ProcessMessageJob.perform_later(
+            account_id:      account.id,
+            message:         body,
+            whatsapp_number: from.split('@').first
+          )
+        end
+      end
+
+      def extract_phone_from_connection_data(data)
+        # Pode vir em data.me.id, data.number ou data.instance.owner
+        jid = data.dig(:me, :id) || data[:number] || data.dig(:instance, :owner)
+        jid&.split('@')&.first
+      end
+
+      def account_from_instance(instance_name)
+        # Instâncias da plataforma: "orbi_<account_id>"
+        if instance_name.start_with?('orbi_')
+          account_id = instance_name.delete_prefix('orbi_').to_i
+          return Account.find_by(id: account_id) if account_id > 0
+        end
+
+        # Instância customizada: busca pelo nome armazenado no whatsapp_config
+        Account.joins(:whatsapp_config)
+               .find_by(whatsapp_configs: { evolution_instance_name: instance_name })
+      end
+
       def valid_webhook?
+        # Evolution API: aceita se vier da nossa URL de Evolution ou com apikey conhecida
+        if evolution_api_request?
+          received_key = request.headers['apikey'].to_s
+          platform_key = ENV['PLATFORM_WA_API_KEY'].to_s
+          # Aceita se apikey bater com a da plataforma, ou se vier sem apikey (instâncias custom)
+          return true if received_key.blank? || platform_key.blank?
+          return ActiveSupport::SecurityUtils.secure_compare(received_key, platform_key)
+        end
+
         # Meta/WhatsApp Cloud API: X-Hub-Signature-256: sha256=<hmac>
         if (hub_sig = request.headers['X-Hub-Signature-256']).present?
           app_secret = ENV['WHATSAPP_APP_SECRET']
