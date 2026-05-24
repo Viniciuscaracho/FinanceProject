@@ -50,6 +50,7 @@ module WhatsApp
 
       # Retorna o QR Code (base64) para o usuário escanear.
       # Cria a instância na Evolution API se ela ainda não existir.
+      # Se a instância estiver presa em "connecting", reinicia antes de gerar o QR.
       #
       # @return [Hash] { success: true, base64: "data:image/png;base64,..." }
       #              | { success: false, error: "..." }
@@ -64,6 +65,14 @@ module WhatsApp
         if state == 'open'
           phone = fetch_connected_phone(**params)
           return success_response({ already_connected: true, phone: phone })
+        end
+
+        # Instância presa em "connecting" — sessão anterior não foi limpa.
+        # Deleta e recria para garantir um QR fresco e válido.
+        if state == 'connecting'
+          Rails.logger.info "🔄 [WhatsApp] Instância #{params[:instance]} presa em connecting — reiniciando"
+          delete_and_recreate_instance(**params)
+          sleep(1.5)
         end
 
         response = HTTParty.get(
@@ -280,6 +289,24 @@ module WhatsApp
             instance: "orbi_#{account.id}"
           }
         end
+      end
+
+      # Deleta a instância e a recria do zero (usada quando está presa em "connecting").
+      def delete_and_recreate_instance(base_url:, api_key:, instance:)
+        HTTParty.delete(
+          "#{base_url}/instance/delete/#{instance}",
+          headers: { 'apikey' => api_key },
+          timeout: 10
+        )
+        sleep(0.5)
+        HTTParty.post(
+          "#{base_url}/instance/create",
+          headers: { 'Content-Type' => 'application/json', 'apikey' => api_key },
+          body: { instanceName: instance, integration: 'WHATSAPP-BAILEYS' }.to_json,
+          timeout: 15
+        )
+      rescue StandardError => e
+        Rails.logger.warn "⚠️ delete_and_recreate_instance: #{e.message}"
       end
 
       # Cria a instância na Evolution API se ela ainda não existir.
