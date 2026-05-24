@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   isSameDay, isSameMonth, parseISO, format,
@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   AlertCircle, Loader2, Plus, User, FileText,
   CheckCircle2, Calendar, TrendingUp, TrendingDown,
-  X, Check,
+  X, Check, SmartphoneNfc, RefreshCw, CheckCircle,
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { apiService } from '../lib/api'
@@ -93,12 +93,11 @@ function Empty({ text }) {
 
 /* ─── Setup Checklist ────────────────────────────── */
 const CHECKLIST_KEY = 'setup_checklist_done'
-const ONBOARDING_KEY = 'onboarding_v1_done'
 
 function SetupChecklist({ allApts }) {
   const navigate = useNavigate()
   const [visible, setVisible] = useState(
-    () => localStorage.getItem(ONBOARDING_KEY) === '1' && !localStorage.getItem(CHECKLIST_KEY)
+    () => !localStorage.getItem(CHECKLIST_KEY)
   )
   const [hasRealContact, setHasRealContact] = useState(false)
 
@@ -222,6 +221,230 @@ function SetupChecklist({ allApts }) {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+/* ─── WhatsApp Dashboard Card ────────────────────── */
+const WA_DASH_DISMISS = 'wa_dash_v1'
+const WA_QR_COUNTDOWN = 55
+
+function WaIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path fillRule="evenodd" clipRule="evenodd"
+        d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.1 21.9l4.833-1.317A9.953 9.953 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2Z"
+        fill="#25D366" />
+      <path d="M8.5 7.5c.2-.5.5-.5.7-.5h.6c.2 0 .5.1.7.6l.9 2.3c.1.3.1.6-.1.8l-.5.5c-.1.1-.1.3 0 .4 1 1.7 2.3 3 4 4 .1.1.3.1.4 0l.5-.5c.2-.2.5-.2.8-.1l2.3.9c.5.2.6.5.6.7v.6c0 .2 0 .5-.5.7-1.5.6-5.5.8-8-3.8S7 8 8.5 7.5Z"
+        fill="white" />
+    </svg>
+  )
+}
+
+function WhatsAppDashboardCard({ isMobile }) {
+  const [mode, setMode] = useState('checking') // checking | hidden | cta | qr | connected
+  const [qrBase64, setQrBase64] = useState(null)
+  const [qrLoading, setQrLoading] = useState(false)
+  const [countdown, setCountdown] = useState(WA_QR_COUNTDOWN)
+  const [waPhone, setWaPhone] = useState(null)
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(WA_DASH_DISMISS) === '1')
+  const pollRef = useRef(null)
+  const countdownRef = useRef(null)
+
+  const checkStatus = useCallback(async (silent = false) => {
+    try {
+      const res = await apiService.getWhatsappConnectionStatus()
+      if (res?.connected) { setWaPhone(res.phone ?? null); setMode('connected') }
+      else if (res?.configured === false) setMode('hidden')
+      else if (!silent) setMode('cta')
+    } catch {
+      if (!silent) setMode('cta')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (dismissed) return
+    checkStatus()
+    return () => { clearInterval(pollRef.current); clearInterval(countdownRef.current) }
+  }, [dismissed, checkStatus])
+
+  useEffect(() => {
+    clearInterval(pollRef.current)
+    if (mode === 'qr') pollRef.current = setInterval(() => checkStatus(true), 3000)
+    return () => clearInterval(pollRef.current)
+  }, [mode, checkStatus])
+
+  useEffect(() => {
+    clearInterval(countdownRef.current)
+    if (mode !== 'qr' || !qrBase64 || qrLoading) return
+    setCountdown(WA_QR_COUNTDOWN)
+    countdownRef.current = setInterval(() => {
+      setCountdown(s => {
+        if (s <= 1) { clearInterval(countdownRef.current); loadQr(); return WA_QR_COUNTDOWN }
+        return s - 1
+      })
+    }, 1000)
+    return () => clearInterval(countdownRef.current)
+  }, [mode, qrBase64, qrLoading]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadQr = async () => {
+    setQrLoading(true)
+    setMode('qr')
+    try {
+      const res = await apiService.getWhatsappQrCode()
+      if (res?.already_connected) { setWaPhone(res.phone); setMode('connected') }
+      else if (res?.base64) setQrBase64(res.base64)
+      else setMode('cta')
+    } catch { setMode('cta') }
+    finally { setQrLoading(false) }
+  }
+
+  const dismiss = () => {
+    localStorage.setItem(WA_DASH_DISMISS, '1')
+    setDismissed(true)
+    setMode('hidden')
+  }
+
+  if (dismissed || mode === 'hidden' || mode === 'checking') return null
+
+  // ── Conectado: banner compacto verde ──
+  if (mode === 'connected') {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 16px',
+      }}>
+        <CheckCircle size={15} style={{ color: '#22C55E', flexShrink: 0 }} />
+        <p style={{ fontSize: 13, fontWeight: 600, color: '#15803D', margin: 0 }}>
+          WhatsApp conectado{waPhone ? ` · +${waPhone}` : ''} — envios automáticos ativos
+        </p>
+      </div>
+    )
+  }
+
+  // ── QR expandido ──
+  if (mode === 'qr') {
+    return (
+      <div style={{
+        background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden',
+      }}>
+        {/* Topo do banner QR */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 16px', borderBottom: `1px solid ${T.border}`,
+          background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <WaIcon size={18} />
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#14532D', margin: 0 }}>Conectar WhatsApp</p>
+              <p style={{ fontSize: 11, color: '#166534', margin: 0 }}>
+                Abra o WhatsApp → Dispositivos vinculados → Vincular dispositivo
+              </p>
+            </div>
+          </div>
+          <button onClick={() => setMode('cta')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#86EFAC', padding: 4, flexShrink: 0 }}>
+            <X size={14} />
+          </button>
+        </div>
+
+        {/* QR + instruções */}
+        <div style={{
+          display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+          alignItems: 'center', gap: 20, padding: '20px 24px',
+        }}>
+          {/* QR frame */}
+          <div style={{
+            position: 'relative', padding: 8, borderRadius: 12, background: '#fff',
+            border: `2px solid ${T.border}`, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', flexShrink: 0,
+          }}>
+            {qrLoading || !qrBase64 ? (
+              <div style={{ width: 180, height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Loader2 size={26} style={{ animation: 'spin 1s linear infinite', color: T.muted }} />
+              </div>
+            ) : (
+              <img src={qrBase64} alt="QR Code WhatsApp" style={{ width: 180, height: 180, display: 'block', borderRadius: 6 }} />
+            )}
+            {!qrLoading && qrBase64 && (
+              <div style={{
+                position: 'absolute', bottom: 10, right: 10,
+                minWidth: 28, height: 28, borderRadius: 14,
+                background: countdown <= 10 ? '#FEE2E2' : T.chip,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 10, fontWeight: 700, padding: '0 5px',
+                color: countdown <= 10 ? '#DC2626' : T.muted,
+              }}>
+                {countdown}s
+              </div>
+            )}
+          </div>
+
+          {/* Instruções */}
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: T.text, margin: '0 0 10px' }}>
+              Como conectar:
+            </p>
+            {[
+              'Abra o WhatsApp no celular',
+              'Toque em ⋮ → Dispositivos vinculados',
+              'Toque em "Vincular dispositivo"',
+              'Aponte a câmera para o QR ao lado',
+            ].map((step, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: '50%', background: '#DCFCE7',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1,
+                }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#15803D' }}>{i + 1}</span>
+                </div>
+                <p style={{ fontSize: 13, color: T.text, margin: 0, lineHeight: 1.5 }}>{step}</p>
+              </div>
+            ))}
+            <button
+              onClick={loadQr}
+              style={{ fontSize: 12, color: T.brand, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit', marginTop: 4, padding: 0 }}
+            >
+              <RefreshCw size={11} /> Gerar novo QR
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── CTA: banner horizontal (modo padrão) ──
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+      background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
+      border: '1px solid #BBF7D0', borderRadius: 10,
+      padding: isMobile ? '12px 14px' : '10px 16px',
+    }}>
+      <div style={{ width: 34, height: 34, borderRadius: 9, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 1px 6px rgba(37,211,102,0.2)' }}>
+        <WaIcon size={18} />
+      </div>
+      <div style={{ flex: 1, minWidth: 160 }}>
+        <p style={{ fontSize: 13, fontWeight: 700, color: '#14532D', margin: 0 }}>
+          Conecte o WhatsApp
+        </p>
+        <p style={{ fontSize: 12, color: '#166534', margin: 0 }}>
+          Confirmações, lembretes e cobranças enviados automaticamente
+        </p>
+      </div>
+      <button
+        onClick={loadQr}
+        style={{
+          padding: '8px 16px', borderRadius: 8, background: '#25D366', border: 'none',
+          color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit', flexShrink: 0,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <SmartphoneNfc size={14} /> Escanear QR Code
+      </button>
+      <button onClick={dismiss} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#86EFAC', padding: 2, flexShrink: 0 }}>
+        <X size={14} />
+      </button>
     </div>
   )
 }
@@ -446,6 +669,8 @@ export function Dashboard() {
       </div>
 
       <SetupChecklist allApts={allApts} />
+
+      <WhatsAppDashboardCard isMobile={isMobile} />
 
       {/* Erro inline — não bloqueia layout, aparece como banner */}
       {error && (

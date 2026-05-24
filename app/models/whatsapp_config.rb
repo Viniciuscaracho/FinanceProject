@@ -8,11 +8,13 @@
 #  allowed_hours_end       :integer          default(20), not null
 #  allowed_hours_start     :integer          default(8), not null
 #  automations             :json
+#  connected_phone         :string
 #  cooldown_minutes        :integer          default(30), not null
 #  enabled                 :boolean          default(FALSE)
 #  evolution_api_key       :string
 #  evolution_api_url       :string
 #  evolution_instance_name :string           default("default")
+#  instance_status         :string           default("close")
 #  created_at              :datetime         not null
 #  updated_at              :datetime         not null
 #  account_id              :bigint           not null
