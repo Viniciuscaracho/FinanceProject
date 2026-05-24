@@ -96,8 +96,12 @@ module WhatsApp
       # Solicita um código de pareamento por número de telefone (alternativa ao QR).
       # O usuário deve digitar o código de 8 dígitos no WhatsApp → Dispositivos → Usar número.
       #
+      # Requisitos Evolution API v2:
+      #   - Instância deve estar em estado 'close' (não 'connecting' ou 'open')
+      #   - Endpoint: GET /instance/connect/{instance}?number={phone}
+      #
       # @param phone [String] Número completo com DDI, ex: "5511999990000"
-      # @return [Hash] { success: true, code: "ABCD-EFGH" }
+      # @return [Hash] { success: true, code: "ABCD1234" }
       def request_pairing_code(account:, phone:)
         params = effective_params(account)
         return error_response('Evolution API não configurada') unless params
@@ -105,20 +109,33 @@ module WhatsApp
         normalized = normalize_phone(phone)
         return error_response('Número inválido') if normalized.length < 12
 
+        # Garante instância em estado 'close' para que o pairingCode seja gerado
         ensure_instance(**params)
+        state = connection_state(**params)
 
-        response = HTTParty.post(
-          "#{params[:base_url]}/instance/pairingCode/#{params[:instance]}",
-          headers: { 'Content-Type' => 'application/json', 'apikey' => params[:api_key] },
-          body: { number: normalized }.to_json,
-          timeout: 15
+        if state == 'open'
+          return error_response('WhatsApp já está conectado. Desconecte antes de vincular outro número.')
+        end
+
+        if state == 'connecting'
+          # Reseta para 'close' para que o pairing funcione
+          delete_and_recreate_instance(**params)
+          sleep(1)
+        end
+
+        response = HTTParty.get(
+          "#{params[:base_url]}/instance/connect/#{params[:instance]}",
+          headers: { 'apikey' => params[:api_key] },
+          query: { number: normalized },
+          timeout: 20
         )
 
         return error_response("Erro ao solicitar código: #{response.body}") unless response.success?
 
         body = response.parsed_response
-        code = body['code'] || body['pairingCode']
-        return error_response('Código não retornado pela API') if code.blank?
+        code = body['pairingCode'] || body['code']
+        # 'code' longo é chave criptográfica do WebSocket, não o pairing code do usuário
+        return error_response('Código de pareamento não retornado. Verifique o número e tente novamente.') if code.blank? || code.length > 20
 
         success_response({ code: code })
       rescue StandardError => e
@@ -358,7 +375,7 @@ module WhatsApp
       end
 
       # Estado bruto da conexão ('open', 'connecting', 'close').
-      def connection_state(base_url:, api_key:, instance:)
+      def connection_state(base_url:, api_key:, instance:, **)
         response = HTTParty.get(
           "#{base_url}/instance/connectionState/#{instance}",
           headers: { 'apikey' => api_key },
@@ -374,7 +391,7 @@ module WhatsApp
 
       # Busca o número de telefone da instância conectada.
       # Evolution API v2 retorna o número em `ownerJid` no nível raiz do objeto.
-      def fetch_connected_phone(base_url:, api_key:, instance:)
+      def fetch_connected_phone(base_url:, api_key:, instance:, **)
         response = HTTParty.get(
           "#{base_url}/instance/fetchInstances",
           headers: { 'apikey' => api_key },
