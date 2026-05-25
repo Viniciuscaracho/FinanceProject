@@ -10,7 +10,10 @@ module WhatsApp
       payment_confirmed:        "Pagamento recebido! ✅ Obrigado, %<patient>s. Até a consulta!",
       meal_plan_updated:        "Oi %<patient>s! %<professional>s atualizou seu plano alimentar. Acesse aqui: %<link>s 🥗",
       form_pending:             "Oi %<patient>s! Antes da sua consulta com %<professional>s, preencha este formulário: %<link>s 📋",
-      return_reminder:          "Oi %<patient>s! Faz um tempo desde sua última consulta com %<professional>s. Quer marcar seu retorno? 📅"
+      return_reminder:          "Oi %<patient>s! Faz um tempo desde sua última consulta com %<professional>s. Quer marcar seu retorno? 📅",
+      billing_notification:     "📋 *Cobrança Pendente*\n\nOlá, %<patient>s! Seu agendamento de *%<service>s* em %<datetime>s está com pagamento pendente.\n\n💰 Valor: %<price>s\n\nQualquer dúvida, estamos à disposição. 😊",
+      pix_reminder:             "💳 *Lembrete de Pagamento*\n\nOlá, %<patient>s! Amanhã você tem *%<service>s* com %<professional>s às %<time>s.\n\n💰 Valor: %<price>s\n🔑 Chave PIX: %<pix_key>s",
+      overdue_notification:     "⚠️ *Pagamento em Atraso*\n\nOlá, %<patient>s! O pagamento do seu *%<service>s* em %<datetime>s ainda está em aberto.\n\n💰 Valor: %<price>s\n\nPor favor, regularize o quanto antes. Obrigado! 🙏"
     }.freeze
 
     def self.render(event_type, resource, contact)
@@ -44,6 +47,19 @@ module WhatsApp
         base.merge(link: meal_plan_link(resource))
       when :form_pending
         base.merge(link: form_link(resource))
+      when :billing_notification, :overdue_notification
+        base.merge(
+          service:  resource.try(:service)&.name || "Serviço",
+          datetime: format_datetime(resource.start_time),
+          price:    price_formatted(resource)
+        )
+      when :pix_reminder
+        base.merge(
+          service:  resource.try(:service)&.name || "Serviço",
+          time:     format_time(resource.start_time),
+          price:    price_formatted(resource),
+          pix_key:  pix_key_from_link(resource)
+        )
       else
         base
       end
@@ -76,6 +92,17 @@ module WhatsApp
 
     def self.manage_url(resource)
       resource.try(:manage_url) || ""
+    end
+
+    def self.price_formatted(resource)
+      cents = resource.try(:price_cents).to_i
+      "R$ #{format('%.2f', cents / 100.0).gsub('.', ',')}"
+    end
+
+    def self.pix_key_from_link(resource)
+      link = resource.try(:appointment_link)
+      return "" unless link
+      (link.settings&.dig('automations', 'pix_key')).to_s
     end
   end
 end

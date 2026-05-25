@@ -54,6 +54,9 @@ class WhatsappMessage < ApplicationRecord
     meal_plan_updated
     form_pending
     return_reminder
+    billing_notification
+    pix_reminder
+    overdue_notification
   ].freeze
 
   validates :event_type,      inclusion: { in: EVENT_TYPES }

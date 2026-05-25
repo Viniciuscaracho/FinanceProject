@@ -29,7 +29,7 @@ class AppointmentBillingNotificationsJob < ApplicationJob
       .joins(:appointment_link)
       .where("appointment_links.settings->'automations'->>'billing_notification' = 'true'")
 
-    run_service(scope, Appointments::SendBillingNotification, 'cobrança pendente')
+    run_via_event_handler(scope, :billing_notification, flag: :billing_notification_sent, label: 'cobrança pendente')
   end
 
   # Agendamentos confirmados + pagamento pendente + começam em 24h–25h
@@ -43,7 +43,7 @@ class AppointmentBillingNotificationsJob < ApplicationJob
       .where("appointment_links.settings->'automations'->>'pix_key' IS NOT NULL")
       .where("appointment_links.settings->'automations'->>'pix_key' != ''")
 
-    run_service(scope, Appointments::SendPixReminder, 'lembrete PIX')
+    run_via_event_handler(scope, :pix_reminder, flag: :pix_reminder_sent, label: 'lembrete PIX')
   end
 
   # Agendamentos confirmados que começam em 1h–2h (manual + link público)
@@ -90,22 +90,38 @@ class AppointmentBillingNotificationsJob < ApplicationJob
       .joins(:appointment_link)
       .where("appointment_links.settings->'automations'->>'overdue' = 'true'")
 
-    run_service(scope, Appointments::SendOverdueNotification, 'atraso')
+    run_via_event_handler(scope, :overdue_notification, flag: :overdue_notification_sent, label: 'atraso')
   end
 
-  def run_service(scope, service_class, label)
+  # Roteia notificação pelo EventHandler (idempotência, cooldown, janela horária).
+  # Marca a flag imediatamente ao enfileirar — não aguarda o envio assíncrono.
+  def run_via_event_handler(scope, event, flag:, label:)
+    sent_col = flag.to_s
+    sent_at_col = "#{sent_col}_at"
     count = 0
-    scope.find_each do |appointment|
-      result = service_class.call(appointment: appointment)
-      if result.success?
-        count += 1
-        Rails.logger.info "✅ [#{label}] Enviado para appointment ##{appointment.id}"
-      else
-        Rails.logger.warn "⚠️  [#{label}] Pulado appointment ##{appointment.id}: #{result.error}"
+
+    scope.includes(:contact, :account).find_each do |appointment|
+      contact = appointment.contact
+      unless contact&.cell_phone_number.present?
+        Rails.logger.warn "⚠️  [#{label}] appointment ##{appointment.id} sem contato com telefone — pulado"
+        next
       end
+
+      WhatsApp::EventHandler.call(
+        account:  appointment.account,
+        contact:  contact,
+        event:    event,
+        resource: appointment
+      )
+
+      cols = { sent_col => true, sent_at_col => Time.current }
+      appointment.update_columns(**cols)
+      count += 1
+      Rails.logger.info "✅ [#{label}] Enfileirado para appointment ##{appointment.id}"
     rescue StandardError => e
       Rails.logger.error "❌ [#{label}] Exceção no appointment ##{appointment.id}: #{e.message}"
     end
-    Rails.logger.info "📨 [#{label}] #{count} mensagens enviadas"
+
+    Rails.logger.info "📨 [#{label}] #{count} mensagens enfileiradas"
   end
 end
