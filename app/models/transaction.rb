@@ -281,6 +281,7 @@ class Transaction < ApplicationRecord
   before_save :set_default_name, if: -> { name.blank? && service.present? }
   after_save :update_children, if: :detailed?
   after_commit :update_bank_account_balance, if: -> { saved_change_to_paid? || saved_change_to_amount_cents? || saved_change_to_bank_account_id? || saved_change_to_transfer_to_id? }
+  after_commit :sync_appointment_on_paid, if: -> { saved_change_to_paid? && paid? && appointment_id.present? }
 
   after_update_commit do
     publish 'transaction_updated', record: self
@@ -474,5 +475,29 @@ class Transaction < ApplicationRecord
 
   def transaction_type_name
     I18n.t("enums.transaction_type.#{Transaction.transaction_types.key(transaction_type_cd)}")
+  end
+
+  # Quando uma transação vinculada a um agendamento é marcada como paga
+  # (ex: via página de Transações), sincroniza o payment_status do agendamento
+  # e dispara o WhatsApp de confirmação de pagamento.
+  def sync_appointment_on_paid
+    appt = appointment
+    return unless appt
+    return if appt.payment_status.to_s == 'paid'
+
+    # update_column bypassa callbacks do appointment, evitando loop com
+    # sync_transaction_on_payment_status_change que aponta no sentido contrário.
+    appt.update_column(:payment_status, Appointment::PAYMENT_STATUS[:paid])
+
+    return unless appt.contact&.cell_phone_number.present?
+
+    WhatsApp::EventHandler.call(
+      account:  appt.account,
+      contact:  appt.contact,
+      event:    :payment_confirmed,
+      resource: appt.reload
+    )
+  rescue => e
+    Rails.logger.error "[Transaction#sync_appointment_on_paid] id=#{id}: #{e.message}"
   end
 end

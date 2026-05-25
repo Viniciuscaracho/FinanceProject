@@ -79,7 +79,7 @@ module WhatsApp
     end
 
     def self.payment_link(resource)
-      resource.try(:payment_link_url) || ""
+      resource.try(:stripe_payment_link_url).presence || resource.try(:payment_link_url) || ""
     end
 
     def self.meal_plan_link(resource)

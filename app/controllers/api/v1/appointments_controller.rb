@@ -166,7 +166,12 @@ module Api
 
           begin
             payment_link = create_stripe_payment_link(appointment)
-            appointment.update!(stripe_payment_link_id: payment_link.id, stripe_payment_intent_id: payment_link.payment_intent)
+            appointment.update!(
+              stripe_payment_link_id:  payment_link.id,
+              stripe_payment_link_url: payment_link.url,
+              stripe_payment_intent_id: payment_link.payment_intent
+            )
+            dispatch_payment_link_whatsapp(appointment)
             render json: appointment_json(appointment, payment_link.url), status: :created
           rescue => e
             Rails.logger.error "appointments#create payment link: #{e.message}"
@@ -594,6 +599,20 @@ module Api
         )
       rescue StandardError => e
         Rails.logger.error "[AppointmentsController] WhatsApp confirmation failed for ##{appointment.id}: #{e.message}"
+      end
+
+      def dispatch_payment_link_whatsapp(appointment)
+        return unless appointment.contact&.cell_phone_number.present?
+        return unless appointment.stripe_payment_link_url.present?
+
+        WhatsApp::EventHandler.call(
+          account:  appointment.account,
+          contact:  appointment.contact,
+          event:    :payment_link,
+          resource: appointment
+        )
+      rescue StandardError => e
+        Rails.logger.error "[AppointmentsController] WhatsApp payment_link failed for ##{appointment.id}: #{e.message}"
       end
 
       def appointment_from_whatsapp(account, whatsapp_number)

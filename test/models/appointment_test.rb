@@ -22,6 +22,7 @@
 #  recurrence_pattern           :jsonb
 #  start_time                   :datetime
 #  status                       :integer          default(0)
+#  stripe_payment_link_url      :string
 #  whatsapp_1h_reminder_sent    :boolean          default(FALSE), not null
 #  whatsapp_1h_reminder_sent_at :datetime
 #  whatsapp_number              :string

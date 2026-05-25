@@ -27,21 +27,22 @@ module Appointments
     private
 
     def build_confirmation_message(appointment)
+      client_name = appointment.contact&.first_name || 'Cliente'
       professional_name = appointment.account_user&.user&.first_name || 'Profissional'
       service_name = appointment.service.name
       start_time = appointment.start_time.strftime('%d/%m/%Y às %H:%M')
 
-      message = "✅ Agendamento Confirmado!\n\n"
-      message += "Olá! Seu agendamento foi confirmado:\n\n"
-      message += "📅 Data: #{start_time}\n"
-      message += "👤 Profissional: #{professional_name}\n"
-      message += "💼 Serviço: #{service_name}\n"
+      message = "✅ *Agendamento Confirmado!*\n\n"
+      message += "Olá, #{client_name}! Seu *#{service_name}* com #{professional_name} está confirmado para #{start_time}."
 
       if appointment.google_meet_link.present?
-        message += "\n🔗 Link da reunião: #{appointment.google_meet_link}\n"
+        message += "\n\n🔗 *Link da reunião:* #{appointment.google_meet_link}"
       end
 
-      message += "\nAté logo!"
+      if appointment.manage_url.present?
+        message += "\n\n📲 *Precisa reagendar ou cancelar?*\n#{appointment.manage_url}"
+      end
+
       message
     end
 

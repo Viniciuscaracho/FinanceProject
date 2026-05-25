@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_23_000001) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -305,6 +305,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_23_000001) do
     t.string "manage_token"
     t.bigint "anamnese_template_id"
     t.boolean "is_demo", default: false, null: false
+    t.string "stripe_payment_link_url"
     t.index ["account_id", "account_user_id", "status", "start_time"], name: "index_appointments_on_account_professional_status_time"
     t.index ["account_id", "start_time", "status"], name: "index_appointments_on_account_time_status"
     t.index ["account_id"], name: "index_appointments_on_account_id"
