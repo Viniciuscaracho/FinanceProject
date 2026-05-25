@@ -19,6 +19,11 @@ then
   bundle exec rails db:create 2>/dev/null || true
   bundle exec rails db:migrate || echo "⚠️  db:migrate failed — starting server anyway (check logs)"
 
+  if [ "${SEED_STRIPE_PLANS}" = "true" ]; then
+    echo "Seeding Stripe plans for Orbi..."
+    bundle exec rails runner "load Rails.root.join('db/seeds/stripe_plans.rb')"
+  fi
+
   if [ -n "${SEED_ADMIN_EMAIL}" ]; then
     echo "Creating/promoting admin user: ${SEED_ADMIN_EMAIL}..."
     bundle exec rails runner "

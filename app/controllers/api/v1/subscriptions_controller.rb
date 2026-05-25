@@ -36,8 +36,6 @@ module Api
             product.name.include?('BarberManagement')
           end
 
-          barber_management_products = products.data if barber_management_products.empty?
-
           render json: {
             plans: barber_management_products.flat_map do |product|
               prices.data.select { |p| p.product == product.id }.map do |price|
