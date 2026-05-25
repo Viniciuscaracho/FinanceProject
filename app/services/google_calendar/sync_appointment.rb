@@ -18,9 +18,6 @@ module GoogleCalendar
       else
         GoogleCalendar::CreateEvent.call(appointment: appointment)
       end
-    rescue => e
-      # Nunca deixar falha de Calendar quebrar o fluxo principal
-      Rails.logger.error "GoogleCalendar::SyncAppointment erro (appointment_id=#{context.appointment&.id}): #{e.message}"
     end
 
     private

@@ -6,9 +6,8 @@ module Integrations
     class CheckCancellationStatusJob < ApplicationJob
       queue_as :integrations
 
-      retry_on InvoiceProcessingError, wait: 5.seconds, attempts: 10 do |job, exception|
-        Rails.logger.error("Retries exhausted for relationship id #{job.arguments.relationship_id} due to error: #{exception.message}")
-      end
+      retry_on InvoiceProcessingError, wait: 5.seconds, attempts: 10
+      retry_on IntegrationError, wait: :exponentially_longer, attempts: 5
 
       def perform(relationship_id)
         check_status(relationship_id)
