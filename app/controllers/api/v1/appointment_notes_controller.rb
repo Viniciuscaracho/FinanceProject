@@ -11,9 +11,11 @@ module Api
                         .where(appointment_id: @appointment.id)
                         .recent
 
+        # Usa @appointment já carregado pelo before_action para evitar N+1
+        apt_json = @appointment.as_json
         render json: {
-          notes:       @notes.as_json(include: :appointment),
-          appointment: @appointment.as_json
+          notes:       @notes.map { |n| n.as_json.merge(appointment: apt_json) },
+          appointment: apt_json
         }
       end
 

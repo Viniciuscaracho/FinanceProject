@@ -39,6 +39,26 @@ module Api
           elsif end_date
             appointments = appointments.where('start_time <= ?', end_date)
           end
+        else
+          # Sem filtro de data: janela padrão de 90 dias no passado a 90 dias no futuro.
+          # Evita carregar histórico completo da conta em uma única query.
+          appointments = appointments.where(start_time: 90.days.ago..90.days.from_now)
+        end
+
+        # Paginação opcional (usada pela aba Lista); sem paginação o calendário recebe tudo na janela.
+        if params[:page].present?
+          per = [[params[:per_page].to_i, 1].max, 200].min.then { |n| n.zero? ? 50 : n }
+          appointments = appointments.page(params[:page]).per(per)
+
+          return render json: {
+            appointments: appointments.map { |apt| appointment_json(apt) },
+            meta: {
+              current_page: appointments.current_page,
+              total_pages:  appointments.total_pages,
+              total_count:  appointments.total_count,
+              per_page:     per
+            }
+          }
         end
 
         render json: appointments.map { |apt| appointment_json(apt) }

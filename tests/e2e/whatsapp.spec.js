@@ -22,8 +22,15 @@ const TEST_PHONES = [
   { raw: '+55 11 98055-9982', normalized: '5511980559982', label: 'Teste 3'  },
 ];
 
-// Data futura para não conflitar com agendamentos existentes
-const FUTURE = addMonths(new Date(), 2);
+// Data futura em dia útil (seg–sex) para não conflitar com agendamentos existentes
+function nextWeekdayFrom(date) {
+  const d = new Date(date);
+  const dow = d.getDay(); // 0=dom, 6=sab
+  if (dow === 0) d.setDate(d.getDate() + 1); // dom → seg
+  if (dow === 6) d.setDate(d.getDate() + 2); // sab → seg
+  return d;
+}
+const FUTURE = nextWeekdayFrom(addMonths(new Date(), 2));
 
 // ─────────────────────────────────────────────────────────
 // helpers
@@ -311,7 +318,7 @@ test.describe('WhatsApp: normalização de números', () => {
     await page.waitForTimeout(1_000);
 
     // O contato auto-criado para o número normalizado deve existir
-    const contactsResp = await page.request.get(`${API_BASE}/contacts`, {
+    const contactsResp = await page.request.get(`${API_BASE}/contacts?per_page=500`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
     const contacts = await contactsResp.json();

@@ -11,6 +11,7 @@ module Api
                                   .provideds
                                   .where(enabled: 't')
                                   .order(:name)
+                                  .limit(500)
 
         render json: services.map { |s| service_json(s) }
       end

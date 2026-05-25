@@ -17,8 +17,15 @@ const RUN_ID   = Date.now();
 // Número único por run — 11 dígitos, válido para whatsapp_number
 const PHONE = `119${String(RUN_ID).slice(-8).padStart(8, '0')}`;
 
-// Data 2 meses no futuro (sem conflito com agendamentos existentes)
-const FUTURE = addMonths(new Date(), 2);
+// Data 2 meses no futuro em dia útil (seg–sex)
+function nextWeekdayFrom(date) {
+  const d = new Date(date);
+  const dow = d.getDay();
+  if (dow === 0) d.setDate(d.getDate() + 1);
+  if (dow === 6) d.setDate(d.getDate() + 2);
+  return d;
+}
+const FUTURE = nextWeekdayFrom(addMonths(new Date(), 2));
 // Filtro de data cobre o mês inteiro para evitar problemas de fuso horário
 const FUTURE_MONTH_START = format(startOfMonth(FUTURE), 'yyyy-MM-dd');
 const FUTURE_MONTH_END   = format(endOfMonth(FUTURE),   'yyyy-MM-dd');
@@ -46,9 +53,9 @@ async function fetchFirstProfessionalAndService(page, token) {
   return { professional: professionals[0], service: services[0] };
 }
 
-async function createAppointmentViaAPI(page, token, { whatsapp, price = 10000, professional, service }) {
-  const start = new Date(FUTURE); start.setHours(14, 0, 0, 0);
-  const end   = new Date(FUTURE); end.setHours(15, 0, 0, 0);
+async function createAppointmentViaAPI(page, token, { whatsapp, price = 10000, professional, service, hour = 9 }) {
+  const start = new Date(FUTURE); start.setHours(hour, 0, 0, 0);
+  const end   = new Date(FUTURE); end.setHours(hour + 1, 0, 0, 0);
 
   const resp = await page.request.post(`${API_BASE}/appointments`, {
     headers: await authHeaders(token),
@@ -109,7 +116,7 @@ test.describe('Integração: Agendamento → Contato auto-criado', () => {
     const { professional, service } = await fetchFirstProfessionalAndService(page, token);
 
     // Cria o agendamento — o callback ensure_contact_from_whatsapp cria o contato
-    const apt = await createAppointmentViaAPI(page, token, { whatsapp: phone, professional, service });
+    const apt = await createAppointmentViaAPI(page, token, { whatsapp: phone, professional, service, hour: 9 });
     appointmentId = apt.id;
 
     // Busca o contato recém-criado na API para obter o id (para cleanup)
@@ -152,39 +159,24 @@ test.describe('Integração: Agendamento pago → Transação criada', () => {
     const { professional, service } = await fetchFirstProfessionalAndService(page, token);
 
     const apt = await createAppointmentViaAPI(page, token, {
-      whatsapp: phone, professional, service, price: 10000,
+      whatsapp: phone, professional, service, price: 10000, hour: 10,
     });
     appointmentId = apt.id;
 
-    // Navega para lista de agendamentos e muda para aba "Lista"
-    await page.goto('/appointments');
-    await page.waitForLoadState('networkidle').catch(() => {});
+    // Marca como pago via API (a lista de agendamentos filtra por mês atual, não mostra FUTURE)
+    const patchResp = await page.request.patch(`${API_BASE}/appointments/${appointmentId}`, {
+      headers: await authHeaders(token),
+      data: { appointment: { payment_status: 'paid' } },
+    });
+    expect(patchResp.ok(), `PATCH payment_status=paid falhou: ${await patchResp.text()}`).toBeTruthy();
 
-    const listTab = page.getByRole('tab', { name: /lista/i });
-    await expect(listTab).toBeVisible({ timeout: 5_000 });
-    await listTab.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(3_000); // aguarda callback after_update criar a transação
 
-    // Localiza a linha pelo nome do cliente auto-criado
-    const row = page.locator('tr').filter({ hasText: clientName });
-    await expect(row.first()).toBeVisible({ timeout: 10_000 });
-
-    // PaymentSelect é o 2º combobox na linha (StatusSelect = 1º, PaymentSelect = 2º)
-    const comboboxes = row.first().getByRole('combobox');
-    await comboboxes.nth(1).click();
-
-    // Seleciona "Pago"
-    const pagoOption = page.locator('[role="option"]').filter({ hasText: /^Pago$/ });
-    await expect(pagoOption).toBeVisible({ timeout: 5_000 });
-    await pagoOption.click();
-    await page.waitForTimeout(2_000); // aguarda callback after_update criar a transação
-
-    // Verifica a transação em /transactions
+    // Verifica a transação em /transactions (transação é criada com data de hoje → aparece no mês atual)
     await page.goto('/transactions');
     await page.waitForLoadState('networkidle').catch(() => {});
 
     // A descrição da transação contém o nome do serviço
-    // Usa div[title*=...] para evitar o <h3> hidden do layout mobile
     await expect(
       page.locator(`div[title*="${service.name}"]`).first()
     ).toBeVisible({ timeout: 10_000 });
@@ -213,7 +205,7 @@ test.describe('Integração: Agendamento → Comissão calculada', () => {
     const { professional, service } = await fetchFirstProfessionalAndService(page, token);
 
     const apt = await createAppointmentViaAPI(page, token, {
-      whatsapp: phone, professional, service, price: PRICE_CENTS,
+      whatsapp: phone, professional, service, price: PRICE_CENTS, hour: 11,
     });
     appointmentId = apt.id;
 

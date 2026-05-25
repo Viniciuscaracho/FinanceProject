@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useState, useEffect, useMemo } from 'react'
+import { useTransactionFilters } from '@/hooks/useTransactionFilters'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -102,143 +102,33 @@ const formatDescriptionWithBreaks = (text, wordsPerLine = 6) => {
 export function Transactions() {
   const isMobile = useIsMobile()
   const queryClient = useQueryClient()
-  const location = useLocation()
-  const initialFilterApplied = useRef(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedFilter, setSelectedFilter] = useState('all')
-  const [sort, setSort] = useState({ field: 'due_date', direction: 'asc' })
+
+  const {
+    showFilters, setShowFilters,
+    showMoreFilters, setShowMoreFilters,
+    searchQuery, setSearchQuery,
+    selectedFilter, setSelectedFilter,
+    sort, setSort,
+    currentPage, setCurrentPage,
+    startDate, setStartDate,
+    endDate, setEndDate,
+    dateType, setDateType,
+    selectedCategoryIds, setSelectedCategoryIds,
+    selectedCostCenterIds, setSelectedCostCenterIds,
+    selectedBankAccountIds, setSelectedBankAccountIds,
+    selectedContactIds, setSelectedContactIds,
+    selectedTagIds, setSelectedTagIds,
+    selectedPaymentMethods, setSelectedPaymentMethods,
+    selectedPaymentTypes, setSelectedPaymentTypes,
+    includePaid, setIncludePaid,
+    includeUnpaid, setIncludeUnpaid,
+    filters,
+    resetFilters,
+  } = useTransactionFilters()
   const [isNewTransactionOpen, setIsNewTransactionOpen] = useState(false)
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [isEditTransactionOpen, setIsEditTransactionOpen] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [showFilters, setShowFilters] = useState(false) // Começar com filtros ocultos para destacar a tabela
-  const [showMoreFilters, setShowMoreFilters] = useState(false) // Estado para mostrar mais filtros
-  
-  // Estados dos filtros avançados
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState([])
-  const [selectedCostCenterIds, setSelectedCostCenterIds] = useState([])
-  const [selectedBankAccountIds, setSelectedBankAccountIds] = useState([])
-  const [selectedContactIds, setSelectedContactIds] = useState([])
-  const [selectedTagIds, setSelectedTagIds] = useState([])
-  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState([])
-  const [selectedPaymentTypes, setSelectedPaymentTypes] = useState([])
-  const [includePaid, setIncludePaid] = useState(true)
-  const [includeUnpaid, setIncludeUnpaid] = useState(true)
-  const [dateType, setDateType] = useState('payment') // 'payment' | 'competency'
-  
-  // Debounced search query para evitar muitas requisições
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
-  
-  // React Query hooks
-  const filters = useMemo(() => {
-    const f = {}
-    if (selectedFilter !== 'all') {
-      f.transaction_type = selectedFilter
-    }
-    if (debouncedSearchQuery) {
-      f.search = debouncedSearchQuery
-    }
-    if (startDate) {
-      // Converter data do formato brasileiro (dd/mm/aaaa) para ISO (aaaa-mm-dd)
-      const isoStartDate = convertDateToISO(startDate)
-      if (isoStartDate) {
-        f.start_date = isoStartDate
-      }
-    }
-    if (endDate) {
-      // Converter data do formato brasileiro (dd/mm/aaaa) para ISO (aaaa-mm-dd)
-      const isoEndDate = convertDateToISO(endDate)
-      if (isoEndDate) {
-        f.end_date = isoEndDate
-      }
-    }
-    if (selectedCategoryIds.length > 0) {
-      f.category_ids = selectedCategoryIds
-    }
-    if (selectedCostCenterIds.length > 0) {
-      f.cost_center_ids = selectedCostCenterIds
-    }
-    if (selectedBankAccountIds.length > 0) {
-      f.bank_account_ids = selectedBankAccountIds
-    }
-    if (selectedContactIds.length > 0) {
-      f.contact_ids = selectedContactIds
-    }
-    if (selectedTagIds.length > 0) {
-      f.tag_ids = selectedTagIds
-    }
-    if (selectedPaymentMethods.length > 0) {
-      f.payment_methods = selectedPaymentMethods
-    }
-    if (selectedPaymentTypes.length > 0) {
-      f.payment_types = selectedPaymentTypes
-    }
-    // Quando nenhum está marcado, forçar resultado vazio enviando filtro impossível
-    if (!includePaid && !includeUnpaid) {
-      f.paid = ['__none__']
-    } else if (includePaid && !includeUnpaid) {
-      f.paid = ['true']
-    } else if (!includePaid && includeUnpaid) {
-      f.paid = ['false']
-    }
-    // ambos marcados → sem filtro (backend retorna tudo)
-    if (dateType) {
-      f.date_type = dateType
-    }
-    return f
-  }, [
-    selectedFilter, 
-    debouncedSearchQuery, 
-    startDate, 
-    endDate, 
-    selectedCategoryIds, 
-    selectedCostCenterIds, 
-    selectedBankAccountIds, 
-    selectedContactIds, 
-    selectedTagIds, 
-    selectedPaymentMethods, 
-    selectedPaymentTypes, 
-    includePaid, 
-    includeUnpaid, 
-    dateType
-  ])
-  
-  // Aplicar filtros/pesquisa ao navegar a partir do dashboard
-  useEffect(() => {
-    if (initialFilterApplied.current || !location.state) return
-    initialFilterApplied.current = true
-
-    const { filter, search } = location.state
-
-    if (search) {
-      setSearchQuery(search)
-      setDebouncedSearchQuery(search)
-    }
-
-    const formatDate = (d) => {
-      const dd = String(d.getDate()).padStart(2, '0')
-      const mm = String(d.getMonth() + 1).padStart(2, '0')
-      const yyyy = d.getFullYear()
-      return `${dd}/${mm}/${yyyy}`
-    }
-
-    if (filter === 'today') {
-      const today = new Date()
-      setStartDate(formatDate(today))
-      setEndDate(formatDate(today))
-      setShowFilters(true)
-    } else if (filter === 'overdue') {
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-      setEndDate(formatDate(yesterday))
-      setIncludePaid(false)
-      setIncludeUnpaid(true)
-      setShowFilters(true)
-    }
-  }, [location.state])
 
   const { data: transactionsData, isLoading: loadingTransactions, error: transactionsError } = useTransactions(currentPage, 20, filters)
   const { data: categoriesData, isLoading: loadingCategories } = useCategories()
@@ -996,15 +886,8 @@ export function Transactions() {
 
   const handleExportCSV = async () => {
     try {
-      // Buscar todas as transações (sem paginação) com os filtros aplicados
-      const exportFilters = {}
-      if (selectedFilter !== 'all') {
-        exportFilters.transaction_type = selectedFilter
-      }
-      if (debouncedSearchQuery) {
-        exportFilters.search = debouncedSearchQuery
-      }
-      
+      const exportFilters = { ...filters }
+
       // Buscar todas as páginas
       let allTransactions = []
       let page = 1
