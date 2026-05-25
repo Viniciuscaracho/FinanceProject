@@ -13,7 +13,6 @@ export function GoogleAuthCallback() {
     const error = params.get('error');
 
     if (error || !token) {
-      console.error('[GoogleAuth] callback error:', error || 'no token');
       navigate(`/login?google_error=1&detail=${encodeURIComponent(error || 'no_token')}`, { replace: true });
       return;
     }

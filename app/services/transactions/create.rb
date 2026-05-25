@@ -15,13 +15,6 @@ module Transactions
 
     private
 
-    def dispatch_event
-      # publish('transaction_created', transaction: context.transaction)
-      # event = Transactions::TransactionCreated.new(data: { transaction: context.transaction })
-      # event_store.# publish(event, stream_name: "transactions/#{context.transaction.id}")
-      # EventModelDispatcher.call(model: context.transaction, event: Transactions::TransactionCreated)
-    end
-
     def use_transaction_type_in_category?
       return false unless context.grouped_expenses?
       return false unless context.transaction.expense?

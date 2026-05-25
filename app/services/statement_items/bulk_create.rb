@@ -67,15 +67,6 @@ module StatementItems
 
     def translate_type(trx)
       (trx.amount_in_pennies || 0).negative? ? :debit : :credit
-
-      # case trx.type
-      # when :credit, :dep, :xfer
-      #   :credit
-      # when :other
-      #   trx.amount_in_pennies.negative? ? :debit : :credit
-      # else
-      #   :debit
-      # end
     end
 
     def find_suggested_transaction(trx)
@@ -99,9 +90,7 @@ module StatementItems
 
     def extract_query_search_param(trx)
       query_search_param = trx.memo.downcase.strip
-      # regexp that remove accents, special characters and numbers
       query_search_param = query_search_param.gsub(/[^a-z\s]/, '')
-      # remove extra spaces using regexp
       query_search_param.gsub(/\s+/, ' ')
     end
 

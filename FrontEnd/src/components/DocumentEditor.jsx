@@ -133,18 +133,14 @@ export function DocumentEditor({
     <span className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-0.5 self-center flex-shrink-0" />
   )
 
-  const log = (action, detail) => console.log(`[Editor] ${action}`, detail ?? '', '→ HTML:', editor.getHTML())
-
   const handleLink = () => {
     if (editor.isActive('link')) {
       editor.chain().focus().unsetLink().run()
-      log('link:remove')
       return
     }
     const url = window.prompt('URL do link:')
     if (!url) return
     editor.chain().focus().setLink({ href: url }).run()
-    log('link:set', url)
   }
 
   const activeTextColor = editor.getAttributes('textStyle').color ?? null
@@ -156,10 +152,10 @@ export function DocumentEditor({
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 rounded-t-lg flex items-center gap-0.5 p-1.5 flex-wrap">
 
         {/* Undo / Redo */}
-        <Btn onClick={() => { editor.chain().focus().undo().run(); log('undo') }} disabled={!editor.can().undo()} tooltip="Desfazer">
+        <Btn onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} tooltip="Desfazer">
           <Undo2 className="h-3.5 w-3.5" />
         </Btn>
-        <Btn onClick={() => { editor.chain().focus().redo().run(); log('redo') }} disabled={!editor.can().redo()} tooltip="Refazer">
+        <Btn onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} tooltip="Refazer">
           <Redo2 className="h-3.5 w-3.5" />
         </Btn>
 
@@ -175,7 +171,7 @@ export function DocumentEditor({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             {BLOCK_TYPES.map(({ label, action }) => (
-              <DropdownMenuItem key={label} onClick={() => { action(editor); log('block', label) }}>
+              <DropdownMenuItem key={label} onClick={() => action(editor)}>
                 {label}
               </DropdownMenuItem>
             ))}
@@ -185,61 +181,61 @@ export function DocumentEditor({
         <Sep />
 
         {/* Text formatting */}
-        <Btn onClick={() => { editor.chain().focus().toggleBold().run(); log('bold', editor.isActive('bold') ? 'off' : 'on') }} isActive={editor.isActive('bold')} tooltip="Negrito (Ctrl+B)">
+        <Btn onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tooltip="Negrito (Ctrl+B)">
           <Bold className="h-3.5 w-3.5" />
         </Btn>
-        <Btn onClick={() => { editor.chain().focus().toggleItalic().run(); log('italic', editor.isActive('italic') ? 'off' : 'on') }} isActive={editor.isActive('italic')} tooltip="Itálico (Ctrl+I)">
+        <Btn onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tooltip="Itálico (Ctrl+I)">
           <Italic className="h-3.5 w-3.5" />
         </Btn>
-        <Btn onClick={() => { editor.chain().focus().toggleUnderline().run(); log('underline', editor.isActive('underline') ? 'off' : 'on') }} isActive={editor.isActive('underline')} tooltip="Sublinhado (Ctrl+U)">
+        <Btn onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive('underline')} tooltip="Sublinhado (Ctrl+U)">
           <UnderlineIcon className="h-3.5 w-3.5" />
         </Btn>
-        <Btn onClick={() => { editor.chain().focus().toggleStrike().run(); log('strike', editor.isActive('strike') ? 'off' : 'on') }} isActive={editor.isActive('strike')} tooltip="Riscado">
+        <Btn onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tooltip="Riscado">
           <Strikethrough className="h-3.5 w-3.5" />
         </Btn>
 
         <Sep />
 
         {/* Alignment */}
-        <Btn onClick={() => { editor.chain().focus().setTextAlign('left').run(); log('align', 'left') }} isActive={editor.isActive({ textAlign: 'left' })} tooltip="Alinhar esquerda">
+        <Btn onClick={() => editor.chain().focus().setTextAlign('left').run()} isActive={editor.isActive({ textAlign: 'left' })} tooltip="Alinhar esquerda">
           <AlignLeft className="h-3.5 w-3.5" />
         </Btn>
-        <Btn onClick={() => { editor.chain().focus().setTextAlign('center').run(); log('align', 'center') }} isActive={editor.isActive({ textAlign: 'center' })} tooltip="Centralizar">
+        <Btn onClick={() => editor.chain().focus().setTextAlign('center').run()} isActive={editor.isActive({ textAlign: 'center' })} tooltip="Centralizar">
           <AlignCenter className="h-3.5 w-3.5" />
         </Btn>
-        <Btn onClick={() => { editor.chain().focus().setTextAlign('right').run(); log('align', 'right') }} isActive={editor.isActive({ textAlign: 'right' })} tooltip="Alinhar direita">
+        <Btn onClick={() => editor.chain().focus().setTextAlign('right').run()} isActive={editor.isActive({ textAlign: 'right' })} tooltip="Alinhar direita">
           <AlignRight className="h-3.5 w-3.5" />
         </Btn>
-        <Btn onClick={() => { editor.chain().focus().setTextAlign('justify').run(); log('align', 'justify') }} isActive={editor.isActive({ textAlign: 'justify' })} tooltip="Justificar">
+        <Btn onClick={() => editor.chain().focus().setTextAlign('justify').run()} isActive={editor.isActive({ textAlign: 'justify' })} tooltip="Justificar">
           <AlignJustify className="h-3.5 w-3.5" />
         </Btn>
 
         <Sep />
 
         {/* Lists */}
-        <Btn onClick={() => { editor.chain().focus().toggleBulletList().run(); log('list:bullet', editor.isActive('bulletList') ? 'off' : 'on') }} isActive={editor.isActive('bulletList')} tooltip="Lista com marcadores">
+        <Btn onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} tooltip="Lista com marcadores">
           <List className="h-3.5 w-3.5" />
         </Btn>
-        <Btn onClick={() => { editor.chain().focus().toggleOrderedList().run(); log('list:ordered', editor.isActive('orderedList') ? 'off' : 'on') }} isActive={editor.isActive('orderedList')} tooltip="Lista numerada">
+        <Btn onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} tooltip="Lista numerada">
           <ListOrdered className="h-3.5 w-3.5" />
         </Btn>
-        <Btn onClick={() => { editor.chain().focus().toggleTaskList().run(); log('list:task', editor.isActive('taskList') ? 'off' : 'on') }} isActive={editor.isActive('taskList')} tooltip="Lista de tarefas">
+        <Btn onClick={() => editor.chain().focus().toggleTaskList().run()} isActive={editor.isActive('taskList')} tooltip="Lista de tarefas">
           <ListChecks className="h-3.5 w-3.5" />
         </Btn>
 
         <Sep />
 
         {/* Blocks */}
-        <Btn onClick={() => { editor.chain().focus().toggleBlockquote().run(); log('blockquote', editor.isActive('blockquote') ? 'off' : 'on') }} isActive={editor.isActive('blockquote')} tooltip="Citação">
+        <Btn onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tooltip="Citação">
           <Quote className="h-3.5 w-3.5" />
         </Btn>
-        <Btn onClick={() => { editor.chain().focus().toggleCode().run(); log('code:inline', editor.isActive('code') ? 'off' : 'on') }} isActive={editor.isActive('code')} tooltip="Código inline">
+        <Btn onClick={() => editor.chain().focus().toggleCode().run()} isActive={editor.isActive('code')} tooltip="Código inline">
           <Code className="h-3.5 w-3.5" />
         </Btn>
-        <Btn onClick={() => { editor.chain().focus().toggleCodeBlock().run(); log('code:block', editor.isActive('codeBlock') ? 'off' : 'on') }} isActive={editor.isActive('codeBlock')} tooltip="Bloco de código">
+        <Btn onClick={() => editor.chain().focus().toggleCodeBlock().run()} isActive={editor.isActive('codeBlock')} tooltip="Bloco de código">
           <Code2 className="h-3.5 w-3.5" />
         </Btn>
-        <Btn onClick={() => { editor.chain().focus().setHorizontalRule().run(); log('horizontal-rule') }} tooltip="Divisor horizontal">
+        <Btn onClick={() => editor.chain().focus().setHorizontalRule().run()} tooltip="Divisor horizontal">
           <Minus className="h-3.5 w-3.5" />
         </Btn>
 
@@ -267,7 +263,7 @@ export function DocumentEditor({
                 <button
                   key={label}
                   title={label}
-                  onClick={() => { color ? editor.chain().focus().setColor(color).run() : editor.chain().focus().unsetColor().run(); log('color:text', color ?? 'reset') }}
+                  onClick={() => color ? editor.chain().focus().setColor(color).run() : editor.chain().focus().unsetColor().run()}
                   className={cn(
                     'h-6 w-6 rounded border border-gray-200 flex items-center justify-center hover:scale-110 transition-transform',
                     !color && 'text-xs font-bold text-gray-500'
@@ -295,7 +291,7 @@ export function DocumentEditor({
                 <button
                   key={label}
                   title={label}
-                  onClick={() => { color ? editor.chain().focus().setHighlight({ color }).run() : editor.chain().focus().unsetHighlight().run(); log('color:highlight', color ?? 'reset') }}
+                  onClick={() => color ? editor.chain().focus().setHighlight({ color }).run() : editor.chain().focus().unsetHighlight().run()}
                   className={cn(
                     'h-6 w-6 rounded border border-gray-200 flex items-center justify-center hover:scale-110 transition-transform',
                     !color && 'text-xs font-bold text-gray-500'

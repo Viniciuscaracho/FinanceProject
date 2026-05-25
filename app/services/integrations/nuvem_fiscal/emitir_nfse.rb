@@ -50,58 +50,6 @@ module Integrations
         @invoiceable.dto
       end
 
-      # def dto
-      #   # TODO: Replace with actual data coming from the request
-      #   # Which entity will be required to be created in Nuvem Fiscal?
-      #   {
-      #     provedor: 'padrao',
-      #     ambiente: 'homologacao',
-      #     referencia: 'hmg20', # this should be the reference of the nfse (example: Invoice.id)
-      #     infDPS: {
-      #       tpAmb: 2,
-      #       dhEmi: Time.current.strftime('%Y-%m-%dT%H:%M:%SZ'),
-      #       dCompet: Time.current.strftime('%Y-%m-%d'),
-      #       prest: {
-      #         CNPJ: @company.document_1
-      #       },
-      #       toma: {
-      #         xNome: 'A4PI SOFTWARE E SEVICOS LTDA ME',
-      #         CNPJ: '21067676000172',
-      #         IM: '101907',
-      #         fone: '45988115410',
-      #         email: 'thiagobonfante@gmail.com',
-      #         end: {
-      #           endNac: {
-      #             cMun: '4107207',
-      #             CEP: '85660000'
-      #           },
-      #           xLgr: 'VALERIO ZAMBONI',
-      #           nro: '76',
-      #           xBairro: 'VITORIA'
-      #         }
-      #       },
-      #       serv: {
-      #         cServ: {
-      #           cTribNac: '1.04',
-      #           xDescServ: 'Analise e desenvolvimento de software'
-      #         }
-      #       },
-      #       valores: {
-      #         vServPrest: {
-      #           vServ: 100.0
-      #         },
-      #         trib: {
-      #           tribMun: {
-      #             tribISSQN: 1,
-      #             pAliq: 2,
-      #             tpRetISSQN: 1
-      #           }
-      #         }
-      #       }
-      #     }
-      #   }
-      # end
-
       def update_relationship(result)
         relationship = result.relationship
         relationship.external_entity = 'nfse'
