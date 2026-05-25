@@ -51,7 +51,7 @@ module Api
           appointments = appointments.page(params[:page]).per(per)
 
           return render json: {
-            appointments: appointments.map { |apt| appointment_json(apt) },
+            appointments: appointments.map { |apt| appointment_json(apt, lite: true) },
             meta: {
               current_page: appointments.current_page,
               total_pages:  appointments.total_pages,
@@ -61,7 +61,7 @@ module Api
           }
         end
 
-        render json: appointments.map { |apt| appointment_json(apt) }
+        render json: appointments.map { |apt| appointment_json(apt, lite: true) }
       rescue => e
         Rails.logger.error "appointments#index: #{e.message}"
         render_internal_error(e)
@@ -481,11 +481,11 @@ module Api
         payment_link
       end
 
-      def appointment_json(appointment, payment_link_url = nil)
+      def appointment_json(appointment, payment_link_url = nil, lite: false)
         # Converter status numérico para string (chave do enum)
         status_key = Appointment::APPOINTMENT_STATUS.key(appointment.status)
         payment_status_key = Appointment::PAYMENT_STATUS.key(appointment.payment_status)
-        
+
         {
           id: appointment.id,
           service: appointment.service ? service_json(appointment.service) : nil,
@@ -524,8 +524,8 @@ module Api
             pending_tasks: appointment.appointment_note.pending_tasks,
             completed_tasks: appointment.appointment_note.completed_tasks
           } : nil,
-          previous_session_pending_tasks: appointment.previous_session_pending_tasks,
-          all_pending_tasks: appointment.all_pending_tasks_for_patient,
+          previous_session_pending_tasks: lite ? [] : appointment.previous_session_pending_tasks,
+          all_pending_tasks: lite ? [] : appointment.all_pending_tasks_for_patient,
           whatsapp_reminder_sent: appointment.whatsapp_reminder_sent || false,
           whatsapp_reminder_sent_at: appointment.whatsapp_reminder_sent_at&.iso8601,
           appointment_link_id: appointment.appointment_link_id,
