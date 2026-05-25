@@ -19,7 +19,7 @@ class ReferralCodesController < ApplicationController
     @referral_code = ReferralCode.find_by(code: params[:id])
     return redirect_to root_path if @referral_code.blank?
 
-    cookies.signed.permanent[:__barber_management_referral_code] = @referral_code.code
+    cookies.signed.permanent[:__orbi_referral_code] = @referral_code.code
   end
 
   def destroy

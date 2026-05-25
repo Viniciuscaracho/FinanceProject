@@ -7,15 +7,15 @@ module BarberManagement
     class Client
       class << self
         def api_key
-          Rails.application.credentials.dig(:barber_management, :stripe, :api_key) ||
-            Rails.application.credentials.dig(:stripe, :private_key) ||
-            ENV['STRIPE_API_KEY']
+          ENV['STRIPE_API_KEY'] ||
+            Rails.application.credentials.dig(:orbi, :stripe, :api_key) ||
+            Rails.application.credentials.dig(:stripe, :private_key)
         end
 
         def webhook_secret
-          Rails.application.credentials.dig(:barber_management, :stripe, :webhook_secret) ||
-            Rails.application.credentials.dig(:stripe, :webhook_secret) ||
-            ENV['STRIPE_WEBHOOK_SECRET']
+          ENV['STRIPE_WEBHOOK_SECRET'] ||
+            Rails.application.credentials.dig(:orbi, :stripe, :webhook_secret) ||
+            Rails.application.credentials.dig(:stripe, :webhook_secret)
         end
 
         def configured?

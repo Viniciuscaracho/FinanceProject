@@ -5,13 +5,12 @@ module Webhooks
     def create
       event = Stripe::Webhook.construct_event(request.body.read, sig_header, endpoint_secret)
       
-      # Primeiro, tentar processar com o handler dedicado do BarberManagement
-      barber_management_result = BarberManagement::Stripe::WebhookHandler.call(event: event)
-      if barber_management_result.success?
+      orbi_result = BarberManagement::Stripe::WebhookHandler.call(event: event)
+      if orbi_result.success?
         return head :ok
       end
 
-      # Se não for do BarberManagement, processar eventos de assinatura genéricos
+      # processar eventos de assinatura genéricos
       result = SubscriptionWebhooks::Create.call(event:)
       return head :ok if result.success?
 

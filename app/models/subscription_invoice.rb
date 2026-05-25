@@ -98,7 +98,7 @@ class SubscriptionInvoice < ApplicationRecord
   end
 
   def prestador
-    Account.barber_management_account.company
+    Account.orbi_account.company
   end
 
   def tomador

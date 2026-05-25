@@ -30,14 +30,15 @@ module Api
           products = ::Stripe::Product.list(active: true, limit: 100)
           prices = ::Stripe::Price.list(active: true, limit: 100)
 
-          barber_management_products = products.data.select do |product|
+          orbi_products = products.data.select do |product|
+            product.metadata['source'] == 'orbi' ||
+            product.metadata['project'] == 'Orbi' ||
             product.metadata['source'] == 'barber_management' ||
-            product.metadata['project'] == 'BarberManagement' ||
-            product.name.include?('BarberManagement')
+            product.metadata['project'] == 'BarberManagement'
           end
 
           render json: {
-            plans: barber_management_products.flat_map do |product|
+            plans: orbi_products.flat_map do |product|
               prices.data.select { |p| p.product == product.id }.map do |price|
                 {
                   id: price.id,

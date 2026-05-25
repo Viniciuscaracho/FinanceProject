@@ -47,7 +47,7 @@ Rails.application.configure do
       
       config.cache_store = :redis_cache_store, {
         url: redis_url,
-        namespace: "barber_management_development_cache",
+        namespace: "orbi_development_cache",
         expires_in: 1.hour,
         reconnect_attempts: 1,
         error_handler: ->(method:, returning:, exception:) {

@@ -9,7 +9,7 @@ module Integrations
         subscription_invoice = event.payload.fetch(:record)
         return unless subscription_invoice.able_to_send_nfse?
 
-        account = Account.barber_management_account
+        account = Account.orbi_account
         return unless account.nfse_enabled?
 
         company = account.company

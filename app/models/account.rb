@@ -221,7 +221,7 @@ class Account < ApplicationRecord
   end
 
   # Public class methods
-  def self.barber_management_account
+  def self.orbi_account
     find_by(admin: true)
   end
 
@@ -239,12 +239,7 @@ class Account < ApplicationRecord
     bank_account
   end
 
-  # Verifica se esta conta é do dono do sistema (BarberManagement)
-  # NÃO confundir com AccountUser.role = admin (que é admin dentro de uma conta de cliente)
-  # 
-  # Esta verificação usa o campo boolean 'admin' da tabela accounts
-  # que identifica a conta do sistema vs contas de clientes
-  def barber_management?
+  def orbi?
     admin == true
   end
 

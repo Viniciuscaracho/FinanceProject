@@ -65,7 +65,7 @@ Rails.application.configure do
   redis_url = ENV.fetch('REDIS_URL', 'redis://localhost:6379/0')
   config.cache_store = :redis_cache_store, {
     url: redis_url,
-    namespace: "barber_management_staging_cache",
+    namespace: "orbi_staging_cache",
     expires_in: 1.hour,
     reconnect_attempts: 3,
     error_handler: ->(method:, returning:, exception:) {
