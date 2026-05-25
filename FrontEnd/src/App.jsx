@@ -17,6 +17,8 @@ import { LandingPage, Dashboard, PublicAppointmentBooking, AppointmentManage, Pu
 import PublicMealPlan from './pages/PublicMealPlan'
 import { LandingPageNutri } from './pages/LandingPageNutri'
 import { GoogleAuthCallback } from './pages/GoogleAuthCallback'
+import { PrivacyPolicy } from './pages/PrivacyPolicy'
+import { TermsOfUse } from './pages/TermsOfUse'
 import { TermsAcceptanceModal } from './components/TermsAcceptanceModal'
 
 const isNutriDomain = window.location.hostname.includes('orbinutri')
@@ -82,6 +84,8 @@ function AppContent() {
         <Route path="/anamnese/responder/:token" element={<PublicAnamneseForm />} />
         <Route path="/d/:token" element={<PublicPatientDocument />} />
         <Route path="/plano/:token" element={<PublicMealPlan />} />
+        <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
+        <Route path="/termos-de-uso" element={<TermsOfUse />} />
 
         {protectedRoutes.map(({ path, element: Page }) => (
           <Route

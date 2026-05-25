@@ -274,7 +274,7 @@ export function Layout({ children }) {
           padding: isMobile ? '8px 8px 80px' : '12px 16px',
           boxSizing: 'border-box',
           width: '100%',
-          overflowX: 'auto',
+          overflowX: 'hidden',
         }}>
           {children}
         </main>

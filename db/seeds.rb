@@ -203,3 +203,6 @@ load Rails.root.join('db', 'seeds', 'taco_foods.rb')
 
 # --- SEED PLANOS ALIMENTARES (nutri MVP) ---
 load Rails.root.join('db', 'seeds', 'meal_plans_data.rb')
+
+# --- SEED TEMPLATES DE PLANO ALIMENTAR ---
+load Rails.root.join('db', 'seeds', 'meal_plan_templates.rb')

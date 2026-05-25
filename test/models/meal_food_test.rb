@@ -4,19 +4,21 @@
 #
 # Table name: meal_foods
 #
-#  id               :bigint           not null, primary key
-#  carbs_snapshot   :decimal(8, 2)    default(0.0)
-#  fat_snapshot     :decimal(8, 2)    default(0.0)
-#  kcal_snapshot    :decimal(8, 2)    default(0.0)
-#  notes            :text
-#  position         :integer          default(0), not null
-#  protein_snapshot :decimal(8, 2)    default(0.0)
-#  quantity         :decimal(8, 2)    default(100.0), not null
-#  unit             :string           default("g"), not null
-#  created_at       :datetime         not null
-#  updated_at       :datetime         not null
-#  food_id          :bigint           not null
-#  meal_id          :bigint           not null
+#  id                :bigint           not null, primary key
+#  carbs_snapshot    :decimal(8, 2)    default(0.0)
+#  fat_snapshot      :decimal(8, 2)    default(0.0)
+#  fiber_snapshot    :decimal(8, 2)    default(0.0)
+#  kcal_snapshot     :decimal(8, 2)    default(0.0)
+#  notes             :text
+#  position          :integer          default(0), not null
+#  protein_snapshot  :decimal(8, 2)    default(0.0)
+#  quantity          :decimal(8, 2)    default(100.0), not null
+#  unit              :string           default("g"), not null
+#  vitamins_snapshot :jsonb
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  food_id           :bigint           not null
+#  meal_id           :bigint           not null
 #
 # Indexes
 #

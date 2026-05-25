@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_25_100002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -558,6 +558,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
     t.string "external_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "vitamins_per_100g", default: {}
     t.index ["account_id"], name: "index_foods_on_account_id"
     t.index ["name"], name: "index_foods_on_name"
     t.index ["source"], name: "index_foods_on_source"
@@ -683,6 +684,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "fiber_snapshot", precision: 8, scale: 2, default: "0.0"
+    t.jsonb "vitamins_snapshot", default: {}
     t.index ["food_id"], name: "index_meal_foods_on_food_id"
     t.index ["meal_id"], name: "index_meal_foods_on_meal_id"
   end
@@ -699,7 +702,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
 
   create_table "meal_plans", force: :cascade do |t|
     t.bigint "account_id", null: false
-    t.bigint "contact_id", null: false
+    t.bigint "contact_id"
     t.string "title", null: false
     t.text "description"
     t.text "notes"
@@ -709,9 +712,12 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_25_000001) do
     t.date "end_date"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "is_template", default: false, null: false
+    t.string "template_category"
     t.index ["account_id", "contact_id"], name: "index_meal_plans_on_account_id_and_contact_id"
     t.index ["account_id"], name: "index_meal_plans_on_account_id"
     t.index ["contact_id"], name: "index_meal_plans_on_contact_id"
+    t.index ["is_template"], name: "index_meal_plans_on_is_template"
     t.index ["public_token"], name: "index_meal_plans_on_public_token", unique: true
   end
 

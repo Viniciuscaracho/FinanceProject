@@ -830,10 +830,10 @@ export function Dashboard() {
       )}
 
       {/* ══ 4. GRID ═══════════════════════════════════ */}
-      <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '3fr 2fr', gap: 10, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '3fr 2fr', gap: 10, alignItems: 'start', minWidth: 0 }}>
 
         {/* ─ Col esquerda ───────────────────────────── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
 
           {/* Agenda do dia */}
           <Panel>
@@ -1037,7 +1037,7 @@ export function Dashboard() {
         </div>
 
         {/* ─ Col direita ────────────────────────────── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
 
           {/* Fluxo do mês */}
           <Panel>

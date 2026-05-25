@@ -51,6 +51,8 @@ module Api
             total_protein:   meal.total_protein.round(1),
             total_carbs:     meal.total_carbs.round(1),
             total_fat:       meal.total_fat.round(1),
+            total_fiber:     meal.total_fiber.round(1),
+            total_vitamins:  meal.total_vitamins,
             foods:           meal.meal_foods.sort_by(&:position).map { |mf| meal_food_json(mf) }
           }
         end
@@ -64,7 +66,9 @@ module Api
             kcal:      mf.kcal_snapshot.to_f,
             protein:   mf.protein_snapshot.to_f,
             carbs:     mf.carbs_snapshot.to_f,
-            fat:       mf.fat_snapshot.to_f
+            fat:       mf.fat_snapshot.to_f,
+            fiber:     mf.fiber_snapshot.to_f,
+            vitamins:  mf.vitamins_snapshot || {}
           }
         end
       end

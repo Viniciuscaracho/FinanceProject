@@ -46,6 +46,24 @@ module Api
         render json: { meal_plan: plan_summary_json(@plan) }
       end
 
+      # POST /contacts/:contact_id/meal_plans/from_template
+      def from_template
+        template = Current.account.meal_plans.templates.find(params[:template_id])
+
+        result = MealPlans::CopyFromTemplate.call(
+          template: template,
+          contact:  @contact,
+          account:  Current.account,
+          title:    params[:title]
+        )
+
+        if result.success?
+          render json: { meal_plan: plan_summary_json(result.meal_plan) }, status: :created
+        else
+          render json: { error: result.error || 'Erro ao criar plano' }, status: :unprocessable_entity
+        end
+      end
+
       # POST /contacts/:contact_id/meal_plans/:id/days
       def add_day
         plan = @contact.meal_plans.find(params[:id])
@@ -186,6 +204,8 @@ module Api
           total_protein:   meal.total_protein.round(1),
           total_carbs:     meal.total_carbs.round(1),
           total_fat:       meal.total_fat.round(1),
+          total_fiber:     meal.total_fiber.round(1),
+          total_vitamins:  meal.total_vitamins,
           foods:           meal.meal_foods.sort_by(&:position).map { |mf| meal_food_json(mf) }
         }
       end
@@ -202,6 +222,8 @@ module Api
           protein:         mf.protein_snapshot.to_f,
           carbs:           mf.carbs_snapshot.to_f,
           fat:             mf.fat_snapshot.to_f,
+          fiber:           mf.fiber_snapshot.to_f,
+          vitamins:        mf.vitamins_snapshot || {},
           position:        mf.position
         }
       end

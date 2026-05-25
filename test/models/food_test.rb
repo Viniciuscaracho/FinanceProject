@@ -4,18 +4,19 @@
 #
 # Table name: foods
 #
-#  id               :bigint           not null, primary key
-#  carbs_per_100g   :decimal(8, 2)    default(0.0)
-#  fat_per_100g     :decimal(8, 2)    default(0.0)
-#  fiber_per_100g   :decimal(8, 2)    default(0.0)
-#  kcal_per_100g    :decimal(8, 2)    default(0.0)
-#  name             :string           not null
-#  protein_per_100g :decimal(8, 2)    default(0.0)
-#  source           :string           default("custom"), not null
-#  created_at       :datetime         not null
-#  updated_at       :datetime         not null
-#  account_id       :bigint
-#  external_id      :string
+#  id                :bigint           not null, primary key
+#  carbs_per_100g    :decimal(8, 2)    default(0.0)
+#  fat_per_100g      :decimal(8, 2)    default(0.0)
+#  fiber_per_100g    :decimal(8, 2)    default(0.0)
+#  kcal_per_100g     :decimal(8, 2)    default(0.0)
+#  name              :string           not null
+#  protein_per_100g  :decimal(8, 2)    default(0.0)
+#  source            :string           default("custom"), not null
+#  vitamins_per_100g :jsonb
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  account_id        :bigint
+#  external_id       :string
 #
 # Indexes
 #

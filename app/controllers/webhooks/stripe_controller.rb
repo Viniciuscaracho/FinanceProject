@@ -28,9 +28,7 @@ module Webhooks
     private
 
     def endpoint_secret
-      # Prioridade: barber_management > stripe (para compatibilidade)
-      Rails.application.credentials.dig(:barber_management, :stripe, :webhook_secret) ||
-        Rails.application.credentials.dig(:stripe, :webhook_secret)
+      BarberManagement::Stripe::Client.webhook_secret
     end
 
     def sig_header

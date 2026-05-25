@@ -4,24 +4,27 @@
 #
 # Table name: meal_plans
 #
-#  id           :bigint           not null, primary key
-#  description  :text
-#  end_date     :date
-#  notes        :text
-#  public_token :string           not null
-#  start_date   :date
-#  status       :integer          default(0), not null
-#  title        :string           not null
-#  created_at   :datetime         not null
-#  updated_at   :datetime         not null
-#  account_id   :bigint           not null
-#  contact_id   :bigint           not null
+#  id                :bigint           not null, primary key
+#  description       :text
+#  end_date          :date
+#  is_template       :boolean          default(FALSE), not null
+#  notes             :text
+#  public_token      :string           not null
+#  start_date        :date
+#  status            :integer          default(0), not null
+#  template_category :string
+#  title             :string           not null
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  account_id        :bigint           not null
+#  contact_id        :bigint
 #
 # Indexes
 #
 #  index_meal_plans_on_account_id                 (account_id)
 #  index_meal_plans_on_account_id_and_contact_id  (account_id,contact_id)
 #  index_meal_plans_on_contact_id                 (contact_id)
+#  index_meal_plans_on_is_template                (is_template)
 #  index_meal_plans_on_public_token               (public_token) UNIQUE
 #
 require 'test_helper'

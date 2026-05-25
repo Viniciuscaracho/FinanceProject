@@ -8,12 +8,14 @@ module BarberManagement
       class << self
         def api_key
           Rails.application.credentials.dig(:barber_management, :stripe, :api_key) ||
-            Rails.application.credentials.dig(:stripe, :private_key)
+            Rails.application.credentials.dig(:stripe, :private_key) ||
+            ENV['STRIPE_API_KEY']
         end
 
         def webhook_secret
           Rails.application.credentials.dig(:barber_management, :stripe, :webhook_secret) ||
-            Rails.application.credentials.dig(:stripe, :webhook_secret)
+            Rails.application.credentials.dig(:stripe, :webhook_secret) ||
+            ENV['STRIPE_WEBHOOK_SECRET']
         end
 
         def configured?

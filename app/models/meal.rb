@@ -44,4 +44,14 @@ class Meal < ApplicationRecord
   def total_fat
     meal_foods.sum(&:fat_snapshot)
   end
+
+  def total_fiber
+    meal_foods.sum(&:fiber_snapshot)
+  end
+
+  def total_vitamins
+    Food::VITAMIN_KEYS.each_with_object({}) do |key, totals|
+      totals[key] = meal_foods.sum { |mf| (mf.vitamins_snapshot || {})[key].to_f }.round(3)
+    end
+  end
 end

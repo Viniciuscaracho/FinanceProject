@@ -18,6 +18,32 @@ then
   echo "Database TCP ready, running setup..."
   bundle exec rails db:create 2>/dev/null || true
   bundle exec rails db:migrate || echo "⚠️  db:migrate failed — starting server anyway (check logs)"
+
+  if [ -n "${SEED_ADMIN_EMAIL}" ]; then
+    echo "Creating/promoting admin user: ${SEED_ADMIN_EMAIL}..."
+    bundle exec rails runner "
+      email = ENV['SEED_ADMIN_EMAIL']
+      user  = User.find_by(email: email)
+      if user
+        user.update!(admin: true, confirmed_at: user.confirmed_at || Time.current)
+        puts \"✅ Admin promoted: #{email}\"
+      else
+        pwd = ENV['SEED_ADMIN_PASSWORD'].presence || SecureRandom.hex(12)
+        User.create!(
+          email: email,
+          first_name:             ENV.fetch('SEED_ADMIN_FIRST_NAME', 'Admin'),
+          last_name:              ENV.fetch('SEED_ADMIN_LAST_NAME', ''),
+          password:               pwd,
+          password_confirmation:  pwd,
+          admin:                  true,
+          confirmed_at:           Time.current,
+          accepted_terms_at:      Time.current,
+          accepted_privacy_at:    Time.current
+        )
+        puts \"✅ Admin created: #{email} | password: #{pwd}\"
+      end
+    "
+  fi
 fi
 
 exec "$@"
