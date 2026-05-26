@@ -17,14 +17,16 @@ export function TermsAcceptanceModal() {
         <div className="flex flex-col gap-2">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Termos de Uso e Privacidade</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Para continuar usando o Orbi, leia e aceite nossos termos.
+            Para continuar usando o Orbi, leia e aceite nossos{' '}
+            <a href="/termos-de-uso" target="_blank" rel="noreferrer" className="underline text-blue-500">termos</a>.
           </p>
         </div>
 
         <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-sm text-gray-700 dark:text-gray-300 max-h-48 overflow-y-auto space-y-3">
           <p>
             Ao usar o Orbi, você concorda com a coleta e uso dos seus dados para fornecer e melhorar
-            nossos serviços, conforme descrito em nossa Política de Privacidade.
+            nossos serviços, conforme descrito em nossa{' '}
+            <a href="/politica-de-privacidade" target="_blank" rel="noreferrer" className="underline text-blue-500">Política de Privacidade</a>.
           </p>
           <p>
             Seus dados são armazenados com segurança e nunca são vendidos a terceiros.

@@ -517,7 +517,12 @@ export function Login() {
       </div>
 
       <div className="absolute bottom-6 left-6 z-10">
-        <p className="text-white/80 text-xs">© Orbi Privacidade e termos</p>
+        <p className="text-white/80 text-xs">
+          © Orbi{' '}
+          <a href="/politica-de-privacidade" className="underline hover:text-white">Privacidade</a>
+          {' '}e{' '}
+          <a href="/termos-de-uso" className="underline hover:text-white">Termos</a>
+        </p>
       </div>
     </div>
   );

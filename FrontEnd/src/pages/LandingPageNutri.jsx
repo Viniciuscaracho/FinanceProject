@@ -983,7 +983,10 @@ export function LandingPageNutri() {
             </button>
           </form>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: '1rem' }}>
-            Ao criar sua conta você concorda com os Termos de Uso e Política de Privacidade.
+            Ao criar sua conta você concorda com os{' '}
+            <a href="/termos-de-uso" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline' }}>Termos de Uso</a>
+            {' '}e{' '}
+            <a href="/politica-de-privacidade" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline' }}>Política de Privacidade</a>.
           </p>
         </div>
       </section>
@@ -1014,14 +1017,24 @@ export function LandingPageNutri() {
             </div>
             <div style={{ display: 'flex', gap: '4rem', flexWrap: 'wrap' }}>
               {[
-                { title: 'Produto', links: ['Agendamento', 'Plano Alimentar', 'Prontuários', 'Financeiro'] },
-                { title: 'Empresa', links: ['Sobre', 'Preços', 'Termos', 'Privacidade'] },
+                { title: 'Produto', links: [
+                  { label: 'Agendamento', href: '#' },
+                  { label: 'Plano Alimentar', href: '#' },
+                  { label: 'Prontuários', href: '#' },
+                  { label: 'Financeiro', href: '#' },
+                ]},
+                { title: 'Empresa', links: [
+                  { label: 'Sobre', href: '#' },
+                  { label: 'Preços', href: '#' },
+                  { label: 'Termos', href: '/termos-de-uso' },
+                  { label: 'Privacidade', href: '/politica-de-privacidade' },
+                ]},
               ].map(col => (
                 <div key={col.title}>
                   <p style={{ fontSize: 11, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>{col.title}</p>
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {col.links.map(l => (
-                      <li key={l}><a href="#" style={{ fontSize: 13, color: T.muted, textDecoration: 'none' }}>{l}</a></li>
+                      <li key={l.label}><a href={l.href} style={{ fontSize: 13, color: T.muted, textDecoration: 'none' }}>{l.label}</a></li>
                     ))}
                   </ul>
                 </div>
