@@ -66,7 +66,7 @@ export function PrivacyPolicy() {
             Política de Privacidade
           </h1>
           <p style={{ color: T.muted, fontSize: 14 }}>
-            Última atualização: 25 de maio de 2026
+            Última atualização: 27 de maio de 2026
           </p>
         </div>
 
@@ -103,15 +103,52 @@ export function PrivacyPolicy() {
           <P>Não vendemos, alugamos nem compartilhamos seus dados com terceiros para fins de marketing.</P>
         </Section>
 
-        <Section title="4. Login com Google">
+        <Section title="4. Integrações com Google">
           <P>
-            Quando você utiliza o login com Google, recebemos as seguintes informações da sua conta Google:
-            nome, endereço de e-mail e foto de perfil. Usamos essas informações exclusivamente para
-            criar e autenticar sua conta na Orbinutri.
+            A Orbinutri integra-se com serviços do Google para oferecer funcionalidades adicionais. O uso
+            que fazemos das informações recebidas das APIs do Google está em conformidade com a{' '}
+            <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" style={{ color: T.brand }}>
+              Política de Dados do Usuário dos Serviços de API do Google
+            </a>
+            , incluindo os requisitos de Uso Limitado.
           </P>
+
+          <P><strong>4.1 Login com Google</strong></P>
           <P>
-            Não solicitamos acesso ao seu Gmail, Google Drive, contatos ou qualquer outro serviço Google
-            além das informações básicas de perfil.
+            Quando você utiliza o login com Google, recebemos nome, endereço de e-mail e foto de perfil.
+            Usamos essas informações exclusivamente para criar e autenticar sua conta na Orbinutri.
+          </P>
+
+          <P><strong>4.2 Importação de Contatos Google</strong></P>
+          <P>
+            Com sua autorização explícita, a Orbinutri pode acessar sua lista de contatos do Google
+            (nomes, e-mails e telefones) por meio do escopo{' '}
+            <code style={{ background: T.light, padding: '2px 6px', borderRadius: 4, fontSize: 13 }}>contacts.readonly</code>.
+            Esse acesso é usado exclusivamente para importar contatos diretamente para sua agenda na plataforma,
+            evitando cadastro manual. Os dados importados são armazenados na sua conta Orbinutri e não são
+            compartilhados com terceiros. Você pode revogar esse acesso a qualquer momento em{' '}
+            <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" style={{ color: T.brand }}>
+              myaccount.google.com/permissions
+            </a>.
+          </P>
+
+          <P><strong>4.3 Google Calendar</strong></P>
+          <P>
+            Com sua autorização explícita, a Orbinutri pode criar, editar e excluir eventos no seu Google
+            Calendar por meio do escopo{' '}
+            <code style={{ background: T.light, padding: '2px 6px', borderRadius: 4, fontSize: 13 }}>calendar</code>.
+            Esse acesso é usado exclusivamente para sincronizar suas consultas agendadas na plataforma com
+            seu calendário pessoal e gerar links do Google Meet para consultas online. Não lemos eventos
+            existentes no seu calendário que não foram criados pela Orbinutri. Você pode revogar esse
+            acesso a qualquer momento em{' '}
+            <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" style={{ color: T.brand }}>
+              myaccount.google.com/permissions
+            </a>.
+          </P>
+
+          <P>
+            Os dados obtidos via APIs do Google não são usados para veicular anúncios, não são vendidos
+            a terceiros e são acessados apenas na medida necessária para as funcionalidades descritas acima.
           </P>
         </Section>
 
