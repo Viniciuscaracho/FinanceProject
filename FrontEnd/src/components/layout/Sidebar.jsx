@@ -60,7 +60,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen
   const navigate  = useNavigate()
   const { isDarkMode } = useTheme()
   const { user }  = useAuth()
-  const isAdmin   = user?.account?.admin === true
+  const isAdmin   = user?.admin === true
 
   // Persistir estado de cada grupo colapsável { storageKey → bool }
   // Padrão: aberto (true) — seções fecham por preferência do usuário, não por default
