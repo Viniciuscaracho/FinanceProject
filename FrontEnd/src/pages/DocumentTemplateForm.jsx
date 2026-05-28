@@ -35,6 +35,7 @@ import {
   AlertCircle,
   HelpCircle,
   FileText,
+  User,
 } from 'lucide-react'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { apiService } from '@/lib/api'
@@ -70,6 +71,85 @@ const DOCUMENT_TYPES = {
   },
 }
 
+// ── Tutorial de variáveis para nutricionistas ─────────────────────────────────
+
+const NUTRI_VARS = [
+  { key: '[NOME_CLIENTE]',         label: 'Paciente',         desc: 'Nome completo do paciente' },
+  { key: '[DATA_ATUAL]',           label: 'Data',             desc: 'Data de emissão do documento' },
+  { key: '[MINHA_EMPRESA]',        label: 'Consultório',      desc: 'Nome do consultório/empresa' },
+  { key: '[REGISTRO_PROFISSIONAL]',label: 'CRN',              desc: 'Número de registro (CRN)' },
+  { key: '[NOME_PROFISSIONAL]',    label: 'Nutricionista',    desc: 'Seu nome completo' },
+  { key: '[CONTEUDO_DOCUMENTO]',   label: 'Conteúdo',         desc: 'Área principal de texto livre' },
+  { key: '[ORIENTACOES]',          label: 'Orientações',      desc: 'Orientações e tarefas para o paciente' },
+  { key: '[PROGRESSO_CLIENTE]',    label: 'Progresso',        desc: 'Evolução e progresso do paciente' },
+  { key: '[NUMERO_SESSAO]',        label: 'Nº Consulta',      desc: 'Número da consulta atual' },
+  { key: '[DATA_SESSAO]',          label: 'Data consulta',    desc: 'Data da consulta/sessão' },
+]
+
+function NutriVariableTutorial({ onInsert }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ border: '1px solid #d1fae5', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+      <button type="button" onClick={() => setOpen(p => !p)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: '#f0fdf4', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: '#065f46', display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span>📋</span> Variáveis disponíveis — clique para inserir no documento
+        </span>
+        <span style={{ fontSize: 11, color: '#6b7280' }}>{open ? '▲ fechar' : '▼ ver'}</span>
+      </button>
+      {open && (
+        <div style={{ padding: '8px 10px', display: 'flex', flexWrap: 'wrap', gap: 5, background: '#fafffe' }}>
+          {NUTRI_VARS.map(v => (
+            <button key={v.key} type="button" onClick={() => onInsert(v.key)}
+              title={v.desc}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '4px 8px', borderRadius: 6, border: '1px solid #d1fae5', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', transition: 'background 100ms' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#ecfdf5'}
+              onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#065f46', fontFamily: 'monospace' }}>{v.key}</span>
+              <span style={{ fontSize: 10, color: '#6b7280' }}>{v.label}</span>
+            </button>
+          ))}
+          <p style={{ width: '100%', fontSize: 10, color: '#9ca3af', margin: '4px 0 0', fontStyle: 'italic' }}>
+            Dica: Passe o mouse sobre cada variável para ver a descrição completa.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function buildVariables(contact, formData) {
+  const today = new Date().toLocaleDateString('pt-BR')
+  const monthYear = new Date().toLocaleDateString('pt-BR', { month: '2-digit', year: 'numeric' })
+  return {
+    '[NOME_CLIENTE]':          contact.name            || '—',
+    '[EMAIL_CLIENTE]':         contact.email           || '—',
+    '[TELEFONE_CLIENTE]':      contact.phone           || '—',
+    '[CELULAR_CLIENTE]':       contact.phone           || '—',
+    '[DOCUMENTO_CLIENTE]':     contact.document        || '—',
+    '[DATA_ATUAL]':            today,
+    '[MES_ATUAL]':             monthYear,
+    '[DATA_SESSAO]':           today,
+    '[NUMERO_SESSAO]':         '1',
+    '[TOTAL_SESSOES]':         formData.session_count  ? String(formData.session_count) : '—',
+    '[SESSOES_RESTANTES]':     formData.session_count  ? String(formData.session_count - 1) : '—',
+    '[SESSOES_REALIZADAS]':    '1',
+    '[MINHA_EMPRESA]':         'Meu Consultório',
+    '[NOME_PROFISSIONAL]':     'Dra. Exemplo',
+    '[REGISTRO_PROFISSIONAL]': 'CRN-X 00000',
+    '[CONTEUDO_DOCUMENTO]':    'Conteúdo detalhado preenchido durante a consulta.',
+    '[ORIENTACOES]':           'Orientações personalizadas para o paciente.',
+    '[PROGRESSO_CLIENTE]':     'Evolução positiva desde o último retorno.',
+    '[OBSERVACOES]':           'Nenhuma observação adicional.',
+    '[PROFISSIONAL_AGENDAMENTO]': 'Dra. Exemplo',
+    '[SERVICO_AGENDAMENTO]':   'Consulta Nutricional',
+    '[VALOR_AGENDAMENTO]':     'R$ 200,00',
+    '[HORA_AGENDAMENTO]':      '09:00',
+    '[DATA_AGENDAMENTO]':      today,
+    '[NOTAS_AGENDAMENTO]':     '—',
+  }
+}
+
 export function DocumentTemplateForm() {
   const navigate = useNavigate()
   const { type, id } = useParams()
@@ -77,6 +157,8 @@ export function DocumentTemplateForm() {
   const [loading, setLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isVariableDialogOpen, setIsVariableDialogOpen] = useState(false)
+  const [previewContacts, setPreviewContacts] = useState([])
+  const [previewContact, setPreviewContact] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -94,7 +176,7 @@ export function DocumentTemplateForm() {
     session_count: null,
     session_number: null,
     session_type: '',
-    professional_type: '',
+    professional_type: 'nutricionista',
   })
 
   const docType = DOCUMENT_TYPES[type] || DOCUMENT_TYPES.receipt
@@ -105,6 +187,14 @@ export function DocumentTemplateForm() {
       loadTemplate()
     }
   }, [id, type])
+
+  useEffect(() => {
+    apiService.getContacts(1, 20).then(res => {
+      const list = res.contacts || []
+      setPreviewContacts(list)
+      if (list.length > 0) setPreviewContact(list[0])
+    }).catch(() => {})
+  }, [])
 
   const loadTemplate = async () => {
     try {
@@ -439,11 +529,56 @@ export function DocumentTemplateForm() {
         </div>
 
         {/* Form */}
-        <form id="document-form" onSubmit={handleSubmit} className="px-4 py-4 md:px-6 h-[calc(100vh-140px)] flex flex-col">
+        <form id="document-form" onSubmit={handleSubmit} className="px-4 py-4 md:px-6 h-[calc(100vh-112px)] flex flex-col">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 flex-1 min-h-0">
-            {/* Left Column - Form Compacto */}
-            <div className="flex flex-col min-h-0">
-              {/* Campos Compactos em Accordion */}
+            {/* Left Column */}
+            <div className="flex flex-col min-h-0 gap-3">
+              {/* Campos fixos (sem Accordion) */}
+              <div className="flex-shrink-0 grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="name" className="text-xs font-medium mb-1 block">
+                    Nome do template <span className="text-red-500">*</span>
+                  </Label>
+                  <Input id="name" value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    required placeholder="Ex: Prescrição Dietética Padrão" className="h-8 text-sm" />
+                </div>
+                <div>
+                  <Label htmlFor="description" className="text-xs font-medium mb-1 block">Descrição</Label>
+                  <Input id="description" value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder="Opcional" className="h-8 text-sm" />
+                </div>
+              </div>
+
+              {/* Editor + tutorial lado a lado */}
+              <div className="flex-1 min-h-0 flex flex-col">
+                <div className="flex items-center justify-between mb-1.5">
+                  <Label className="text-sm font-medium">Conteúdo do documento</Label>
+                  <Button type="button" variant="outline" size="sm"
+                    onClick={() => setIsVariableDialogOpen(true)} className="text-xs h-7 px-2">
+                    Inserir variável
+                  </Button>
+                </div>
+
+                {/* Tutorial de variáveis inline */}
+                <NutriVariableTutorial onInsert={insertVariable} />
+
+                {/* Editor ocupa o restante */}
+                <div className="flex-1 min-h-0 mt-2">
+                  <DocumentEditor
+                    content={formData.content}
+                    onChange={(html) => setFormData({...formData, content: html})}
+                    onVariableInsert={() => setIsVariableDialogOpen(true)}
+                    editorRef={editorRef}
+                    className="h-full"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ── Accordion e editor antigos (ocultos) ── */}
+            {false && <div>
               <Accordion type="multiple" defaultValue={['basic']} className="mb-3 flex-shrink-0">
                 <AccordionItem value="basic" className="border border-border rounded-lg px-3">
                   <AccordionTrigger className="py-2 text-sm font-medium">
@@ -513,15 +648,6 @@ export function DocumentTemplateForm() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="nutricionista">Nutricionista</SelectItem>
-                                <SelectItem value="fisioterapeuta">Fisioterapeuta</SelectItem>
-                                <SelectItem value="medico">Médico</SelectItem>
-                                <SelectItem value="psicologo">Psicólogo</SelectItem>
-                                <SelectItem value="dentista">Dentista</SelectItem>
-                                <SelectItem value="personal_trainer">Personal Trainer</SelectItem>
-                                <SelectItem value="fonoaudiologo">Fonoaudiólogo</SelectItem>
-                                <SelectItem value="terapeuta">Terapeuta</SelectItem>
-                                <SelectItem value="professor">Professor</SelectItem>
-                                <SelectItem value="coach">Coach</SelectItem>
                                 <SelectItem value="outro">Outro</SelectItem>
                               </SelectContent>
                             </Select>
@@ -774,17 +900,40 @@ export function DocumentTemplateForm() {
                   />
                 </div>
               </div>
-            </div>
+            </div>}{/* fim bloco oculto */}
 
-            {/* Right Column - Preview - Área Principal */}
-            <div className="hidden xl:block flex-1 flex flex-col min-h-0">
-              <div className="mb-2">
+            {/* Right Column - Preview */}
+            <div className="hidden xl:flex flex-col min-h-0">
+              <div className="flex items-center justify-between mb-2 gap-3 flex-shrink-0">
                 <Label className="text-sm font-medium text-text-primary">Visualização</Label>
+                {previewContacts.length > 0 && (
+                  <div className="flex items-center gap-2 min-w-0">
+                    <User size={13} style={{ color: '#6b7280', flexShrink: 0 }} />
+                    <select
+                      value={previewContact?.id ?? ''}
+                      onChange={e => setPreviewContact(previewContacts.find(c => String(c.id) === e.target.value) || null)}
+                      style={{ fontSize: 12, padding: '3px 8px', borderRadius: 6, border: '1px solid #E5E7EB', background: '#fff', color: '#374151', fontFamily: 'inherit', maxWidth: 200, cursor: 'pointer' }}
+                    >
+                      {previewContacts.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                    <span style={{ fontSize: 10, color: '#9ca3af', flexShrink: 0 }}>exemplo</span>
+                  </div>
+                )}
               </div>
+              {previewContact && (
+                <div style={{ fontSize: 11, color: '#059669', background: '#f0fdf4', border: '1px solid #d1fae5', borderRadius: 6, padding: '4px 10px', marginBottom: 8, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ fontWeight: 600 }}>{previewContact.name}</span>
+                  {previewContact.email && <span style={{ color: '#6b7280' }}>· {previewContact.email}</span>}
+                  <span style={{ marginLeft: 'auto', color: '#9ca3af', fontStyle: 'italic' }}>valores em destaque amarelo</span>
+                </div>
+              )}
               <div className="flex-1 min-h-0">
-                <DocumentPreview 
-                  content={formData.content} 
+                <DocumentPreview
+                  content={formData.content}
                   showHeader={formData.show_header}
+                  variables={previewContact ? buildVariables(previewContact, formData) : null}
                   className="h-full"
                 />
               </div>

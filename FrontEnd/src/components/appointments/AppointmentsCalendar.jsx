@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils'
 import { apiService } from '@/lib/api'
 import { normalizeAppointments, normalizeStatus, STATUS_CONFIG } from '@/utils/appointmentUtils'
 import { formatCurrency } from '@/utils/format'
-import { ConsultationModal } from './ConsultationModal'
+import { useNavigate } from 'react-router-dom'
 import { useAppointments } from '@/hooks/useAppointments'
 import { MiniCalendar } from './MiniCalendar'
 import { T, DISPLAY } from '@/lib/tokens'
@@ -157,6 +157,7 @@ function MonthViewSkeleton({ currentDate }) {
 
 export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone }) {
   const isMobile = useIsMobile()
+  const navigate = useNavigate()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState('month') // 'month' | 'week' | 'day'
   const [selectedProfessional, setSelectedProfessional] = useState('all')
@@ -165,8 +166,6 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [expandedAppointmentId, setExpandedAppointmentId] = useState(null)
   const [mobileSheetApt, setMobileSheetApt] = useState(null)
-  const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false)
-  const [selectedAppointmentForConsultation, setSelectedAppointmentForConsultation] = useState(null)
   const [highlightedAptId, setHighlightedAptId] = useState(null)
   const highlightTimerRef = useRef(null)
 
@@ -1029,13 +1028,12 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              setSelectedAppointmentForConsultation(apt)
-                              setIsConsultationModalOpen(true)
-                              setExpandedAppointmentId(null)
+                              const contactId = apt.client?.id || apt.contact?.id || apt.contact_id
+                              if (contactId) navigate(`/contacts/${contactId}`)
                             }}
                             className="h-7 w-7 rounded-lg flex items-center justify-center transition-colors"
                             style={{ background: T.chip, color: T.brand }}
-                            title="Anotações do atendimento"
+                            title="Prontuário do paciente"
                           >
                             <FileText className="size-3.5" />
                           </button>
@@ -1098,13 +1096,6 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Modal de Sessão */}
-      <ConsultationModal
-        appointment={selectedAppointmentForConsultation}
-        open={isConsultationModalOpen}
-        onOpenChange={setIsConsultationModalOpen}
-      />
 
       {/* Bottom Sheet de ações rápidas — Mobile */}
       <Sheet open={!!mobileSheetApt} onOpenChange={(o) => { if (!o) setMobileSheetApt(null) }}>
@@ -1195,7 +1186,11 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
                   )}
 
                   <button
-                    onClick={() => { close(); setSelectedAppointmentForConsultation(apt); setIsConsultationModalOpen(true) }}
+                    onClick={() => {
+                      close()
+                      const contactId = apt.client?.id || apt.contact?.id || apt.contact_id
+                      if (contactId) navigate(`/contacts/${contactId}`)
+                    }}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 14,
                       padding: '14px 16px', borderRadius: 14,
@@ -1206,7 +1201,7 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
                     <div style={{ width: 40, height: 40, borderRadius: 10, background: T.brand + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <FileText size={20} style={{ color: T.brand }} />
                     </div>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: T.text }}>Anotações do atendimento</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: T.text }}>Prontuário do paciente</span>
                   </button>
                 </div>
               </div>

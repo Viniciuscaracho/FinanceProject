@@ -1,24 +1,38 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import DOMPurify from 'dompurify'
 import { cn } from '@/lib/utils'
 import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
 import { ZoomIn, ZoomOut, RotateCcw, FileText } from 'lucide-react'
 
-export function DocumentPreview({ 
-  content = '', 
+function applyVariables(html, variables) {
+  if (!variables || !html) return html
+  return Object.entries(variables).reduce((acc, [key, val]) => {
+    const safe = String(val ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+    return acc.replaceAll(
+      key,
+      `<mark style="background:#fef9c3;color:#713f12;border-radius:3px;padding:0 2px;font-weight:600">${safe}</mark>`
+    )
+  }, html)
+}
+
+export function DocumentPreview({
+  content = '',
   showHeader = false,
-  className 
+  variables = null,
+  className
 }) {
   const previewRef = useRef(null)
   const containerRef = useRef(null)
   const [zoom, setZoom] = useState(1)
 
+  const resolvedContent = useMemo(() => applyVariables(content, variables), [content, variables])
+
   useEffect(() => {
-    if (previewRef.current && content) {
-      previewRef.current.innerHTML = DOMPurify.sanitize(content)
+    if (previewRef.current) {
+      previewRef.current.innerHTML = DOMPurify.sanitize(resolvedContent || '')
     }
-  }, [content, showHeader])
+  }, [resolvedContent, showHeader])
 
   const handleZoomChange = (value) => {
     setZoom(value[0])

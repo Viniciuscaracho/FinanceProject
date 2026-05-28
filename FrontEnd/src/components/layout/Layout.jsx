@@ -193,7 +193,7 @@ export function Layout({ children }) {
   return (
     /* Outer shell — overflow-x:hidden aqui captura qualquer vazamento
        horizontal de páginas filhas sem esconder o sidebar (que é fixed). */
-    <div style={{ minHeight: '100vh', background: bg }}>
+    <div style={{ minHeight: '100vh', background: bg, '--sidebar-w': `${sidebarW}px` }}>
       <CommandPalette />
       {showOnboarding && <OnboardingWizard onDone={dismissOnboarding} />}
 
@@ -259,6 +259,7 @@ export function Layout({ children }) {
         minWidth: 0,
         display: 'flex',
         flexDirection: 'column',
+        '--sidebar-w': `${sidebarW}px`,
       }}>
         <Header
           onMobileMenuClick={handleMobileMenuClick}
@@ -274,7 +275,7 @@ export function Layout({ children }) {
           padding: isMobile ? '8px 8px 80px' : '12px 16px',
           boxSizing: 'border-box',
           width: '100%',
-          overflowX: 'hidden',
+          overflowX: 'clip',
         }}>
           {children}
         </main>
@@ -282,14 +283,15 @@ export function Layout({ children }) {
         {isMobile && <BottomNavigation />}
       </div>
 
-      {/* ── Scroll to top ────────────────────────── */}
+      {/* ── Scroll to top — centralizado no conteúdo principal ─────────── */}
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           style={{
             position: 'fixed',
             bottom: isMobile ? 80 : 24,
-            right: 16,
+            left: `calc(var(--sidebar-w, 0px) + (100vw - var(--sidebar-w, 0px)) / 2)`,
+            transform: 'translateX(-50%)',
             zIndex: 50,
             width: 36, height: 36,
             borderRadius: '50%',

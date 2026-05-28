@@ -1753,8 +1753,6 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                 <option value="plano_alimentar">Plano Alimentar</option>
                 <option value="orientacao_nutricional">Orientação Nutricional</option>
                 <option value="evolucao_paciente">Evolução do Paciente</option>
-                <option value="orientacao_terapeutica">Orientação Terapêutica</option>
-                <option value="anotacao_sessao">Anotação de Sessão</option>
                 <option value="outro">Outro</option>
               </select>
             </div>

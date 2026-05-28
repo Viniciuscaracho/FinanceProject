@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTransactionFilters } from '@/hooks/useTransactionFilters'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -61,9 +61,9 @@ import {
   Circle,
   X,
   MessageCircle,
-  Square,
-  CheckSquare2,
-  CheckCheck
+  CheckCheck,
+  MoreVertical,
+  Copy
 } from 'lucide-react'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
@@ -134,6 +134,9 @@ export function Transactions() {
 
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState(new Set())
+  const selectAllRef = useRef(null)
+
+  const monthHeaderRef = useRef(null)
 
   // Delete dialog (cascade for installments/recurring)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -142,6 +145,9 @@ export function Transactions() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   const [isBulkMarkingPaid, setIsBulkMarkingPaid] = useState(false)
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false)
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false)
+  const [bulkEditFields, setBulkEditFields] = useState({ category_id: '', contact_id: '', cost_center_id: '' })
   const [isNewTransactionOpen, setIsNewTransactionOpen] = useState(false)
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [isEditTransactionOpen, setIsEditTransactionOpen] = useState(false)
@@ -285,11 +291,11 @@ export function Transactions() {
     const revenue = transactions
       .filter(t => t.transaction_type_cd === 0)
       .reduce((sum, t) => sum + (parseFloat(t.amount_cents || 0) / 100), 0)
-    
+
     const expenses = transactions
       .filter(t => t.transaction_type_cd >= 1 && t.transaction_type_cd <= 4)
       .reduce((sum, t) => sum + (parseFloat(t.amount_cents || 0) / 100), 0)
-    
+
     const balance = revenue - expenses
 
     return { revenue, expenses, balance }
@@ -731,6 +737,32 @@ export function Transactions() {
     }
   }
 
+  const handleBulkUpdate = async () => {
+    if (selectedIds.size === 0) return
+    const fields = {}
+    if (bulkEditFields.category_id)    fields.category_id    = bulkEditFields.category_id
+    if (bulkEditFields.contact_id)     fields.contact_id     = bulkEditFields.contact_id
+    if (bulkEditFields.cost_center_id) fields.cost_center_id = bulkEditFields.cost_center_id
+    if (Object.keys(fields).length === 0) {
+      toast.error('Selecione ao menos um campo para atualizar')
+      return
+    }
+    setIsBulkUpdating(true)
+    try {
+      await apiService.bulkUpdateTransactions(Array.from(selectedIds), fields)
+      queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      setShowBulkEditDialog(false)
+      setBulkEditFields({ category_id: '', contact_id: '', cost_center_id: '' })
+      setSelectedIds(new Set())
+      toast.success(`${selectedIds.size} transação(ões) atualizada(s)`)
+    } catch (error) {
+      toast.error(error?.data?.error || error?.message || 'Erro ao atualizar transações')
+    } finally {
+      setIsBulkUpdating(false)
+    }
+  }
+
   const toggleSelectId = (id) => {
     setSelectedIds(prev => {
       const next = new Set(prev)
@@ -1090,6 +1122,24 @@ export function Transactions() {
     })
   }, [filteredTransactions, sort])
 
+  // Selected transactions total — must be after sortedTransactions
+  const selectedTotal = useMemo(() => {
+    return sortedTransactions
+      .filter(t => selectedIds.has(t.id))
+      .reduce((sum, t) => {
+        const amt = parseFloat(t.amount_cents || 0) / 100
+        return t.transaction_type_cd === 0 ? sum + amt : sum - amt
+      }, 0)
+  }, [selectedIds, sortedTransactions])
+
+  // Indeterminate state for select-all checkbox
+  useEffect(() => {
+    if (!selectAllRef.current) return
+    const total = sortedTransactions.length
+    const sel = selectedIds.size
+    selectAllRef.current.indeterminate = sel > 0 && sel < total
+  })
+
   const toggleSort = (field) => {
     setSort(prev =>
       prev.field === field
@@ -1098,12 +1148,21 @@ export function Transactions() {
     )
   }
 
-  const filterOptions = [
-    { label: 'Todos', value: 'all', count: totalCount, icon: Landmark },
-    { label: 'Receitas', value: '0', count: transactions.filter(t => t.transaction_type_cd === 0).length, icon: TrendingUp },
-    { label: 'Despesas', value: '1', count: transactions.filter(t => t.transaction_type_cd >= 1 && t.transaction_type_cd <= 4).length, icon: TrendingDown },
-    { label: 'Transferências', value: '5', count: transactions.filter(t => t.transaction_type_cd === 5).length, icon: ArrowUpDown },
+  const TYPE_PILLS = [
+    { label: 'Todos',             value: 'all', color: T.brand },
+    { label: 'Recebimentos',      value: '0',   color: '#16a34a' },
+    { label: 'Despesas fixas',    value: '1',   color: '#dc2626' },
+    { label: 'Despesas variáveis',value: '2',   color: '#ea580c' },
+    { label: 'Pessoas',           value: '3',   color: '#2563eb' },
+    { label: 'Impostos',          value: '4',   color: '#7c3aed' },
+    { label: 'Transferências',    value: '5',   color: '#6b7280' },
   ]
+
+  const countByType = useMemo(() => {
+    const c = { all: totalCount, 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    transactions.forEach(t => { if (c[t.transaction_type_cd] !== undefined) c[t.transaction_type_cd]++ })
+    return c
+  }, [transactions, totalCount])
 
   if (loading && transactions.length === 0) {
     return (
@@ -1933,95 +1992,7 @@ export function Transactions() {
         </div>
       </div>
 
-      {/* Month Navigator */}
-      <div className="flex items-center justify-between mb-3 px-1">
-        <button
-          onClick={goToPrevMonth}
-          className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          title="Mês anterior"
-        >
-          <ChevronLeft className="w-5 h-5 text-text-secondary" />
-        </button>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-text-primary capitalize">{monthLabel}</span>
-          {(() => {
-            const now = new Date()
-            const isCurrentMonth = currentMonth.getFullYear() === now.getFullYear() && currentMonth.getMonth() === now.getMonth()
-            return !isCurrentMonth ? (
-              <button
-                onClick={goToCurrentMonth}
-                className="text-xs px-2 py-0.5 rounded-full border transition-colors"
-                style={{ borderColor: T.brand + '60', color: T.brand, background: T.chip }}
-              >
-                Hoje
-              </button>
-            ) : null
-          })()}
-        </div>
-        <button
-          onClick={goToNextMonth}
-          className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          title="Próximo mês"
-        >
-          <ChevronRight className="w-5 h-5 text-text-secondary" />
-        </button>
-      </div>
 
-      {/* Bulk Action Bar */}
-      {selectedIds.size > 0 && (
-        <div
-          className="flex items-center justify-between gap-3 mb-3 px-3 py-2 rounded-lg"
-          style={{ background: T.chip, border: `1px solid ${T.brand}40` }}
-        >
-          <span className="text-sm font-medium" style={{ color: T.brand }}>
-            {selectedIds.size} selecionada{selectedIds.size !== 1 ? 's' : ''}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs gap-1"
-              onClick={handleBulkMarkAsPaid}
-              disabled={isBulkMarkingPaid || isBulkDeleting}
-            >
-              {isBulkMarkingPaid ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
-              Marcar pago
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs gap-1 border-red-200 text-red-600 hover:bg-red-50"
-              onClick={handleBulkDelete}
-              disabled={isBulkDeleting || isBulkMarkingPaid}
-            >
-              {isBulkDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-              Excluir
-            </Button>
-            <button onClick={() => setSelectedIds(new Set())} className="ml-1 p-1 rounded hover:bg-white/60">
-              <X className="w-3.5 h-3.5 text-text-secondary" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-3 mb-3">
-        <StatCard
-          title="Receitas"
-          value={formatCurrency(summary.revenue)}
-          icon={ArrowUpCircle}
-        />
-        <StatCard
-          title="Despesas"
-          value={formatCurrency(summary.expenses)}
-          icon={ArrowDownCircle}
-        />
-        <StatCard
-          title="Saldo"
-          value={formatCurrency(summary.balance)}
-          icon={Landmark}
-        />
-      </div>
 
       {/* Search and Filters */}
       <FluidSection
@@ -2038,28 +2009,39 @@ export function Transactions() {
             />
           </div>
 
-          {/* Filter Pills — sempre visíveis */}
-          <div className="flex flex-wrap gap-2">
-            {filterOptions.map((filter) => {
-              const Icon = filter.icon
-              const isActive = selectedFilter === filter.value
+          {/* Filter Pills — coloridas por tipo */}
+          <div className="flex flex-wrap gap-1.5">
+            {TYPE_PILLS.map(pill => {
+              const isActive = selectedFilter === pill.value
+              const count = countByType[pill.value] ?? 0
+              if (!isActive && count === 0 && pill.value !== 'all') return null
               return (
-                <Button
-                  key={filter.value}
-                  size="sm"
-                  onClick={() => setSelectedFilter(filter.value)}
-                  className="flex items-center gap-1.5 border-0 h-8 px-3 text-xs"
-                  style={isActive
-                    ? { background: T.brand, color: '#fff' }
-                    : { background: T.chip, color: T.brand }
-                  }
+                <button
+                  key={pill.value}
+                  onClick={() => setSelectedFilter(pill.value)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    height: 30, padding: '0 12px', borderRadius: 999,
+                    fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                    border: `1.5px solid ${isActive ? pill.color : pill.color + '40'}`,
+                    background: isActive ? pill.color : 'transparent',
+                    color: isActive ? '#fff' : pill.color,
+                    transition: 'all 120ms',
+                    fontFamily: 'inherit',
+                  }}
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{filter.label}</span>
-                  <Badge variant="secondary" className="ml-0.5 text-[10px] px-1.5 py-0">
-                    {filter.count}
-                  </Badge>
-                </Button>
+                  {pill.label}
+                  {count > 0 && (
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, lineHeight: 1,
+                      padding: '1px 5px', borderRadius: 999,
+                      background: isActive ? 'rgba(255,255,255,0.25)' : pill.color + '18',
+                      color: isActive ? '#fff' : pill.color,
+                    }}>
+                      {count}
+                    </span>
+                  )}
+                </button>
               )
             })}
           </div>
@@ -2374,8 +2356,121 @@ export function Transactions() {
         </Alert>
       )}
 
+      {/* Month section header — sticky nav row + full info below */}
+      <div ref={monthHeaderRef} className="mb-4">
+        {/* ── Sticky nav row: ← Maio 2026 → ────────────────────────────── */}
+        <div
+          className="sticky top-14 sm:top-16 z-[8] backdrop-blur-md bg-white/85 dark:bg-[#111]/85 -mx-2 sm:-mx-4"
+          style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}
+        >
+          <div className="flex items-center justify-center gap-2 py-1.5 px-4">
+            <button
+              onClick={goToPrevMonth}
+              className="flex items-center justify-center w-7 h-7 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              <ChevronLeft className="w-4 h-4 text-text-secondary" />
+            </button>
+            <span
+              className="text-sm font-semibold capitalize select-none"
+              style={{ color: T.text, minWidth: 148, textAlign: 'center' }}
+            >
+              {monthLabel}
+            </span>
+            <button
+              onClick={goToNextMonth}
+              className="flex items-center justify-center w-7 h-7 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              <ChevronRight className="w-4 h-4 text-text-secondary" />
+            </button>
+          </div>
+        </div>
+
+        {/* ── Full info: nome, contagem, saldo ──────────────────────────── */}
+        <div className="py-4 px-1">
+          <p style={{ fontSize: 22, fontWeight: 700, color: T.text, lineHeight: 1.2, textTransform: 'capitalize' }}>
+            {monthLabel}
+          </p>
+          {totalCount > 0 && (
+            <>
+              <p style={{ fontSize: 13, color: T.muted, marginTop: 3 }}>
+                {totalCount} transaç{totalCount !== 1 ? 'ões' : 'ão'}
+              </p>
+              <p style={{
+                fontSize: 20, fontWeight: 700, marginTop: 1,
+                color: summary.balance >= 0 ? T.green : T.red,
+                letterSpacing: '-0.3px', fontVariantNumeric: 'tabular-nums',
+              }}>
+                {summary.balance >= 0 ? '+' : '−'}{formatCurrency(Math.abs(summary.balance))}
+              </p>
+            </>
+          )}
+        </div>
+        <div className="h-px" style={{ background: T.border }} />
+      </div>
+
+      {/* Summary Cards — próximo à tabela */}
+      <div className="grid grid-cols-3 gap-3 mb-3">
+        <StatCard
+          title="Receitas"
+          value={formatCurrency(summary.revenue)}
+          icon={ArrowUpCircle}
+        />
+        <StatCard
+          title="Despesas"
+          value={formatCurrency(summary.expenses)}
+          icon={ArrowDownCircle}
+        />
+        <StatCard
+          title="Saldo"
+          value={formatCurrency(summary.balance)}
+          icon={Landmark}
+        />
+      </div>
+
+      {/* Bulk action bar — acima da lista, aparece ao selecionar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between gap-2 mb-2 px-3 py-2 rounded-lg"
+          style={{ background: T.chip, border: `1px solid ${T.brand}40` }}>
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-sm font-semibold tabular-nums" style={{ color: T.brand }}>
+              {selectedIds.size} selecionada{selectedIds.size !== 1 ? 's' : ''}
+            </span>
+            <span className="text-sm font-semibold tabular-nums hidden sm:inline"
+              style={{ color: selectedTotal >= 0 ? T.green : T.red }}>
+              {selectedTotal >= 0 ? '+' : '−'}{formatCurrency(Math.abs(selectedTotal))}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={() => { setBulkEditFields({ category_id: '', contact_id: '', cost_center_id: '' }); setShowBulkEditDialog(true) }}
+              disabled={isBulkDeleting || isBulkMarkingPaid || isBulkUpdating}
+              className="inline-flex items-center gap-1 h-7 px-2.5 text-xs font-medium rounded-md border transition-colors disabled:opacity-50"
+              style={{ borderColor: T.brand + '60', color: T.brand, background: T.chip }}>
+              <Edit className="w-3 h-3" />
+              <span className="hidden sm:inline">Editar</span>
+            </button>
+            <button onClick={handleBulkMarkAsPaid} disabled={isBulkMarkingPaid || isBulkDeleting || isBulkUpdating}
+              className="inline-flex items-center gap-1 h-7 px-2.5 text-xs font-medium rounded-md border transition-colors disabled:opacity-50"
+              style={{ borderColor: T.green + '80', color: T.green, background: T.green + '0d' }}>
+              {isBulkMarkingPaid ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
+              <span className="hidden sm:inline">Marcar pago</span>
+            </button>
+            <button onClick={handleBulkDelete} disabled={isBulkDeleting || isBulkMarkingPaid || isBulkUpdating}
+              className="inline-flex items-center gap-1 h-7 px-2.5 text-xs font-medium rounded-md border transition-colors disabled:opacity-50"
+              style={{ borderColor: '#EF444440', color: '#EF4444', background: '#EF44440d' }}>
+              {isBulkDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+              <span className="hidden sm:inline">Excluir</span>
+            </button>
+            <button onClick={() => setSelectedIds(new Set())}
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-border hover:bg-gray-100 transition-colors">
+              <X className="w-3.5 h-3.5 text-text-secondary" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Transactions List - Mobile Card View */}
-      <div className="block md:hidden space-y-3">
+      <div className="block md:hidden space-y-2">
         {sortedTransactions.length === 0 ? (
           <FluidSection
             title="Nenhuma transação encontrada"
@@ -2386,153 +2481,115 @@ export function Transactions() {
             </div>
           </FluidSection>
         ) : (
-          sortedTransactions.map((transaction, index) => {
+          sortedTransactions.map((transaction) => {
             const amount = parseFloat(transaction.amount_cents || 0) / 100
             const isRevenue = transaction.transaction_type_cd === 0
-            const isFirst = index === 0
-            const isLast = index === sortedTransactions.length - 1
             const isSelected = selectedIds.has(transaction.id)
 
+            const metaParts = []
+            if (transaction.contact) metaParts.push(transaction.contact.name)
+            metaParts.push(formatDate(transaction.due_date))
+            if (transaction.category) metaParts.push(transaction.category.name)
+
             return (
-              <div
-                key={transaction.id}
-                className={cn(
-                  "group/item",
-                  isFirst && "serial-position-first",
-                  isLast && "serial-position-last"
-                )}
-              >
+              <div key={transaction.id}>
                 <div
-                  className="bg-surface-elevated rounded-[var(--radius-lg)] p-3 border border-border shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-all duration-140 cursor-pointer"
-                  style={{ borderLeft: `3px solid ${isSelected ? T.brand : isRevenue ? T.green : '#E5E7EB'}`, background: isSelected ? T.chip : '', transition: 'background 100ms' }}
-                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = T.bg }}
-                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = '' }}
-                  onClick={() => handleEditTransaction(transaction)}
+                  className="relative rounded-xl border border-border bg-surface-elevated"
+                  style={{
+                    borderLeft: `3px solid ${isSelected ? T.brand : isRevenue ? T.green : T.border}`,
+                    background: isSelected ? T.chip : '',
+                    transition: 'background 80ms',
+                  }}
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1 min-w-0">
-                      <h3
-                        className="font-semibold text-sm text-text-primary truncate leading-snug"
-                        title={transaction.name || transaction.description || ''}
-                      >
-                        {(() => {
-                          const n = transaction.name || transaction.description || 'Sem descrição'
-                          return n.length > 42 ? n.slice(0, 42) + '…' : n
-                        })()}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                        {transaction.category && (
-                          <span style={{ background: T.light, color: T.muted, borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
-                            {transaction.category.name}
-                          </span>
-                        )}
-                        <span style={{ ...getTransactionTypeStyle(transaction.transaction_type_cd), borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
-                          {getTransactionTypeLabel(transaction.transaction_type_cd)}
-                        </span>
-                        {transaction.payment_plan_id && transaction.installment_number && (
-                          <Badge variant="outline" className="text-xs" style={{ background: T.chip, color: T.brand, borderColor: T.brand + '40' }}>
-                            {transaction.installment_number}/{transaction.installment_total || '?'} Parcelas
-                          </Badge>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleTogglePaidStatus(transaction)
-                          }}
-                          disabled={isLoading}
-                          style={{
-                            borderRadius: 20,
-                            padding: '3px 8px',
-                            fontSize: 11,
-                            fontWeight: 600,
-                            border: 'none',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            background: transaction.paid ? T.green + '18' : T.amber + '18',
-                            color: transaction.paid ? T.green : T.amber,
-                          }}
+                  {/* Checkbox top-right */}
+                  <div className="absolute top-3 right-3 z-10" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelectId(transaction.id)}
+                      className="h-4 w-4 rounded cursor-pointer"
+                      style={{ accentColor: T.brand }}
+                    />
+                  </div>
+
+                  {/* Clickable body */}
+                  <div className="p-3 pr-8 cursor-pointer" onClick={() => handleEditTransaction(transaction)}>
+                    {/* Top row: description + amount */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p
+                          style={{ fontWeight: 600, fontSize: 15, color: T.text, lineHeight: '1.3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                          title={transaction.name || transaction.description || ''}
                         >
-                          {isLoading ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : transaction.paid ? (
-                            <>
-                              <CheckCircle2 className="w-3 h-3" />
-                              Pago
-                            </>
-                          ) : (
-                            <>
-                              <Circle className="w-3 h-3" />
-                              Pendente
-                            </>
+                          {transaction.name || transaction.description || 'Sem descrição'}
+                        </p>
+                        <p style={{ fontSize: 12, color: T.muted, marginTop: 3 }}>
+                          {metaParts.join(' · ')}
+                          {transaction.payment_plan_id && transaction.installment_number && (
+                            <span style={{ marginLeft: 6, background: T.chip, color: T.brand, borderRadius: 4, padding: '1px 5px', fontSize: 10, fontWeight: 700 }}>
+                              {transaction.installment_number}/{transaction.installment_total || '?'}
+                            </span>
                           )}
-                        </button>
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p style={{ fontSize: 20, fontWeight: 700, color: isRevenue ? T.green : T.red, letterSpacing: '-0.3px', fontVariantNumeric: 'tabular-nums' }}>
+                          {isRevenue ? '+' : '−'}{formatCurrency(amount)}
+                        </p>
                       </div>
                     </div>
-                    <div className="ml-3 text-right shrink-0">
-                      <p style={{ fontSize: '1rem', fontWeight: 700, color: isRevenue ? T.green : T.red }}>
-                        {isRevenue ? '+' : '-'}{formatCurrency(amount)}
-                      </p>
-                    </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-text-secondary pt-2 border-t border-border">
-                    <span><span className="font-medium">Venc:</span> {formatDate(transaction.due_date)}</span>
-                    {transaction.paid_at && (
-                      <span><span className="font-medium">Pago:</span> {formatDate(transaction.paid_at)}</span>
-                    )}
-                    {transaction.contact && (
-                      <span className="truncate max-w-[140px]"><span className="font-medium">Contato:</span> {transaction.contact.name}</span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-border" onClick={(e) => e.stopPropagation()}>
+                  {/* Footer: status + ⋮ */}
+                  <div
+                    className="flex items-center justify-between px-2 pb-1.5 border-t border-border"
+                    style={{ paddingTop: 6 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Status badge mobile */}
                     <button
-                      onClick={() => toggleSelectId(transaction.id)}
-                      className="flex items-center gap-1 text-xs px-2 py-1 rounded"
-                      style={{ color: isSelected ? T.brand : T.muted, background: isSelected ? T.chip : 'transparent' }}
+                      onClick={() => handleTogglePaidStatus(transaction)}
+                      disabled={isLoading}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                        border: 'none', cursor: 'pointer',
+                        background: transaction.paid ? T.green + '18' : T.amber + '18',
+                        color: transaction.paid ? T.green : T.amber,
+                      }}
                     >
-                      {isSelected ? <CheckSquare2 className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
-                      Selecionar
+                      {isLoading ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : transaction.paid ? <CheckCircle2 size={12} /> : <Circle size={12} />}
+                      {transaction.paid ? 'Pago' : 'Pendente'}
                     </button>
-                    <div className="flex items-center gap-1">
-                      {transaction.contact && getContactPhone(transaction.contact) && !transaction.paid && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openWhatsApp(getContactPhone(transaction.contact), WA_TEMPLATES.payment(transaction))}
-                          title="Cobrar via WhatsApp"
-                          style={{ color: '#25D366' }}
-                        >
-                          <MessageCircle className="w-4 h-4" />
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                          <MoreVertical className="w-3.5 h-3.5" />
                         </Button>
-                      )}
-                      {transaction.payment_plan_id && transaction.payment_type_cd === 1 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditInstallments(transaction)}
-                          title="Editar parcelas"
-                        >
-                          <Calendar className="w-4 h-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditTransaction(transaction)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteTransaction(transaction)}
-                      >
-                        <Trash2 className="w-4 h-4 text-danger" />
-                      </Button>
-                    </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
+                          <Edit className="w-4 h-4 mr-2" />Editar
+                        </DropdownMenuItem>
+                        {transaction.payment_plan_id && (transaction.payment_type_cd === 1 || transaction.payment_type_cd === 2) && (
+                          <DropdownMenuItem onClick={() => handleEditInstallments(transaction)}>
+                            <Calendar className="w-4 h-4 mr-2" />
+                            {transaction.payment_type_cd === 2 ? 'Editar recorrência' : 'Editar parcelas'}
+                          </DropdownMenuItem>
+                        )}
+                        {transaction.contact && getContactPhone(transaction.contact) && !transaction.paid && (
+                          <DropdownMenuItem onClick={() => openWhatsApp(getContactPhone(transaction.contact), WA_TEMPLATES.payment(transaction))} style={{ color: '#25D366' }}>
+                            <MessageCircle className="w-4 h-4 mr-2" />Cobrar via WhatsApp
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleDeleteTransaction(transaction)} className="text-red-600 focus:text-red-600">
+                          <Trash2 className="w-4 h-4 mr-2" />Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </div>
@@ -2543,211 +2600,224 @@ export function Transactions() {
 
       {/* Transactions Table - Desktop View */}
       <div className="hidden md:block w-full">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold text-text-primary">Transações</h2>
-            <p className="text-sm text-text-secondary mt-1">
-              {sortedTransactions.length} transação{sortedTransactions.length !== 1 ? 'ões' : ''} encontrada{sortedTransactions.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-        </div>
-        <div style={{ background: T.white, borderRadius: 12, border: `1px solid ${T.border}`, overflow: 'hidden' }}>
+        <div style={{ background: T.white, borderRadius: 12, border: `1px solid ${T.border}`, overflow: 'clip' }}>
           <Table className="w-full">
-            <TableHeader>
+            <TableHeader
+              className="sticky top-14 sm:top-16 z-[7]"
+              style={{ background: T.bg }}
+            >
               <TableRow style={{ background: T.bg }}>
-                <TableHead style={{ width: 40, paddingLeft: 12 }}>
-                  <button onClick={toggleSelectAll} className="flex items-center justify-center">
-                    {sortedTransactions.length > 0 && selectedIds.size === sortedTransactions.length
-                      ? <CheckSquare2 className="w-4 h-4" style={{ color: T.brand }} />
-                      : <Square className="w-4 h-4 text-text-secondary" />}
-                  </button>
+                <TableHead style={{ width: 44, paddingLeft: 14 }}>
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    checked={sortedTransactions.length > 0 && selectedIds.size === sortedTransactions.length}
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 rounded cursor-pointer"
+                    style={{ accentColor: T.brand }}
+                    title="Selecionar todos"
+                  />
                 </TableHead>
                 <TableHead
-                  className="whitespace-nowrap text-sm font-semibold py-4 cursor-pointer select-none"
-                  style={{ width: '10%' }}
+                  className="whitespace-nowrap text-xs font-semibold py-3 cursor-pointer select-none uppercase tracking-wide"
+                  style={{ width: '11%', color: T.muted }}
                   onClick={() => toggleSort('due_date')}
                 >
                   <span className="flex items-center gap-1">
                     Vencimento
                     {sort.field === 'due_date'
-                      ? sort.direction === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />
-                      : <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />}
+                      ? sort.direction === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+                      : <ArrowUpDown className="h-3 w-3 opacity-40" />}
                   </span>
                 </TableHead>
                 <TableHead
-                  className="!whitespace-normal text-sm font-semibold py-4 cursor-pointer select-none"
+                  className="text-xs font-semibold py-3 cursor-pointer select-none uppercase tracking-wide"
+                  style={{ color: T.muted }}
                   onClick={() => toggleSort('description')}
                 >
                   <span className="flex items-center gap-1">
                     Descrição
                     {sort.field === 'description'
-                      ? sort.direction === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />
-                      : <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />}
+                      ? sort.direction === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+                      : <ArrowUpDown className="h-3 w-3 opacity-40" />}
                   </span>
                 </TableHead>
-                <TableHead className="whitespace-nowrap text-sm font-semibold py-4" style={{ width: '12%' }}>Categoria</TableHead>
-                <TableHead className="whitespace-nowrap text-sm font-semibold py-4" style={{ width: '12%' }}>Valor</TableHead>
-                <TableHead className="whitespace-nowrap text-sm font-semibold py-4" style={{ width: '12%' }}>Tipo</TableHead>
-                <TableHead className="whitespace-nowrap text-sm font-semibold py-4" style={{ width: '10%' }}>Status</TableHead>
-                <TableHead className="text-right whitespace-nowrap text-sm font-semibold py-4" style={{ width: '12%' }}>Ações</TableHead>
+                <TableHead className="whitespace-nowrap text-xs font-semibold py-3 uppercase tracking-wide" style={{ width: '11%', color: T.muted }}>Categoria</TableHead>
+                <TableHead className="whitespace-nowrap text-xs font-semibold py-3 uppercase tracking-wide" style={{ width: 130, color: T.muted }}>Valor</TableHead>
+                <TableHead className="whitespace-nowrap text-xs font-semibold py-3 uppercase tracking-wide hidden xl:table-cell" style={{ width: 110, color: T.muted }}>Tipo pgto</TableHead>
+                <TableHead className="whitespace-nowrap text-xs font-semibold py-3 uppercase tracking-wide hidden xl:table-cell" style={{ width: 110, color: T.muted }}>Modo</TableHead>
+                <TableHead className="whitespace-nowrap text-xs font-semibold py-3 uppercase tracking-wide" style={{ width: 110, color: T.muted }}>Status</TableHead>
+                <TableHead style={{ width: 48 }} />
               </TableRow>
             </TableHeader>
             <TableBody>
                 {sortedTransactions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-12 text-text-secondary">
+                    <TableCell colSpan={9} className="text-center py-12 text-text-secondary">
                       Nenhuma transação encontrada
                     </TableCell>
                   </TableRow>
                 ) : (
-                  sortedTransactions.map((transaction, index) => {
+                  sortedTransactions.map((transaction) => {
                     const amount = parseFloat(transaction.amount_cents || 0) / 100
                     const isRevenue = transaction.transaction_type_cd === 0
-                    const isFirst = index === 0
-                    const isLast = index === sortedTransactions.length - 1
                     const isSelected = selectedIds.has(transaction.id)
 
                     return (
                       <TableRow
                         key={transaction.id}
-                        className={cn(
-                          "cursor-pointer transition-colors",
-                          isFirst && "serial-position-first",
-                          isLast && "serial-position-last"
-                        )}
-                        style={{ borderLeft: `3px solid ${isSelected ? T.brand : isRevenue ? T.green : '#E5E7EB'}`, background: isSelected ? T.chip : 'transparent', transition: 'background 100ms' }}
+                        className="cursor-pointer"
+                        style={{
+                          borderLeft: `3px solid ${isSelected ? T.brand : isRevenue ? T.green : T.border}`,
+                          background: isSelected ? T.chip : 'transparent',
+                          transition: 'background 80ms',
+                        }}
                         onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = T.bg }}
-                        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isSelected ? T.chip : 'transparent' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = isSelected ? T.chip : 'transparent' }}
                         onClick={() => handleEditTransaction(transaction)}
                       >
-                        <TableCell style={{ paddingLeft: 12 }} onClick={(e) => e.stopPropagation()}>
-                          <button onClick={() => toggleSelectId(transaction.id)} className="flex items-center justify-center">
-                            {isSelected
-                              ? <CheckSquare2 className="w-4 h-4" style={{ color: T.brand }} />
-                              : <Square className="w-4 h-4 text-text-secondary" />}
-                          </button>
+                        {/* Checkbox */}
+                        <TableCell style={{ paddingLeft: 14, width: 44 }} onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectId(transaction.id)}
+                            className="h-4 w-4 rounded cursor-pointer"
+                            style={{ accentColor: T.brand }}
+                          />
                         </TableCell>
-                        <TableCell className="text-base whitespace-nowrap text-text-primary py-4">{formatDate(transaction.due_date)}</TableCell>
+
+                        {/* Date */}
+                        <TableCell className="whitespace-nowrap py-4 text-sm" style={{ color: T.muted }}>
+                          {formatDate(transaction.due_date)}
+                        </TableCell>
+
+                        {/* Description */}
                         <TableCell className="py-4">
+                          {/* Description with inline status icon */}
                           <div className="flex items-start gap-2">
-                            <div className="flex-1">
+                            {/* Status dot/icon */}
+                            <div className="shrink-0 mt-0.5">
+                              {transaction.paid
+                                ? <CheckCircle2 size={14} style={{ color: T.green }} />
+                                : <Circle size={14} style={{ color: T.amber }} />}
+                            </div>
+                            <div className="flex-1 min-w-0">
                               <div
-                                className="font-medium text-sm text-text-primary"
-                                style={{ maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                className="font-medium text-sm"
+                                style={{ color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 280 }}
                                 title={transaction.name || transaction.description || ''}
                               >
-                                {(() => {
-                                  const n = transaction.name || transaction.description || 'Sem descrição'
-                                  return n.length > 48 ? n.slice(0, 48) + '…' : n
-                                })()}
+                                {transaction.name || transaction.description || 'Sem descrição'}
                               </div>
                               {transaction.contact && (
-                                <div className="text-sm text-text-secondary mt-1 truncate">
+                                <div className="text-xs mt-0.5 truncate" style={{ color: T.muted }}>
                                   {transaction.contact.name}
                                 </div>
                               )}
                             </div>
                             {transaction.payment_plan_id && transaction.installment_number && (
-                              <Badge variant="outline" className="text-xs flex-shrink-0" style={{ background: T.chip, color: T.brand, borderColor: T.brand + '40' }}>
+                              <span className="shrink-0" style={{ background: T.chip, color: T.brand, borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 700 }}>
                                 {transaction.installment_number}/{transaction.installment_total || '?'}
-                              </Badge>
+                              </span>
                             )}
                           </div>
                         </TableCell>
+
+                        {/* Category */}
                         <TableCell className="whitespace-nowrap py-4">
                           {transaction.category ? (
-                            <span style={{ background: T.light, color: T.muted, borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>{transaction.category.name}</span>
+                            <span style={{ background: T.light, color: T.muted, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
+                              {transaction.category.name}
+                            </span>
                           ) : (
-                            <span className="text-text-secondary">-</span>
+                            <span style={{ color: T.border }}>—</span>
                           )}
                         </TableCell>
-                        <TableCell className="whitespace-nowrap py-4">
-                          <span style={{ fontWeight: 600, fontSize: '1.125rem', color: isRevenue ? T.green : T.red }}>
-                            {isRevenue ? '+' : '-'}{formatCurrency(amount)}
+
+                        {/* Amount */}
+                        <TableCell className="whitespace-nowrap py-4" style={{ width: 130 }}>
+                          <span style={{ fontSize: 17, fontWeight: 700, color: isRevenue ? T.green : T.red, letterSpacing: '-0.3px', fontVariantNumeric: 'tabular-nums' }}>
+                            {isRevenue ? '+' : '−'}{formatCurrency(amount)}
                           </span>
                         </TableCell>
-                        <TableCell className="whitespace-nowrap py-4">
-                          <span style={{ ...getTransactionTypeStyle(transaction.transaction_type_cd), borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                            {getTransactionTypeLabel(transaction.transaction_type_cd)}
+
+                        {/* Tipo pagamento */}
+                        <TableCell className="whitespace-nowrap py-4 hidden xl:table-cell" style={{ width: 110 }}>
+                          <span style={{ fontSize: 12, color: T.muted }}>
+                            {transaction.payment_type_cd === 1 ? 'Parcelado'
+                              : transaction.payment_type_cd === 2 ? 'Recorrente'
+                              : 'À vista'}
                           </span>
                         </TableCell>
-                        <TableCell className="whitespace-nowrap py-4">
+
+                        {/* Modo de pagamento */}
+                        <TableCell className="whitespace-nowrap py-4 hidden xl:table-cell" style={{ width: 110 }}>
+                          <span style={{ fontSize: 12, color: T.muted }}>
+                            {getPaymentMethodLabel(transaction.payment_method_cd || 0)}
+                          </span>
+                        </TableCell>
+
+                        {/* Status badge */}
+                        <TableCell className="whitespace-nowrap py-4" style={{ width: 110 }} onClick={(e) => e.stopPropagation()}>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleTogglePaidStatus(transaction)
-                            }}
+                            onClick={() => handleTogglePaidStatus(transaction)}
                             disabled={isLoading}
                             style={{
-                              borderRadius: 20,
-                              padding: '3px 8px',
-                              fontSize: 11,
-                              fontWeight: 600,
-                              border: 'none',
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              whiteSpace: 'nowrap',
+                              display: 'inline-flex', alignItems: 'center', gap: 4,
+                              padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                              border: 'none', cursor: 'pointer',
                               background: transaction.paid ? T.green + '18' : T.amber + '18',
                               color: transaction.paid ? T.green : T.amber,
                             }}
                           >
-                            {isLoading ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : transaction.paid ? (
-                              <>
-                                <CheckCircle2 className="w-4 h-4" />
-                                Pago
-                              </>
-                            ) : (
-                              <>
-                                <Circle className="w-4 h-4" />
-                                Pendente
-                              </>
-                            )}
+                            {isLoading ? <Loader2 className="w-3 h-3 animate-spin" />
+                              : transaction.paid ? <CheckCircle2 size={12} /> : <Circle size={12} />}
+                            {transaction.paid ? 'Pago' : 'Pendente'}
                           </button>
                         </TableCell>
-                        <TableCell className="text-right whitespace-nowrap py-4">
-                          <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                            {transaction.contact && getContactPhone(transaction.contact) && !transaction.paid && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openWhatsApp(getContactPhone(transaction.contact), WA_TEMPLATES.payment(transaction))}
-                                title="Cobrar via WhatsApp"
-                                style={{ color: '#25D366' }}
-                              >
-                                <MessageCircle className="w-4 h-4" />
+                        <TableCell className="text-right py-4" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="w-4 h-4" />
                               </Button>
-                            )}
-                            {transaction.payment_plan_id && (transaction.payment_type_cd === 1 || transaction.payment_type_cd === 2) && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditInstallments(transaction)}
-                                title="Editar parcelas"
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem onClick={() => handleEditTransaction(transaction)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleTogglePaidStatus(transaction)}>
+                                {transaction.paid
+                                  ? <><Circle className="w-4 h-4 mr-2" />Marcar como pendente</>
+                                  : <><CheckCircle2 className="w-4 h-4 mr-2" />Marcar como pago</>}
+                              </DropdownMenuItem>
+                              {transaction.payment_plan_id && (transaction.payment_type_cd === 1 || transaction.payment_type_cd === 2) && (
+                                <DropdownMenuItem onClick={() => handleEditInstallments(transaction)}>
+                                  <Calendar className="w-4 h-4 mr-2" />
+                                  {transaction.payment_type_cd === 2 ? 'Editar recorrência' : 'Editar parcelas'}
+                                </DropdownMenuItem>
+                              )}
+                              {transaction.contact && getContactPhone(transaction.contact) && !transaction.paid && (
+                                <DropdownMenuItem
+                                  onClick={() => openWhatsApp(getContactPhone(transaction.contact), WA_TEMPLATES.payment(transaction))}
+                                  style={{ color: '#25D366' }}
+                                >
+                                  <MessageCircle className="w-4 h-4 mr-2" />
+                                  Cobrar via WhatsApp
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteTransaction(transaction)}
+                                className="text-red-600 focus:text-red-600"
                               >
-                                <Calendar className="w-4 h-4" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditTransaction(transaction)}
-                              title="Editar transação"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteTransaction(transaction)}
-                              title="Excluir transação"
-                            >
-                              <Trash2 className="w-4 h-4 text-danger" />
-                            </Button>
-                          </div>
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     )
@@ -3152,6 +3222,99 @@ export function Transactions() {
             <Button onClick={handleCreateCostCenter} disabled={isCreatingCostCenter || !newCostCenterName.trim()}>
               {isCreatingCostCenter ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Criar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Edição em Lote */}
+      <Dialog open={showBulkEditDialog} onOpenChange={(open) => { if (!open) setShowBulkEditDialog(false) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Edit className="h-5 w-5" style={{ color: T.brand }} />
+              </div>
+              <div>
+                <DialogTitle style={{ margin: 0 }}>Editar em lote</DialogTitle>
+                <DialogDescription style={{ margin: 0 }}>
+                  Aplicar campos iguais às {selectedIds.size} transações selecionadas. Deixe em branco para não alterar.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2">
+            {/* Categoria */}
+            <div className="space-y-1.5">
+              <Label>Categoria</Label>
+              <Select
+                value={bulkEditFields.category_id || 'none'}
+                onValueChange={v => setBulkEditFields(f => ({ ...f, category_id: v === 'none' ? '' : v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Não alterar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Não alterar</SelectItem>
+                  {categories.map(c => (
+                    <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Contato */}
+            <div className="space-y-1.5">
+              <Label>Contato</Label>
+              <Select
+                value={bulkEditFields.contact_id || 'none'}
+                onValueChange={v => setBulkEditFields(f => ({ ...f, contact_id: v === 'none' ? '' : v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Não alterar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Não alterar</SelectItem>
+                  {contacts.slice(0, 50).map(c => (
+                    <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Centro de Custo */}
+            <div className="space-y-1.5">
+              <Label>Centro de Custo</Label>
+              <Select
+                value={bulkEditFields.cost_center_id || 'none'}
+                onValueChange={v => setBulkEditFields(f => ({ ...f, cost_center_id: v === 'none' ? '' : v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Não alterar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Não alterar</SelectItem>
+                  {costCenters.map(c => (
+                    <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <Button variant="outline" className="flex-1" onClick={() => setShowBulkEditDialog(false)} disabled={isBulkUpdating}>
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1 border-0"
+              style={{ background: T.brand, color: '#fff' }}
+              onClick={handleBulkUpdate}
+              disabled={isBulkUpdating}
+            >
+              {isBulkUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Edit className="w-4 h-4 mr-2" />}
+              Aplicar às {selectedIds.size} transações
             </Button>
           </div>
         </DialogContent>

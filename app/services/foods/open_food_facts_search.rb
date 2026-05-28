@@ -4,15 +4,13 @@ module Foods
   class OpenFoodFactsSearch
     BASE_URL = 'https://world.openfoodfacts.org'
 
-    def self.by_name(query, limit: 10)
+    def self.by_name(query, limit: 20)
       response = connection.get('/cgi/search.pl') do |req|
         req.params['search_terms'] = query
         req.params['search_simple'] = 1
         req.params['action']        = 'process'
         req.params['json']          = 1
         req.params['page_size']     = limit
-        req.params['lc']            = 'pt'
-        req.params['cc']            = 'br'
         req.params['fields']        = 'id,product_name,brands,nutriments'
       end
 

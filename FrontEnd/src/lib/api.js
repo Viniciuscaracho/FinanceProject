@@ -320,6 +320,13 @@ class ApiService {
     });
   }
 
+  async bulkUpdateTransactions(transactionIds, fields) {
+    return await this.request('/transactions/bulk_update', {
+      method: 'POST',
+      body: JSON.stringify({ transaction_ids: transactionIds, ...fields }),
+    });
+  }
+
   async checkRecurrenceExpiry() {
     return await this.request('/transactions/check_recurrence_expiry');
   }
@@ -1838,6 +1845,43 @@ class ApiService {
     return this.request(`/contacts/${contactId}/anamnese_history`)
   }
 
+  // ── Anamnese vinculada ao paciente (sem agendamento) ──────────────────────────
+
+  async getContactAnamneseResponses(contactId) {
+    return this.request(`/contacts/${contactId}/anamnese_responses`)
+  }
+
+  async createContactAnamneseResponse(contactId, data) {
+    return this.request(`/contacts/${contactId}/anamnese_responses`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  // ── Patient Notes (evoluções clínicas, sem agendamento) ──────────────────────
+
+  async getPatientNotes(contactId) {
+    return this.request(`/contacts/${contactId}/patient_notes`)
+  }
+
+  async createPatientNote(contactId, content) {
+    return this.request(`/contacts/${contactId}/patient_notes`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    })
+  }
+
+  async updatePatientNote(contactId, noteId, content) {
+    return this.request(`/contacts/${contactId}/patient_notes/${noteId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ content }),
+    })
+  }
+
+  async deletePatientNote(contactId, noteId) {
+    return this.request(`/contacts/${contactId}/patient_notes/${noteId}`, { method: 'DELETE' })
+  }
+
   // ── Appointment: salvar template de anamnese ──────────────────────────────────
 
   async setAppointmentAnamneseTemplate(appointmentId, templateId) {
@@ -1985,8 +2029,14 @@ class ApiService {
 
   // ── Busca de Alimentos ────────────────────────────────────────────────────────
 
-  async searchFoods(q) {
-    return this.request(`/foods?q=${encodeURIComponent(q)}`)
+  async searchFoods(q, source = null) {
+    const params = new URLSearchParams({ q })
+    if (source) params.set('source', source)
+    return this.request(`/foods?${params.toString()}`)
+  }
+
+  async searchFoodByBarcode(barcode) {
+    return this.request(`/foods/barcode/${encodeURIComponent(barcode)}`)
   }
 
   async createCustomFood(data) {

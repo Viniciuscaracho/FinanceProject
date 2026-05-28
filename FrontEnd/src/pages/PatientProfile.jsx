@@ -1,19 +1,24 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Mail, Phone, FileText, Target, ClipboardList, Calendar, TrendingUp, Copy, ExternalLink, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Link2, UtensilsCrossed } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, FileText, Target, ClipboardList, Calendar, TrendingUp, Copy, ExternalLink, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Link2, UtensilsCrossed, Paperclip, Upload, Download, Eye, AlertCircle, CheckCircle2, MessageCircle, History } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { toast } from 'sonner'
 import { apiService } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { T } from '@/lib/tokens'
+import { DocumentEditor } from '@/components/DocumentEditor'
 
 const DOCUMENT_TYPE_LABELS = {
-  plano_alimentar: 'Plano Alimentar',
-  orientacao_nutricional: 'Orientação Nutricional',
-  evolucao_paciente: 'Evolução',
-  orientacao_terapeutica: 'Orientação Terapêutica',
-  anotacao_sessao: 'Anotação de Sessão',
-  outro: 'Outro',
+  prescricao_dietetica:    'Prescrição Dietética',
+  plano_alimentar:         'Plano Alimentar',
+  diagnostico_nutricional: 'Diagnóstico Nutricional',
+  evolucao_nutricional:    'Evolução Nutricional',
+  orientacao_alimentar:    'Orientação Alimentar',
+  laudo_nutricional:       'Laudo Nutricional',
+  atestado_consulta:       'Atestado de Consulta',
+  recordatorio_24h:        'Recordatório 24h',
+  orientacao_nutricional:  'Orientação Nutricional',
+  outro:                   'Outro',
 }
 
 const GOAL_STATUS_COLORS = { active: '#10B981', completed: '#4C60AA', abandoned: '#9CA3AF' }
@@ -21,6 +26,257 @@ const GOAL_STATUS_LABELS = { active: 'Ativa', completed: 'Concluída', abandoned
 const APT_STATUS_LABELS  = { scheduled: 'Agendado', completed: 'Concluído', cancelled: 'Cancelado', no_show: 'Faltou' }
 const APT_STATUS_COLORS  = { scheduled: '#3B82F6', completed: '#10B981', cancelled: '#EF4444', no_show: '#F59E0B' }
 const CONTACT_TYPE_LABELS = { customer: 'Cliente', employee: 'Colaborador', supplier: 'Fornecedor', partner: 'Sócio', associate: 'Associado' }
+
+// ── helpers para anexos ────────────────────────────────────────────────────────
+
+function getFileExt(filename = '') {
+  return filename.split('.').pop()?.toUpperCase().slice(0, 4) || 'FILE'
+}
+function getExtColor(ext = '') {
+  const map = { PDF: '#EF4444', PNG: '#8B5CF6', JPG: '#8B5CF6', JPEG: '#8B5CF6', DOC: '#3B82F6', DOCX: '#3B82F6' }
+  return map[ext] || '#6B7280'
+}
+function isPreviewable(att) {
+  const type = (att.content_type || '').toLowerCase()
+  return type.startsWith('image/') || type === 'application/pdf'
+}
+function formatBytes(bytes) {
+  if (!bytes) return ''
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i]
+}
+
+// ── AppointmentNoteCard ────────────────────────────────────────────────────────
+
+function AppointmentNoteCard({ apt }) {
+  const [open, setOpen]           = useState(false)
+  const [loaded, setLoaded]       = useState(false)
+  const [notes, setNotes]         = useState('')
+  const [currentNote, setCurrentNote] = useState(null)
+  const [saving, setSaving]       = useState(false)
+  const [loading, setLoading]     = useState(false)
+  const [unsaved, setUnsaved]     = useState(false)
+  const [lastSaved, setLastSaved] = useState(null)
+  const [attachments, setAttachments]     = useState([])
+  const [uploading, setUploading]         = useState(false)
+  const [previewUrl, setPreviewUrl]       = useState(null)
+  const fileRef = useRef(null)
+
+  const load = useCallback(async () => {
+    if (loaded) return
+    setLoading(true)
+    try {
+      const [notesRes, attRes] = await Promise.all([
+        apiService.getAppointmentNotes(apt.id).catch(() => null),
+        apiService.getAppointmentAttachments(apt.id).catch(() => null),
+      ])
+      const note = notesRes?.notes?.[0] ?? null
+      setCurrentNote(note)
+      setNotes(note?.notes ?? '')
+      setLastSaved(note?.updated_at ?? null)
+      setAttachments(attRes?.attachments ?? [])
+      setLoaded(true)
+    } finally { setLoading(false) }
+  }, [apt.id, loaded])
+
+  const handleToggle = () => {
+    const next = !open
+    setOpen(next)
+    if (next) load()
+  }
+
+  const handleSave = async () => {
+    const plain = notes.replace(/<[^>]*>/g, '').trim()
+    if (plain.length < 1) { toast.error('Anotação vazia'); return }
+    setSaving(true)
+    try {
+      if (currentNote) {
+        await apiService.updateAppointmentNote(apt.id, currentNote.id, { notes })
+      } else {
+        const res = await apiService.createAppointmentNote(apt.id, { notes })
+        if (res.note) setCurrentNote(res.note)
+      }
+      setUnsaved(false)
+      setLastSaved(new Date().toISOString())
+      toast.success('Anotação salva!')
+    } catch { toast.error('Erro ao salvar') }
+    finally { setSaving(false) }
+  }
+
+  const handleUpload = async (e) => {
+    const files = e.target.files
+    if (!files?.length) return
+    setUploading(true)
+    try {
+      const res = await apiService.uploadAppointmentAttachments(apt.id, files)
+      setAttachments(res.attachments || [])
+      toast.success('Anexo adicionado!')
+    } catch { toast.error('Erro ao enviar arquivo') }
+    finally { setUploading(false); if (fileRef.current) fileRef.current.value = '' }
+  }
+
+  const handleDeleteAttachment = async (attId) => {
+    if (!window.confirm('Remover este anexo?')) return
+    try {
+      await apiService.deleteAppointmentAttachment(apt.id, attId)
+      setAttachments(prev => prev.filter(a => a.id !== attId))
+      toast.success('Anexo removido')
+    } catch { toast.error('Erro ao remover') }
+  }
+
+  const statusColor = APT_STATUS_COLORS[apt.status] || '#9CA3AF'
+  const statusLabel = APT_STATUS_LABELS[apt.status] || apt.status
+  const dateStr = apt.start_time
+    ? new Date(apt.start_time).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+    : '—'
+
+  return (
+    <div style={{ border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+      {/* Cabeçalho */}
+      <button type="button" onClick={handleToggle}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: open ? T.chip : 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: T.text }}>{apt.service?.name || 'Consulta'}</div>
+          <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+            {dateStr}
+            {apt.professional?.name ? ` · ${apt.professional.name}` : ''}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {currentNote && (
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: '#ECFDF5', color: '#10B981' }}>
+              ✓ Anotação
+            </span>
+          )}
+          {attachments.length > 0 && (
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: T.chip, color: T.brand }}>
+              {attachments.length} anexo{attachments.length > 1 ? 's' : ''}
+            </span>
+          )}
+          <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: statusColor + '20', color: statusColor }}>
+            {statusLabel}
+          </span>
+          {open ? <ChevronUp size={14} style={{ color: T.muted }} /> : <ChevronDown size={14} style={{ color: T.muted }} />}
+        </div>
+      </button>
+
+      {/* Corpo expansível */}
+      {open && (
+        <div style={{ borderTop: `1px solid ${T.border}`, background: T.white }}>
+          {loading ? (
+            <div style={{ padding: 24, display: 'flex', justifyContent: 'center' }}>
+              <Loader2 size={20} className="animate-spin" style={{ color: T.brand }} />
+            </div>
+          ) : (
+            <>
+              {/* Editor de notas */}
+              <div style={{ padding: '0 0 0 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 6px', borderBottom: `1px solid ${T.border}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <FileText size={13} style={{ color: T.brand }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Anotações</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {saving && <span style={{ fontSize: 11, color: T.muted, display: 'flex', alignItems: 'center', gap: 4 }}><Loader2 size={11} className="animate-spin" /> Salvando…</span>}
+                    {!saving && unsaved && <span style={{ fontSize: 11, color: '#F59E0B', display: 'flex', alignItems: 'center', gap: 4 }}><AlertCircle size={11} /> Não salvo</span>}
+                    {!saving && !unsaved && lastSaved && <span style={{ fontSize: 11, color: '#10B981', display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={11} /> Salvo</span>}
+                    <Button size="sm" onClick={handleSave} disabled={saving || !unsaved}
+                      style={{ fontSize: 11, height: 28, gap: 4, opacity: !unsaved ? 0.5 : 1 }}>
+                      <Save size={11} /> Salvar
+                    </Button>
+                  </div>
+                </div>
+                <div style={{ minHeight: 120 }}>
+                  <DocumentEditor
+                    key={apt.id}
+                    content={notes}
+                    onChange={(val) => { setNotes(val); setUnsaved(true) }}
+                    placeholder="Evolução, orientações, observações clínicas…"
+                    className="border-0 rounded-none shadow-none"
+                  />
+                </div>
+              </div>
+
+              {/* Anexos */}
+              <div style={{ borderTop: `1px solid ${T.border}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Paperclip size={13} style={{ color: T.brand }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>
+                      Anexos {attachments.length > 0 && `(${attachments.length})`}
+                    </span>
+                  </div>
+                  <input ref={fileRef} type="file" multiple className="hidden" onChange={handleUpload} disabled={uploading} style={{ display: 'none' }} />
+                  <Button variant="ghost" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}
+                    style={{ fontSize: 11, height: 28, gap: 4, color: T.brand }}>
+                    {uploading ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
+                    {uploading ? 'Enviando…' : 'Adicionar'}
+                  </Button>
+                </div>
+
+                {attachments.length === 0 ? (
+                  <p style={{ fontSize: 12, color: T.muted, textAlign: 'center', padding: '12px 16px 16px' }}>Nenhum arquivo anexado</p>
+                ) : (
+                  <div style={{ borderTop: `1px solid ${T.border}` }}>
+                    {attachments.map(att => {
+                      const ext = getFileExt(att.filename)
+                      return (
+                        <div key={att.id}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderBottom: `1px solid #F9FAFB` }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 8, background: getExtColor(ext) + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <span style={{ fontSize: 9, fontWeight: 800, color: getExtColor(ext) }}>{ext}</span>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{att.filename}</div>
+                            <div style={{ fontSize: 10, color: T.muted }}>{formatBytes(att.byte_size)}</div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                            {att.url && isPreviewable(att) && (
+                              <button type="button" onClick={() => setPreviewUrl(att.url)} title="Visualizar"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 6, borderRadius: 6 }}>
+                                <Eye size={14} />
+                              </button>
+                            )}
+                            {att.url && (
+                              <button type="button" onClick={() => window.open(att.url, '_blank')} title="Baixar"
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 6, borderRadius: 6 }}>
+                                <Download size={14} />
+                              </button>
+                            )}
+                            <button type="button" onClick={() => handleDeleteAttachment(att.id)} title="Remover"
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB', padding: 6, borderRadius: 6 }}>
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Preview de arquivo */}
+      {previewUrl && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={() => setPreviewUrl(null)}>
+          <div style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', maxWidth: 800, width: '100%', maxHeight: '90vh' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', padding: 8, borderBottom: `1px solid ${T.border}` }}>
+              <button type="button" onClick={() => setPreviewUrl(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 4 }}>✕</button>
+            </div>
+            <iframe src={previewUrl} style={{ width: '100%', height: '80vh', border: 'none' }} title="preview" />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function Section({ icon: Icon, title, count, children, defaultOpen = true, collapsible = true }) {
   const [open, setOpen] = useState(defaultOpen)
@@ -213,41 +469,123 @@ export function PatientProfile() {
 
 
   const [loading, setLoading] = useState(true)
-  const [contact, setContact]     = useState(null)
-  const [goals, setGoals]         = useState([])
-  const [docs, setDocs]           = useState([])
-  const [anamneses, setAnamneses] = useState([])
-  const [appointments, setAppointments] = useState([])
-  const [mealPlans, setMealPlans] = useState([])
+  const [contact, setContact]         = useState(null)
+  const [goals, setGoals]             = useState([])
+  const [docs, setDocs]               = useState([])
+  const [anamneses, setAnamneses]     = useState([])
+  const [mealPlans, setMealPlans]     = useState([])
+  const [patientNotes, setPatientNotes] = useState([])
   const [expandedAnamneseId, setExpandedAnamneseId] = useState(null)
 
-  const [showNewGoal, setShowNewGoal]   = useState(false)
-  const [newGoal, setNewGoal]           = useState(BLANK_GOAL)
-  const [savingGoal, setSavingGoal]     = useState(false)
+  // Metas
+  const [showNewGoal, setShowNewGoal] = useState(false)
+  const [newGoal, setNewGoal]         = useState(BLANK_GOAL)
+  const [savingGoal, setSavingGoal]   = useState(false)
+
+  // Anamnese — criação
+  const [anamneseTemplates, setAnamneseTemplates] = useState([])
+  const [showCreateAnamnese, setShowCreateAnamnese] = useState(false)
+  const [createTemplateId, setCreateTemplateId]   = useState('')
+  const [createAnswers, setCreateAnswers]         = useState({})
+  const [savingAnamnese, setSavingAnamnese]       = useState(false)
+
+  // Notas clínicas (evoluções)
+  const [showNewNote, setShowNewNote]   = useState(false)
+  const [noteContent, setNoteContent]   = useState('')
+  const [savingNote, setSavingNote]     = useState(false)
+  const [editingNoteId, setEditingNoteId] = useState(null)
+  const [editingContent, setEditingContent] = useState('')
+  const [savingEditNote, setSavingEditNote] = useState(false)
+
+  // Documentos — criação
+  const [docTemplates, setDocTemplates]   = useState([])
+  const [showNewDocDialog, setShowNewDocDialog] = useState(false)
+  const [newDoc, setNewDoc]               = useState({ title: '', document_type: 'plano_alimentar', content: '' })
+  const [savingDoc, setSavingDoc]         = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [contactRes, goalsRes, docsRes, anamneseRes, aptsRes, plansRes] = await Promise.all([
+      const [contactRes, goalsRes, docsRes, anamneseRes, plansRes, templatesRes, notesRes, docTplsRes] = await Promise.all([
         apiService.getContact(id),
         apiService.getPatientGoals(id).catch(() => ({ goals: [] })),
         apiService.getPatientDocuments(id).catch(() => ({ documents: [] })),
-        apiService.getAnamneseHistory(id).catch(() => ({ responses: [] })),
-        apiService.getAppointments({ contact_id: id, per_page: 10 }).catch(() => []),
+        apiService.getContactAnamneseResponses(id).catch(() => ({ responses: [] })),
         apiService.getMealPlans(id).catch(() => ({ meal_plans: [] })),
+        apiService.getAnamneseTemplates().catch(() => ({ templates: [] })),
+        apiService.getPatientNotes(id).catch(() => ({ notes: [] })),
+        apiService.getProfessionalDocumentTemplates(1, 50).catch(() => ({ templates: [] })),
       ])
       setContact(contactRes.contact || contactRes)
       setGoals(goalsRes.goals || [])
       setDocs(docsRes.documents || [])
       setAnamneses(anamneseRes.responses || [])
-      setAppointments(Array.isArray(aptsRes) ? aptsRes : (aptsRes.appointments || []))
       setMealPlans(plansRes.meal_plans || [])
+      setAnamneseTemplates(templatesRes.templates || [])
+      setPatientNotes(notesRes.notes || [])
+      setDocTemplates(docTplsRes.templates || [])
     } catch (e) {
       toast.error('Erro ao carregar perfil')
     } finally {
       setLoading(false)
     }
   }, [id])
+
+  const handleSaveAnamnese = async () => {
+    setSavingAnamnese(true)
+    try {
+      const res = await apiService.createContactAnamneseResponse(id, {
+        anamnese_template_id: createTemplateId || null,
+        responses: createAnswers,
+      })
+      setAnamneses(prev => [res.response, ...prev])
+      setShowCreateAnamnese(false)
+      setCreateTemplateId('')
+      setCreateAnswers({})
+      toast.success('Anamnese salva!')
+    } catch (e) {
+      toast.error(e?.message || 'Erro ao salvar anamnese')
+    } finally {
+      setSavingAnamnese(false)
+    }
+  }
+
+  const handleSaveNote = async () => {
+    const plain = noteContent.replace(/<[^>]*>/g, '').trim()
+    if (!plain) return
+    setSavingNote(true)
+    try {
+      const res = await apiService.createPatientNote(id, noteContent)
+      setPatientNotes(prev => [res.note, ...prev])
+      setNoteContent('')
+      setShowNewNote(false)
+      toast.success('Anotação salva!')
+    } catch { toast.error('Erro ao salvar anotação') }
+    finally { setSavingNote(false) }
+  }
+
+  const handleUpdateNote = async (noteId) => {
+    const plain = editingContent.replace(/<[^>]*>/g, '').trim()
+    if (!plain) return
+    setSavingEditNote(true)
+    try {
+      const res = await apiService.updatePatientNote(id, noteId, editingContent)
+      setPatientNotes(prev => prev.map(n => n.id === noteId ? res.note : n))
+      setEditingNoteId(null)
+      setEditingContent('')
+      toast.success('Anotação atualizada!')
+    } catch { toast.error('Erro ao atualizar') }
+    finally { setSavingEditNote(false) }
+  }
+
+  const handleDeleteNote = async (noteId) => {
+    if (!window.confirm('Remover esta anotação?')) return
+    try {
+      await apiService.deletePatientNote(id, noteId)
+      setPatientNotes(prev => prev.filter(n => n.id !== noteId))
+      toast.success('Anotação removida')
+    } catch { toast.error('Erro ao remover') }
+  }
 
   useEffect(() => { load() }, [load])
 
@@ -292,6 +630,27 @@ export function PatientProfile() {
       setDocs(prev => prev.filter(d => d.id !== docId))
       toast.success('Documento removido')
     } catch { toast.error('Erro ao remover documento') }
+  }
+
+  const handleNewDocTemplateChange = (templateId) => {
+    const tpl = docTemplates.find(t => String(t.id) === templateId)
+    setNewDoc(prev => ({ ...prev, content: tpl?.content || '' }))
+  }
+
+  const handleCreateDoc = async () => {
+    if (!newDoc.title.trim()) return
+    setSavingDoc(true)
+    try {
+      const res = await apiService.createPatientDocument(id, newDoc)
+      setDocs(prev => [res.document, ...prev])
+      setShowNewDocDialog(false)
+      setNewDoc({ title: '', document_type: 'plano_alimentar', content: '' })
+      toast.success('Documento criado!')
+    } catch (e) {
+      toast.error(e?.message || 'Erro ao criar documento')
+    } finally {
+      setSavingDoc(false)
+    }
   }
 
   const handleCreateMealPlan = async () => {
@@ -373,9 +732,9 @@ export function PatientProfile() {
               <Phone size={13} /> {contact.phone || contact.phone_number}
             </div>
           )}
-          {appointments.length > 0 && (
+          {patientNotes.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Calendar size={13} /> {appointments.length} consulta{appointments.length !== 1 ? 's' : ''}
+              <FileText size={13} /> {patientNotes.length} evolução{patientNotes.length !== 1 ? 'ões' : ''}
             </div>
           )}
         </div>
@@ -389,7 +748,63 @@ export function PatientProfile() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* Meal Plans */}
+        {/* 1 ── METAS */}
+        <Section icon={Target} title="Metas" count={goals.filter(g => g.status === 'active').length}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {goals.length === 0 && !showNewGoal && (
+              <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '16px 0' }}>Nenhuma meta cadastrada</p>
+            )}
+            {goals.map(goal => (
+              <GoalCard key={goal.id} goal={goal} contactId={id}
+                onUpdate={updated => setGoals(prev => prev.map(g => g.id === updated.id ? updated : g))}
+                onDelete={handleDeleteGoal} />
+            ))}
+            {showNewGoal ? (
+              <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '14px', background: '#F9FAFB' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Título *</label>
+                    <input type="text" value={newGoal.title} onChange={e => setNewGoal(p => ({ ...p, title: e.target.value }))}
+                      placeholder="Ex: Emagrecer 5kg"
+                      style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Valor atual</label>
+                    <input type="number" step="any" value={newGoal.current_value} onChange={e => setNewGoal(p => ({ ...p, current_value: e.target.value }))}
+                      placeholder="72" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Meta</label>
+                    <input type="number" step="any" value={newGoal.target_value} onChange={e => setNewGoal(p => ({ ...p, target_value: e.target.value }))}
+                      placeholder="65" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Unidade</label>
+                    <input type="text" value={newGoal.unit} onChange={e => setNewGoal(p => ({ ...p, unit: e.target.value }))}
+                      placeholder="kg, mg/dL…" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Prazo</label>
+                    <input type="date" value={newGoal.deadline} onChange={e => setNewGoal(p => ({ ...p, deadline: e.target.value }))}
+                      style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <Button size="sm" variant="ghost" onClick={() => setShowNewGoal(false)} disabled={savingGoal} style={{ fontSize: 12 }}>Cancelar</Button>
+                  <Button size="sm" onClick={handleSaveGoal} disabled={savingGoal || !newGoal.title.trim()} style={{ background: T.brand, color: '#fff', fontSize: 12 }}>
+                    {savingGoal ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />} Salvar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setShowNewGoal(true)} style={{ fontSize: 12, gap: 6 }}>
+                <Plus size={13} /> Nova meta
+              </Button>
+            )}
+          </div>
+        </Section>
+
+        {/* 2 ── PLANO ALIMENTAR */}
         <Section icon={UtensilsCrossed} title="Planos Alimentares" count={mealPlans.length} collapsible={false}>
           {mealPlans.length === 0 ? (
             <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '16px 0' }}>Nenhum plano alimentar criado</p>
@@ -431,72 +846,241 @@ export function PatientProfile() {
           </Button>
         </Section>
 
-        {/* Goals */}
-        <Section icon={Target} title="Metas" count={goals.filter(g => g.status === 'active').length}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {goals.length === 0 && !showNewGoal && (
-              <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '16px 0' }}>Nenhuma meta cadastrada</p>
-            )}
-            {goals.map(goal => (
-              <GoalCard
-                key={goal.id}
-                goal={goal}
-                contactId={id}
-                onUpdate={updated => setGoals(prev => prev.map(g => g.id === updated.id ? updated : g))}
-                onDelete={handleDeleteGoal}
-              />
-            ))}
+        {/* 3 ── ANAMNESE */}
+        <Section icon={ClipboardList} title="Anamnese" count={anamneses.length}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-            {showNewGoal ? (
-              <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '14px', background: '#F9FAFB' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Título *</label>
-                    <input type="text" value={newGoal.title} onChange={e => setNewGoal(p => ({ ...p, title: e.target.value }))}
-                      placeholder="Ex: Emagrecer 5kg"
-                      style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Valor atual</label>
-                    <input type="number" step="any" value={newGoal.current_value} onChange={e => setNewGoal(p => ({ ...p, current_value: e.target.value }))}
-                      placeholder="72" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Meta</label>
-                    <input type="number" step="any" value={newGoal.target_value} onChange={e => setNewGoal(p => ({ ...p, target_value: e.target.value }))}
-                      placeholder="65" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Unidade</label>
-                    <input type="text" value={newGoal.unit} onChange={e => setNewGoal(p => ({ ...p, unit: e.target.value }))}
-                      placeholder="kg, mg/dL…" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Prazo</label>
-                    <input type="date" value={newGoal.deadline} onChange={e => setNewGoal(p => ({ ...p, deadline: e.target.value }))}
-                      style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
-                  </div>
+            {/* Formulário de criação */}
+            {showCreateAnamnese ? (
+              <div style={{ border: `1px solid ${T.brand}30`, borderRadius: 12, padding: 16, background: '#F8F9FF' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <span style={{ fontWeight: 700, fontSize: 13, color: T.text }}>Nova anamnese</span>
+                  <button type="button" onClick={() => { setShowCreateAnamnese(false); setCreateTemplateId(''); setCreateAnswers({}) }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 2 }}>✕</button>
                 </div>
+
+                {/* Seletor de template */}
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 5 }}>Template</label>
+                  <select value={createTemplateId} onChange={e => { setCreateTemplateId(e.target.value); setCreateAnswers({}) }}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}>
+                    <option value="">Sem template (livre)</option>
+                    {anamneseTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </div>
+
+                {/* Campos do template selecionado */}
+                {createTemplateId && (() => {
+                  const tpl = anamneseTemplates.find(t => String(t.id) === createTemplateId)
+                  if (!tpl?.fields?.length) return null
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+                      {tpl.fields.map(field => (
+                        <div key={field.id}>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: T.text, display: 'block', marginBottom: 4 }}>
+                            {field.label}
+                            {field.required && <span style={{ color: '#EF4444', marginLeft: 3 }}>*</span>}
+                          </label>
+                          {field.type === 'textarea' ? (
+                            <textarea rows={3} value={createAnswers[field.id] || ''}
+                              onChange={e => setCreateAnswers(p => ({ ...p, [field.id]: e.target.value }))}
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }} />
+                          ) : field.type === 'select' ? (
+                            <select value={createAnswers[field.id] || ''}
+                              onChange={e => setCreateAnswers(p => ({ ...p, [field.id]: e.target.value }))}
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}>
+                              <option value="">Selecione…</option>
+                              {(field.options || []).map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
+                            </select>
+                          ) : field.type === 'checkbox' ? (
+                            <div style={{ display: 'flex', gap: 16 }}>
+                              {['Sim', 'Não'].map(opt => (
+                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                                  <input type="radio" name={`field_${field.id}`} value={opt}
+                                    checked={createAnswers[field.id] === opt}
+                                    onChange={() => setCreateAnswers(p => ({ ...p, [field.id]: opt }))}
+                                    style={{ accentColor: T.brand }} />
+                                  {opt}
+                                </label>
+                              ))}
+                            </div>
+                          ) : (
+                            <input type={field.type || 'text'} value={createAnswers[field.id] || ''}
+                              onChange={e => setCreateAnswers(p => ({ ...p, [field.id]: e.target.value }))}
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+
+                {/* Campo livre quando sem template */}
+                {!createTemplateId && (
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: T.text, display: 'block', marginBottom: 4 }}>Observações</label>
+                    <textarea rows={4} value={createAnswers['__free__'] || ''}
+                      onChange={e => setCreateAnswers({ '__free__': e.target.value })}
+                      placeholder="Histórico, queixas, observações importantes…"
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }} />
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                  <Button size="sm" variant="ghost" onClick={() => setShowNewGoal(false)} disabled={savingGoal} style={{ fontSize: 12 }}>Cancelar</Button>
-                  <Button size="sm" onClick={handleSaveGoal} disabled={savingGoal || !newGoal.title.trim()} style={{ background: T.brand, color: '#fff', fontSize: 12 }}>
-                    {savingGoal ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-                    Salvar
+                  <Button size="sm" variant="ghost" onClick={() => { setShowCreateAnamnese(false); setCreateTemplateId(''); setCreateAnswers({}) }} style={{ fontSize: 12 }}>
+                    Cancelar
+                  </Button>
+                  <Button size="sm" onClick={handleSaveAnamnese} disabled={savingAnamnese}
+                    style={{ background: T.brand, color: '#fff', fontSize: 12, gap: 5 }}>
+                    {savingAnamnese ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />} Salvar anamnese
                   </Button>
                 </div>
               </div>
             ) : (
-              <Button size="sm" variant="outline" onClick={() => setShowNewGoal(true)} style={{ fontSize: 12, gap: 6 }}>
-                <Plus size={13} /> Nova meta
+              <Button size="sm" variant="outline" onClick={() => setShowCreateAnamnese(true)} style={{ fontSize: 12, gap: 6 }}>
+                <Plus size={13} /> Nova anamnese
               </Button>
+            )}
+
+            {/* Histórico */}
+            {anamneses.length === 0 ? (
+              <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '8px 0' }}>Nenhuma anamnese registrada</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {anamneses.map(resp => {
+                  const isExpanded = expandedAnamneseId === resp.id
+                  const template = resp.anamnese_template
+                  const answers = resp.responses || resp.answers || {}
+                  const fields = template?.fields || []
+                  return (
+                    <div key={resp.id} style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                      <button type="button" onClick={() => setExpandedAnamneseId(isExpanded ? null : resp.id)}
+                        style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: isExpanded ? T.chip : 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        <div style={{ textAlign: 'left' }}>
+                          <span style={{ fontWeight: 600, fontSize: 13, color: T.text }}>{template?.name || 'Anamnese livre'}</span>
+                          {resp.appointment_start_time && (
+                            <span style={{ fontSize: 11, color: T.muted, marginLeft: 8 }}>
+                              {new Date(resp.appointment_start_time).toLocaleDateString('pt-BR')}
+                            </span>
+                          )}
+                        </div>
+                        {isExpanded ? <ChevronUp size={14} style={{ color: '#9CA3AF' }} /> : <ChevronDown size={14} style={{ color: '#9CA3AF' }} />}
+                      </button>
+                      {isExpanded && (
+                        <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${T.border}` }}>
+                          {fields.length > 0 ? fields.map(field => {
+                            const val = answers[field.id] || answers[String(field.id)]
+                            if (!val) return null
+                            return (
+                              <div key={field.id} style={{ padding: '6px 0', borderBottom: `1px solid #F9FAFB`, fontSize: 13 }}>
+                                <span style={{ fontWeight: 600, color: T.muted, fontSize: 11 }}>{field.label}</span>
+                                <p style={{ margin: '2px 0 0', color: T.text }}>{Array.isArray(val) ? val.join(', ') : String(val)}</p>
+                              </div>
+                            )
+                          }) : answers['__free__'] ? (
+                            <p style={{ fontSize: 13, color: T.text, marginTop: 8, lineHeight: 1.5 }}>{answers['__free__']}</p>
+                          ) : (
+                            <p style={{ fontSize: 13, color: T.muted, marginTop: 8 }}>Sem respostas registradas.</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             )}
           </div>
         </Section>
 
-        {/* Documents */}
-        <Section icon={FileText} title="Documentos" count={docs.length}>
+        {/* 4 ── EVOLUÇÕES CLÍNICAS */}
+        <Section icon={FileText} title="Evoluções Clínicas" count={patientNotes.length} collapsible={false}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* Editor de nova nota */}
+            {showNewNote ? (
+              <div style={{ border: `1px solid ${T.brand}30`, borderRadius: 12, overflow: 'hidden', background: '#F8F9FF' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px 6px', borderBottom: `1px solid ${T.border}` }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Nova evolução</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Button size="sm" variant="ghost" onClick={() => { setShowNewNote(false); setNoteContent('') }} style={{ fontSize: 11, height: 28 }}>Cancelar</Button>
+                    <Button size="sm" onClick={handleSaveNote} disabled={savingNote}
+                      style={{ fontSize: 11, height: 28, gap: 4 }}>
+                      {savingNote ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Salvar
+                    </Button>
+                  </div>
+                </div>
+                <DocumentEditor
+                  content={noteContent}
+                  onChange={setNoteContent}
+                  placeholder="Evolução clínica, orientações, observações do atendimento…"
+                  className="border-0 rounded-none shadow-none"
+                />
+              </div>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => setShowNewNote(true)} style={{ fontSize: 12, gap: 6 }}>
+                <Plus size={13} /> Nova evolução
+              </Button>
+            )}
+
+            {/* Lista de evoluções */}
+            {patientNotes.length === 0 && !showNewNote && (
+              <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '8px 0' }}>
+                Nenhuma evolução registrada
+              </p>
+            )}
+            {patientNotes.map(note => (
+              <div key={note.id} style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 14px', background: '#FAFAFA', borderBottom: `1px solid ${T.border}` }}>
+                  <span style={{ fontSize: 11, color: T.muted }}>
+                    {new Date(note.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                    {note.updated_at !== note.created_at && ' · editado'}
+                  </span>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button type="button" onClick={() => { setEditingNoteId(note.id); setEditingContent(note.content) }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.brand, fontSize: 11, fontWeight: 600, padding: '2px 6px', borderRadius: 5, fontFamily: 'inherit' }}>
+                      Editar
+                    </button>
+                    <button type="button" onClick={() => handleDeleteNote(note.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB', padding: 4 }}>
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                {editingNoteId === note.id ? (
+                  <div>
+                    <DocumentEditor
+                      key={`edit-${note.id}`}
+                      content={editingContent}
+                      onChange={setEditingContent}
+                      className="border-0 rounded-none shadow-none"
+                    />
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', padding: '8px 14px', borderTop: `1px solid ${T.border}` }}>
+                      <Button size="sm" variant="ghost" onClick={() => { setEditingNoteId(null); setEditingContent('') }} style={{ fontSize: 11, height: 28 }}>Cancelar</Button>
+                      <Button size="sm" onClick={() => handleUpdateNote(note.id)} disabled={savingEditNote}
+                        style={{ fontSize: 11, height: 28, gap: 4 }}>
+                        {savingEditNote ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Salvar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="prose prose-sm max-w-none" style={{ padding: '12px 14px', fontSize: 13, color: T.text, lineHeight: 1.6 }}
+                    dangerouslySetInnerHTML={{ __html: note.content }} />
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* 5 ── DOCUMENTOS */}
+        <Section icon={FileText} title="Documentos" count={docs.length} defaultOpen={false}>
+          <button type="button" onClick={() => { setNewDoc({ title: '', document_type: 'plano_alimentar', content: '' }); setShowNewDocDialog(true) }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: T.brand, background: 'none', border: `1px dashed ${T.border}`, borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: 'inherit', width: '100%', justifyContent: 'center', marginBottom: 10 }}>
+            <Plus size={13} /> Novo documento
+          </button>
+
           {docs.length === 0 ? (
-            <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '16px 0' }}>Nenhum documento criado</p>
+            <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '8px 0' }}>Nenhum documento criado</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {docs.map(doc => (
@@ -505,28 +1089,25 @@ export function PatientProfile() {
                     <div style={{ fontWeight: 600, fontSize: 13, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.title}</div>
                     <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
                       {DOCUMENT_TYPE_LABELS?.[doc.document_type] || doc.document_type}
-                      {' · '}
-                      {new Date(doc.updated_at).toLocaleDateString('pt-BR')}
+                      {' · '}{new Date(doc.updated_at).toLocaleDateString('pt-BR')}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
-                    <button type="button"
-                      onClick={() => handleToggleDocShared(doc)}
-                      title={doc.shared ? 'Remover compartilhamento' : 'Compartilhar'}
+                    <button type="button" onClick={() => handleToggleDocShared(doc)}
                       style={{ background: doc.shared ? '#ECFDF5' : '#F3F4F6', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: doc.shared ? '#10B981' : '#9CA3AF' }}>
                       <Link2 size={12} /> {doc.shared ? 'Ativo' : 'Link'}
                     </button>
                     {doc.shared && (
-                      <button type="button" onClick={() => handleCopyDocLink(doc)} title="Copiar link"
+                      <button type="button" onClick={() => handleCopyDocLink(doc)}
                         style={{ background: T.chip, border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: T.brand }}>
                         <Copy size={12} /> Copiar
                       </button>
                     )}
-                    <a href={`/d/${doc.public_token}`} target="_blank" rel="noreferrer" title="Ver documento"
+                    <a href={`/d/${doc.public_token}`} target="_blank" rel="noreferrer"
                       style={{ background: T.chip, border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: T.brand, textDecoration: 'none' }}>
                       <ExternalLink size={12} />
                     </a>
-                    <button type="button" onClick={() => handleDeleteDoc(doc.id)} title="Remover"
+                    <button type="button" onClick={() => handleDeleteDoc(doc.id)}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB', padding: '4px' }}>
                       <Trash2 size={13} />
                     </button>
@@ -537,81 +1118,52 @@ export function PatientProfile() {
           )}
         </Section>
 
-        {/* Anamnese history */}
-        <Section icon={ClipboardList} title="Histórico de Anamneses" count={anamneses.length} defaultOpen={false}>
-          {anamneses.length === 0 ? (
-            <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '16px 0' }}>Nenhuma anamnese registrada</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {anamneses.map(resp => {
-                const isExpanded = expandedAnamneseId === resp.id
-                const template = resp.anamnese_template
-                const answers = resp.answers || {}
-                const fields = template?.fields || []
-                return (
-                  <div key={resp.id} style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
-                    <button type="button" onClick={() => setExpandedAnamneseId(isExpanded ? null : resp.id)}
-                      style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                      <div style={{ textAlign: 'left' }}>
-                        <span style={{ fontWeight: 600, fontSize: 13, color: T.text }}>{template?.name || 'Anamnese'}</span>
-                        {resp.appointment_start_time && (
-                          <span style={{ fontSize: 11, color: T.muted, marginLeft: 8 }}>
-                            {new Date(resp.appointment_start_time).toLocaleDateString('pt-BR')}
-                          </span>
-                        )}
-                      </div>
-                      {isExpanded ? <ChevronUp size={14} style={{ color: '#9CA3AF' }} /> : <ChevronDown size={14} style={{ color: '#9CA3AF' }} />}
-                    </button>
-                    {isExpanded && (
-                      <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${T.border}` }}>
-                        {fields.length > 0 ? fields.map(field => {
-                          const val = answers[field.id] || answers[String(field.id)]
-                          if (!val) return null
-                          return (
-                            <div key={field.id} style={{ padding: '6px 0', borderBottom: `1px solid ${T.border}`, fontSize: 13 }}>
-                              <span style={{ fontWeight: 600, color: T.muted, fontSize: 12 }}>{field.label}</span>
-                              <p style={{ margin: '2px 0 0', color: T.text }}>{Array.isArray(val) ? val.join(', ') : String(val)}</p>
-                            </div>
-                          )
-                        }) : (
-                          <p style={{ fontSize: 13, color: T.muted, marginTop: 8 }}>Sem respostas registradas.</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </Section>
+        {/* Modal — Novo Documento */}
+        {showNewDocDialog && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+            onClick={e => { if (e.target === e.currentTarget) setShowNewDocDialog(false) }}>
+            <div style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 440, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: T.text, margin: '0 0 16px' }}>Novo Documento</h3>
 
-        {/* Recent appointments */}
-        <Section icon={Calendar} title="Consultas" count={appointments.length} defaultOpen={false}>
-          {appointments.length === 0 ? (
-            <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '16px 0' }}>Nenhuma consulta encontrada</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {appointments.map(apt => {
-                const statusColor = APT_STATUS_COLORS[apt.status] || '#9CA3AF'
-                const statusLabel = APT_STATUS_LABELS[apt.status] || apt.status
-                return (
-                  <div key={apt.id} style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13, color: T.text }}>{apt.service?.name || 'Consulta'}</div>
-                      <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
-                        {apt.start_time ? new Date(apt.start_time).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—'}
-                        {apt.professional?.name ? ` · ${apt.professional.name}` : ''}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20, background: statusColor + '20', color: statusColor, flexShrink: 0 }}>
-                      {statusLabel}
-                    </span>
-                  </div>
-                )
-              })}
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>Título *</label>
+              <input value={newDoc.title} onChange={e => setNewDoc(p => ({ ...p, title: e.target.value }))}
+                placeholder="Ex: Prescrição Dietética — Junho 2026" autoFocus
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', marginBottom: 12 }} />
+
+              <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>Tipo</label>
+              <select value={newDoc.document_type} onChange={e => setNewDoc(p => ({ ...p, document_type: e.target.value }))}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box', marginBottom: 12 }}>
+                {Object.entries(DOCUMENT_TYPE_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+
+              {docTemplates.length > 0 && (
+                <>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>
+                    Usar modelo como base <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(opcional)</span>
+                  </label>
+                  <select onChange={e => handleNewDocTemplateChange(e.target.value)} defaultValue=""
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box', marginBottom: 16 }}>
+                    <option value="">Sem modelo (documento em branco)</option>
+                    {docTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </>
+              )}
+
+              <div style={{ display: 'flex', gap: 8, marginTop: docTemplates.length === 0 ? 4 : 0 }}>
+                <button type="button" onClick={() => setShowNewDocDialog(false)} disabled={savingDoc}
+                  style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: T.muted }}>
+                  Cancelar
+                </button>
+                <Button onClick={handleCreateDoc} disabled={savingDoc || !newDoc.title.trim()} style={{ flex: 2, gap: 6 }}>
+                  {savingDoc ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  Criar documento
+                </Button>
+              </div>
             </div>
-          )}
-        </Section>
+          </div>
+        )}
 
       </div>
     </div>

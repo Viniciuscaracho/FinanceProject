@@ -50,12 +50,8 @@ module Api
       end
 
       def destroy
-        if @professional_document_template.default?
-          render json: { error: 'Não é possível excluir o template padrão' }, status: :unprocessable_entity
-        else
-          @professional_document_template.destroy
-          render json: { message: 'Template removido com sucesso' }
-        end
+        @professional_document_template.destroy
+        render json: { message: 'Template removido com sucesso' }
       end
 
       private

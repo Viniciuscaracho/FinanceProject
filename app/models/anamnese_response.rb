@@ -11,16 +11,16 @@
 #  updated_at           :datetime         not null
 #  account_id           :bigint           not null
 #  anamnese_template_id :bigint
-#  appointment_id       :bigint           not null
+#  appointment_id       :bigint
 #  contact_id           :bigint
 #
 # Indexes
 #
-#  index_anamnese_responses_on_account_id                     (account_id)
-#  index_anamnese_responses_on_account_id_and_appointment_id  (account_id,appointment_id) UNIQUE
-#  index_anamnese_responses_on_anamnese_template_id           (anamnese_template_id)
-#  index_anamnese_responses_on_appointment_id                 (appointment_id)
-#  index_anamnese_responses_on_contact_id                     (contact_id)
+#  idx_anamnese_responses_unique_appointment         (account_id,appointment_id) UNIQUE WHERE (appointment_id IS NOT NULL)
+#  index_anamnese_responses_on_account_id            (account_id)
+#  index_anamnese_responses_on_anamnese_template_id  (anamnese_template_id)
+#  index_anamnese_responses_on_appointment_id        (appointment_id)
+#  index_anamnese_responses_on_contact_id            (contact_id)
 #
 # Foreign Keys
 #
@@ -32,11 +32,12 @@
 class AnamneseResponse < ApplicationRecord
   acts_as_tenant :account
 
-  belongs_to :appointment
+  belongs_to :appointment,       optional: true
   belongs_to :anamnese_template, optional: true
-  belongs_to :contact, optional: true, class_name: 'Contact', foreign_key: 'contact_id'
+  belongs_to :contact,           optional: true, class_name: 'Contact', foreign_key: 'contact_id'
 
-  validates :appointment_id, uniqueness: { scope: :account_id, message: 'já possui uma anamnese' }
+  validates :appointment_id, uniqueness: { scope: :account_id, message: 'já possui uma anamnese' },
+                             allow_nil: true
 
   before_save :set_filled_at
 

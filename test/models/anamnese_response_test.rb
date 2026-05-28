@@ -11,16 +11,16 @@
 #  updated_at           :datetime         not null
 #  account_id           :bigint           not null
 #  anamnese_template_id :bigint
-#  appointment_id       :bigint           not null
+#  appointment_id       :bigint
 #  contact_id           :bigint
 #
 # Indexes
 #
-#  index_anamnese_responses_on_account_id                     (account_id)
-#  index_anamnese_responses_on_account_id_and_appointment_id  (account_id,appointment_id) UNIQUE
-#  index_anamnese_responses_on_anamnese_template_id           (anamnese_template_id)
-#  index_anamnese_responses_on_appointment_id                 (appointment_id)
-#  index_anamnese_responses_on_contact_id                     (contact_id)
+#  idx_anamnese_responses_unique_appointment         (account_id,appointment_id) UNIQUE WHERE (appointment_id IS NOT NULL)
+#  index_anamnese_responses_on_account_id            (account_id)
+#  index_anamnese_responses_on_anamnese_template_id  (anamnese_template_id)
+#  index_anamnese_responses_on_appointment_id        (appointment_id)
+#  index_anamnese_responses_on_contact_id            (contact_id)
 #
 # Foreign Keys
 #

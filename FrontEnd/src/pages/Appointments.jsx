@@ -70,7 +70,7 @@ import {
   getClientName,
 } from '@/utils/appointmentUtils'
 import { formatCurrency } from '@/utils/format'
-import { ConsultationModal } from '@/components/appointments/ConsultationModal'
+import { useNavigate } from 'react-router-dom'
 import { T } from '@/lib/tokens'
 
 
@@ -82,6 +82,7 @@ const formatDateTime = (dateString) => {
 
 
 function AppointmentsPage() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('calendar')
 
   const {
@@ -104,8 +105,6 @@ function AppointmentsPage() {
     setIsFormDialogOpen,
     isDeleteDialogOpen,
     setIsDeleteDialogOpen,
-    isConsultationModalOpen,
-    setIsConsultationModalOpen,
     isSubmitting,
     setIsSubmitting,
     newlyCreatedAppointment,
@@ -160,8 +159,8 @@ function AppointmentsPage() {
   }, [])
 
   const handleOpenConsultation = (appointment) => {
-    setSelectedAppointment(appointment)
-    setIsConsultationModalOpen(true)
+    const contactId = appointment.client?.id || appointment.contact?.id || appointment.contact_id
+    if (contactId) navigate(`/contacts/${contactId}`)
   }
 
   // Aba de Anotações: deriva dos appointments já carregados pelo contexto (sem nova requisição)
@@ -747,12 +746,6 @@ function AppointmentsPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Modal de Sessão */}
-      <ConsultationModal
-        appointment={selectedAppointment}
-        open={isConsultationModalOpen}
-        onOpenChange={setIsConsultationModalOpen}
-      />
       </div>
     </div>
   )

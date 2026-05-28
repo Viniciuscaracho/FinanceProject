@@ -73,6 +73,7 @@ namespace :api, defaults: { format: 'json' } do
         post :extend_recurrence
         post :bulk_destroy
         post :bulk_mark_as_paid
+        post :bulk_update
       end
     end
     
@@ -95,6 +96,9 @@ namespace :api, defaults: { format: 'json' } do
           post :toggle_shared
         end
       end
+      resources :patient_notes, only: %i[index create update destroy]
+      resources :anamnese_responses, only: %i[index create],
+                controller: 'contact_anamnese_responses'
       resources :meal_plans, only: %i[index show create update destroy] do
         collection { post :from_template }
         member do

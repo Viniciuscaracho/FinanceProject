@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_27_100001) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_28_100002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -171,14 +171,14 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_27_100001) do
 
   create_table "anamnese_responses", force: :cascade do |t|
     t.bigint "account_id", null: false
-    t.bigint "appointment_id", null: false
+    t.bigint "appointment_id"
     t.bigint "contact_id"
     t.bigint "anamnese_template_id"
     t.jsonb "responses", default: {}, null: false
     t.datetime "filled_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["account_id", "appointment_id"], name: "index_anamnese_responses_on_account_id_and_appointment_id", unique: true
+    t.index ["account_id", "appointment_id"], name: "idx_anamnese_responses_unique_appointment", unique: true, where: "(appointment_id IS NOT NULL)"
     t.index ["account_id"], name: "index_anamnese_responses_on_account_id"
     t.index ["anamnese_template_id"], name: "index_anamnese_responses_on_anamnese_template_id"
     t.index ["appointment_id"], name: "index_anamnese_responses_on_appointment_id"
@@ -810,6 +810,17 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_27_100001) do
     t.index ["account_id", "contact_id"], name: "index_patient_goals_on_account_id_and_contact_id"
     t.index ["account_id"], name: "index_patient_goals_on_account_id"
     t.index ["contact_id"], name: "index_patient_goals_on_contact_id"
+  end
+
+  create_table "patient_notes", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.text "content"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "contact_id"], name: "index_patient_notes_on_account_id_and_contact_id"
+    t.index ["account_id"], name: "index_patient_notes_on_account_id"
+    t.index ["contact_id"], name: "index_patient_notes_on_contact_id"
   end
 
   create_table "payment_plans", force: :cascade do |t|
@@ -1475,6 +1486,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_27_100001) do
   add_foreign_key "patient_documents", "people", column: "contact_id"
   add_foreign_key "patient_goals", "accounts"
   add_foreign_key "patient_goals", "people", column: "contact_id"
+  add_foreign_key "patient_notes", "accounts"
+  add_foreign_key "patient_notes", "people", column: "contact_id"
   add_foreign_key "payment_plans", "accounts"
   add_foreign_key "payouts", "account_users"
   add_foreign_key "payouts", "accounts"

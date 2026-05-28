@@ -296,6 +296,26 @@ module Api
         head :no_content
       end
 
+      def bulk_update
+        transaction_ids = Array(params[:transaction_ids])
+        transactions = Current.account.transactions.where(id: transaction_ids)
+
+        result = Transactions::BulkUpdate.call(
+          transactions: transactions,
+          params: {
+            category_id:   params[:category_id].presence,
+            contact_id:    params[:contact_id].presence,
+            cost_center_id: params[:cost_center_id].presence,
+          }
+        )
+
+        if result.success?
+          head :no_content
+        else
+          render json: { error: result.message }, status: :unprocessable_entity
+        end
+      end
+
       def check_recurrence_expiry
         result = Transactions::CheckRecurrenceExpiry.call(account: Current.account)
 

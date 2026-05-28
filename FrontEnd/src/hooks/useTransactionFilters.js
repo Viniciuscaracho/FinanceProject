@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 
 const convertDateToISO = (dateString) => {
   if (!dateString) return null
@@ -23,13 +23,24 @@ const getMonthBounds = (monthDate) => {
   return { first, last }
 }
 
+// Parse ?mes=YYYY-MM from URL, fallback to current month
+const parseMonthParam = (param) => {
+  if (!param) return null
+  const [y, m] = param.split('-').map(Number)
+  if (!y || !m || m < 1 || m > 12) return null
+  return new Date(y, m - 1, 1)
+}
+
 export function useTransactionFilters() {
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const initialFilterApplied = useRef(false)
   const monthNavigationActive = useRef(true)
 
   const now = new Date()
-  const [currentMonth, setCurrentMonth] = useState(new Date(now.getFullYear(), now.getMonth(), 1))
+  const initialMonth = parseMonthParam(searchParams.get('mes')) || new Date(now.getFullYear(), now.getMonth(), 1)
+
+  const [currentMonth, setCurrentMonth] = useState(initialMonth)
 
   const [searchQuery, setSearchQuery]                     = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery]   = useState('')
@@ -39,7 +50,7 @@ export function useTransactionFilters() {
   const [showMoreFilters, setShowMoreFilters]             = useState(false)
   const [currentPage, setCurrentPage]                     = useState(1)
 
-  const { first: initFirst, last: initLast } = getMonthBounds(new Date(now.getFullYear(), now.getMonth(), 1))
+  const { first: initFirst, last: initLast } = getMonthBounds(initialMonth)
   const [startDate, setStartDate]                         = useState(formatDate(initFirst))
   const [endDate, setEndDate]                             = useState(formatDate(initLast))
 
@@ -54,7 +65,18 @@ export function useTransactionFilters() {
   const [includeUnpaid, setIncludeUnpaid]                 = useState(true)
   const [dateType, setDateType]                           = useState('due_date')
 
-  // Sync startDate/endDate when currentMonth changes (only if month navigation is active)
+  // Write mes param to URL whenever month changes
+  const applyMonth = (date) => {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.set('mes', `${y}-${m}`)
+      return next
+    }, { replace: true })
+  }
+
+  // Sync startDate/endDate when currentMonth changes
   useEffect(() => {
     if (!monthNavigationActive.current) return
     const { first, last } = getMonthBounds(currentMonth)
@@ -64,21 +86,31 @@ export function useTransactionFilters() {
   }, [currentMonth])
 
   const goToPrevMonth = () => {
-    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
+    setCurrentMonth(prev => {
+      const next = new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
+      applyMonth(next)
+      return next
+    })
   }
 
   const goToNextMonth = () => {
-    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
+    setCurrentMonth(prev => {
+      const next = new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
+      applyMonth(next)
+      return next
+    })
   }
 
   const goToCurrentMonth = () => {
     const today = new Date()
-    setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1))
+    const next = new Date(today.getFullYear(), today.getMonth(), 1)
+    applyMonth(next)
+    setCurrentMonth(next)
   }
 
   const monthLabel = currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 
-  // Aplica filtros vindos do dashboard via location.state (ex: "hoje", "vencidos")
+  // Aplica filtros vindos do dashboard via location.state
   useEffect(() => {
     if (initialFilterApplied.current || !location.state) return
     initialFilterApplied.current = true
@@ -105,7 +137,7 @@ export function useTransactionFilters() {
     }
   }, [location.state])
 
-  // Debounce de busca — reset para página 1 quando o termo muda
+  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery)
@@ -114,7 +146,7 @@ export function useTransactionFilters() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  // Reset para página 1 quando o filtro de tipo muda
+  // Reset to page 1 on type filter change
   useEffect(() => {
     if (currentPage !== 1) setCurrentPage(1)
   }, [selectedFilter])
@@ -176,24 +208,16 @@ export function useTransactionFilters() {
   }
 
   return {
-    // filter UI visibility
     showFilters, setShowFilters,
     showMoreFilters, setShowMoreFilters,
-    // search
     searchQuery, setSearchQuery,
-    // type pill
     selectedFilter, setSelectedFilter,
-    // sort
     sort, setSort,
-    // pagination
     currentPage, setCurrentPage,
-    // month navigation
     currentMonth, goToPrevMonth, goToNextMonth, goToCurrentMonth, monthLabel,
-    // date range
     startDate, setStartDate,
     endDate, setEndDate,
     dateType, setDateType,
-    // multi-select filters
     selectedCategoryIds, setSelectedCategoryIds,
     selectedCostCenterIds, setSelectedCostCenterIds,
     selectedBankAccountIds, setSelectedBankAccountIds,
@@ -201,10 +225,8 @@ export function useTransactionFilters() {
     selectedTagIds, setSelectedTagIds,
     selectedPaymentMethods, setSelectedPaymentMethods,
     selectedPaymentTypes, setSelectedPaymentTypes,
-    // paid/unpaid toggles
     includePaid, setIncludePaid,
     includeUnpaid, setIncludeUnpaid,
-    // computed
     filters,
     resetFilters,
   }

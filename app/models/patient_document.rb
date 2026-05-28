@@ -34,12 +34,20 @@ class PatientDocument < ApplicationRecord
   belongs_to :account
 
   DOCUMENT_TYPES = {
-    'plano_alimentar'        => 'Plano Alimentar',
-    'orientacao_nutricional' => 'Orientação Nutricional',
-    'evolucao_paciente'      => 'Evolução do Paciente',
-    'orientacao_terapeutica' => 'Orientação Terapêutica',
-    'anotacao_sessao'        => 'Anotação de Sessão',
-    'outro'                  => 'Outro'
+    # Exclusivos nutricionista (CFN / Lei 8.234/91)
+    'prescricao_dietetica'    => 'Prescrição Dietética',
+    'plano_alimentar'         => 'Plano Alimentar',
+    'diagnostico_nutricional' => 'Diagnóstico Nutricional',
+    'evolucao_nutricional'    => 'Evolução Nutricional',
+    'orientacao_alimentar'    => 'Orientação Alimentar',
+    'laudo_nutricional'       => 'Laudo Nutricional',
+    'atestado_consulta'       => 'Atestado de Consulta',
+    'recordatorio_24h'        => 'Recordatório Alimentar 24h',
+    # Genéricos
+    'orientacao_nutricional'  => 'Orientação Nutricional',
+    'orientacao_terapeutica'  => 'Orientação Terapêutica',
+    'anotacao_sessao'         => 'Anotação de Sessão',
+    'outro'                   => 'Outro',
   }.freeze
 
   before_create :generate_public_token

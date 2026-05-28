@@ -12,8 +12,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { 
-  Plus, 
+import {
+  Plus,
   Edit,
   Trash2,
   FileText,
@@ -22,7 +22,9 @@ import {
   FileSignature,
   Loader2,
   AlertCircle,
-  GraduationCap
+  GraduationCap,
+  CalendarCheck,
+  ArrowRight,
 } from 'lucide-react'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { apiService } from '@/lib/api'
@@ -31,49 +33,26 @@ import { toast } from 'sonner'
 import { T } from '@/lib/tokens'
 
 const DOCUMENT_TYPES = {
-  receipt: {
-    label: 'Recibos',
-    labelMobile: 'Recibos',
-    icon: Receipt,
-    type: 'ReceiptTemplate',
-    endpoint: 'receipt',
-    color: 'text-green-600'
-  },
-  invoice: {
-    label: 'Faturas',
-    labelMobile: 'Faturas',
-    icon: FileCheck,
-    type: 'InvoiceTemplate',
-    endpoint: 'invoice',
-    color: 'text-blue-600'
-  },
-  contract: {
-    label: 'Contratos',
-    labelMobile: 'Contratos',
-    icon: FileSignature,
-    type: 'ContractTemplate',
-    endpoint: 'contract',
-    color: 'text-purple-600'
-  },
   professional: {
-    label: 'Documentos Profissionais',
-    labelMobile: 'Profis.',
+    label: 'Documentos Clínicos',
+    labelMobile: 'Documentos',
     icon: GraduationCap,
     type: 'ProfessionalDocumentTemplate',
     endpoint: 'professional',
-    color: 'text-orange-600'
+    color: 'text-green-600'
   }
 }
 
 export function DocumentTemplates() {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
-  const [activeTab, setActiveTab] = useState('receipt')
+  const [activeTab, setActiveTab] = useState('professional')
   const [templates, setTemplates] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [deleting, setDeleting] = useState(null)
 
   useEffect(() => {
     loadTemplates()
@@ -123,22 +102,25 @@ export function DocumentTemplates() {
     }
   }
 
-  const handleDelete = async (templateId) => {
+  const handleDelete = async (template) => {
+    if (!window.confirm(`Excluir "${template.name}"? Esta ação não pode ser desfeita.`)) return
+
+    setDeleting(template.id)
     try {
       const docType = DOCUMENT_TYPES[activeTab]
 
       switch (docType.endpoint) {
         case 'receipt':
-          await apiService.deleteReceiptTemplate(templateId)
+          await apiService.deleteReceiptTemplate(template.id)
           break
         case 'invoice':
-          await apiService.deleteInvoiceTemplate(templateId)
+          await apiService.deleteInvoiceTemplate(template.id)
           break
         case 'contract':
-          await apiService.deleteContractTemplate(templateId)
+          await apiService.deleteContractTemplate(template.id)
           break
         case 'professional':
-          await apiService.deleteProfessionalDocumentTemplate(templateId)
+          await apiService.deleteProfessionalDocumentTemplate(template.id)
           break
       }
 
@@ -147,6 +129,8 @@ export function DocumentTemplates() {
     } catch (err) {
       const errorMessage = err.data?.error || err.message || 'Erro ao excluir template'
       toast.error(errorMessage)
+    } finally {
+      setDeleting(null)
     }
   }
 
@@ -171,7 +155,7 @@ export function DocumentTemplates() {
               Modelos de Documentos
             </h1>
             <p className="text-lg text-text-secondary">
-              Gerencie templates de recibos, faturas, contratos e documentos profissionais
+              Modelos de documentos clínicos para nutricionistas — prescrições, laudos, evoluções e mais
             </p>
           </div>
           <Button 
@@ -181,6 +165,22 @@ export function DocumentTemplates() {
             <Plus className="h-4 w-4" />
             Novo Template
           </Button>
+        </div>
+
+        {/* Onde usar */}
+        <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <CalendarCheck size={18} style={{ color: '#2563eb', flexShrink: 0, marginTop: 1 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: '#1e40af', margin: '0 0 2px' }}>Como usar estes modelos</p>
+            <p style={{ fontSize: 12, color: '#3b82f6', margin: 0, lineHeight: 1.5 }}>
+              Acesse um <strong>Paciente</strong> → seção <strong>Prontuário</strong> → <strong>Documentos</strong> → <strong>Novo documento</strong> → escolha um modelo.
+              As variáveis como <code style={{ background: '#dbeafe', padding: '0 4px', borderRadius: 3 }}>[NOME_CLIENTE]</code> são substituídas automaticamente pelos dados do paciente.
+            </p>
+          </div>
+          <button type="button" onClick={() => navigate('/contacts')}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, color: '#2563eb', background: 'none', border: '1px solid #93c5fd', borderRadius: 7, padding: '5px 10px', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
+            Ir para pacientes <ArrowRight size={12} />
+          </button>
         </div>
 
         {error && (
@@ -308,10 +308,12 @@ export function DocumentTemplates() {
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => handleDelete(template.id)}
-                                      disabled={template.default}
+                                      onClick={() => handleDelete(template)}
+                                      disabled={deleting === template.id}
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      {deleting === template.id
+                                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                                        : <Trash2 className="h-4 w-4" />}
                                     </Button>
                                   </div>
                                 </TableCell>
