@@ -286,6 +286,7 @@ module Api
           needs_terms_acceptance: user.accepted_terms_at.nil?
         }
       rescue => e
+        Rails.logger.error "[user_data] #{e.class}: #{e.message}"
         {
           id: user.id,
           email: user.email,

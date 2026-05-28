@@ -36,7 +36,12 @@ module Api
       end
 
       def update
-        if @contact.update(contact_params)
+        attrs = contact_params
+        if attrs[:address_attributes].present? && @contact.address.present?
+          attrs[:address_attributes][:id] = @contact.address.id
+        end
+
+        if @contact.update(attrs)
           render json: { contact: contact_json(@contact) }
         else
           render json: { errors: @contact.errors.full_messages }, status: :unprocessable_entity
@@ -87,23 +92,31 @@ module Api
           document: contact.document_1,
           notes: contact.description,
           contact_type: contact.contact_type.to_s,
-          is_demo: contact.is_demo
+          is_demo: contact.is_demo,
+          birth_date: contact.birth_date&.to_s,
+          cep: contact.address&.postcode,
+          address_number: contact.address&.address_number
         )
       end
 
       def contact_params
-        # Mapear campos do frontend para campos do modelo
-        permitted_params = params.require(:contact).permit(:name, :email, :phone, :document, :notes, :contact_type)
-        
-        # Converter campos para os nomes corretos do modelo
+        permitted_params = params.require(:contact).permit(:name, :email, :phone, :document, :notes, :contact_type, :birth_date, :cep, :address_number)
+
         contact_attributes = {}
         contact_attributes[:first_name] = permitted_params[:name] if permitted_params[:name].present?
         contact_attributes[:email] = permitted_params[:email] if permitted_params[:email].present?
         contact_attributes[:phone_number] = permitted_params[:phone] if permitted_params[:phone].present?
         contact_attributes[:document_1] = permitted_params[:document] if permitted_params[:document].present?
         contact_attributes[:description] = permitted_params[:notes] if permitted_params[:notes].present?
-        
-        # Mapear contact_type do frontend para o enum do modelo
+        contact_attributes[:birth_date] = permitted_params[:birth_date] if permitted_params[:birth_date].present?
+
+        if permitted_params[:cep].present? || permitted_params[:address_number].present?
+          address_attrs = {}
+          address_attrs[:postcode] = permitted_params[:cep].gsub(/\D/, '') if permitted_params[:cep].present?
+          address_attrs[:address_number] = permitted_params[:address_number] if permitted_params[:address_number].present?
+          contact_attributes[:address_attributes] = address_attrs
+        end
+
         if permitted_params[:contact_type].present?
           type_mapping = {
             'customer' => :customer,
@@ -114,7 +127,7 @@ module Api
           }
           contact_attributes[:contact_type] = type_mapping[permitted_params[:contact_type]] if type_mapping[permitted_params[:contact_type]]
         end
-        
+
         contact_attributes
       end
     end

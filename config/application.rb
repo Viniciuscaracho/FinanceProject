@@ -93,10 +93,16 @@ module BarberManagement
     config.action_mailer.default_url_options = { host: ENV.fetch('DEFAULT_HOST_NAME', 'localhost:3000') }
     config.action_mailer.asset_host = "#{ENV.fetch('DEFAULT_HOST_PROTOCOL', 'http')}://#{ENV.fetch('DEFAULT_HOST_NAME', 'localhost:3000')}"
 
-    # Encryption key derivation salt
-    config.active_record.encryption.primary_key = Rails.application.credentials.encryption_primary_key
-    config.active_record.encryption.deterministic_key = Rails.application.credentials.encryption_deterministic_key
-    config.active_record.encryption.key_derivation_salt = Rails.application.credentials.encryption_key_derivation_salt
+    # Encryption keys — credentials take priority; ENV vars as fallback for EasyPanel/Docker deploys
+    config.active_record.encryption.primary_key =
+      Rails.application.credentials.encryption_primary_key ||
+      ENV['ENCRYPTION_PRIMARY_KEY']
+    config.active_record.encryption.deterministic_key =
+      Rails.application.credentials.encryption_deterministic_key ||
+      ENV['ENCRYPTION_DETERMINISTIC_KEY']
+    config.active_record.encryption.key_derivation_salt =
+      Rails.application.credentials.encryption_key_derivation_salt ||
+      ENV['ENCRYPTION_KEY_DERIVATION_SALT']
 
     # Disable Flipper middleware completely
     # config.middleware.delete(Flipper::Middleware::Memoizer) if defined?(Flipper::Middleware::Memoizer)

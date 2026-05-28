@@ -84,6 +84,9 @@ const EMPTY_FORM = {
   document: '',
   notes: '',
   contact_type: 'customer',
+  birth_date: '',
+  cep: '',
+  address_number: '',
 }
 
 export function Contacts() {
@@ -185,6 +188,9 @@ export function Contacts() {
       document: contact.document_1 || contact.document || '',
       notes: contact.description || contact.notes || '',
       contact_type: normalizeContactType(contact.contact_type),
+      birth_date: contact.birth_date || '',
+      cep: contact.cep || '',
+      address_number: contact.address_number || '',
     })
     setEditingContact(contact)
     setIsEditContactOpen(true)
@@ -421,6 +427,37 @@ export function Contacts() {
                       placeholder="CPF ou CNPJ"
                       value={formData.document}
                       onChange={(e) => setFormData({ ...formData, document: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Nota Fiscal */}
+              <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Nota Fiscal</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5 col-span-2">
+                    <Label>Data de Nascimento</Label>
+                    <Input
+                      type="date"
+                      value={formData.birth_date}
+                      onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>CEP</Label>
+                    <Input
+                      placeholder="00000-000"
+                      value={formData.cep}
+                      onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Número</Label>
+                    <Input
+                      placeholder="123"
+                      value={formData.address_number}
+                      onChange={(e) => setFormData({ ...formData, address_number: e.target.value })}
                     />
                   </div>
                 </div>
@@ -821,6 +858,37 @@ export function Contacts() {
                     placeholder="CPF ou CNPJ"
                     value={formData.document}
                     onChange={(e) => setFormData({ ...formData, document: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Nota Fiscal */}
+            <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Nota Fiscal</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5 col-span-2">
+                  <Label>Data de Nascimento</Label>
+                  <Input
+                    type="date"
+                    value={formData.birth_date}
+                    onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>CEP</Label>
+                  <Input
+                    placeholder="00000-000"
+                    value={formData.cep}
+                    onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Número</Label>
+                  <Input
+                    placeholder="123"
+                    value={formData.address_number}
+                    onChange={(e) => setFormData({ ...formData, address_number: e.target.value })}
                   />
                 </div>
               </div>
