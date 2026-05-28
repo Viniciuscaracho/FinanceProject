@@ -299,9 +299,24 @@ class ApiService {
     });
   }
 
-  async deleteTransaction(id) {
-    return await this.request(`/transactions/${id}`, {
+  async deleteTransaction(id, option = null) {
+    const url = option ? `/transactions/${id}?option=${option}` : `/transactions/${id}`
+    return await this.request(url, {
       method: 'DELETE',
+    });
+  }
+
+  async bulkDestroyTransactions(transactionIds, option = 'only_this_installment') {
+    return await this.request('/transactions/bulk_destroy', {
+      method: 'POST',
+      body: JSON.stringify({ transaction_ids: transactionIds, option }),
+    });
+  }
+
+  async bulkMarkAsPaidTransactions(transactionIds) {
+    return await this.request('/transactions/bulk_mark_as_paid', {
+      method: 'POST',
+      body: JSON.stringify({ transaction_ids: transactionIds }),
     });
   }
 

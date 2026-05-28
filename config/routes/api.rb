@@ -71,6 +71,8 @@ namespace :api, defaults: { format: 'json' } do
       collection do
         get :check_recurrence_expiry
         post :extend_recurrence
+        post :bulk_destroy
+        post :bulk_mark_as_paid
       end
     end
     
@@ -112,7 +114,11 @@ namespace :api, defaults: { format: 'json' } do
       end
     end
 
-    resources :foods, only: %i[index create destroy]
+    resources :foods, only: %i[index create destroy] do
+      collection do
+        get 'barcode/:barcode', action: :barcode_search
+      end
+    end
     resources :meal_plan_templates, only: %i[index show create update destroy] do
       member do
         post :add_day

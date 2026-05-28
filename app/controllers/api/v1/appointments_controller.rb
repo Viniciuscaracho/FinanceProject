@@ -163,6 +163,7 @@ module Api
           end
 
           trigger_whatsapp_confirmation(appointment)
+          trigger_whatsapp_to_professional(appointment)
 
           begin
             payment_link = create_stripe_payment_link(appointment)
@@ -599,6 +600,20 @@ module Api
         )
       rescue StandardError => e
         Rails.logger.error "[AppointmentsController] WhatsApp confirmation failed for ##{appointment.id}: #{e.message}"
+      end
+
+      def trigger_whatsapp_to_professional(appointment)
+        phone = appointment.account_user&.user&.phone_number
+        return unless phone.present?
+
+        account = appointment.account
+        message = WhatsApp::TemplateRenderer.render(:appointment_new_booking_professional, appointment, appointment.contact)
+
+        if WhatsApp::EvolutionApiClient.configured?(account: account)
+          WhatsApp::EvolutionApiClient.send_message(account: account, phone: phone, message: message)
+        end
+      rescue StandardError => e
+        Rails.logger.error "[AppointmentsController] WhatsApp professional notification failed for ##{appointment.id}: #{e.message}"
       end
 
       def dispatch_payment_link_whatsapp(appointment)

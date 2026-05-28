@@ -4,6 +4,7 @@ module WhatsApp
   class TemplateRenderer
     TEMPLATES = {
       appointment_confirmation: "✅ Agendamento confirmado!\n\nOlá, %<patient>s! Sua consulta de *%<service>s* com %<professional>s está marcada para *%<datetime>s*.\n\nPara reagendar ou cancelar: %<manage_url>s",
+      appointment_new_booking_professional: "📅 *Novo agendamento recebido!*\n\nPaciente: *%<patient>s*\nServiço: *%<service>s*\nData/hora: *%<datetime>s*\n\nVerifique sua agenda. 🗓️",
       appointment_reminder_24h: "Oi %<patient>s, lembrete: sua consulta com %<professional>s é amanhã às %<time>s. Confirma presença? ✅",
       appointment_reminder_1h:  "Oi %<patient>s! Sua consulta com %<professional>s começa em 1 hora (%<time>s). Até já! 🕐",
       payment_link:             "Olá %<patient>s! Segue o link para pagamento da sua consulta com %<professional>s: %<link>s 💳",
@@ -38,6 +39,11 @@ module WhatsApp
           datetime:   format_datetime(resource.start_time),
           service:    resource.try(:service)&.name || "Consulta",
           manage_url: manage_url(resource)
+        )
+      when :appointment_new_booking_professional
+        base.merge(
+          datetime: format_datetime(resource.start_time),
+          service:  resource.try(:service)&.name || "Consulta"
         )
       when :appointment_reminder_24h, :appointment_reminder_1h
         base.merge(time: format_time(resource.start_time))

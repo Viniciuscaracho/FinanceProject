@@ -5,6 +5,7 @@
 # Table name: foods
 #
 #  id                :bigint           not null, primary key
+#  brand             :string
 #  carbs_per_100g    :decimal(8, 2)    default(0.0)
 #  fat_per_100g      :decimal(8, 2)    default(0.0)
 #  fiber_per_100g    :decimal(8, 2)    default(0.0)

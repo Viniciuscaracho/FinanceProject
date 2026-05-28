@@ -160,20 +160,28 @@ module Api
       end
 
       def plan_params
-        params.require(:meal_plan).permit(:title, :description, :notes, :start_date, :end_date, :status)
+        params.require(:meal_plan).permit(
+          :title, :description, :notes, :start_date, :end_date, :status,
+          :target_kcal, :target_protein_g, :target_carbs_g, :target_fat_g, :target_fiber_g
+        )
       end
 
       def plan_summary_json(plan)
         {
-          id:           plan.id,
-          title:        plan.title,
-          description:  plan.description,
-          status:       plan.status,
-          public_token: plan.public_token,
-          total_days:   plan.total_days,
-          start_date:   plan.start_date,
-          end_date:     plan.end_date,
-          updated_at:   plan.updated_at.iso8601
+          id:               plan.id,
+          title:            plan.title,
+          description:      plan.description,
+          status:           plan.status,
+          public_token:     plan.public_token,
+          total_days:       plan.total_days,
+          start_date:       plan.start_date,
+          end_date:         plan.end_date,
+          updated_at:       plan.updated_at.iso8601,
+          target_kcal:      plan.target_kcal.to_f,
+          target_protein_g: plan.target_protein_g.to_f,
+          target_carbs_g:   plan.target_carbs_g.to_f,
+          target_fat_g:     plan.target_fat_g.to_f,
+          target_fiber_g:   plan.target_fiber_g.to_f
         }
       end
 
@@ -185,11 +193,23 @@ module Api
       end
 
       def day_json(day)
+        meals = day.meals.sort_by(&:position).map { |m| meal_json(m) }
         {
           id:         day.id,
           day_number: day.day_number,
           label:      day.display_label,
-          meals:      day.meals.sort_by(&:position).map { |m| meal_json(m) }
+          meals:      meals,
+          summary:    day_summary(meals)
+        }
+      end
+
+      def day_summary(meals)
+        {
+          total_kcal:    meals.sum { |m| m[:total_kcal] }.round(1),
+          total_protein: meals.sum { |m| m[:total_protein] }.round(1),
+          total_carbs:   meals.sum { |m| m[:total_carbs] }.round(1),
+          total_fat:     meals.sum { |m| m[:total_fat] }.round(1),
+          total_fiber:   meals.sum { |m| m[:total_fiber] }.round(1)
         }
       end
 

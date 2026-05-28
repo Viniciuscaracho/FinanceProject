@@ -52,13 +52,18 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Landmark,
   ArrowUpCircle,
   ArrowDownCircle,
   CheckCircle2,
   Circle,
   X,
-  MessageCircle
+  MessageCircle,
+  Square,
+  CheckSquare2,
+  CheckCheck
 } from 'lucide-react'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
@@ -110,6 +115,7 @@ export function Transactions() {
     selectedFilter, setSelectedFilter,
     sort, setSort,
     currentPage, setCurrentPage,
+    currentMonth, goToPrevMonth, goToNextMonth, goToCurrentMonth, monthLabel,
     startDate, setStartDate,
     endDate, setEndDate,
     dateType, setDateType,
@@ -125,6 +131,17 @@ export function Transactions() {
     filters,
     resetFilters,
   } = useTransactionFilters()
+
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState(new Set())
+
+  // Delete dialog (cascade for installments/recurring)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteOption, setDeleteOption] = useState('only_this_installment')
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+  const [isBulkMarkingPaid, setIsBulkMarkingPaid] = useState(false)
   const [isNewTransactionOpen, setIsNewTransactionOpen] = useState(false)
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [isEditTransactionOpen, setIsEditTransactionOpen] = useState(false)
@@ -262,24 +279,6 @@ export function Transactions() {
     return () => clearInterval(interval)
   }, [])
 
-  // Debounce para busca - reset página quando busca muda
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery)
-      if (currentPage !== 1) {
-        setCurrentPage(1) // Reset para primeira página ao buscar
-      }
-    }, 500) // Aguarda 500ms após parar de digitar
-
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-  
-  // Reset página quando filtro muda
-  useEffect(() => {
-    if (currentPage !== 1) {
-      setCurrentPage(1)
-    }
-  }, [selectedFilter])
 
   // Calculate summary statistics
   const summary = useMemo(() => {
@@ -667,13 +666,84 @@ export function Transactions() {
     }
   }
 
-  const handleDeleteTransaction = async (id) => {
+  const handleDeleteTransaction = (transaction) => {
+    if (transaction.payment_plan_id && (transaction.payment_type_cd === 1 || transaction.payment_type_cd === 2)) {
+      setDeleteTarget(transaction)
+      setDeleteOption('only_this_installment')
+      setShowDeleteDialog(true)
+    } else {
+      confirmDelete(transaction.id, null)
+    }
+  }
+
+  const confirmDelete = async (id, option) => {
+    setIsDeleting(true)
     try {
-      await deleteTransaction.mutateAsync(id)
+      await apiService.deleteTransaction(id, option)
+      queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['bank_accounts'] })
+      setShowDeleteDialog(false)
+      setDeleteTarget(null)
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n })
       toast.success('Transação excluída')
     } catch (error) {
       const msg = error?.data?.errors?.join?.('\n') || error?.data?.error || error?.message || 'Erro ao excluir transação'
       toast.error(msg)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+    setIsBulkDeleting(true)
+    try {
+      await apiService.bulkDestroyTransactions(Array.from(selectedIds))
+      queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['bank_accounts'] })
+      setSelectedIds(new Set())
+      toast.success(`${selectedIds.size} transação(ões) excluída(s)`)
+    } catch (error) {
+      const msg = error?.data?.error || error?.message || 'Erro ao excluir transações'
+      toast.error(msg)
+    } finally {
+      setIsBulkDeleting(false)
+    }
+  }
+
+  const handleBulkMarkAsPaid = async () => {
+    if (selectedIds.size === 0) return
+    setIsBulkMarkingPaid(true)
+    try {
+      await apiService.bulkMarkAsPaidTransactions(Array.from(selectedIds))
+      queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['bank_accounts'] })
+      setSelectedIds(new Set())
+      toast.success(`${selectedIds.size} transação(ões) marcada(s) como paga(s)`)
+    } catch (error) {
+      const msg = error?.data?.error || error?.message || 'Erro ao marcar transações'
+      toast.error(msg)
+    } finally {
+      setIsBulkMarkingPaid(false)
+    }
+  }
+
+  const toggleSelectId = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === sortedTransactions.length && sortedTransactions.length > 0) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(sortedTransactions.map(t => t.id)))
     }
   }
 
@@ -867,21 +937,8 @@ export function Transactions() {
   }
 
   const handleClearFilters = () => {
-    setStartDate('')
-    setEndDate('')
-    setSelectedCategoryIds([])
-    setSelectedCostCenterIds([])
-    setSelectedBankAccountIds([])
-    setSelectedContactIds([])
-    setSelectedTagIds([])
-    setSelectedPaymentMethods([])
-    setSelectedPaymentTypes([])
-    setIncludePaid(true)
-    setIncludeUnpaid(true)
-    setDateType('payment')
-    setSelectedFilter('all')
-    setSearchQuery('')
-    setCurrentPage(1)
+    resetFilters()
+    setSelectedIds(new Set())
   }
 
   const handleExportCSV = async () => {
@@ -1876,6 +1933,77 @@ export function Transactions() {
         </div>
       </div>
 
+      {/* Month Navigator */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <button
+          onClick={goToPrevMonth}
+          className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          title="Mês anterior"
+        >
+          <ChevronLeft className="w-5 h-5 text-text-secondary" />
+        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-text-primary capitalize">{monthLabel}</span>
+          {(() => {
+            const now = new Date()
+            const isCurrentMonth = currentMonth.getFullYear() === now.getFullYear() && currentMonth.getMonth() === now.getMonth()
+            return !isCurrentMonth ? (
+              <button
+                onClick={goToCurrentMonth}
+                className="text-xs px-2 py-0.5 rounded-full border transition-colors"
+                style={{ borderColor: T.brand + '60', color: T.brand, background: T.chip }}
+              >
+                Hoje
+              </button>
+            ) : null
+          })()}
+        </div>
+        <button
+          onClick={goToNextMonth}
+          className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          title="Próximo mês"
+        >
+          <ChevronRight className="w-5 h-5 text-text-secondary" />
+        </button>
+      </div>
+
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div
+          className="flex items-center justify-between gap-3 mb-3 px-3 py-2 rounded-lg"
+          style={{ background: T.chip, border: `1px solid ${T.brand}40` }}
+        >
+          <span className="text-sm font-medium" style={{ color: T.brand }}>
+            {selectedIds.size} selecionada{selectedIds.size !== 1 ? 's' : ''}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1"
+              onClick={handleBulkMarkAsPaid}
+              disabled={isBulkMarkingPaid || isBulkDeleting}
+            >
+              {isBulkMarkingPaid ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
+              Marcar pago
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs gap-1 border-red-200 text-red-600 hover:bg-red-50"
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting || isBulkMarkingPaid}
+            >
+              {isBulkDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+              Excluir
+            </Button>
+            <button onClick={() => setSelectedIds(new Set())} className="ml-1 p-1 rounded hover:bg-white/60">
+              <X className="w-3.5 h-3.5 text-text-secondary" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-3 mb-3">
         <StatCard
@@ -2223,6 +2351,7 @@ export function Transactions() {
                           <SelectValue placeholder="Por pagamento" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="due_date">Por vencimento</SelectItem>
                           <SelectItem value="payment">Por pagamento</SelectItem>
                           <SelectItem value="competency">Por competência</SelectItem>
                         </SelectContent>
@@ -2262,9 +2391,10 @@ export function Transactions() {
             const isRevenue = transaction.transaction_type_cd === 0
             const isFirst = index === 0
             const isLast = index === sortedTransactions.length - 1
-            
+            const isSelected = selectedIds.has(transaction.id)
+
             return (
-              <div 
+              <div
                 key={transaction.id}
                 className={cn(
                   "group/item",
@@ -2274,9 +2404,9 @@ export function Transactions() {
               >
                 <div
                   className="bg-surface-elevated rounded-[var(--radius-lg)] p-3 border border-border shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] transition-all duration-140 cursor-pointer"
-                  style={{ borderLeft: `3px solid ${isRevenue ? T.green : '#E5E7EB'}`, transition: 'background 100ms' }}
-                  onMouseEnter={e => e.currentTarget.style.background = T.bg}
-                  onMouseLeave={e => e.currentTarget.style.background = ''}
+                  style={{ borderLeft: `3px solid ${isSelected ? T.brand : isRevenue ? T.green : '#E5E7EB'}`, background: isSelected ? T.chip : '', transition: 'background 100ms' }}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = T.bg }}
+                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = '' }}
                   onClick={() => handleEditTransaction(transaction)}
                 >
                   <div className="flex items-start justify-between mb-2">
@@ -2357,42 +2487,52 @@ export function Transactions() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t border-border" onClick={(e) => e.stopPropagation()}>
-                    {transaction.contact && getContactPhone(transaction.contact) && !transaction.paid && (
+                  <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-border" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => toggleSelectId(transaction.id)}
+                      className="flex items-center gap-1 text-xs px-2 py-1 rounded"
+                      style={{ color: isSelected ? T.brand : T.muted, background: isSelected ? T.chip : 'transparent' }}
+                    >
+                      {isSelected ? <CheckSquare2 className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+                      Selecionar
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {transaction.contact && getContactPhone(transaction.contact) && !transaction.paid && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openWhatsApp(getContactPhone(transaction.contact), WA_TEMPLATES.payment(transaction))}
+                          title="Cobrar via WhatsApp"
+                          style={{ color: '#25D366' }}
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {transaction.payment_plan_id && transaction.payment_type_cd === 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditInstallments(transaction)}
+                          title="Editar parcelas"
+                        >
+                          <Calendar className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => openWhatsApp(getContactPhone(transaction.contact), WA_TEMPLATES.payment(transaction))}
-                        title="Cobrar via WhatsApp"
-                        style={{ color: '#25D366' }}
+                        onClick={() => handleEditTransaction(transaction)}
                       >
-                        <MessageCircle className="w-4 h-4" />
+                        <Edit className="w-4 h-4" />
                       </Button>
-                    )}
-                    {transaction.payment_plan_id && transaction.payment_type_cd === 1 && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEditInstallments(transaction)}
-                        title="Editar parcelas"
+                        onClick={() => handleDeleteTransaction(transaction)}
                       >
-                        <Calendar className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4 text-danger" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditTransaction(transaction)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteTransaction(transaction.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-danger" />
-                    </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2415,6 +2555,13 @@ export function Transactions() {
           <Table className="w-full">
             <TableHeader>
               <TableRow style={{ background: T.bg }}>
+                <TableHead style={{ width: 40, paddingLeft: 12 }}>
+                  <button onClick={toggleSelectAll} className="flex items-center justify-center">
+                    {sortedTransactions.length > 0 && selectedIds.size === sortedTransactions.length
+                      ? <CheckSquare2 className="w-4 h-4" style={{ color: T.brand }} />
+                      : <Square className="w-4 h-4 text-text-secondary" />}
+                  </button>
+                </TableHead>
                 <TableHead
                   className="whitespace-nowrap text-sm font-semibold py-4 cursor-pointer select-none"
                   style={{ width: '10%' }}
@@ -2458,7 +2605,8 @@ export function Transactions() {
                     const isRevenue = transaction.transaction_type_cd === 0
                     const isFirst = index === 0
                     const isLast = index === sortedTransactions.length - 1
-                    
+                    const isSelected = selectedIds.has(transaction.id)
+
                     return (
                       <TableRow
                         key={transaction.id}
@@ -2467,11 +2615,18 @@ export function Transactions() {
                           isFirst && "serial-position-first",
                           isLast && "serial-position-last"
                         )}
-                        style={{ borderLeft: `3px solid ${isRevenue ? T.green : '#E5E7EB'}`, transition: 'background 100ms' }}
-                        onMouseEnter={e => e.currentTarget.style.background = T.bg}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        style={{ borderLeft: `3px solid ${isSelected ? T.brand : isRevenue ? T.green : '#E5E7EB'}`, background: isSelected ? T.chip : 'transparent', transition: 'background 100ms' }}
+                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = T.bg }}
+                        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isSelected ? T.chip : 'transparent' }}
                         onClick={() => handleEditTransaction(transaction)}
                       >
+                        <TableCell style={{ paddingLeft: 12 }} onClick={(e) => e.stopPropagation()}>
+                          <button onClick={() => toggleSelectId(transaction.id)} className="flex items-center justify-center">
+                            {isSelected
+                              ? <CheckSquare2 className="w-4 h-4" style={{ color: T.brand }} />
+                              : <Square className="w-4 h-4 text-text-secondary" />}
+                          </button>
+                        </TableCell>
                         <TableCell className="text-base whitespace-nowrap text-text-primary py-4">{formatDate(transaction.due_date)}</TableCell>
                         <TableCell className="py-4">
                           <div className="flex items-start gap-2">
@@ -2566,7 +2721,7 @@ export function Transactions() {
                                 <MessageCircle className="w-4 h-4" />
                               </Button>
                             )}
-                            {transaction.payment_plan_id && transaction.payment_type_cd === 1 && (
+                            {transaction.payment_plan_id && (transaction.payment_type_cd === 1 || transaction.payment_type_cd === 2) && (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -2587,7 +2742,7 @@ export function Transactions() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleDeleteTransaction(transaction.id)}
+                              onClick={() => handleDeleteTransaction(transaction)}
                               title="Excluir transação"
                             >
                               <Trash2 className="w-4 h-4 text-danger" />
@@ -2997,6 +3152,64 @@ export function Transactions() {
             <Button onClick={handleCreateCostCenter} disabled={isCreatingCostCenter || !newCostCenterName.trim()}>
               {isCreatingCostCenter ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Criar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Exclusão em Cascata */}
+      <Dialog open={showDeleteDialog} onOpenChange={(open) => { if (!open) { setShowDeleteDialog(false); setDeleteTarget(null) } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Trash2 className="h-5 w-5 text-red-500" />
+              </div>
+              <div>
+                <DialogTitle style={{ margin: 0 }}>Excluir Transação</DialogTitle>
+                <DialogDescription style={{ margin: 0 }}>
+                  {deleteTarget?.payment_type_cd === 2 ? 'Recorrência' : 'Parcelamento'} {deleteTarget?.installment_number}/{deleteTarget?.installment_total || '?'}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-text-secondary">Como deseja excluir?</p>
+            <RadioGroup value={deleteOption} onValueChange={setDeleteOption} className="space-y-2">
+              {[
+                { value: 'only_this_installment', label: 'Apenas esta', description: 'Exclui somente esta parcela/ocorrência' },
+                { value: 'this_and_next_installments', label: 'Esta e as próximas', description: 'Exclui esta e todas as futuras' },
+                { value: 'this_and_prev_installments', label: 'Esta e as anteriores', description: 'Exclui esta e todas as anteriores' },
+                { value: 'prev_and_next_installments', label: 'Todas', description: 'Exclui o plano inteiro' },
+              ].map(opt => (
+                <label key={opt.value} className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors"
+                  style={{ borderColor: deleteOption === opt.value ? T.brand : T.border, background: deleteOption === opt.value ? T.chip : '' }}>
+                  <RadioGroupItem value={opt.value} className="mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: deleteOption === opt.value ? T.brand : T.text }}>{opt.label}</p>
+                    <p className="text-xs text-text-secondary">{opt.description}</p>
+                  </div>
+                </label>
+              ))}
+            </RadioGroup>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => { setShowDeleteDialog(false); setDeleteTarget(null) }}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="flex-1 border-0"
+              style={{ background: '#EF4444', color: '#fff' }}
+              onClick={() => confirmDelete(deleteTarget.id, deleteOption)}
+              disabled={isDeleting}
+            >
+              {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Excluir
             </Button>
           </div>
         </DialogContent>

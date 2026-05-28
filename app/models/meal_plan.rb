@@ -12,6 +12,11 @@
 #  public_token      :string           not null
 #  start_date        :date
 #  status            :integer          default(0), not null
+#  target_carbs_g    :decimal(8, 2)    default(0.0)
+#  target_fat_g      :decimal(8, 2)    default(0.0)
+#  target_fiber_g    :decimal(8, 2)    default(0.0)
+#  target_kcal       :decimal(8, 2)    default(0.0)
+#  target_protein_g  :decimal(8, 2)    default(0.0)
 #  template_category :string
 #  title             :string           not null
 #  created_at        :datetime         not null

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_05_25_100002) do
+ActiveRecord::Schema[7.0].define(version: 2026_05_27_100001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -559,6 +559,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_25_100002) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "vitamins_per_100g", default: {}
+    t.string "brand"
     t.index ["account_id"], name: "index_foods_on_account_id"
     t.index ["name"], name: "index_foods_on_name"
     t.index ["source"], name: "index_foods_on_source"
@@ -714,6 +715,11 @@ ActiveRecord::Schema[7.0].define(version: 2026_05_25_100002) do
     t.datetime "updated_at", null: false
     t.boolean "is_template", default: false, null: false
     t.string "template_category"
+    t.decimal "target_kcal", precision: 8, scale: 2, default: "0.0"
+    t.decimal "target_protein_g", precision: 8, scale: 2, default: "0.0"
+    t.decimal "target_carbs_g", precision: 8, scale: 2, default: "0.0"
+    t.decimal "target_fat_g", precision: 8, scale: 2, default: "0.0"
+    t.decimal "target_fiber_g", precision: 8, scale: 2, default: "0.0"
     t.index ["account_id", "contact_id"], name: "index_meal_plans_on_account_id_and_contact_id"
     t.index ["account_id"], name: "index_meal_plans_on_account_id"
     t.index ["contact_id"], name: "index_meal_plans_on_contact_id"

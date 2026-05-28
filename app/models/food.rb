@@ -16,6 +16,7 @@
 #  created_at        :datetime         not null
 #  updated_at        :datetime         not null
 #  account_id        :bigint
+#  brand             :string
 #  external_id       :string
 #
 # Indexes
@@ -29,7 +30,8 @@ class Food < ApplicationRecord
 
   SOURCES = %w[taco open_food_facts custom].freeze
 
-  validates :name, presence: true, length: { maximum: 200 }
+  validates :name,   presence: true, length: { maximum: 200 }
+  validates :brand,  length: { maximum: 100 }, allow_nil: true
   validates :source, inclusion: { in: SOURCES }
 
   scope :global,          -> { where(account_id: nil) }

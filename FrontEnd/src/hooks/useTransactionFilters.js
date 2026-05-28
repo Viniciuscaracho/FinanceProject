@@ -15,9 +15,21 @@ const formatDate = (d) => {
   return `${dd}/${mm}/${yyyy}`
 }
 
+const getMonthBounds = (monthDate) => {
+  const year = monthDate.getFullYear()
+  const month = monthDate.getMonth()
+  const first = new Date(year, month, 1)
+  const last = new Date(year, month + 1, 0)
+  return { first, last }
+}
+
 export function useTransactionFilters() {
   const location = useLocation()
   const initialFilterApplied = useRef(false)
+  const monthNavigationActive = useRef(true)
+
+  const now = new Date()
+  const [currentMonth, setCurrentMonth] = useState(new Date(now.getFullYear(), now.getMonth(), 1))
 
   const [searchQuery, setSearchQuery]                     = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery]   = useState('')
@@ -26,8 +38,11 @@ export function useTransactionFilters() {
   const [showFilters, setShowFilters]                     = useState(false)
   const [showMoreFilters, setShowMoreFilters]             = useState(false)
   const [currentPage, setCurrentPage]                     = useState(1)
-  const [startDate, setStartDate]                         = useState('')
-  const [endDate, setEndDate]                             = useState('')
+
+  const { first: initFirst, last: initLast } = getMonthBounds(new Date(now.getFullYear(), now.getMonth(), 1))
+  const [startDate, setStartDate]                         = useState(formatDate(initFirst))
+  const [endDate, setEndDate]                             = useState(formatDate(initLast))
+
   const [selectedCategoryIds, setSelectedCategoryIds]     = useState([])
   const [selectedCostCenterIds, setSelectedCostCenterIds] = useState([])
   const [selectedBankAccountIds, setSelectedBankAccountIds] = useState([])
@@ -37,12 +52,37 @@ export function useTransactionFilters() {
   const [selectedPaymentTypes, setSelectedPaymentTypes]   = useState([])
   const [includePaid, setIncludePaid]                     = useState(true)
   const [includeUnpaid, setIncludeUnpaid]                 = useState(true)
-  const [dateType, setDateType]                           = useState('payment')
+  const [dateType, setDateType]                           = useState('due_date')
+
+  // Sync startDate/endDate when currentMonth changes (only if month navigation is active)
+  useEffect(() => {
+    if (!monthNavigationActive.current) return
+    const { first, last } = getMonthBounds(currentMonth)
+    setStartDate(formatDate(first))
+    setEndDate(formatDate(last))
+    setCurrentPage(1)
+  }, [currentMonth])
+
+  const goToPrevMonth = () => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
+  }
+
+  const goToNextMonth = () => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
+  }
+
+  const goToCurrentMonth = () => {
+    const today = new Date()
+    setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1))
+  }
+
+  const monthLabel = currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 
   // Aplica filtros vindos do dashboard via location.state (ex: "hoje", "vencidos")
   useEffect(() => {
     if (initialFilterApplied.current || !location.state) return
     initialFilterApplied.current = true
+    monthNavigationActive.current = false
     const { filter, search } = location.state
 
     if (search) {
@@ -57,6 +97,7 @@ export function useTransactionFilters() {
     } else if (filter === 'overdue') {
       const yesterday = new Date()
       yesterday.setDate(yesterday.getDate() - 1)
+      setStartDate('')
       setEndDate(formatDate(yesterday))
       setIncludePaid(false)
       setIncludeUnpaid(true)
@@ -117,8 +158,9 @@ export function useTransactionFilters() {
     setSearchQuery('')
     setDebouncedSearchQuery('')
     setSelectedFilter('all')
-    setStartDate('')
-    setEndDate('')
+    const { first, last } = getMonthBounds(currentMonth)
+    setStartDate(formatDate(first))
+    setEndDate(formatDate(last))
     setSelectedCategoryIds([])
     setSelectedCostCenterIds([])
     setSelectedBankAccountIds([])
@@ -128,8 +170,9 @@ export function useTransactionFilters() {
     setSelectedPaymentTypes([])
     setIncludePaid(true)
     setIncludeUnpaid(true)
-    setDateType('payment')
+    setDateType('due_date')
     setCurrentPage(1)
+    monthNavigationActive.current = true
   }
 
   return {
@@ -144,6 +187,8 @@ export function useTransactionFilters() {
     sort, setSort,
     // pagination
     currentPage, setCurrentPage,
+    // month navigation
+    currentMonth, goToPrevMonth, goToNextMonth, goToCurrentMonth, monthLabel,
     // date range
     startDate, setStartDate,
     endDate, setEndDate,

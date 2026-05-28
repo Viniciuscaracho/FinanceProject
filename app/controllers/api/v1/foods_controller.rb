@@ -3,15 +3,40 @@
 module Api
   module V1
     class FoodsController < ApplicationController
+      # GET /api/v1/foods?q=arroz&source=taco
+      # GET /api/v1/foods?q=arroz&source=open_food_facts
+      # GET /api/v1/foods?q=arroz&source=custom
       def index
-        q = params[:q].to_s.strip
+        q      = params[:q].to_s.strip
+        source = params[:source].to_s.presence
+
         return render json: { foods: [] } if q.length < 2
 
-        global_foods  = Food.global.search(q).order(:name).limit(20)
-        account_foods = Food.for_account(Current.account.id).search(q).order(:name).limit(10)
+        foods = if source == 'open_food_facts'
+          results = Foods::OpenFoodFactsSearch.by_name(q)
+          render json: { foods: results.map { |r| off_food_json(r) } } and return
+        elsif source == 'custom'
+          Food.for_account(Current.account.id).search(q).order(:name).limit(20)
+        elsif source == 'taco'
+          Food.global.taco.search(q).order(:name).limit(20)
+        else
+          global  = Food.global.search(q).order(:name).limit(20)
+          account = Food.for_account(Current.account.id).search(q).order(:name).limit(10)
+          (global + account).uniq(&:id)
+        end
 
-        foods = (global_foods + account_foods).uniq(&:id)
         render json: { foods: foods.map { |f| food_json(f) } }
+      end
+
+      # GET /api/v1/foods/barcode/:barcode
+      def barcode_search
+        result = Foods::OpenFoodFactsSearch.by_barcode(params[:barcode])
+
+        if result
+          render json: { food: off_food_json(result) }
+        else
+          render json: { error: 'Produto não encontrado' }, status: :not_found
+        end
       end
 
       def create
@@ -35,20 +60,40 @@ module Api
       private
 
       def food_params
-        params.require(:food).permit(:name, :kcal_per_100g, :protein_per_100g,
-                                     :carbs_per_100g, :fat_per_100g, :fiber_per_100g)
+        params.require(:food).permit(
+          :name, :brand, :kcal_per_100g, :protein_per_100g,
+          :carbs_per_100g, :fat_per_100g, :fiber_per_100g,
+          :external_id, vitamins_per_100g: {}
+        )
       end
 
       def food_json(food)
         {
-          id:              food.id,
-          name:            food.name,
-          kcal_per_100g:   food.kcal_per_100g.to_f,
+          id:               food.id,
+          name:             food.name,
+          brand:            food.brand,
+          source:           food.source,
+          kcal_per_100g:    food.kcal_per_100g.to_f,
           protein_per_100g: food.protein_per_100g.to_f,
-          carbs_per_100g:  food.carbs_per_100g.to_f,
-          fat_per_100g:    food.fat_per_100g.to_f,
-          fiber_per_100g:  food.fiber_per_100g.to_f,
-          source:          food.source
+          carbs_per_100g:   food.carbs_per_100g.to_f,
+          fat_per_100g:     food.fat_per_100g.to_f,
+          fiber_per_100g:   food.fiber_per_100g.to_f
+        }
+      end
+
+      # Open Food Facts results are not persisted — return as-is for the frontend
+      def off_food_json(data)
+        {
+          id:               nil,
+          external_id:      data[:external_id],
+          name:             data[:name],
+          brand:            data[:brand],
+          source:           'open_food_facts',
+          kcal_per_100g:    data[:kcal_per_100g].to_f,
+          protein_per_100g: data[:protein_per_100g].to_f,
+          carbs_per_100g:   data[:carbs_per_100g].to_f,
+          fat_per_100g:     data[:fat_per_100g].to_f,
+          fiber_per_100g:   data[:fiber_per_100g].to_f
         }
       end
     end

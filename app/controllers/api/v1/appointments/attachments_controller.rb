@@ -8,42 +8,21 @@ module Api
 
         # GET /api/v1/appointments/:appointment_id/attachments
         def index
-          attachments = @appointment.attachments.map do |attachment|
-            {
-              id: attachment.id,
-              filename: attachment.filename.to_s,
-              content_type: attachment.content_type,
-              byte_size: attachment.byte_size,
-              created_at: attachment.created_at.iso8601,
-              url: rails_blob_url(attachment, only_path: false)
-            }
-          end
+          attachments = @appointment.attachments.map { |a| serialize_attachment(a) }
 
           render json: { attachments: attachments }
         end
 
         # POST /api/v1/appointments/:appointment_id/attachments
         def create
-          # Aceitar attachments como array ou como múltiplos parâmetros
-          # Rails recebe attachments[] como array automaticamente
           files = params[:attachments] || params[:'attachments[]']
-          
+
           if files.present?
-            # Se for um array, usar diretamente; se não, criar array
             files_array = files.is_a?(Array) ? files : [files]
             @appointment.attachments.attach(files_array)
             @appointment.reload
 
-            attachments = @appointment.attachments.map do |attachment|
-              {
-                id: attachment.id,
-                filename: attachment.filename.to_s,
-                content_type: attachment.content_type,
-                byte_size: attachment.byte_size,
-                created_at: attachment.created_at.iso8601,
-                url: rails_blob_url(attachment, only_path: false)
-              }
-            end
+            attachments = @appointment.attachments.map { |a| serialize_attachment(a) }
 
             render json: {
               message: 'Anexos adicionados com sucesso',
@@ -85,13 +64,23 @@ module Api
           render json: { error: 'Agendamento não encontrado' }, status: :not_found
         end
 
-        def rails_blob_url(attachment, only_path: false)
-          helpers = Rails.application.routes.url_helpers
-          if only_path
-            helpers.rails_blob_path(attachment, only_path: true)
-          else
-            helpers.rails_blob_url(attachment)
-          end
+        def serialize_attachment(attachment)
+          {
+            id: attachment.id,
+            filename: attachment.filename.to_s,
+            content_type: attachment.content_type,
+            byte_size: attachment.byte_size,
+            created_at: attachment.created_at&.iso8601,
+            url: blob_url(attachment)
+          }
+        end
+
+        def blob_url(attachment)
+          Rails.application.routes.url_helpers.rails_blob_url(
+            attachment,
+            host: request.host_with_port,
+            protocol: request.protocol
+          )
         rescue => e
           Rails.logger.error "Error generating blob URL: #{e.message}"
           nil

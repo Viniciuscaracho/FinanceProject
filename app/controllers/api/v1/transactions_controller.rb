@@ -224,21 +224,73 @@ module Api
       end
 
       def destroy
-        bank_account_id = @transaction.bank_account_id
-        was_paid = @transaction.paid
+        option = params[:option].presence || 'only_this_installment'
+        bank_account_ids = [@transaction.bank_account_id].compact
 
-        @transaction.destroy
-
-        if was_paid && bank_account_id.present?
-          bank_account = BankAccount.find_by(id: bank_account_id)
-          if bank_account.present?
-            begin
-              bank_account.update_balance!
-              bank_account.reload
-            rescue => e
-              Rails.logger.error "❌ [TransactionsController#destroy] Erro ao atualizar conta #{bank_account_id}: #{e.message}"
-            end
+        if @transaction.on_cash?
+          @transaction.destroy
+        else
+          result = Transactions::Destroy.call(transaction: @transaction, option: option)
+          unless result.success?
+            render json: { error: result.message }, status: :unprocessable_entity
+            return
           end
+          destroyed = result.destroyed_transactions || [@transaction]
+          bank_account_ids = destroyed.map(&:bank_account_id).compact.uniq
+        end
+
+        bank_account_ids.each do |ba_id|
+          bank_account = BankAccount.find_by(id: ba_id)
+          next unless bank_account
+          begin
+            bank_account.update_balance!
+          rescue => e
+            Rails.logger.error "❌ [TransactionsController#destroy] Erro ao atualizar conta #{ba_id}: #{e.message}"
+          end
+        end
+
+        head :no_content
+      end
+
+      def bulk_destroy
+        transaction_ids = Array(params[:transaction_ids])
+        option = params[:option].presence || 'only_this_installment'
+
+        bank_account_ids = Current.account.transactions
+          .where(id: transaction_ids)
+          .pluck(:bank_account_id)
+          .compact.uniq
+
+        result = Transactions::BulkDestroy.call(
+          transactions_ids: transaction_ids,
+          option: option,
+          account: Current.account
+        )
+
+        if result.success?
+          bank_account_ids.each do |ba_id|
+            BankAccount.find_by(id: ba_id)&.update_balance! rescue nil
+          end
+          head :no_content
+        else
+          render json: { error: result.message }, status: :unprocessable_entity
+        end
+      end
+
+      def bulk_mark_as_paid
+        transaction_ids = Array(params[:transaction_ids])
+
+        bank_account_ids = Current.account.transactions
+          .where(id: transaction_ids)
+          .pluck(:bank_account_id)
+          .compact.uniq
+
+        Current.account.transactions
+          .where(id: transaction_ids)
+          .update_all(paid: true, paid_at: Time.current)
+
+        bank_account_ids.each do |ba_id|
+          BankAccount.find_by(id: ba_id)&.update_balance! rescue nil
         end
 
         head :no_content

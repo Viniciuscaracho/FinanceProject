@@ -36,6 +36,7 @@ import {
   Upload,
   Trash2,
   Download,
+  Eye,
   AlertCircle,
   Video,
   ExternalLink,
@@ -70,6 +71,18 @@ const STATUS_CONFIG = {
 
 function getFileExt(filename = '') {
   return filename.split('.').pop()?.toUpperCase().slice(0, 4) || 'FILE'
+}
+
+function isPreviewable(att) {
+  const type = (att.content_type || '').toLowerCase()
+  const ext = getFileExt(att.filename).toLowerCase()
+  return (
+    type.startsWith('image/') ||
+    type === 'application/pdf' ||
+    type === 'text/html' ||
+    ext === 'pdf' ||
+    ext === 'html'
+  )
 }
 
 function getExtColor(ext = '') {
@@ -111,6 +124,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
   const [attachments, setAttachments] = useState([])
   const [isLoadingAttachments, setIsLoadingAttachments] = useState(false)
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false)
+  const [previewAttachment, setPreviewAttachment] = useState(null)
   const fileInputRef = useRef(null)
 
   // Anamnese state
@@ -158,6 +172,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
         setHasUnsavedChanges(false)
         setLastSaved(null)
         setAttachments([])
+        setPreviewAttachment(null)
         setAnamneseResponse(null)
         setAnamneseAnswers({})
         setAnamneseTemplateId('')
@@ -383,15 +398,21 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
     try {
       setIsUploadingAttachment(true)
       const response = await apiService.uploadAppointmentAttachments(appointment.id, files)
-      setAttachments(response.attachments || [])
+      const atts = response.attachments || []
+      setAttachments(atts)
+      cacheInvalidate(appointment.id)
       toast.success('Anexos adicionados com sucesso!')
-      // Limpar input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
     } catch (error) {
-      toast.error(error.message || 'Erro ao fazer upload dos anexos')
+      // Se for erro de servidor (5xx), o arquivo pode ter sido salvo mesmo assim.
+      // Recarregar lista para manter UI sincronizada.
+      if (error.status >= 500) {
+        await loadAttachments()
+        toast.warning('Upload concluído com avisos. Verificando arquivos...')
+      } else {
+        toast.error(error.message || 'Erro ao fazer upload dos anexos')
+      }
     } finally {
+      if (fileInputRef.current) fileInputRef.current.value = ''
       setIsUploadingAttachment(false)
     }
   }
@@ -1500,10 +1521,20 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                         <p className="text-xs text-gray-400">{formatFileSize(att.byte_size)}</p>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {att.url && isPreviewable(att) && (
+                          <button
+                            onClick={() => setPreviewAttachment(att)}
+                            className="h-8 w-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center transition-colors"
+                            title="Visualizar"
+                          >
+                            <Eye className="h-4 w-4 text-gray-500" />
+                          </button>
+                        )}
                         {att.url && (
                           <button
                             onClick={() => window.open(att.url, '_blank')}
                             className="h-8 w-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center transition-colors"
+                            title="Baixar"
                           >
                             <Download className="h-4 w-4 text-gray-500" />
                           </button>
@@ -1753,6 +1784,64 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
               {savingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
               Criar documento
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Visualizar Anexo */}
+      <Dialog open={!!previewAttachment} onOpenChange={open => { if (!open) setPreviewAttachment(null) }}>
+        <DialogContent style={{ maxWidth: 900, width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 truncate">
+              <Eye className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{previewAttachment?.filename}</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', borderRadius: 8, border: '1px solid #E5E7EB' }}>
+            {previewAttachment && (() => {
+              const type = (previewAttachment.content_type || '').toLowerCase()
+              const ext = getFileExt(previewAttachment.filename).toLowerCase()
+
+              if (type.startsWith('image/')) {
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 300, background: '#F9FAFB' }}>
+                    <img
+                      src={previewAttachment.url}
+                      alt={previewAttachment.filename}
+                      style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 6 }}
+                    />
+                  </div>
+                )
+              }
+
+              if (type === 'text/html' || ext === 'html') {
+                return (
+                  <div
+                    style={{ padding: '16px 20px', height: '100%', minHeight: 300, overflowY: 'auto', background: '#fff', fontSize: 14, lineHeight: 1.6 }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewAttachment._html || '') }}
+                  />
+                )
+              }
+
+              // PDF — iframe
+              return (
+                <iframe
+                  src={previewAttachment.url}
+                  title={previewAttachment.filename}
+                  style={{ width: '100%', height: '70vh', border: 'none' }}
+                />
+              )
+            })()}
+          </div>
+
+          <DialogFooter style={{ marginTop: 12 }}>
+            <Button variant="outline" onClick={() => setPreviewAttachment(null)}>Fechar</Button>
+            {previewAttachment?.url && (
+              <Button onClick={() => window.open(previewAttachment.url, '_blank')} style={{ background: T.brand, color: '#fff' }} className="gap-2">
+                <Download className="h-3.5 w-3.5" /> Baixar
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
