@@ -715,14 +715,14 @@ module Api
         return render json: {
           error: 'Acesso negado',
           message: 'Este endpoint é exclusivo para o dono do sistema (BarberManagement). Não confundir com admin de conta de cliente.'
-        }, status: :forbidden unless Current.account&.admin == true
+        }, status: :forbidden unless current_user&.admin?
       end
 
       def authenticate_admin_or_impersonating!
         return render json: {
           error: 'Acesso negado',
           message: 'Este endpoint requer permissões de administrador ou estar em modo de suporte.'
-        }, status: :forbidden unless Current.account&.admin == true || (Current.impersonating == true && Current.admin_account_id.present?)
+        }, status: :forbidden unless current_user&.admin? || (Current.impersonating == true && Current.admin_account_id.present?)
       end
 
       def set_account
