@@ -2,7 +2,8 @@
 
 module Api
   module V1
-    class UsersController < Api::BaseController
+    class UsersController < Api::V1::ApplicationController
+      include Pagy::Backend
 
       def index
         users = Current.account.users
@@ -12,12 +13,13 @@ module Api
       end
 
       def show
-        @user = Current.account.users.find(params[:id])
+        @user = Current.account&.users&.find_by(id: params[:id]) || User.find(params[:id])
         render json: { user: user_json(@user) }
       end
 
       def update
-        @user = Current.account.users.find(params[:id])
+        @user = User.find(params[:id])
+        render json: { error: 'Forbidden' }, status: :forbidden and return unless @user == current_user || current_user&.admin?
         @user.update!(user_params)
 
         render json: { user: user_json(@user) }, status: :ok
@@ -26,11 +28,13 @@ module Api
       private
 
       def user_params
-        params.permit(:name, :email, :first_name, :last_name, :password)
+        permitted = params.permit(:name, :email, :first_name, :last_name, :password, :phone, :phone_number)
+        permitted[:phone_number] = permitted.delete(:phone) if permitted[:phone].present?
+        permitted
       end
 
       def user_json(user)
-        { id: user.id, email: user.email, first_name: user.first_name, last_name: user.last_name, name: user.name }
+        { id: user.id, email: user.email, first_name: user.first_name, last_name: user.last_name, name: user.name, phone_number: user.phone_number }
       end
     end
   end

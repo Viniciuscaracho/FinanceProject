@@ -890,9 +890,9 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                 <ClipboardList className="h-4 w-4" style={{ color: T.brand }} />
                 <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Anamnese</span>
                 {(appointment?.anamnese_filled || anamneseResponse) ? (
-                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: '#E8FDF3', color: '#10B981' }}>Preenchida</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: '#10B98120', color: '#10B981' }}>Preenchida</span>
                 ) : appointment?.anamnese_template_id ? (
-                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: '#FEF3C7', color: '#D97706' }}>Aguardando paciente</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: '#F59E0B20', color: '#D97706' }}>Aguardando paciente</span>
                 ) : null}
               </div>
               {anamneseExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
@@ -905,11 +905,11 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                   <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '10px 14px', borderRadius: 10,
-                    background: '#F5F3FF', border: '1px solid #DDD6FE', gap: 12,
+                    background: '#7C3AED18', border: '1px solid #7C3AED40', gap: 12,
                   }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 12, fontWeight: 700, color: '#5B21B6', margin: 0 }}>Retorno detectado</p>
-                      <p style={{ fontSize: 11, color: '#7C3AED', margin: '2px 0 0' }}>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: '#7C3AED', margin: 0 }}>Retorno detectado</p>
+                      <p style={{ fontSize: 11, color: '#9B72CF', margin: '2px 0 0' }}>
                         Pré-preencha com as respostas da última consulta e edite só o que mudou.
                       </p>
                     </div>
@@ -937,8 +937,8 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                       onChange={e => handleTemplateChange(e.target.value)}
                       style={{
                         flex: 1, padding: '7px 10px', borderRadius: 8,
-                        border: '1px solid #E5E7EB', fontSize: 13,
-                        background: '#fff', fontFamily: 'inherit', cursor: 'pointer',
+                        border: `1px solid ${T.border}`, fontSize: 13,
+                        fontFamily: 'inherit', cursor: 'pointer',
                       }}
                     >
                       <option value="">Sem template (livre)</option>
@@ -952,7 +952,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                           title="Copiar link"
                           style={{
                             padding: '7px 10px', borderRadius: 8,
-                            border: '1px solid #E5E7EB', background: '#F9FAFB',
+                            border: `1px solid ${T.border}`, background: T.light,
                             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
                             fontSize: 12, fontWeight: 600, color: T.brand, fontFamily: 'inherit',
                             whiteSpace: 'nowrap',
@@ -1001,7 +1001,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                               rows={3}
                               value={anamneseAnswers[field.id] || ''}
                               onChange={e => setAnamneseAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
-                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
                             />
                           )}
                           {(field.type === 'text' || field.type === 'number' || field.type === 'date') && (
@@ -1009,14 +1009,14 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                               type={field.type}
                               value={anamneseAnswers[field.id] || ''}
                               onChange={e => setAnamneseAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
-                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }}
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }}
                             />
                           )}
                           {field.type === 'select' && (
                             <select
                               value={anamneseAnswers[field.id] || ''}
                               onChange={e => setAnamneseAnswers(prev => ({ ...prev, [field.id]: e.target.value }))}
-                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', background: '#fff' }}
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit' }}
                             >
                               <option value="">Selecione…</option>
                               {(field.options || []).map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
@@ -1054,7 +1054,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                       value={anamneseAnswers['__free__'] || ''}
                       onChange={e => setAnamneseAnswers({ '__free__': e.target.value })}
                       placeholder="Histórico, queixas, observações importantes…"
-                      style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' }}
                     />
                   </div>
                 )}
@@ -1110,40 +1110,40 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                       const answers = resp.responses || {}
 
                       return (
-                        <div key={resp.id} style={{ border: '1px solid #E5E7EB', borderRadius: 10, overflow: 'hidden' }}>
+                        <div key={resp.id} style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
                           <button
                             type="button"
                             onClick={() => setExpandedHistoryId(isExpanded ? null : resp.id)}
                             style={{
                               width: '100%', padding: '10px 14px', textAlign: 'left',
-                              background: isExpanded ? T.chip : '#fff', border: 'none',
+                              background: isExpanded ? T.chip : T.white, border: 'none',
                               cursor: 'pointer', display: 'flex', alignItems: 'center',
                               justifyContent: 'space-between', fontFamily: 'inherit',
                             }}
                           >
                             <div>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: '#222' }}>{templateName}</span>
-                              <span style={{ fontSize: 11, color: '#888', marginLeft: 8 }}>{date}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{templateName}</span>
+                              <span style={{ fontSize: 11, color: T.muted, marginLeft: 8 }}>{date}</span>
                             </div>
-                            {isExpanded ? <ChevronUp size={14} style={{ color: '#888' }} /> : <ChevronDown size={14} style={{ color: '#888' }} />}
+                            {isExpanded ? <ChevronUp size={14} style={{ color: T.muted }} /> : <ChevronDown size={14} style={{ color: T.muted }} />}
                           </button>
 
                           {isExpanded && (
-                            <div style={{ padding: '12px 14px', borderTop: '1px solid #F3F4F6', background: '#FAFAFA', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <div style={{ padding: '12px 14px', borderTop: `1px solid ${T.border}`, background: T.light, display: 'flex', flexDirection: 'column', gap: 10 }}>
                               {fields.length > 0 ? fields.map(field => {
                                 const val = answers[field.id]
                                 if (!val) return null
                                 return (
                                   <div key={field.id}>
-                                    <p style={{ fontSize: 11, fontWeight: 700, color: '#888', margin: '0 0 2px' }}>{field.label}</p>
-                                    <p style={{ fontSize: 13, color: '#222', margin: 0, lineHeight: 1.5 }}>{val}</p>
+                                    <p style={{ fontSize: 11, fontWeight: 700, color: T.muted, margin: '0 0 2px' }}>{field.label}</p>
+                                    <p style={{ fontSize: 13, color: T.text, margin: 0, lineHeight: 1.5 }}>{val}</p>
                                   </div>
                                 )
                               }) : (
                                 answers['__free__'] && (
                                   <div>
-                                    <p style={{ fontSize: 11, fontWeight: 700, color: '#888', margin: '0 0 2px' }}>Observações</p>
-                                    <p style={{ fontSize: 13, color: '#222', margin: 0, lineHeight: 1.5 }}>{answers['__free__']}</p>
+                                    <p style={{ fontSize: 11, fontWeight: 700, color: T.muted, margin: '0 0 2px' }}>Observações</p>
+                                    <p style={{ fontSize: 13, color: T.text, margin: 0, lineHeight: 1.5 }}>{answers['__free__']}</p>
                                   </div>
                                 )
                               )}
@@ -1195,7 +1195,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                     const historyEntries = goal.progress_history || []
                     const showHistory = showGoalHistoryId === goal.id
                     return (
-                      <div key={goal.id} style={{ border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>
+                      <div key={goal.id} style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px' }}>
                         {/* Header row */}
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                           <div style={{ flex: 1 }}>
@@ -1206,7 +1206,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                               </span>
                             </div>
                             {(goal.current_value != null || goal.target_value != null) && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5, fontSize: 12, color: '#666' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5, fontSize: 12, color: T.muted }}>
                                 <TrendingUp size={12} style={{ color: T.brand }} />
                                 <span>
                                   {goal.current_value != null ? `Atual: ${goal.current_value}` : ''}
@@ -1219,12 +1219,12 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                             )}
                             {/* Progress bar */}
                             {pct != null && (
-                              <div style={{ marginTop: 6, height: 5, borderRadius: 99, background: '#E5E7EB', overflow: 'hidden' }}>
+                              <div style={{ marginTop: 6, height: 5, borderRadius: 99, background: T.border, overflow: 'hidden' }}>
                                 <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width 0.4s' }} />
                               </div>
                             )}
                             {goal.deadline && (
-                              <p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>
+                              <p style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
                                 Prazo: {new Date(goal.deadline + 'T12:00:00').toLocaleDateString('pt-BR')}
                               </p>
                             )}
@@ -1232,7 +1232,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                           <button
                             type="button"
                             onClick={() => handleDeleteGoal(goal.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB', padding: 4, flexShrink: 0 }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.border, padding: 4, flexShrink: 0 }}
                           >
                             <Trash2 size={13} />
                           </button>
@@ -1251,7 +1251,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                           {historyEntries.length > 0 && (
                             <button type="button"
                               onClick={() => setShowGoalHistoryId(showHistory ? null : goal.id)}
-                              style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', background: '#F3F4F6', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                              style={{ fontSize: 11, fontWeight: 600, color: T.muted, background: T.light, border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
                             >
                               {showHistory ? '▲' : '▼'} Histórico ({historyEntries.length})
                             </button>
@@ -1259,7 +1259,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                           {isActive && (
                             <button type="button"
                               onClick={() => handleUpdateGoalStatus(goal, 'completed')}
-                              style={{ fontSize: 11, fontWeight: 600, color: '#4C60AA', background: '#EEF2FF', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                              style={{ fontSize: 11, fontWeight: 600, color: T.brand, background: T.chip, border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
                             >
                               ✓ Concluir
                             </button>
@@ -1267,7 +1267,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                           {!isActive && (
                             <button type="button"
                               onClick={() => handleUpdateGoalStatus(goal, 'active')}
-                              style={{ fontSize: 11, fontWeight: 600, color: '#10B981', background: '#ECFDF5', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+                              style={{ fontSize: 11, fontWeight: 600, color: '#10B981', background: '#10B98120', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
                             >
                               ↺ Reativar
                             </button>
@@ -1276,25 +1276,25 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
 
                         {/* Progress entry form */}
                         {progressGoalId === goal.id && (
-                          <div style={{ marginTop: 10, padding: '10px 12px', background: '#F9FAFB', borderRadius: 8, border: '1px solid #E5E7EB' }}>
+                          <div style={{ marginTop: 10, padding: '10px 12px', background: T.light, borderRadius: 8, border: `1px solid ${T.border}` }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 }}>
                               <input
                                 type="number" step="any" value={progressValue}
                                 onChange={e => setProgressValue(e.target.value)}
                                 placeholder={`Valor${goal.unit ? ` (${goal.unit})` : ''}`}
-                                style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit' }}
+                                style={{ padding: '6px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit' }}
                               />
                               <input
                                 type="date" value={progressDate}
                                 onChange={e => setProgressDate(e.target.value)}
-                                style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit' }}
+                                style={{ padding: '6px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit' }}
                               />
                             </div>
                             <input
                               type="text" value={progressNote}
                               onChange={e => setProgressNote(e.target.value)}
                               placeholder="Observação (opcional)"
-                              style={{ width: '100%', padding: '6px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 6 }}
+                              style={{ width: '100%', padding: '6px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 12, fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 6 }}
                             />
                             <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                               <Button size="sm" variant="ghost" onClick={() => { setProgressGoalId(null); setProgressValue(''); setProgressNote(''); setProgressDate('') }} style={{ fontSize: 11 }}>Cancelar</Button>
@@ -1305,14 +1305,14 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
 
                         {/* Progress history */}
                         {showHistory && historyEntries.length > 0 && (
-                          <div style={{ marginTop: 8, borderTop: '1px solid #F3F4F6', paddingTop: 8 }}>
+                          <div style={{ marginTop: 8, borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
                             {[...historyEntries].reverse().map((entry, i) => (
-                              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: 12, color: '#374151', padding: '3px 0', borderBottom: i < historyEntries.length - 1 ? '1px solid #F3F4F6' : 'none' }}>
+                              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: 12, color: T.text, padding: '3px 0', borderBottom: i < historyEntries.length - 1 ? `1px solid ${T.border}` : 'none' }}>
                                 <div>
                                   <span style={{ fontWeight: 700 }}>{entry.value}{goal.unit ? ` ${goal.unit}` : ''}</span>
-                                  {entry.note && <span style={{ color: '#9CA3AF', marginLeft: 6 }}>{entry.note}</span>}
+                                  {entry.note && <span style={{ color: T.muted, marginLeft: 6 }}>{entry.note}</span>}
                                 </div>
-                                <span style={{ color: '#9CA3AF', fontSize: 11, flexShrink: 0, marginLeft: 8 }}>
+                                <span style={{ color: T.muted, fontSize: 11, flexShrink: 0, marginLeft: 8 }}>
                                   {entry.date ? new Date(entry.date + 'T12:00:00').toLocaleDateString('pt-BR') : ''}
                                 </span>
                               </div>
@@ -1324,32 +1324,32 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                   })}
 
                   {showNewGoalForm ? (
-                    <div style={{ border: '1px solid #E5E7EB', borderRadius: 10, padding: '14px', background: '#F9FAFB', space: 'y-3' }}>
+                    <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '14px', background: T.light }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                         <div style={{ gridColumn: '1 / -1' }}>
-                          <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Título da meta *</label>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Título da meta *</label>
                           <input type="text" value={newGoal.title} onChange={e => setNewGoal(p => ({ ...p, title: e.target.value }))}
-                            placeholder="Ex: Emagrecer 5kg" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                            placeholder="Ex: Emagrecer 5kg" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
                         </div>
                         <div>
-                          <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Valor atual</label>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Valor atual</label>
                           <input type="number" step="any" value={newGoal.current_value} onChange={e => setNewGoal(p => ({ ...p, current_value: e.target.value }))}
-                            placeholder="72" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                            placeholder="72" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
                         </div>
                         <div>
-                          <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Meta</label>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Meta</label>
                           <input type="number" step="any" value={newGoal.target_value} onChange={e => setNewGoal(p => ({ ...p, target_value: e.target.value }))}
-                            placeholder="65" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                            placeholder="65" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
                         </div>
                         <div>
-                          <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Unidade</label>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Unidade</label>
                           <input type="text" value={newGoal.unit} onChange={e => setNewGoal(p => ({ ...p, unit: e.target.value }))}
-                            placeholder="kg, mg/dL…" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                            placeholder="kg, mg/dL…" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
                         </div>
                         <div>
-                          <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Prazo</label>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Prazo</label>
                           <input type="date" value={newGoal.deadline} onChange={e => setNewGoal(p => ({ ...p, deadline: e.target.value }))}
-                            style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                            style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
@@ -1397,7 +1397,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                   )}
 
                   {patientDocs.map(doc => (
-                    <div key={doc.id} style={{ border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>
+                    <div key={doc.id} style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -1408,14 +1408,14 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                               </span>
                             )}
                           </div>
-                          <p style={{ fontSize: 11, color: '#aaa', marginTop: 3 }}>
+                          <p style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>
                             Atualizado {formatDate(doc.updated_at)}
                           </p>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleDeleteDoc(doc.id)}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D1D5DB', padding: 4 }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.border, padding: 4 }}
                         >
                           <Trash2 size={13} />
                         </button>
@@ -1432,7 +1432,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
                         <button
                           type="button"
                           onClick={() => handleToggleDocShared(doc)}
-                          style={{ fontSize: 11, fontWeight: 600, color: doc.shared ? '#10B981' : '#9CA3AF', background: doc.shared ? '#D1FAE5' : '#F3F4F6', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
+                          style={{ fontSize: 11, fontWeight: 600, color: doc.shared ? '#10B981' : T.muted, background: doc.shared ? '#10B98120' : T.light, border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
                         >
                           <Link2 size={11} /> {doc.shared ? 'Link ativo' : 'Ativar link'}
                         </button>
@@ -1733,22 +1733,22 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
 
           <div className="space-y-4 py-2">
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>Título *</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Título *</label>
               <input
                 type="text"
                 value={newDoc.title}
                 onChange={e => setNewDoc(p => ({ ...p, title: e.target.value }))}
                 placeholder="Ex: Plano Alimentar - Maio 2026"
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }}
               />
             </div>
 
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>Tipo</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Tipo</label>
               <select
                 value={newDoc.document_type}
                 onChange={e => setNewDoc(p => ({ ...p, document_type: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 14, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }}
               >
                 <option value="plano_alimentar">Plano Alimentar</option>
                 <option value="orientacao_nutricional">Orientação Nutricional</option>
@@ -1759,13 +1759,13 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
 
             {templates.length > 0 && (
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>
-                  Usar template como base <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(opcional)</span>
+                <label style={{ fontSize: 12, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>
+                  Usar template como base <span style={{ fontWeight: 400, color: T.muted }}>(opcional)</span>
                 </label>
                 <select
                   onChange={e => handleNewDocTemplateChange(e.target.value)}
                   defaultValue=""
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 14, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }}
                 >
                   <option value="">Sem template (documento em branco)</option>
                   {templates.map(t => (
@@ -1796,14 +1796,14 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
             </DialogTitle>
           </DialogHeader>
 
-          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', borderRadius: 8, border: '1px solid #E5E7EB' }}>
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', borderRadius: 8, border: `1px solid ${T.border}` }}>
             {previewAttachment && (() => {
               const type = (previewAttachment.content_type || '').toLowerCase()
               const ext = getFileExt(previewAttachment.filename).toLowerCase()
 
               if (type.startsWith('image/')) {
                 return (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 300, background: '#F9FAFB' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 300, background: T.light }}>
                     <img
                       src={previewAttachment.url}
                       alt={previewAttachment.filename}
@@ -1816,7 +1816,7 @@ export function ConsultationModal({ appointment, open, onOpenChange }) {
               if (type === 'text/html' || ext === 'html') {
                 return (
                   <div
-                    style={{ padding: '16px 20px', height: '100%', minHeight: 300, overflowY: 'auto', background: '#fff', fontSize: 14, lineHeight: 1.6 }}
+                    style={{ padding: '16px 20px', height: '100%', minHeight: 300, overflowY: 'auto', background: T.white, fontSize: 14, lineHeight: 1.6, color: T.text }}
                     dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewAttachment._html || '') }}
                   />
                 )

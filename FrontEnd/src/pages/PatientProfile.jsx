@@ -146,7 +146,7 @@ function AppointmentNoteCard({ apt }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {currentNote && (
-            <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: '#ECFDF5', color: '#10B981' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: '#10B98120', color: '#10B981' }}>
               ✓ Anotação
             </span>
           )}
@@ -265,7 +265,7 @@ function AppointmentNoteCard({ apt }) {
       {previewUrl && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
           onClick={() => setPreviewUrl(null)}>
-          <div style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', maxWidth: 800, width: '100%', maxHeight: '90vh' }}>
+          <div className="dm-modal-box" style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', maxWidth: 800, width: '100%', maxHeight: '90vh' }}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', padding: 8, borderBottom: `1px solid ${T.border}` }}>
               <button type="button" onClick={() => setPreviewUrl(null)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 4 }}>✕</button>
@@ -403,36 +403,36 @@ function GoalCard({ goal, contactId, onUpdate, onDelete }) {
         )}
         {history.length > 0 && (
           <button type="button" onClick={() => setShowHistory(p => !p)}
-            style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', background: '#F3F4F6', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ fontSize: 11, fontWeight: 600, color: T.muted, background: T.light, border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
             {showHistory ? '▲' : '▼'} Histórico ({history.length})
           </button>
         )}
         {isActive && (
           <button type="button" onClick={() => handleStatus('completed')}
-            style={{ fontSize: 11, fontWeight: 600, color: '#4C60AA', background: '#EEF2FF', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ fontSize: 11, fontWeight: 600, color: T.brand, background: T.chip, border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
             ✓ Concluir
           </button>
         )}
         {!isActive && (
           <button type="button" onClick={() => handleStatus('active')}
-            style={{ fontSize: 11, fontWeight: 600, color: '#10B981', background: '#ECFDF5', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ fontSize: 11, fontWeight: 600, color: '#10B981', background: '#10B98120', border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
             ↺ Reativar
           </button>
         )}
       </div>
 
       {showProgress && (
-        <div style={{ marginTop: 10, padding: '10px 12px', background: '#F9FAFB', borderRadius: 8, border: '1px solid #E5E7EB' }}>
+        <div style={{ marginTop: 10, padding: '10px 12px', background: T.light, borderRadius: 8, border: `1px solid ${T.border}` }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 }}>
             <input type="number" step="any" value={value} onChange={e => setValue(e.target.value)}
               placeholder={`Valor${goal.unit ? ` (${goal.unit})` : ''}`}
-              style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit' }} />
+              style={{ padding: '6px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit' }} />
             <input type="date" value={date} onChange={e => setDate(e.target.value)}
-              style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit' }} />
+              style={{ padding: '6px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit' }} />
           </div>
           <input type="text" value={note} onChange={e => setNote(e.target.value)}
             placeholder="Observação (opcional)"
-            style={{ width: '100%', padding: '6px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 6 }} />
+            style={{ width: '100%', padding: '6px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 12, fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 6 }} />
           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
             <Button size="sm" variant="ghost" onClick={() => setShowProgress(false)} style={{ fontSize: 11 }}>Cancelar</Button>
             <Button size="sm" onClick={handleProgress} disabled={!value || saving} style={{ background: T.brand, color: '#fff', fontSize: 11 }}>
@@ -443,14 +443,14 @@ function GoalCard({ goal, contactId, onUpdate, onDelete }) {
       )}
 
       {showHistory && history.length > 0 && (
-        <div style={{ marginTop: 8, borderTop: '1px solid #F3F4F6', paddingTop: 8 }}>
+        <div style={{ marginTop: 8, borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
           {[...history].reverse().map((entry, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#374151', padding: '3px 0', borderBottom: i < history.length - 1 ? '1px solid #F3F4F6' : 'none' }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: T.text, padding: '3px 0', borderBottom: i < history.length - 1 ? `1px solid ${T.border}` : 'none' }}>
               <div>
                 <span style={{ fontWeight: 700 }}>{entry.value}{goal.unit ? ` ${goal.unit}` : ''}</span>
-                {entry.note && <span style={{ color: '#9CA3AF', marginLeft: 6 }}>{entry.note}</span>}
+                {entry.note && <span style={{ color: T.muted, marginLeft: 6 }}>{entry.note}</span>}
               </div>
-              <span style={{ color: '#9CA3AF', fontSize: 11, flexShrink: 0, marginLeft: 8 }}>
+              <span style={{ color: T.muted, fontSize: 11, flexShrink: 0, marginLeft: 8 }}>
                 {entry.date ? new Date(entry.date + 'T12:00:00').toLocaleDateString('pt-BR') : ''}
               </span>
             </div>
@@ -476,6 +476,14 @@ export function PatientProfile() {
   const [mealPlans, setMealPlans]     = useState([])
   const [patientNotes, setPatientNotes] = useState([])
   const [expandedAnamneseId, setExpandedAnamneseId] = useState(null)
+
+  // Template picker
+  const [showTemplatePicker, setShowTemplatePicker]   = useState(false)
+  const [pickerTemplates, setPickerTemplates]         = useState([])
+  const [pickerLoading, setPickerLoading]             = useState(false)
+  const [selectedTemplate, setSelectedTemplate]       = useState(null)
+  const [pickerTitle, setPickerTitle]                 = useState('')
+  const [creatingFromTemplate, setCreatingFromTemplate] = useState(false)
 
   // Metas
   const [showNewGoal, setShowNewGoal] = useState(false)
@@ -653,11 +661,33 @@ export function PatientProfile() {
     }
   }
 
-  const handleCreateMealPlan = async () => {
+  const handleOpenTemplatePicker = async () => {
+    setShowTemplatePicker(true)
+    setSelectedTemplate(null)
+    setPickerTitle('')
+    setPickerLoading(true)
     try {
-      const res = await apiService.createMealPlan(id, { title: 'Novo Plano Alimentar' })
+      const res = await apiService.getMealPlanTemplates()
+      setPickerTemplates(res.templates || [])
+    } catch { toast.error('Erro ao carregar modelos') }
+    finally { setPickerLoading(false) }
+  }
+
+  const handleCreateMealPlan = async () => {
+    setCreatingFromTemplate(true)
+    try {
+      let res
+      if (selectedTemplate) {
+        const title = pickerTitle.trim() || selectedTemplate.title
+        res = await apiService.createMealPlanFromTemplate(id, selectedTemplate.id, title)
+      } else {
+        const title = pickerTitle.trim() || 'Novo Plano Alimentar'
+        res = await apiService.createMealPlan(id, { title })
+      }
+      setShowTemplatePicker(false)
       navigate(`/contacts/${id}/meal-plans/${res.meal_plan.id}`)
     } catch { toast.error('Erro ao criar plano alimentar') }
+    finally { setCreatingFromTemplate(false) }
   }
 
   const handleDeleteMealPlan = async (planId) => {
@@ -760,33 +790,33 @@ export function PatientProfile() {
                 onDelete={handleDeleteGoal} />
             ))}
             {showNewGoal ? (
-              <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '14px', background: '#F9FAFB' }}>
+              <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '14px', background: T.light }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Título *</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Título *</label>
                     <input type="text" value={newGoal.title} onChange={e => setNewGoal(p => ({ ...p, title: e.target.value }))}
                       placeholder="Ex: Emagrecer 5kg"
-                      style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Valor atual</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Valor atual</label>
                     <input type="number" step="any" value={newGoal.current_value} onChange={e => setNewGoal(p => ({ ...p, current_value: e.target.value }))}
-                      placeholder="72" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                      placeholder="72" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Meta</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Meta</label>
                     <input type="number" step="any" value={newGoal.target_value} onChange={e => setNewGoal(p => ({ ...p, target_value: e.target.value }))}
-                      placeholder="65" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                      placeholder="65" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Unidade</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Unidade</label>
                     <input type="text" value={newGoal.unit} onChange={e => setNewGoal(p => ({ ...p, unit: e.target.value }))}
-                      placeholder="kg, mg/dL…" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                      placeholder="kg, mg/dL…" style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 3 }}>Prazo</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Prazo</label>
                     <input type="date" value={newGoal.deadline} onChange={e => setNewGoal(p => ({ ...p, deadline: e.target.value }))}
-                      style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
@@ -815,7 +845,7 @@ export function PatientProfile() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: 13, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{plan.title}</div>
                     <div style={{ fontSize: 11, color: T.muted, marginTop: 2, display: 'flex', gap: 6 }}>
-                      <span style={{ padding: '1px 6px', borderRadius: 20, fontSize: 10, fontWeight: 600, background: plan.status === 'active' ? '#ECFDF5' : '#F3F4F6', color: plan.status === 'active' ? '#10B981' : '#9CA3AF' }}>
+                      <span style={{ padding: '1px 6px', borderRadius: 20, fontSize: 10, fontWeight: 600, background: plan.status === 'active' ? '#10B98120' : T.light, color: plan.status === 'active' ? '#10B981' : T.muted }}>
                         {plan.status === 'active' ? 'Ativo' : plan.status === 'draft' ? 'Rascunho' : 'Arquivado'}
                       </span>
                       <span>{plan.total_days} {plan.total_days === 1 ? 'dia' : 'dias'} · atualizado {new Date(plan.updated_at).toLocaleDateString('pt-BR')}</span>
@@ -841,9 +871,113 @@ export function PatientProfile() {
               ))}
             </div>
           )}
-          <Button size="sm" variant="outline" onClick={handleCreateMealPlan} style={{ fontSize: 12, gap: 6 }}>
+          <Button size="sm" variant="outline" onClick={handleOpenTemplatePicker} style={{ fontSize: 12, gap: 6 }}>
             <Plus size={13} /> Novo plano alimentar
           </Button>
+
+          {/* Modal de seleção de modelo */}
+          {showTemplatePicker && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+              onClick={e => { if (e.target === e.currentTarget) setShowTemplatePicker(false) }}>
+              <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+                {/* Header */}
+                <div style={{ padding: '20px 20px 0', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: T.text }}>Novo Plano Alimentar</h3>
+                      <p style={{ margin: '4px 0 0', fontSize: 12, color: T.muted }}>Escolha um modelo ou comece do zero</p>
+                    </div>
+                    <button type="button" onClick={() => setShowTemplatePicker(false)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 4 }}>✕</button>
+                  </div>
+                </div>
+
+                {/* Lista de templates */}
+                <div style={{ overflowY: 'auto', flex: 1, padding: '16px 20px' }}>
+                  {pickerLoading ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '24px 0' }}>
+                      <Loader2 size={20} className="animate-spin" style={{ color: T.brand }} />
+                    </div>
+                  ) : (
+                    <>
+                      {/* Plano em branco */}
+                      <button type="button" onClick={() => setSelectedTemplate(null)}
+                        style={{ width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 10, border: `2px solid ${selectedTemplate === null ? T.brand : T.border}`, background: selectedTemplate === null ? '#EEF2FF' : '#fff', cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: 20 }}>📄</span>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: 13, color: T.text }}>Plano em branco</div>
+                            <div style={{ fontSize: 11, color: T.muted, marginTop: 1 }}>Comece do zero e monte o plano do jeito que quiser</div>
+                          </div>
+                          {selectedTemplate === null && <span style={{ marginLeft: 'auto', color: T.brand, fontWeight: 700, fontSize: 12 }}>✓</span>}
+                        </div>
+                      </button>
+
+                      {pickerTemplates.length > 0 && (
+                        <>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: T.muted, margin: '12px 0 8px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Modelos disponíveis</div>
+                          {pickerTemplates.map(tpl => {
+                            const catColors = { low_carb: '#F59E0B', hipertrofia: '#4C60AA', mediterraneo: '#10B981', vegetariano: '#22C55E', emagrecimento: '#EF4444', outro: '#9CA3AF' }
+                            const catLabels = { low_carb: 'Low Carb', hipertrofia: 'Hipertrofia', mediterraneo: 'Mediterrâneo', vegetariano: 'Vegetariano', emagrecimento: 'Emagrecimento', outro: 'Outro' }
+                            const color = catColors[tpl.template_category] || '#9CA3AF'
+                            const label = catLabels[tpl.template_category] || 'Outro'
+                            const isSelected = selectedTemplate?.id === tpl.id
+                            return (
+                              <button key={tpl.id} type="button" onClick={() => setSelectedTemplate(tpl)}
+                                style={{ width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 10, border: `2px solid ${isSelected ? T.brand : T.border}`, background: isSelected ? '#EEF2FF' : '#fff', cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <span style={{ fontSize: 20 }}>🥗</span>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                      <span style={{ fontWeight: 600, fontSize: 13, color: T.text }}>{tpl.title}</span>
+                                      <span style={{ padding: '1px 7px', borderRadius: 20, fontSize: 10, fontWeight: 700, background: `${color}20`, color }}>{label}</span>
+                                    </div>
+                                    {tpl.description && <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{tpl.description}</div>}
+                                    <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{tpl.total_days} {tpl.total_days === 1 ? 'dia' : 'dias'}</div>
+                                  </div>
+                                  {isSelected && <span style={{ color: T.brand, fontWeight: 700, fontSize: 12 }}>✓</span>}
+                                </div>
+                              </button>
+                            )
+                          })}
+                        </>
+                      )}
+
+                      {pickerTemplates.length === 0 && !pickerLoading && (
+                        <p style={{ fontSize: 12, color: T.muted, textAlign: 'center', padding: '8px 0' }}>Nenhum modelo personalizado criado ainda</p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div style={{ padding: '12px 20px 20px', borderTop: `1px solid ${T.border}`, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>
+                      Nome do plano
+                    </label>
+                    <input
+                      value={pickerTitle}
+                      onChange={e => setPickerTitle(e.target.value)}
+                      placeholder={selectedTemplate ? selectedTemplate.title : 'Novo Plano Alimentar'}
+                      style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Button variant="outline" onClick={() => setShowTemplatePicker(false)} style={{ flex: 1, fontSize: 13 }}>Cancelar</Button>
+                    <Button onClick={handleCreateMealPlan} disabled={creatingFromTemplate} style={{ flex: 2, fontSize: 13, gap: 6 }}>
+                      {creatingFromTemplate ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                      {selectedTemplate ? 'Usar modelo' : 'Criar plano em branco'}
+                    </Button>
+                  </div>
+                  <button type="button" onClick={() => { setShowTemplatePicker(false); navigate('/meal-plan-templates') }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.brand, fontSize: 12, fontWeight: 600, padding: 0, textAlign: 'center', fontFamily: 'inherit' }}>
+                    Gerenciar meus modelos →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </Section>
 
         {/* 3 ── ANAMNESE */}
@@ -852,7 +986,7 @@ export function PatientProfile() {
 
             {/* Formulário de criação */}
             {showCreateAnamnese ? (
-              <div style={{ border: `1px solid ${T.brand}30`, borderRadius: 12, padding: 16, background: '#F8F9FF' }}>
+              <div style={{ border: `1px solid ${T.brand}30`, borderRadius: 12, padding: 16, background: T.white }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                   <span style={{ fontWeight: 700, fontSize: 13, color: T.text }}>Nova anamnese</span>
                   <button type="button" onClick={() => { setShowCreateAnamnese(false); setCreateTemplateId(''); setCreateAnswers({}) }}
@@ -863,7 +997,7 @@ export function PatientProfile() {
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 5 }}>Template</label>
                   <select value={createTemplateId} onChange={e => { setCreateTemplateId(e.target.value); setCreateAnswers({}) }}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}>
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }}>
                     <option value="">Sem template (livre)</option>
                     {anamneseTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
@@ -888,7 +1022,7 @@ export function PatientProfile() {
                           ) : field.type === 'select' ? (
                             <select value={createAnswers[field.id] || ''}
                               onChange={e => setCreateAnswers(p => ({ ...p, [field.id]: e.target.value }))}
-                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box' }}>
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }}>
                               <option value="">Selecione…</option>
                               {(field.options || []).map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
                             </select>
@@ -998,7 +1132,7 @@ export function PatientProfile() {
 
             {/* Editor de nova nota */}
             {showNewNote ? (
-              <div style={{ border: `1px solid ${T.brand}30`, borderRadius: 12, overflow: 'hidden', background: '#F8F9FF' }}>
+              <div style={{ border: `1px solid ${T.brand}30`, borderRadius: 12, overflow: 'hidden', background: T.white }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px 6px', borderBottom: `1px solid ${T.border}` }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Nova evolução</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1122,17 +1256,17 @@ export function PatientProfile() {
         {showNewDocDialog && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
             onClick={e => { if (e.target === e.currentTarget) setShowNewDocDialog(false) }}>
-            <div style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 440, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+            <div className="dm-modal-box" style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 440, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: T.text, margin: '0 0 16px' }}>Novo Documento</h3>
 
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>Título *</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Título *</label>
               <input value={newDoc.title} onChange={e => setNewDoc(p => ({ ...p, title: e.target.value }))}
                 placeholder="Ex: Prescrição Dietética — Junho 2026" autoFocus
                 style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', marginBottom: 12 }} />
 
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>Tipo</label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Tipo</label>
               <select value={newDoc.document_type} onChange={e => setNewDoc(p => ({ ...p, document_type: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box', marginBottom: 12 }}>
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 12 }}>
                 {Object.entries(DOCUMENT_TYPE_LABELS).map(([key, label]) => (
                   <option key={key} value={key}>{label}</option>
                 ))}
@@ -1140,11 +1274,11 @@ export function PatientProfile() {
 
               {docTemplates.length > 0 && (
                 <>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 4 }}>
-                    Usar modelo como base <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(opcional)</span>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>
+                    Usar modelo como base <span style={{ fontWeight: 400, color: T.muted }}>(opcional)</span>
                   </label>
                   <select onChange={e => handleNewDocTemplateChange(e.target.value)} defaultValue=""
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit', background: '#fff', boxSizing: 'border-box', marginBottom: 16 }}>
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 16 }}>
                     <option value="">Sem modelo (documento em branco)</option>
                     {docTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>

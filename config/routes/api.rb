@@ -124,6 +124,10 @@ namespace :api, defaults: { format: 'json' } do
       end
     end
     resources :meal_plan_templates, only: %i[index show create update destroy] do
+      collection do
+        post :from_plan
+        post :import_system
+      end
       member do
         post :add_day
         delete 'days/:day_id', action: :remove_day

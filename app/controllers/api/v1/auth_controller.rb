@@ -276,6 +276,7 @@ module Api
           first_name: user.first_name || '',
           last_name: user.last_name || '',
           name: user.name || '',
+          phone_number: user.phone_number,
           preferred_language: user.preferred_language,
           admin: user.admin? || false,
           account_admin: is_account_admin,

@@ -25,6 +25,36 @@ function MacroBar({ protein, carbs, fat }) {
   )
 }
 
+function DayMacroStrip({ meals }) {
+  const kcal    = meals.reduce((s, m) => s + m.total_kcal,    0)
+  const protein = meals.reduce((s, m) => s + m.total_protein, 0)
+  const carbs   = meals.reduce((s, m) => s + m.total_carbs,   0)
+  const fat     = meals.reduce((s, m) => s + m.total_fat,     0)
+  const fiber   = meals.reduce((s, m) => s + m.total_fiber,   0)
+  if (kcal === 0) return null
+  return (
+    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#F59E0B', background: '#FFFBEB', borderRadius: 16, padding: '3px 10px' }}>
+        {kcal.toFixed(0)} kcal
+      </span>
+      <span style={{ fontSize: 12, fontWeight: 600, color: '#4C60AA', background: '#EEF2FF', borderRadius: 16, padding: '3px 10px' }}>
+        P {protein.toFixed(0)}g
+      </span>
+      <span style={{ fontSize: 12, fontWeight: 600, color: '#10B981', background: '#ECFDF5', borderRadius: 16, padding: '3px 10px' }}>
+        C {carbs.toFixed(0)}g
+      </span>
+      <span style={{ fontSize: 12, fontWeight: 600, color: '#D97706', background: '#FEF3C7', borderRadius: 16, padding: '3px 10px' }}>
+        G {fat.toFixed(0)}g
+      </span>
+      {fiber > 0 && (
+        <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', background: '#F3F4F6', borderRadius: 16, padding: '3px 10px' }}>
+          Fib. {fiber.toFixed(0)}g
+        </span>
+      )}
+    </div>
+  )
+}
+
 function MealCard({ meal }) {
   const [open, setOpen] = useState(true)
   return (
@@ -76,14 +106,18 @@ function MealCard({ meal }) {
                 <div style={{ fontSize: 14, color: '#1F2937', fontWeight: 500 }}>{food.food_name}</div>
                 <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3 }}>
                   {food.kcal.toFixed(0)} kcal · P {food.protein.toFixed(1)}g · C {food.carbs.toFixed(1)}g · G {food.fat.toFixed(1)}g
+                  {food.fiber > 0 ? ` · Fib. ${food.fiber.toFixed(1)}g` : ''}
                 </div>
+                {food.notes && (
+                  <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2, fontStyle: 'italic' }}>{food.notes}</div>
+                )}
               </div>
               <span style={{
                 fontSize: 14, fontWeight: 700, color: '#374151',
                 background: '#F9FAFB', borderRadius: 8,
                 padding: '4px 10px', flexShrink: 0, whiteSpace: 'nowrap',
               }}>
-                {food.quantity}g
+                {food.quantity}{food.unit || 'g'}
               </span>
             </div>
           ))}
@@ -102,7 +136,6 @@ function MealCard({ meal }) {
 
 function DaySection({ day }) {
   const [open, setOpen] = useState(true)
-  const totalKcal = day.meals.reduce((s, m) => s + m.total_kcal, 0)
 
   return (
     <div style={{ marginBottom: 24 }}>
@@ -119,18 +152,18 @@ function DaySection({ day }) {
       >
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontWeight: 800, fontSize: 16, color: '#1F2937' }}>{day.label}</span>
-          {totalKcal > 0 && (
-            <span style={{ fontSize: 13, color: '#9CA3AF', fontWeight: 500 }}>
-              {totalKcal.toFixed(0)} kcal
-            </span>
-          )}
         </div>
         {open
           ? <ChevronUp size={18} style={{ color: '#9CA3AF' }} />
           : <ChevronDown size={18} style={{ color: '#9CA3AF' }} />
         }
       </button>
-      {open && day.meals.map((meal, i) => <MealCard key={i} meal={meal} />)}
+      {open && (
+        <>
+          <DayMacroStrip meals={day.meals} />
+          {day.meals.map((meal, i) => <MealCard key={i} meal={meal} />)}
+        </>
+      )}
     </div>
   )
 }
@@ -150,12 +183,14 @@ export default function PublicMealPlan() {
           total_protein: Number(m.total_protein),
           total_carbs:   Number(m.total_carbs),
           total_fat:     Number(m.total_fat),
+          total_fiber:   Number(m.total_fiber || 0),
           foods: (m.foods || []).map(f => ({
             ...f,
             kcal:     Number(f.kcal),
             protein:  Number(f.protein),
             carbs:    Number(f.carbs),
             fat:      Number(f.fat),
+            fiber:    Number(f.fiber || 0),
             quantity: Number(f.quantity),
           })),
         })
@@ -193,16 +228,18 @@ export default function PublicMealPlan() {
 
   const { meal_plan, professional, patient } = data
 
-  const numDays = meal_plan.days.length || 1
-  const allMeals = meal_plan.days.flatMap(d => d.meals)
-  const totalKcal    = allMeals.reduce((s, m) => s + m.total_kcal, 0)
+  const numDays    = meal_plan.days.length || 1
+  const allMeals   = meal_plan.days.flatMap(d => d.meals)
+  const totalKcal    = allMeals.reduce((s, m) => s + m.total_kcal,    0)
   const totalProtein = allMeals.reduce((s, m) => s + m.total_protein, 0)
-  const totalCarbs   = allMeals.reduce((s, m) => s + m.total_carbs, 0)
-  const totalFat     = allMeals.reduce((s, m) => s + m.total_fat, 0)
+  const totalCarbs   = allMeals.reduce((s, m) => s + m.total_carbs,   0)
+  const totalFat     = allMeals.reduce((s, m) => s + m.total_fat,     0)
+  const totalFiber   = allMeals.reduce((s, m) => s + m.total_fiber,   0)
   const avgKcal    = totalKcal    / numDays
   const avgProtein = totalProtein / numDays
   const avgCarbs   = totalCarbs   / numDays
   const avgFat     = totalFat     / numDays
+  const avgFiber   = totalFiber   / numDays
   const hasTotals  = totalKcal > 0
 
   return (
@@ -226,7 +263,7 @@ export default function PublicMealPlan() {
             <p style={{ marginTop: 12, fontSize: 14, color: '#6B7280', lineHeight: 1.6 }}>{meal_plan.description}</p>
           )}
 
-          {/* Resumo de macros do plano */}
+          {/* Resumo de macros médios por dia */}
           {hasTotals && (
             <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: '#F59E0B', background: '#FFFBEB', borderRadius: 20, padding: '4px 12px' }}>
@@ -241,6 +278,11 @@ export default function PublicMealPlan() {
               <span style={{ fontSize: 13, fontWeight: 600, color: '#D97706', background: '#FEF3C7', borderRadius: 20, padding: '4px 12px' }}>
                 Gord. {avgFat.toFixed(0)}g
               </span>
+              {avgFiber > 0 && (
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#6B7280', background: '#F3F4F6', borderRadius: 20, padding: '4px 12px' }}>
+                  Fib. {avgFiber.toFixed(0)}g
+                </span>
+              )}
             </div>
           )}
 

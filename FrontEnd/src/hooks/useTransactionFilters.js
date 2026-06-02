@@ -86,19 +86,15 @@ export function useTransactionFilters() {
   }, [currentMonth])
 
   const goToPrevMonth = () => {
-    setCurrentMonth(prev => {
-      const next = new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
-      applyMonth(next)
-      return next
-    })
+    const next = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)
+    applyMonth(next)
+    setCurrentMonth(next)
   }
 
   const goToNextMonth = () => {
-    setCurrentMonth(prev => {
-      const next = new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
-      applyMonth(next)
-      return next
-    })
+    const next = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
+    applyMonth(next)
+    setCurrentMonth(next)
   }
 
   const goToCurrentMonth = () => {

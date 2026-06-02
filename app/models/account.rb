@@ -181,6 +181,7 @@ class Account < ApplicationRecord
 
   after_create_commit do
     SeedDocumentTemplatesJob.perform_later(self)
+    SeedMealPlanTemplatesJob.perform_later(self)
   end
 
   after_update_commit :reload_frames_after_commit

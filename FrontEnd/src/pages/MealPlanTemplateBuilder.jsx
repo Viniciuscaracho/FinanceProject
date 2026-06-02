@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, Plus, Trash2, Loader2, Copy, Check,
+  ArrowLeft, Plus, Trash2, Loader2, Check,
   ChevronDown, ChevronUp, Search, X, UtensilsCrossed,
-  Save, Settings2, BookmarkPlus,
+  Save, Settings2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { apiService } from '@/lib/api'
@@ -12,20 +12,29 @@ import { T } from '@/lib/tokens'
 import { MealNutrientPanel, DayNutrientStrip, computeDayTotals } from '@/components/nutrition/NutrientPanel'
 
 const MEAL_DEFAULTS = ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia']
-const STATUS_LABELS = { draft: 'Rascunho', active: 'Ativo', archived: 'Arquivado' }
-const STATUS_COLORS = { draft: '#9CA3AF', active: '#10B981', archived: '#6B7280' }
-const TEMPLATE_CATEGORIES = [
-  { value: 'low_carb',     label: 'Low Carb'      },
-  { value: 'hipertrofia',  label: 'Hipertrofia'   },
-  { value: 'mediterraneo', label: 'Mediterrâneo'  },
-  { value: 'vegetariano',  label: 'Vegetariano'   },
-  { value: 'emagrecimento',label: 'Emagrecimento' },
-  { value: 'outro',        label: 'Outro'         },
-]
-const SOURCE_TABS   = [
-  { key: null,              label: 'Todos'         },
-  { key: 'taco',            label: 'TACO'          },
-  { key: 'open_food_facts', label: 'Fabricantes'   },
+
+const CATEGORY_LABELS = {
+  low_carb:     'Low Carb',
+  hipertrofia:  'Hipertrofia',
+  mediterraneo: 'Mediterrâneo',
+  vegetariano:  'Vegetariano',
+  emagrecimento:'Emagrecimento',
+  outro:        'Outro',
+}
+
+const CATEGORY_COLORS = {
+  low_carb:     '#F59E0B',
+  hipertrofia:  '#4C60AA',
+  mediterraneo: '#10B981',
+  vegetariano:  '#22C55E',
+  emagrecimento:'#EF4444',
+  outro:        '#9CA3AF',
+}
+
+const SOURCE_TABS = [
+  { key: null,              label: 'Todos'          },
+  { key: 'taco',            label: 'TACO'           },
+  { key: 'open_food_facts', label: 'Fabricantes'    },
   { key: 'custom',          label: 'Meus alimentos' },
 ]
 
@@ -55,10 +64,7 @@ function FoodSearch({ onSelect, onClose }) {
   const inputRef = useRef(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
-
-  useEffect(() => {
-    if (source !== 'custom') setShowCustomForm(false)
-  }, [source])
+  useEffect(() => { if (source !== 'custom') setShowCustomForm(false) }, [source])
 
   useEffect(() => {
     if (query.length < 2) { setResults([]); return }
@@ -93,14 +99,12 @@ function FoodSearch({ onSelect, onClose }) {
   }
 
   const setField = (key) => (e) => setCustomFood(p => ({ ...p, [key]: e.target.value }))
-
   const sourceLabel = s => ({ taco: 'TACO', open_food_facts: 'Fabricante', custom: 'Meu' }[s] || 'TACO')
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="dm-modal-box" style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 520, boxShadow: '0 20px 60px rgba(0,0,0,0.15)', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-        {/* Tabs */}
         <div style={{ display: 'flex', borderBottom: `1px solid ${T.border}`, padding: '0 10px', flexShrink: 0 }}>
           {SOURCE_TABS.map(tab => (
             <button key={String(tab.key)} type="button"
@@ -112,18 +116,14 @@ function FoodSearch({ onSelect, onClose }) {
             </button>
           ))}
         </div>
-
-        {/* Campo de busca */}
         <div style={{ padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
           <Search size={15} style={{ color: T.muted, flexShrink: 0 }} />
           <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)}
-            placeholder={source === 'open_food_facts' ? 'Buscar em fabricantes (ex: Nestlé, Quaker...)' : 'Buscar alimento (ex: arroz, frango, banana...)'}
+            placeholder="Buscar alimento (ex: arroz, frango, banana...)"
             style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, fontFamily: 'inherit', color: T.text }} />
           {loading && <Loader2 size={14} className="animate-spin" style={{ color: T.muted }} />}
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 2 }}><X size={16} /></button>
         </div>
-
-        {/* Formulário inline — apenas na aba Meus alimentos */}
         {source === 'custom' && (
           <div style={{ flexShrink: 0 }}>
             {!showCustomForm ? (
@@ -165,8 +165,7 @@ function FoodSearch({ onSelect, onClose }) {
                     style={{ flex: 1, padding: '8px', borderRadius: 8, border: `1px solid ${T.border}`, background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, color: T.muted }}>
                     Cancelar
                   </button>
-                  <Button onClick={handleSaveCustomFood} disabled={savingCustom}
-                    style={{ flex: 2, gap: 5, fontSize: 12 }}>
+                  <Button onClick={handleSaveCustomFood} disabled={savingCustom} style={{ flex: 2, gap: 5, fontSize: 12 }}>
                     {savingCustom ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Criar e adicionar
                   </Button>
                 </div>
@@ -174,8 +173,6 @@ function FoodSearch({ onSelect, onClose }) {
             )}
           </div>
         )}
-
-        {/* Resultados */}
         <div style={{ overflowY: 'auto', flex: 1 }}>
           {query.length < 2 && (
             <p style={{ padding: '20px 14px', fontSize: 13, color: T.muted, textAlign: 'center' }}>Digite ao menos 2 letras para buscar</p>
@@ -206,7 +203,7 @@ function FoodSearch({ onSelect, onClose }) {
 
 // ── FoodItem ──────────────────────────────────────────────────────────────────
 
-function FoodItem({ item, contactId, planId, dayId, mealId, onRemove, onUpdate }) {
+function FoodItem({ item, templateId, dayId, mealId, onRemove, onUpdate }) {
   const [editing, setEditing] = useState(false)
   const [qty, setQty]         = useState(String(item.quantity))
   const [saving, setSaving]   = useState(false)
@@ -215,7 +212,7 @@ function FoodItem({ item, contactId, planId, dayId, mealId, onRemove, onUpdate }
     if (!qty || isNaN(qty) || Number(qty) <= 0) return
     setSaving(true)
     try {
-      const res = await apiService.updateMealFood(contactId, planId, dayId, mealId, item.id, { quantity: Number(qty) })
+      const res = await apiService.updateTemplateMealFood(templateId, dayId, mealId, item.id, { quantity: Number(qty) })
       onUpdate(res.meal_food); setEditing(false)
     } catch { toast.error('Erro ao atualizar quantidade') }
     finally { setSaving(false) }
@@ -258,8 +255,8 @@ function FoodItem({ item, contactId, planId, dayId, mealId, onRemove, onUpdate }
 
 // ── MealCard ──────────────────────────────────────────────────────────────────
 
-function MealCard({ meal, day, plan, contactId, onUpdate, onRemove }) {
-  const [open, setOpen]           = useState(true)
+function MealCard({ meal, day, template, onUpdate, onRemove }) {
+  const [open, setOpen]                 = useState(true)
   const [showFoodSearch, setShowFoodSearch] = useState(false)
 
   const handleAddFood = async (food) => {
@@ -277,14 +274,14 @@ function MealCard({ meal, day, plan, contactId, onUpdate, onRemove }) {
       } catch { toast.error('Erro ao salvar alimento'); return }
     }
     try {
-      const res = await apiService.addFoodToMeal(contactId, plan.id, day.id, meal.id, { food_id: foodId, quantity: 100, unit: 'g' })
+      const res = await apiService.addFoodToTemplateMeal(template.id, day.id, meal.id, { food_id: foodId, quantity: 100, unit: 'g' })
       onUpdate({ ...meal, foods: [...meal.foods, res.meal_food] })
     } catch { toast.error('Erro ao adicionar alimento') }
   }
 
   const handleRemoveFood = async (id) => {
     try {
-      await apiService.removeMealFood(contactId, plan.id, day.id, meal.id, id)
+      await apiService.removeTemplateMealFood(template.id, day.id, meal.id, id)
       onUpdate({ ...meal, foods: meal.foods.filter(f => f.id !== id) })
     } catch { toast.error('Erro ao remover alimento') }
   }
@@ -300,7 +297,6 @@ function MealCard({ meal, day, plan, contactId, onUpdate, onRemove }) {
     <>
       {showFoodSearch && <FoodSearch onSelect={handleAddFood} onClose={() => setShowFoodSearch(false)} />}
       <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden', marginBottom: 8 }}>
-        {/* Cabeçalho da refeição */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', background: T.light, cursor: 'pointer' }}
           onClick={() => setOpen(p => !p)}>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -321,7 +317,6 @@ function MealCard({ meal, day, plan, contactId, onUpdate, onRemove }) {
           </button>
           {open ? <ChevronUp size={14} style={{ color: T.muted }} /> : <ChevronDown size={14} style={{ color: T.muted }} />}
         </div>
-
         {open && (
           <div style={{ padding: '0 12px 10px' }}>
             {meal.foods.length === 0 && (
@@ -329,7 +324,7 @@ function MealCard({ meal, day, plan, contactId, onUpdate, onRemove }) {
             )}
             {meal.foods.map(item => (
               <FoodItem key={item.id} item={item}
-                contactId={contactId} planId={plan.id} dayId={day.id} mealId={meal.id}
+                templateId={template.id} dayId={day.id} mealId={meal.id}
                 onRemove={handleRemoveFood} onUpdate={handleUpdateFood} />
             ))}
             <button type="button" onClick={() => setShowFoodSearch(true)}
@@ -346,15 +341,15 @@ function MealCard({ meal, day, plan, contactId, onUpdate, onRemove }) {
 
 // ── DayCard ───────────────────────────────────────────────────────────────────
 
-function DayCard({ day, plan, contactId, onUpdate, onRemoveDay, onOpenTargets }) {
-  const [open, setOpen]         = useState(true)
+function DayCard({ day, template, onUpdate, onRemoveDay }) {
+  const [open, setOpen]             = useState(true)
   const [addingMeal, setAddingMeal] = useState(false)
 
   const handleAddMeal = async (name) => {
     if (!name.trim()) return
     setAddingMeal(true)
     try {
-      const res = await apiService.addMeal(contactId, plan.id, day.id, name.trim())
+      const res = await apiService.addMealToTemplate(template.id, day.id, name.trim())
       onUpdate({ ...day, meals: [...day.meals, { ...res.meal, foods: [] }] })
     } catch { toast.error('Erro ao adicionar refeição') }
     finally { setAddingMeal(false) }
@@ -362,7 +357,7 @@ function DayCard({ day, plan, contactId, onUpdate, onRemoveDay, onOpenTargets })
 
   const handleRemoveMeal = async (mealId) => {
     try {
-      await apiService.removeMeal(contactId, plan.id, day.id, mealId)
+      await apiService.removeMealFromTemplate(template.id, day.id, mealId)
       onUpdate({ ...day, meals: day.meals.filter(m => m.id !== mealId) })
     } catch { toast.error('Erro ao remover refeição') }
   }
@@ -374,7 +369,6 @@ function DayCard({ day, plan, contactId, onUpdate, onRemoveDay, onOpenTargets })
 
   return (
     <div style={{ border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
-      {/* Cabeçalho do dia */}
       <div style={{ display: 'flex', alignItems: 'center', padding: '10px 14px', background: T.chip }}>
         <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => setOpen(p => !p)}>
           <span style={{ fontWeight: 700, fontSize: 14, color: T.text }}>{day.label}</span>
@@ -387,25 +381,15 @@ function DayCard({ day, plan, contactId, onUpdate, onRemoveDay, onOpenTargets })
           {open ? <ChevronUp size={15} style={{ color: T.muted }} /> : <ChevronDown size={15} style={{ color: T.muted }} />}
         </div>
       </div>
-
-      {/* ── PAINEL DE NUTRIENTES — sempre visível quando há alimentos ── */}
       {hasFood && (
-        <DayNutrientStrip
-          totals={totals}
-          targets={plan}
-          onOpenTargets={onOpenTargets}
-        />
+        <DayNutrientStrip totals={totals} targets={template} onOpenTargets={() => {}} />
       )}
-
-      {/* Refeições */}
       {open && (
         <div style={{ padding: '12px 14px' }}>
           {day.meals.map(meal => (
-            <MealCard key={meal.id} meal={meal} day={day} plan={plan} contactId={contactId}
+            <MealCard key={meal.id} meal={meal} day={day} template={template}
               onUpdate={handleUpdateMeal} onRemove={handleRemoveMeal} />
           ))}
-
-          {/* Botões de adição rápida */}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
             {MEAL_DEFAULTS.filter(n => !day.meals.find(m => m.name === n)).slice(0, 4).map(name => (
               <button key={name} type="button" onClick={() => handleAddMeal(name)} disabled={addingMeal}
@@ -422,7 +406,7 @@ function DayCard({ day, plan, contactId, onUpdate, onRemoveDay, onOpenTargets })
 
 // ── TargetsModal ──────────────────────────────────────────────────────────────
 
-function TargetsModal({ plan, contactId, planId, onSave, onClose }) {
+function TargetsModal({ template, templateId, onSave, onClose }) {
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
@@ -430,11 +414,11 @@ function TargetsModal({ plan, contactId, planId, onSave, onClose }) {
   }, [onClose])
 
   const [values, setValues] = useState({
-    target_kcal:      plan.target_kcal      || 0,
-    target_protein_g: plan.target_protein_g || 0,
-    target_carbs_g:   plan.target_carbs_g   || 0,
-    target_fat_g:     plan.target_fat_g     || 0,
-    target_fiber_g:   plan.target_fiber_g   || 0,
+    target_kcal:      template.target_kcal      || 0,
+    target_protein_g: template.target_protein_g || 0,
+    target_carbs_g:   template.target_carbs_g   || 0,
+    target_fat_g:     template.target_fat_g     || 0,
+    target_fiber_g:   template.target_fiber_g   || 0,
   })
   const [saving, setSaving] = useState(false)
 
@@ -449,8 +433,8 @@ function TargetsModal({ plan, contactId, planId, onSave, onClose }) {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const res = await apiService.updateMealPlan(contactId, planId, values)
-      onSave(res.meal_plan); onClose()
+      const res = await apiService.updateMealPlanTemplate(templateId, values)
+      onSave(res.template); onClose()
       toast.success('Metas salvas!')
     } catch { toast.error('Erro ao salvar metas') }
     finally { setSaving(false) }
@@ -460,9 +444,8 @@ function TargetsModal({ plan, contactId, planId, onSave, onClose }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="dm-modal-box" style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 460, padding: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
-        <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: T.text }}>Metas diárias — Prescrito</h3>
-        <p style={{ margin: '0 0 18px', fontSize: 12, color: T.muted }}>Define os valores de referência para o painel de análise nutricional.</p>
-
+        <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: T.text }}>Metas do modelo</h3>
+        <p style={{ margin: '0 0 18px', fontSize: 12, color: T.muted }}>Referência nutricional para o painel de análise.</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {fields.map((f, i) => (
             <div key={f.key} style={{ gridColumn: i === 0 ? '1 / -1' : undefined }}>
@@ -476,7 +459,6 @@ function TargetsModal({ plan, contactId, planId, onSave, onClose }) {
             </div>
           ))}
         </div>
-
         <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
           <button type="button" onClick={onClose}
             style={{ flex: 1, padding: '12px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: T.muted, minHeight: 48 }}>
@@ -492,47 +474,37 @@ function TargetsModal({ plan, contactId, planId, onSave, onClose }) {
   )
 }
 
-// ── MealPlanBuilder ───────────────────────────────────────────────────────────
+// ── MealPlanTemplateBuilder ───────────────────────────────────────────────────
 
-export default function MealPlanBuilder() {
-  const { contactId, planId } = useParams()
+export default function MealPlanTemplateBuilder() {
+  const { templateId } = useParams()
   const navigate = useNavigate()
-  const [plan, setPlan]       = useState(null)
-  const [contact, setContact] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [title, setTitle]     = useState('')
+  const [template, setTemplate]       = useState(null)
+  const [loading, setLoading]         = useState(true)
+  const [title, setTitle]             = useState('')
   const [editingTitle, setEditingTitle] = useState(false)
-  const [saving, setSaving]             = useState(false)
-  const [addingDay, setAddingDay]       = useState(false)
-  const [activating, setActivating]     = useState(false)
-  const [copied, setCopied]             = useState(false)
-  const [showTargets, setShowTargets]   = useState(false)
-  const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false)
-  const [templateForm, setTemplateForm] = useState({ title: '', template_category: 'outro' })
-  const [savingTemplate, setSavingTemplate] = useState(false)
+  const [saving, setSaving]           = useState(false)
+  const [addingDay, setAddingDay]     = useState(false)
+  const [showTargets, setShowTargets] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [planRes, contactRes] = await Promise.all([
-        apiService.getMealPlan(contactId, planId),
-        apiService.getContact(contactId),
-      ])
-      setPlan(planRes.meal_plan)
-      setTitle(planRes.meal_plan.title)
-      setContact(contactRes.contact || contactRes)
-    } catch { toast.error('Erro ao carregar plano alimentar') }
+      const res = await apiService.getMealPlanTemplate(templateId)
+      setTemplate(res.template)
+      setTitle(res.template.title)
+    } catch { toast.error('Erro ao carregar modelo') }
     finally { setLoading(false) }
-  }, [contactId, planId])
+  }, [templateId])
 
   useEffect(() => { load() }, [load])
 
   const handleSaveTitle = async () => {
-    if (!title.trim() || title === plan.title) { setEditingTitle(false); return }
+    if (!title.trim() || title === template.title) { setEditingTitle(false); return }
     setSaving(true)
     try {
-      const res = await apiService.updateMealPlan(contactId, planId, { title: title.trim() })
-      setPlan(p => ({ ...p, title: res.meal_plan.title })); setEditingTitle(false)
+      const res = await apiService.updateMealPlanTemplate(templateId, { title: title.trim() })
+      setTemplate(p => ({ ...p, title: res.template.title })); setEditingTitle(false)
     } catch { toast.error('Erro ao salvar título') }
     finally { setSaving(false) }
   }
@@ -540,61 +512,20 @@ export default function MealPlanBuilder() {
   const handleAddDay = async () => {
     setAddingDay(true)
     try {
-      const res = await apiService.addMealPlanDay(contactId, planId)
-      setPlan(p => ({ ...p, days: [...p.days, { ...res.day, meals: [] }] }))
+      const res = await apiService.addMealPlanTemplateDay(templateId)
+      setTemplate(p => ({ ...p, days: [...p.days, { ...res.day, meals: [] }] }))
     } catch { toast.error('Erro ao adicionar dia') }
     finally { setAddingDay(false) }
   }
 
   const handleRemoveDay = async (dayId) => {
     try {
-      await apiService.removeMealPlanDay(contactId, planId, dayId)
-      setPlan(p => ({ ...p, days: p.days.filter(d => d.id !== dayId) }))
+      await apiService.removeMealPlanTemplateDay(templateId, dayId)
+      setTemplate(p => ({ ...p, days: p.days.filter(d => d.id !== dayId) }))
     } catch { toast.error('Erro ao remover dia') }
   }
 
-  const handleUpdateDay = (updated) => setPlan(p => ({ ...p, days: p.days.map(d => d.id === updated.id ? updated : d) }))
-
-  const handleActivate = async () => {
-    setActivating(true)
-    try {
-      const res = await apiService.activateMealPlan(contactId, planId)
-      setPlan(p => ({ ...p, status: 'active' }))
-      if (res?.whatsapp_sent) {
-        toast.success('Plano ativado! Link enviado por WhatsApp ao paciente.')
-      } else {
-        toast.success('Plano ativado! Link disponível para o paciente.')
-      }
-    } catch { toast.error('Erro ao ativar plano') }
-    finally { setActivating(false) }
-  }
-
-  const handleOpenSaveAsTemplate = () => {
-    setTemplateForm({ title: plan.title, template_category: 'outro' })
-    setShowSaveAsTemplate(true)
-  }
-
-  const handleSaveAsTemplate = async () => {
-    if (!templateForm.title.trim()) { toast.error('Informe um título'); return }
-    setSavingTemplate(true)
-    try {
-      await apiService.savePlanAsTemplate(planId, {
-        title:             templateForm.title.trim(),
-        template_category: templateForm.template_category,
-      })
-      setShowSaveAsTemplate(false)
-      toast.success('Plano salvo como modelo!')
-    } catch { toast.error('Erro ao salvar como modelo') }
-    finally { setSavingTemplate(false) }
-  }
-
-  const handleCopyLink = () => {
-    const url = `${import.meta.env.VITE_PUBLIC_URL || window.location.origin}/plano/${plan.public_token}`
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true); toast.success('Link copiado!')
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
+  const handleUpdateDay = (updated) => setTemplate(p => ({ ...p, days: p.days.map(d => d.id === updated.id ? updated : d) }))
 
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
@@ -602,125 +533,72 @@ export default function MealPlanBuilder() {
     </div>
   )
 
-  if (!plan) return null
+  if (!template) return null
 
-  const hasTargets = plan.target_kcal > 0 || plan.target_protein_g > 0
+  const hasTargets = template.target_kcal > 0 || template.target_protein_g > 0
+  const catColor = CATEGORY_COLORS[template.template_category] || '#9CA3AF'
+  const catLabel = CATEGORY_LABELS[template.template_category] || 'Outro'
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '12px 12px 80px' }}>
       {showTargets && (
-        <TargetsModal plan={plan} contactId={contactId} planId={planId}
-          onSave={updated => setPlan(p => ({ ...p, ...updated }))}
+        <TargetsModal template={template} templateId={templateId}
+          onSave={updated => setTemplate(p => ({ ...p, ...updated }))}
           onClose={() => setShowTargets(false)} />
       )}
 
-      {showSaveAsTemplate && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
-          onClick={e => { if (e.target === e.currentTarget) setShowSaveAsTemplate(false) }}>
-          <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 400, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
-            <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: T.text }}>Salvar como modelo</h3>
-            <p style={{ margin: '0 0 18px', fontSize: 12, color: T.muted }}>Este plano será copiado como modelo reutilizável para novos pacientes.</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Nome do modelo *</label>
-                <input value={templateForm.title} onChange={e => setTemplateForm(p => ({ ...p, title: e.target.value }))}
-                  placeholder="ex: Low Carb — Emagrecimento"
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Categoria</label>
-                <select value={templateForm.template_category} onChange={e => setTemplateForm(p => ({ ...p, template_category: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: '#fff' }}>
-                  {TEMPLATE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                </select>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
-              <button type="button" onClick={() => setShowSaveAsTemplate(false)}
-                style={{ flex: 1, padding: '11px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, color: T.muted }}>
-                Cancelar
-              </button>
-              <Button onClick={handleSaveAsTemplate} disabled={savingTemplate}
-                style={{ flex: 2, gap: 6, fontSize: 13, borderRadius: 10 }}>
-                {savingTemplate ? <Loader2 size={13} className="animate-spin" /> : <BookmarkPlus size={13} />}
-                Salvar modelo
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 16 }}>
-        <button type="button" onClick={() => navigate(`/contacts/${contactId}`)}
+        <button type="button" onClick={() => navigate('/meal-plan-templates')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 6, marginTop: 2, minWidth: 32, minHeight: 32 }}>
           <ArrowLeft size={18} />
         </button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, color: T.muted, marginBottom: 2 }}>
-            {contact?.name || 'Paciente'} · Plano Alimentar
+          <div style={{ fontSize: 11, color: T.muted, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+            Modelo alimentar ·
+            <span style={{ padding: '1px 7px', borderRadius: 20, fontSize: 10, fontWeight: 700, background: `${catColor}20`, color: catColor }}>{catLabel}</span>
           </div>
           {editingTitle ? (
             <input value={title} onChange={e => setTitle(e.target.value)}
               onBlur={handleSaveTitle}
-              onKeyDown={e => { if (e.key === 'Enter') handleSaveTitle(); if (e.key === 'Escape') { setTitle(plan.title); setEditingTitle(false) } }}
+              onKeyDown={e => { if (e.key === 'Enter') handleSaveTitle(); if (e.key === 'Escape') { setTitle(template.title); setEditingTitle(false) } }}
               autoFocus
               style={{ fontSize: 18, fontWeight: 700, color: T.text, border: 'none', borderBottom: `2px solid ${T.brand}`, outline: 'none', background: 'transparent', fontFamily: 'inherit', width: '100%' }} />
           ) : (
             <h1 onClick={() => setEditingTitle(true)}
               style={{ fontSize: 18, fontWeight: 700, color: T.text, margin: 0, cursor: 'text', lineHeight: 1.3 }}>
-              {plan.title}
+              {template.title}
             </h1>
           )}
         </div>
       </div>
 
-      {/* ── Barra de ações ── */}
+      {/* Barra de ações */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        {/* Metas — CTA principal */}
         <button type="button" onClick={() => setShowTargets(true)}
           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: `1.5px solid ${hasTargets ? T.brand : T.border}`, background: hasTargets ? '#EEF2FF' : 'none', cursor: 'pointer', color: hasTargets ? T.brand : T.muted, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, minHeight: 40, flex: '1 1 auto' }}>
           <Settings2 size={14} />
-          {hasTargets ? `Metas: ${Math.round(plan.target_kcal)} kcal · ${Math.round(plan.target_protein_g)}g P · ${Math.round(plan.target_carbs_g)}g C` : 'Definir metas do plano'}
+          {hasTargets ? `Metas: ${Math.round(template.target_kcal)} kcal · ${Math.round(template.target_protein_g)}g P · ${Math.round(template.target_carbs_g)}g C` : 'Definir metas do modelo'}
         </button>
-
-        {/* Salvar como modelo */}
-        <button type="button" onClick={handleOpenSaveAsTemplate}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'none', cursor: 'pointer', color: T.muted, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, minHeight: 40, flexShrink: 0, whiteSpace: 'nowrap' }}>
-          <BookmarkPlus size={14} /> Salvar como modelo
-        </button>
-
-        {/* Status + ação */}
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: plan.status === 'active' ? '#ECFDF5' : '#F3F4F6', color: STATUS_COLORS[plan.status] }}>
-            {STATUS_LABELS[plan.status]}
-          </span>
-          {plan.status === 'active' ? (
-            <Button size="sm" onClick={handleCopyLink} style={{ fontSize: 12, gap: 5, background: T.chip, color: T.brand, border: `1px solid ${T.border}`, minHeight: 36 }}>
-              {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? 'Copiado!' : 'Link'}
-            </Button>
-          ) : (
-            <Button size="sm" onClick={handleActivate} disabled={activating} style={{ fontSize: 12, gap: 5, minHeight: 36 }}>
-              {activating ? <Loader2 size={12} className="animate-spin" /> : <UtensilsCrossed size={12} />}
-              Ativar
-            </Button>
-          )}
-        </div>
+        {saving && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '9px 14px', fontSize: 12, color: T.muted }}>
+            <Loader2 size={12} className="animate-spin" /> Salvando...
+          </div>
+        )}
       </div>
 
-      {/* ── Dias ── */}
-      {plan.days?.length === 0 && (
+      {/* Dias */}
+      {template.days?.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px 0', color: T.muted }}>
           <UtensilsCrossed size={32} style={{ marginBottom: 12, opacity: 0.3 }} />
           <p style={{ fontSize: 14 }}>Nenhum dia adicionado ainda</p>
-          <p style={{ fontSize: 12, marginTop: 4 }}>Adicione dias da semana para montar o plano</p>
+          <p style={{ fontSize: 12, marginTop: 4 }}>Adicione dias para montar a estrutura do modelo</p>
         </div>
       )}
 
-      {plan.days?.map(day => (
-        <DayCard key={day.id} day={day} plan={plan} contactId={contactId}
-          onUpdate={handleUpdateDay} onRemoveDay={handleRemoveDay}
-          onOpenTargets={() => setShowTargets(true)} />
+      {template.days?.map(day => (
+        <DayCard key={day.id} day={day} template={template}
+          onUpdate={handleUpdateDay} onRemoveDay={handleRemoveDay} />
       ))}
 
       <Button variant="outline" onClick={handleAddDay} disabled={addingDay}

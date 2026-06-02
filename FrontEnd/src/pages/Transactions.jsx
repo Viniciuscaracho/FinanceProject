@@ -610,9 +610,17 @@ export function Transactions() {
 
     setIsCreatingCategory(true)
     try {
-      await apiService.createCategory({ name: newCategoryName.trim() })
+      const response = await apiService.createCategory({ name: newCategoryName.trim() })
       queryClient.invalidateQueries({ queryKey: ['categories'] })
       toast.success(`Categoria "${newCategoryName.trim()}" criada!`)
+      const newId = response?.category?.id?.toString()
+      if (newId) {
+        if (isEditTransactionOpen) {
+          setEditFormData(prev => ({ ...prev, category_id: newId }))
+        } else {
+          setFormData(prev => ({ ...prev, category_id: newId }))
+        }
+      }
       setNewCategoryName('')
       setIsAddCategoryOpen(false)
       setDuplicateWarning('')
@@ -634,9 +642,17 @@ export function Transactions() {
 
     setIsCreatingContact(true)
     try {
-      await apiService.createContact({ name: newContactName.trim() })
+      const response = await apiService.createContact({ name: newContactName.trim() })
       queryClient.invalidateQueries({ queryKey: ['contacts'] })
       toast.success(`Contato "${newContactName.trim()}" criado!`)
+      const newId = response?.contact?.id?.toString()
+      if (newId) {
+        if (isEditTransactionOpen) {
+          setEditFormData(prev => ({ ...prev, contact_id: newId }))
+        } else {
+          setFormData(prev => ({ ...prev, contact_id: newId }))
+        }
+      }
       setNewContactName('')
       setIsAddContactOpen(false)
       setDuplicateWarning('')
@@ -658,9 +674,17 @@ export function Transactions() {
 
     setIsCreatingCostCenter(true)
     try {
-      await apiService.createCostCenter({ name: newCostCenterName.trim() })
+      const response = await apiService.createCostCenter({ name: newCostCenterName.trim() })
       queryClient.invalidateQueries({ queryKey: ['cost_centers'] })
       toast.success(`Centro de custo "${newCostCenterName.trim()}" criado!`)
+      const newId = response?.cost_center?.id?.toString()
+      if (newId) {
+        if (isEditTransactionOpen) {
+          setEditFormData(prev => ({ ...prev, cost_center_id: newId }))
+        } else {
+          setFormData(prev => ({ ...prev, cost_center_id: newId }))
+        }
+      }
       setNewCostCenterName('')
       setIsAddCostCenterOpen(false)
       setDuplicateWarning('')
@@ -910,10 +934,8 @@ export function Transactions() {
 
   const formatDateForInput = (dateString) => {
     if (!dateString) return ''
-    const date = new Date(dateString)
-    const day = date.getDate().toString().padStart(2, '0')
-    const month = (date.getMonth() + 1).toString().padStart(2, '0')
-    const year = date.getFullYear()
+    const [year, month, day] = dateString.split('T')[0].split('-')
+    if (!year || !month || !day) return ''
     return `${day}/${month}/${year}`
   }
 
@@ -1851,9 +1873,16 @@ export function Transactions() {
                                   max="120"
                                   value={paymentPlan.number_of_installments}
                                   onChange={(e) => setPaymentPlan({
-                                    ...paymentPlan, 
-                                    number_of_installments: parseInt(e.target.value) || 2
+                                    ...paymentPlan,
+                                    number_of_installments: e.target.value === '' ? '' : parseInt(e.target.value)
                                   })}
+                                  onBlur={(e) => {
+                                    const val = parseInt(e.target.value)
+                                    setPaymentPlan({
+                                      ...paymentPlan,
+                                      number_of_installments: (!val || val < 2) ? 2 : Math.min(val, 120)
+                                    })
+                                  }}
                                   className="w-full"
                                 />
                                 <p className="text-xs text-text-secondary">Mínimo: 2, Máximo: 120</p>
@@ -1960,16 +1989,16 @@ export function Transactions() {
                                 <p className="text-sm">
                                   {paymentPlan.amount_type === 'total_amount' ? (
                                     <>
-                                      Valor total: {formatCurrency(parseFloat(formData.amount_cents || 0) * 100)}<br/>
+                                      Valor total: {formatCurrency(parseFloat(formData.amount_cents || 0))}<br/>
                                       Valor por parcela: {formatCurrency(
-                                        (parseFloat(formData.amount_cents || 0) * 100) / paymentPlan.number_of_installments
+                                        parseFloat(formData.amount_cents || 0) / paymentPlan.number_of_installments
                                       )}
                                     </>
                                   ) : (
                                     <>
-                                      Valor por parcela: {formatCurrency(parseFloat(formData.amount_cents || 0) * 100)}<br/>
+                                      Valor por parcela: {formatCurrency(parseFloat(formData.amount_cents || 0))}<br/>
                                       Valor total: {formatCurrency(
-                                        (parseFloat(formData.amount_cents || 0) * 100) * paymentPlan.number_of_installments
+                                        parseFloat(formData.amount_cents || 0) * paymentPlan.number_of_installments
                                       )}
                                     </>
                                   )}
@@ -2382,6 +2411,20 @@ export function Transactions() {
             >
               <ChevronRight className="w-4 h-4 text-text-secondary" />
             </button>
+            {(() => {
+              const now = new Date()
+              const isCurrentMonth = currentMonth.getFullYear() === now.getFullYear() && currentMonth.getMonth() === now.getMonth()
+              if (isCurrentMonth) return null
+              return (
+                <button
+                  onClick={goToCurrentMonth}
+                  className="ml-1 text-xs font-semibold px-2 py-0.5 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                  style={{ color: T.brand, border: `1px solid ${T.brand}50` }}
+                >
+                  Hoje
+                </button>
+              )
+            })()}
           </div>
         </div>
 
@@ -2603,7 +2646,6 @@ export function Transactions() {
         <div style={{ background: T.white, borderRadius: 12, border: `1px solid ${T.border}`, overflow: 'clip' }}>
           <Table className="w-full">
             <TableHeader
-              className="sticky top-14 sm:top-16 z-[7]"
               style={{ background: T.bg }}
             >
               <TableRow style={{ background: T.bg }}>

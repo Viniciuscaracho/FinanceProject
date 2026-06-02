@@ -33,7 +33,9 @@ export const CompanySettings = lazy(() => import('../pages/CompanySettings').the
 export const Vitrine = lazy(() => import('../pages/Vitrine').then(m => ({ default: m.Vitrine })))
 export const AnamneseTemplates = lazy(() => import('../pages/AnamneseTemplates').then(m => ({ default: m.AnamneseTemplates })))
 export const PatientProfile = lazy(() => import('../pages/PatientProfile').then(m => ({ default: m.PatientProfile })))
-export const MealPlanBuilder = lazy(() => import('../pages/MealPlanBuilder'))
+export const MealPlanBuilder         = lazy(() => import('../pages/MealPlanBuilder'))
+export const MealPlanTemplates       = lazy(() => import('../pages/MealPlanTemplates'))
+export const MealPlanTemplateBuilder = lazy(() => import('../pages/MealPlanTemplateBuilder'))
 
 export const protectedRoutes = [
   { path: '/',                              element: Dashboard },
@@ -41,6 +43,8 @@ export const protectedRoutes = [
   { path: '/contacts',                      element: Contacts },
   { path: '/contacts/:id',                  element: PatientProfile },
   { path: '/contacts/:contactId/meal-plans/:planId', element: MealPlanBuilder },
+  { path: '/meal-plan-templates',                   element: MealPlanTemplates },
+  { path: '/meal-plan-templates/:templateId',        element: MealPlanTemplateBuilder },
   { path: '/appointments',                  element: Appointments },
   { path: '/appointment-links',             element: AppointmentLinks },
   { path: '/appointment-notes',             element: AppointmentNotes },

@@ -71,7 +71,7 @@ function DensityGauge({ density }) {
         Densidade calórica
       </div>
       <div style={{ position: 'relative', height: 10, borderRadius: 5, background: 'linear-gradient(to right, #10B981, #34D399, #F59E0B, #EF4444, #B91C1C)', marginBottom: 5 }}>
-        <div style={{ position: 'absolute', top: -4, left: `${pct}%`, transform: 'translateX(-50%)', width: 18, height: 18, borderRadius: '50%', background: '#fff', border: `3px solid ${info.color}`, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }} />
+        <div className="dm-gauge-dot" style={{ position: 'absolute', top: -4, left: `${pct}%`, transform: 'translateX(-50%)', width: 18, height: 18, borderRadius: '50%', background: '#fff', border: `3px solid ${info.color}`, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }} />
       </div>
       <div style={{ fontSize: 18, fontWeight: 800, color: T.text }}>{density.toFixed(2)}</div>
       <div style={{ fontSize: 10, color: info.color, fontWeight: 600 }}>{info.label} (Kcal/g)</div>
@@ -132,7 +132,7 @@ function MicroBar({ label, value, unit, ref: refVal, isLimit, showRef }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '88px 1fr 72px', alignItems: 'center', gap: 8, marginBottom: 5 }}>
       <span style={{ fontSize: 11, color: T.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
-      <div style={{ height: 5, borderRadius: 3, background: '#F3F4F6', overflow: 'hidden' }}>
+      <div style={{ height: 5, borderRadius: 3, background: T.light, overflow: 'hidden' }}>
         {pct > 0 && <div style={{ width: `${pct}%`, height: '100%', background: barColor, borderRadius: 3 }} />}
       </div>
       <span style={{ fontSize: 11, fontWeight: 700, color: T.text, textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -154,7 +154,7 @@ function MicronutrientSection({ fiber, vitamins, showRef }) {
   const vitaminKeys = ['vitamin_a_mcg', 'vitamin_c_mg', 'vitamin_d_mcg', 'vitamin_b12_mcg']
 
   return (
-    <div style={{ marginTop: 12, borderTop: `1px solid #F3F4F6`, paddingTop: 10 }}>
+    <div style={{ marginTop: 12, borderTop: `1px solid ${T.border}`, paddingTop: 10 }}>
       <button type="button" onClick={() => setOpen(p => !p)}
         style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '0 0 6px' }}>
         <FlaskConical size={12} style={{ color: T.brand }} />
@@ -241,7 +241,7 @@ export function MealNutrientPanel({ meal }) {
                 { label: 'Fibras',       value: fiber,   color: '#6B7280' },
                 { label: 'Peso total',   value: weight,  color: '#9CA3AF' },
               ].map(m => (
-                <div key={m.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid #F9FAFB' }}>
+                <div key={m.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: `1px solid ${T.border}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: m.color, display: 'inline-block' }} />
                     <span style={{ fontSize: 11, color: T.muted }}>{m.label}</span>
@@ -293,7 +293,7 @@ export function DayNutrientStrip({ totals, targets, onOpenTargets }) {
               {kcalPct.toFixed(0)}%
             </span>
           </div>
-          <div style={{ height: 6, borderRadius: 3, background: '#F3F4F6', overflow: 'hidden', marginBottom: 10 }}>
+          <div style={{ height: 6, borderRadius: 3, background: T.light, overflow: 'hidden', marginBottom: 10 }}>
             <div style={{ width: `${kcalPct}%`, height: '100%', background: kcalPct > 105 ? '#EF4444' : '#F59E0B', borderRadius: 3, transition: 'width 0.4s' }} />
           </div>
         </div>
@@ -314,7 +314,7 @@ export function DayNutrientStrip({ totals, targets, onOpenTargets }) {
             <div key={m.key} style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 2 }}>{m.key}</div>
               {pct !== null && (
-                <div style={{ height: 3, borderRadius: 2, background: '#F3F4F6', overflow: 'hidden', marginBottom: 3 }}>
+                <div style={{ height: 3, borderRadius: 2, background: T.light, overflow: 'hidden', marginBottom: 3 }}>
                   <div style={{ width: `${pct}%`, height: '100%', background: m.color, borderRadius: 2 }} />
                 </div>
               )}
@@ -384,7 +384,7 @@ function DayNutrientDetail({ totals, targets }) {
           </thead>
           <tbody>
             {rows.map(row => (
-              <tr key={row.label} style={{ borderBottom: '1px solid #F9FAFB' }}>
+              <tr key={row.label} style={{ borderBottom: `1px solid ${T.border}` }}>
                 <td style={{ padding: '5px 0', color: T.text, fontWeight: 500 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: row.color, flexShrink: 0, display: 'inline-block' }} />

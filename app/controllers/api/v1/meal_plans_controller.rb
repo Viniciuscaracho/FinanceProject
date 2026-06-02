@@ -43,7 +43,13 @@ module Api
 
       def activate
         @plan.update!(status: MealPlan::STATUSES[:active])
-        render json: { meal_plan: plan_summary_json(@plan) }
+
+        whatsapp_result = MealPlans::SendWhatsappLink.call(meal_plan: @plan)
+        render json: {
+          meal_plan:        plan_summary_json(@plan),
+          whatsapp_sent:    whatsapp_result.sent || false,
+          whatsapp_error:   whatsapp_result.error
+        }
       end
 
       # POST /contacts/:contact_id/meal_plans/from_template

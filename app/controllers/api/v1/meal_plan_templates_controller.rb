@@ -11,6 +11,42 @@ module Api
         render json: { templates: templates.map { |t| template_summary_json(t) } }
       end
 
+      # POST /meal_plan_templates/import_system
+      def import_system
+        result = MealPlans::ImportSystemTemplates.call(account: Current.account)
+
+        if result.success?
+          templates = Current.account.meal_plans.templates.recent.includes(:meal_plan_days)
+          render json: {
+            imported:  result.imported,
+            templates: templates.map { |t| template_summary_json(t) }
+          }
+        else
+          render json: { error: 'Erro ao importar modelos' }, status: :unprocessable_entity
+        end
+      end
+
+      # POST /meal_plan_templates/from_plan
+      def from_plan
+        plan = Current.account.meal_plans.find(params[:plan_id])
+
+        result = MealPlans::CopyPlanToTemplate.call(
+          plan:              plan,
+          account:           Current.account,
+          title:             params[:title],
+          description:       params[:description],
+          template_category: params[:template_category]
+        )
+
+        if result.success?
+          render json: { template: template_summary_json(result.template) }, status: :created
+        else
+          render json: { error: result.error || 'Erro ao salvar modelo' }, status: :unprocessable_entity
+        end
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: 'Plano não encontrado' }, status: :not_found
+      end
+
       def show
         render json: { template: template_full_json(@template) }
       end
@@ -71,7 +107,7 @@ module Api
       def add_food
         day       = @template.meal_plan_days.find(params[:day_id])
         meal      = day.meals.find(params[:meal_id])
-        food      = Current.account.foods.find(params[:food_id])
+        food      = Food.find(params[:food_id])
         position  = (meal.meal_foods.maximum(:position) || -1) + 1
         meal_food = meal.meal_foods.create!(
           food:     food,
@@ -112,7 +148,10 @@ module Api
       end
 
       def template_params
-        params.require(:meal_plan).permit(:title, :description, :notes, :template_category)
+        params.require(:meal_plan).permit(
+          :title, :description, :notes, :template_category,
+          :target_kcal, :target_protein_g, :target_carbs_g, :target_fat_g, :target_fiber_g
+        )
       end
 
       def template_summary_json(t)
@@ -122,7 +161,12 @@ module Api
           description:       t.description,
           template_category: t.template_category,
           total_days:        t.total_days,
-          updated_at:        t.updated_at.iso8601
+          updated_at:        t.updated_at.iso8601,
+          target_kcal:       t.target_kcal.to_f,
+          target_protein_g:  t.target_protein_g.to_f,
+          target_carbs_g:    t.target_carbs_g.to_f,
+          target_fat_g:      t.target_fat_g.to_f,
+          target_fiber_g:    t.target_fiber_g.to_f
         }
       end
 

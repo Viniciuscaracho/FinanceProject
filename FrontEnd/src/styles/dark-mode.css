@@ -1,0 +1,251 @@
+/*
+ * Dark Mode Global Overrides
+ *
+ * Approach: target structural elements (inputs, selects, dialogs) globally
+ * so that components with hardcoded light colors render correctly in dark mode
+ * without requiring per-component changes.
+ *
+ * This mirrors how Dark Reader (Dynamic mode) works: convert detected
+ * light values to their dark equivalents using CSS variables.
+ */
+
+/* ── 0. Tailwind utility class overrides (Dark Reader approach) ──────────────
+   When dark:bg-* variants are defined but the Tailwind custom variant isn't
+   applying correctly, override the light utility classes directly.
+   This covers ALL components that use Tailwind bg-white, bg-gray-* etc.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Backgrounds */
+.dark .bg-white          { background-color: var(--surface-elevated) !important; }
+.dark .bg-gray-50        { background-color: var(--surface) !important; }
+.dark .bg-gray-100       { background-color: var(--surface-subtle) !important; }
+.dark .bg-gray-200       { background-color: var(--border) !important; }
+
+/* Text */
+.dark .text-gray-900     { color: var(--text-primary) !important; }
+.dark .text-gray-800     { color: var(--text-primary) !important; }
+.dark .text-gray-700     { color: var(--text-primary) !important; }
+.dark .text-gray-600     { color: var(--text-secondary) !important; }
+.dark .text-gray-500     { color: var(--text-secondary) !important; }
+.dark .text-gray-400     { color: var(--text-secondary) !important; }
+
+/* Borders */
+.dark .border-gray-100   { border-color: var(--border) !important; }
+.dark .border-gray-200   { border-color: var(--border) !important; }
+.dark .border-gray-300   { border-color: var(--border) !important; }
+
+/* Hover states */
+.dark .hover\:bg-gray-50:hover   { background-color: var(--surface-subtle) !important; }
+.dark .hover\:bg-gray-100:hover  { background-color: var(--surface-subtle) !important; }
+
+/* Sticky nav bars with opacity (bg-white/85, bg-white/90, etc.) */
+.dark [class*="bg-white\/"]      { background-color: color-mix(in srgb, var(--surface-elevated) 90%, transparent) !important; }
+
+/* Additional grays used in some components */
+.dark .text-gray-300 { color: var(--text-secondary) !important; }
+.dark .border-gray-400 { border-color: var(--border) !important; }
+.dark .bg-gray-300 { background-color: var(--surface-subtle) !important; }
+
+/* Skeleton loading elements */
+.dark .bg-gray-100.rounded-full,
+.dark .bg-gray-100.rounded-lg,
+.dark .bg-gray-100.rounded-xl { background-color: var(--surface-subtle) !important; }
+
+/* ── 1. Native form elements ─────────────────────────────────────────────────
+   CSS !important overrides inline styles, so this fixes all inputs/selects
+   even when they have hardcoded background: '#fff' inline.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+.dark textarea {
+  background-color: var(--surface-elevated) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+  color-scheme: dark;
+}
+
+.dark select {
+  background-color: var(--surface-elevated) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+  color-scheme: dark;
+}
+
+/* Native <option> inside <select> */
+.dark option {
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+/* Placeholder text */
+.dark ::placeholder {
+  color: var(--text-secondary) !important;
+  opacity: 0.6;
+}
+
+/* Autofill overrides (Chrome applies its own yellow/blue) */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-elevated) inset !important;
+  box-shadow: 0 0 0 1000px var(--surface-elevated) inset !important;
+  caret-color: var(--text-primary);
+}
+
+/* ── 2. Radix UI & Shadcn overlays ──────────────────────────────────────────
+   Radix renders portals into document.body but html.dark still covers them.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Select dropdown content */
+.dark [data-radix-select-content],
+.dark [role="listbox"] {
+  background-color: var(--surface-elevated) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark [data-radix-select-item],
+.dark [role="option"] {
+  color: var(--text-primary) !important;
+}
+
+.dark [data-radix-select-item][data-highlighted],
+.dark [role="option"]:hover,
+.dark [role="option"][aria-selected="true"] {
+  background-color: var(--surface-subtle) !important;
+}
+
+/* Popover & tooltip */
+.dark [data-radix-popper-content-wrapper] > * {
+  background-color: var(--surface-elevated) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Command palette / combobox */
+.dark [cmdk-root],
+.dark [cmdk-list],
+.dark [cmdk-item] {
+  background-color: var(--surface-elevated) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark [cmdk-item][aria-selected="true"],
+.dark [cmdk-item]:hover {
+  background-color: var(--chip) !important;
+}
+
+/* ── 3. Custom modal containers (position:fixed white boxes) ─────────────────
+   These are divs with inline style="background: rgb(255,255,255)" that CSS
+   !important can override. We target them by their common structural role:
+   a direct child of a fixed-position overlay.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* The typical pattern:
+   <div style="position:fixed; inset:0; background:rgba(0,0,0,0.4)">   ← overlay
+     <div style="background:#fff; border-radius:12px">                 ← modal box
+   </div>
+   We can't target by inline style value, but we CAN add a CSS class to
+   the modal box. Components are being fixed to add .dm-modal-box class.
+*/
+
+.dark .dm-modal-box {
+  background-color: var(--surface-elevated) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+
+/* ── 4. Progress bar & chart tracks ─────────────────────────────────────────
+   Light gray tracks (#F3F4F6, #F9FAFB) used as backgrounds for progress bars.
+   These need to be darker in dark mode.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.dark .dm-track {
+  background-color: var(--surface-subtle) !important;
+}
+
+/* ── 5. Scrollbars (webkit) ─────────────────────────────────────────────────*/
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* ── 6. Common semantic patterns ──────────────────────────────────────────── */
+
+/* White section backgrounds inside cards/panels */
+.dark .dm-section {
+  background-color: var(--surface-elevated) !important;
+  border-color: var(--border) !important;
+}
+
+/* Light badge backgrounds (status chips) — use the .dm-badge class to
+   get a transparent overlay that works in both modes */
+.dark .dm-badge-green  { background-color: #10B98120 !important; color: #10B981 !important; }
+.dark .dm-badge-amber  { background-color: #F59E0B20 !important; color: #F59E0B !important; }
+.dark .dm-badge-red    { background-color: #EF444420 !important; color: #EF4444 !important; }
+.dark .dm-badge-purple { background-color: #7C3AED20 !important; color: #A78BFA !important; }
+.dark .dm-badge-blue   { background-color: var(--chip) !important; color: var(--brand-primary) !important; }
+.dark .dm-badge-gray   { background-color: var(--surface-subtle) !important; color: var(--text-secondary) !important; }
+
+/* ── 7. Table row alternating & dividers ─────────────────────────────────── */
+
+.dark .dm-row-divider {
+  border-color: var(--border) !important;
+}
+
+/* ── 8. Sonner toasts ────────────────────────────────────────────────────── */
+
+.dark [data-sonner-toast] {
+  background-color: var(--surface-elevated) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ── 9. ProseMirror / Tiptap editor ─────────────────────────────────────────
+   The editor content area inherits background but Tiptap may inject its own.
+   Force dark background on the contenteditable and its wrapper.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.dark .ProseMirror,
+.dark [contenteditable="true"] {
+  background-color: var(--surface-elevated) !important;
+  color: var(--text-primary) !important;
+  caret-color: var(--text-primary);
+}
+
+.dark .editor-content {
+  background-color: var(--surface-elevated) !important;
+}
+
+/* Editor code blocks */
+.dark .editor-content pre {
+  background: var(--surface-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark .editor-content hr {
+  border-color: var(--border) !important;
+}
+
+.dark .editor-content blockquote {
+  border-color: var(--border) !important;
+}
+
+/* ── 11. Density gauge indicator dot ────────────────────────────────────────
+   The white circle that moves along the gradient track.
+   Background should be the surface in dark mode, not white.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.dark .dm-gauge-dot {
+  background-color: var(--surface-elevated) !important;
+}

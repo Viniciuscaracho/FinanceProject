@@ -2027,6 +2027,89 @@ class ApiService {
     return this.request(`/contacts/${contactId}/meal_plans/${planId}/days/${dayId}/meals/${mealId}/foods/${foodItemId}`, { method: 'DELETE' })
   }
 
+  // ── Modelos de Plano Alimentar ────────────────────────────────────────────────
+
+  async getMealPlanTemplates() {
+    return this.request('/meal_plan_templates')
+  }
+
+  async getMealPlanTemplate(id) {
+    return this.request(`/meal_plan_templates/${id}`)
+  }
+
+  async createMealPlanTemplate(data) {
+    return this.request('/meal_plan_templates', {
+      method: 'POST',
+      body: JSON.stringify({ meal_plan: data }),
+    })
+  }
+
+  async updateMealPlanTemplate(id, data) {
+    return this.request(`/meal_plan_templates/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ meal_plan: data }),
+    })
+  }
+
+  async deleteMealPlanTemplate(id) {
+    return this.request(`/meal_plan_templates/${id}`, { method: 'DELETE' })
+  }
+
+  async importSystemMealPlanTemplates() {
+    return this.request('/meal_plan_templates/import_system', { method: 'POST' })
+  }
+
+  async savePlanAsTemplate(planId, data) {
+    return this.request('/meal_plan_templates/from_plan', {
+      method: 'POST',
+      body: JSON.stringify({ plan_id: planId, ...data }),
+    })
+  }
+
+  async createMealPlanFromTemplate(contactId, templateId, title) {
+    return this.request(`/contacts/${contactId}/meal_plans/from_template`, {
+      method: 'POST',
+      body: JSON.stringify({ template_id: templateId, title }),
+    })
+  }
+
+  async addMealPlanTemplateDay(templateId) {
+    return this.request(`/meal_plan_templates/${templateId}/add_day`, { method: 'POST' })
+  }
+
+  async removeMealPlanTemplateDay(templateId, dayId) {
+    return this.request(`/meal_plan_templates/${templateId}/days/${dayId}`, { method: 'DELETE' })
+  }
+
+  async addMealToTemplate(templateId, dayId, name) {
+    return this.request(`/meal_plan_templates/${templateId}/days/${dayId}/meals`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    })
+  }
+
+  async removeMealFromTemplate(templateId, dayId, mealId) {
+    return this.request(`/meal_plan_templates/${templateId}/days/${dayId}/meals/${mealId}`, { method: 'DELETE' })
+  }
+
+  async addFoodToTemplateMeal(templateId, dayId, mealId, data) {
+    return this.request(`/meal_plan_templates/${templateId}/days/${dayId}/meals/${mealId}/foods`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateTemplateMealFood(templateId, dayId, mealId, foodItemId, data) {
+    return this.request(`/meal_plan_templates/${templateId}/days/${dayId}/meals/${mealId}/foods/${foodItemId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async removeTemplateMealFood(templateId, dayId, mealId, foodItemId) {
+    return this.request(`/meal_plan_templates/${templateId}/days/${dayId}/meals/${mealId}/foods/${foodItemId}`, { method: 'DELETE' })
+  }
+
   // ── Busca de Alimentos ────────────────────────────────────────────────────────
 
   async searchFoods(q, source = null) {
