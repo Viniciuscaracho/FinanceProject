@@ -138,9 +138,7 @@ class Appointment < ApplicationRecord
   after_update :send_whatsapp_on_confirmation
   after_update :send_payment_confirmation_whatsapp
   after_create :create_audit_transaction_if_unpaid
-  after_create :schedule_google_calendar_sync
-  after_create :send_confirmation_email
-  after_create :send_whatsapp_booking_receipt
+  after_create :schedule_appointment_confirmations
   after_update :schedule_google_calendar_sync_on_change
   after_commit :dispatch_whatsapp_confirmation_event, on: :create
   after_commit :dispatch_whatsapp_confirmation_event_on_update, on: :update
@@ -567,6 +565,12 @@ class Appointment < ApplicationRecord
     )
   end
 
+  def schedule_appointment_confirmations
+    SendAppointmentConfirmationsJob.perform_later(id)
+  rescue => e
+    Rails.logger.error "Falha ao agendar SendAppointmentConfirmationsJob para appointment #{id}: #{e.message}"
+  end
+
   def schedule_google_calendar_sync
     GoogleCalendarSyncJob.perform_later(id)
   rescue => e
@@ -637,14 +641,6 @@ class Appointment < ApplicationRecord
     return false unless appointment_link
     settings = appointment_link.settings || {}
     (settings.dig('automations', key.to_s)) == true
-  end
-
-  def send_confirmation_email
-    return unless contact&.email.present?
-
-    AppointmentMailer.confirmation(self).deliver_later
-  rescue => e
-    Rails.logger.error "Erro ao enviar e-mail de confirmação: #{e.message}"
   end
 
   def send_whatsapp_booking_receipt
