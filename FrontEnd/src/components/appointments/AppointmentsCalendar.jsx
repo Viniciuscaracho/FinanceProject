@@ -1002,7 +1002,7 @@ export function AppointmentsCalendar({ newlyCreatedAppointment, onHighlightDone 
                             {apt.is_demo && (
                               <span
                                 className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5"
-                                style={{ borderRadius: 20, background: '#F3F4F6', color: '#6B7280', border: '1px solid #E5E7EB' }}
+                                style={{ borderRadius: 20, background: T.light, color: T.muted, border: `1px solid ${T.border}` }}
                               >
                                 Exemplo
                               </span>

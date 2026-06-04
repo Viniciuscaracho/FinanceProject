@@ -71,7 +71,7 @@ function DensityGauge({ density }) {
         Densidade calórica
       </div>
       <div style={{ position: 'relative', height: 10, borderRadius: 5, background: 'linear-gradient(to right, #10B981, #34D399, #F59E0B, #EF4444, #B91C1C)', marginBottom: 5 }}>
-        <div className="dm-gauge-dot" style={{ position: 'absolute', top: -4, left: `${pct}%`, transform: 'translateX(-50%)', width: 18, height: 18, borderRadius: '50%', background: '#fff', border: `3px solid ${info.color}`, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }} />
+        <div className="dm-gauge-dot" style={{ position: 'absolute', top: -4, left: `${pct}%`, transform: 'translateX(-50%)', width: 18, height: 18, borderRadius: '50%', background: T.white, border: `3px solid ${info.color}`, boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }} />
       </div>
       <div style={{ fontSize: 18, fontWeight: 800, color: T.text }}>{density.toFixed(2)}</div>
       <div style={{ fontSize: 10, color: info.color, fontWeight: 600 }}>{info.label} (Kcal/g)</div>

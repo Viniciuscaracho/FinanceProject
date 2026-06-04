@@ -334,7 +334,7 @@ export function OnboardingWizard({ onDone }) {
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 14,
-                background: '#EEF2FA', display: 'inline-flex',
+                background: T.chip, display: 'inline-flex',
                 alignItems: 'center', justifyContent: 'center', marginBottom: 14,
               }}>
                 <FileText size={24} style={{ color: '#4C60AA' }} />
@@ -406,7 +406,7 @@ export function OnboardingWizard({ onDone }) {
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 14,
-                background: '#EEF2FA', display: 'inline-flex',
+                background: T.chip, display: 'inline-flex',
                 alignItems: 'center', justifyContent: 'center', marginBottom: 14,
               }}>
                 <Briefcase size={24} style={{ color: '#4C60AA' }} />
@@ -507,7 +507,7 @@ export function OnboardingWizard({ onDone }) {
             <div style={{ textAlign: 'center', marginBottom: 28 }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 14,
-                background: '#EEF2FA', display: 'inline-flex',
+                background: T.chip, display: 'inline-flex',
                 alignItems: 'center', justifyContent: 'center', marginBottom: 14,
               }}>
                 <Clock size={24} style={{ color: '#4C60AA' }} />

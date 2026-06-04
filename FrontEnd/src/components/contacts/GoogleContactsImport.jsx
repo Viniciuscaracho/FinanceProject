@@ -26,7 +26,7 @@ function ContactRow({ contact, selected, onToggle }) {
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '10px 14px', borderRadius: 8, cursor: 'pointer',
-        background: selected ? '#EEF2FA' : 'transparent',
+        background: selected ? T.chip : 'transparent',
         border: `1px solid ${selected ? '#4C60AA40' : 'transparent'}`,
         transition: 'all 120ms',
       }}
@@ -45,7 +45,7 @@ function ContactRow({ contact, selected, onToggle }) {
       {/* Avatar */}
       <div style={{
         width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-        background: '#EEF2FA', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 14, fontWeight: 700, color: '#4C60AA',
       }}>
         {(contact.name?.[0] || contact.email?.[0] || '?').toUpperCase()}
@@ -168,7 +168,7 @@ export function GoogleContactsImport({ onImported, onClose }) {
 
         {/* Header */}
         <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: '#EEF2FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <GoogleIcon />
           </div>
           <div style={{ flex: 1 }}>

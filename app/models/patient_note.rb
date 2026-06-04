@@ -11,6 +11,17 @@
 #  account_id :bigint           not null
 #  contact_id :bigint           not null
 #
+# Indexes
+#
+#  index_patient_notes_on_account_id                 (account_id)
+#  index_patient_notes_on_account_id_and_contact_id  (account_id,contact_id)
+#  index_patient_notes_on_contact_id                 (contact_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#  fk_rails_...  (contact_id => people.id)
+#
 class PatientNote < ApplicationRecord
   acts_as_tenant :account
 

@@ -103,7 +103,7 @@ function PhotoUpload({ label, hint, url, uploading, onFileSelect, onRemove, shap
         <div style={{
           width: isCircle ? 72 : 120, height: 72,
           borderRadius: isCircle ? '50%' : 10,
-          background: url ? 'transparent' : (isCircle ? '#EEF2FA' : 'linear-gradient(135deg, #1E2440, #4C60AA)'),
+          background: url ? 'transparent' : (isCircle ? T.chip : 'linear-gradient(135deg, #1E2440, #4C60AA)'),
           border: `2px ${url ? 'solid' : 'dashed'} var(--border)`,
           overflow: 'hidden', flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -137,7 +137,7 @@ function PhotoUpload({ label, hint, url, uploading, onFileSelect, onRemove, shap
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               fontSize: 13, fontWeight: 600, color: '#4C60AA',
-              background: '#EEF2FA', border: 'none', borderRadius: 8,
+              background: T.chip, border: 'none', borderRadius: 8,
               padding: '7px 14px', cursor: uploading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
               opacity: uploading ? 0.6 : 1,
             }}
@@ -191,7 +191,7 @@ function ProfilePreview({ acct, co, addr, logoUrl, coverUrl }) {
           position: 'absolute', bottom: -20, left: 16,
           width: 44, height: 44, borderRadius: 10,
           border: '3px solid var(--background, #fff)',
-          background: logoUrl ? 'transparent' : '#EEF2FA',
+          background: logoUrl ? 'transparent' : T.chip,
           overflow: 'hidden',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
@@ -207,7 +207,7 @@ function ProfilePreview({ acct, co, addr, logoUrl, coverUrl }) {
         {acct?.profession_category && (
           <span style={{
             fontSize: 11, fontWeight: 600, color: '#4C60AA',
-            background: '#EEF2FA', borderRadius: 20, padding: '2px 8px',
+            background: T.chip, borderRadius: 20, padding: '2px 8px',
             display: 'inline-block', marginBottom: 6,
           }}>
             {acct.profession_category}

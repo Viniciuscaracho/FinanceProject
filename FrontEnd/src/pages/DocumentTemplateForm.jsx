@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { T } from '@/lib/tokens'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -102,9 +103,9 @@ function NutriVariableTutorial({ onInsert }) {
           {NUTRI_VARS.map(v => (
             <button key={v.key} type="button" onClick={() => onInsert(v.key)}
               title={v.desc}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '4px 8px', borderRadius: 6, border: '1px solid #d1fae5', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', transition: 'background 100ms' }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '4px 8px', borderRadius: 6, border: '1px solid #d1fae5', background: T.white, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 100ms' }}
               onMouseEnter={e => e.currentTarget.style.background = '#ecfdf5'}
-              onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+              onMouseLeave={e => e.currentTarget.style.background = T.white}>
               <span style={{ fontSize: 10, fontWeight: 700, color: '#065f46', fontFamily: 'monospace' }}>{v.key}</span>
               <span style={{ fontSize: 10, color: '#6b7280' }}>{v.label}</span>
             </button>
@@ -722,9 +723,9 @@ export function DocumentTemplateForm() {
                                 style={{
                                   flex: 1, padding: '6px 0', borderRadius: 8, fontSize: 12, fontWeight: 500,
                                   cursor: 'pointer', border: '1px solid', fontFamily: 'inherit',
-                                  borderColor: formData.transaction_type_cd === opt.value ? '#4C60AA' : '#E5E7EB',
-                                  background: formData.transaction_type_cd === opt.value ? '#F0F2FF' : '#fff',
-                                  color: formData.transaction_type_cd === opt.value ? '#4C60AA' : '#374151',
+                                  borderColor: formData.transaction_type_cd === opt.value ? '#4C60AA' : T.border,
+                                  background: formData.transaction_type_cd === opt.value ? T.chip : T.white,
+                                  color: formData.transaction_type_cd === opt.value ? '#4C60AA' : T.text,
                                   transition: 'all 150ms',
                                 }}>
                                 {opt.label}
@@ -912,7 +913,7 @@ export function DocumentTemplateForm() {
                     <select
                       value={previewContact?.id ?? ''}
                       onChange={e => setPreviewContact(previewContacts.find(c => String(c.id) === e.target.value) || null)}
-                      style={{ fontSize: 12, padding: '3px 8px', borderRadius: 6, border: '1px solid #E5E7EB', background: '#fff', color: '#374151', fontFamily: 'inherit', maxWidth: 200, cursor: 'pointer' }}
+                      style={{ fontSize: 12, padding: '3px 8px', borderRadius: 6, border: `1px solid ${T.border}`, background: T.white, color: T.text, fontFamily: 'inherit', maxWidth: 200, cursor: 'pointer' }}
                     >
                       {previewContacts.map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>

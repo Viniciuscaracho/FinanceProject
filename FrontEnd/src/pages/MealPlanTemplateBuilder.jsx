@@ -42,7 +42,7 @@ const SOURCE_TABS = [
 
 function MacroBadge({ label, value, unit = 'g', color }) {
   return (
-    <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', minWidth: 44, padding: '2px 6px', borderRadius: 7, background: '#F9FAFB', border: `1px solid ${T.border}` }}>
+    <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', minWidth: 44, padding: '2px 6px', borderRadius: 7, background: T.light, border: `1px solid ${T.border}` }}>
       <span style={{ fontSize: 9, fontWeight: 600, color: color || T.muted, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</span>
       <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{value}{unit}</span>
     </span>
@@ -104,7 +104,7 @@ function FoodSearch({ onSelect, onClose }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="dm-modal-box" style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 520, boxShadow: '0 20px 60px rgba(0,0,0,0.15)', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="dm-modal-box" style={{ background: T.white, borderRadius: 14, width: '100%', maxWidth: 520, boxShadow: '0 20px 60px rgba(0,0,0,0.15)', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', borderBottom: `1px solid ${T.border}`, padding: '0 10px', flexShrink: 0 }}>
           {SOURCE_TABS.map(tab => (
             <button key={String(tab.key)} type="button"
@@ -219,7 +219,7 @@ function FoodItem({ item, templateId, dayId, mealId, onRemove, onUpdate }) {
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid #F3F4F6' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: `1px solid ${T.border}` }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 500, color: T.text, lineHeight: 1.3 }}>{item.food_name}</div>
         <div style={{ fontSize: 11, color: T.muted, marginTop: 1 }}>
@@ -241,7 +241,7 @@ function FoodItem({ item, templateId, dayId, mealId, onRemove, onUpdate }) {
         </div>
       ) : (
         <button type="button" onClick={() => setEditing(true)}
-          style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, background: '#F3F4F6', border: 'none', cursor: 'pointer', color: T.text, fontFamily: 'inherit', fontWeight: 600, minHeight: 32, flexShrink: 0 }}>
+          style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, background: T.light, border: `1px solid ${T.border}`, cursor: 'pointer', color: T.text, fontFamily: 'inherit', fontWeight: 600, minHeight: 32, flexShrink: 0 }}>
           {item.quantity}g
         </button>
       )}
@@ -443,7 +443,7 @@ function TargetsModal({ template, templateId, onSave, onClose }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="dm-modal-box" style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 460, padding: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div className="dm-modal-box" style={{ background: T.white, borderRadius: 16, width: '100%', maxWidth: 460, padding: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.18)', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: T.text }}>Metas do modelo</h3>
         <p style={{ margin: '0 0 18px', fontSize: 12, color: T.muted }}>Referência nutricional para o painel de análise.</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -576,7 +576,7 @@ export default function MealPlanTemplateBuilder() {
       {/* Barra de ações */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         <button type="button" onClick={() => setShowTargets(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: `1.5px solid ${hasTargets ? T.brand : T.border}`, background: hasTargets ? '#EEF2FF' : 'none', cursor: 'pointer', color: hasTargets ? T.brand : T.muted, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, minHeight: 40, flex: '1 1 auto' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: `1.5px solid ${hasTargets ? T.brand : T.border}`, background: hasTargets ? T.chip : 'none', cursor: 'pointer', color: hasTargets ? T.brand : T.muted, fontFamily: 'inherit', fontSize: 12, fontWeight: 600, minHeight: 40, flex: '1 1 auto' }}>
           <Settings2 size={14} />
           {hasTargets ? `Metas: ${Math.round(template.target_kcal)} kcal · ${Math.round(template.target_protein_g)}g P · ${Math.round(template.target_carbs_g)}g C` : 'Definir metas do modelo'}
         </button>

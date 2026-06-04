@@ -56,7 +56,7 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          "bg-white dark:bg-[#1A1C1E] border-2 border-gray-200 dark:border-gray-700 data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-6 shadow-2xl transition-all duration-140",
+          "bg-card text-foreground border-2 border-border data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-6 shadow-2xl transition-all duration-140",
           side === "right" &&
             "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
           side === "left" &&
@@ -88,7 +88,7 @@ function SheetHeader({
   return (
     <div
       data-slot="sheet-header"
-      className={cn("flex flex-col gap-1.5 p-6 pb-4 border-b border-gray-200 dark:border-gray-700", className)}
+      className={cn("flex flex-col gap-1.5 p-6 pb-4 border-b border-border", className)}
       {...props} />
   );
 }
@@ -100,7 +100,7 @@ function SheetFooter({
   return (
     <div
       data-slot="sheet-footer"
-      className={cn("mt-auto flex flex-col-reverse gap-3 p-4 sm:flex-row sm:justify-end border-t border-gray-200 dark:border-gray-700", className)}
+      className={cn("mt-auto flex flex-col-reverse gap-3 p-4 sm:flex-row sm:justify-end border-t border-border", className)}
       {...props} />
   );
 }
@@ -112,7 +112,7 @@ function SheetTitle({
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn("text-lg font-bold leading-tight text-gray-900 dark:text-white", className)}
+      className={cn("text-lg font-bold leading-tight text-foreground", className)}
       {...props} />
   );
 }
@@ -124,7 +124,7 @@ function SheetDescription({
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
-      className={cn("text-sm text-gray-600 dark:text-gray-300 leading-relaxed", className)}
+      className={cn("text-sm text-muted-foreground leading-relaxed", className)}
       {...props} />
   );
 }

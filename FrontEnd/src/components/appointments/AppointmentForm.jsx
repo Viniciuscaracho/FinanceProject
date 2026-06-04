@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { T } from '@/lib/tokens'
 import { format, addDays, addWeeks, addMonths } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
 import { Button } from '@/components/ui/button'
@@ -496,7 +497,7 @@ export function AppointmentForm({
       >
         <ResponsiveDialogHeader>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: '#F0F2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <CalendarIcon className="h-5 w-5" style={{ color: '#4C60AA' }} />
             </div>
             <div>

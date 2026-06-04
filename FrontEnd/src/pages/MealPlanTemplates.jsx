@@ -114,7 +114,7 @@ export default function MealPlanTemplates() {
 
       {/* Form */}
       {showForm && (
-        <div style={{ border: `1px solid ${T.brand}40`, borderRadius: 12, padding: 16, marginBottom: 16, background: '#FAFBFF' }}>
+        <div style={{ border: `1px solid ${T.brand}40`, borderRadius: 12, padding: 16, marginBottom: 16, background: T.white }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: T.text, marginBottom: 14 }}>Novo modelo</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div>
@@ -126,7 +126,7 @@ export default function MealPlanTemplates() {
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Categoria</label>
               <select value={form.template_category} onChange={e => setForm(p => ({ ...p, template_category: e.target.value }))}
-                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: '#fff' }}>
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: T.white, color: T.text }}>
                 {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
                 ))}
@@ -176,7 +176,7 @@ export default function MealPlanTemplates() {
             const color = CATEGORY_COLORS[tpl.template_category] || '#9CA3AF'
             const label = CATEGORY_LABELS[tpl.template_category] || 'Outro'
             return (
-              <div key={tpl.id} style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, background: '#fff' }}>
+              <div key={tpl.id} style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, background: T.white }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
                     <span style={{ fontWeight: 600, fontSize: 13, color: T.text }}>{tpl.title}</span>

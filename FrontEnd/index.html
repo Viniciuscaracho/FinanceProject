@@ -2,6 +2,16 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <!-- Blocking script: apply dark class before first paint to avoid FOUC -->
+    <script>
+      (function() {
+        var t = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (t === 'dark' || (!t && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <!-- Viewport com suporte a zoom e diferentes tamanhos de tela -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />

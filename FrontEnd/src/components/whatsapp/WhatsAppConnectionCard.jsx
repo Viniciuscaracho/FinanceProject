@@ -112,7 +112,7 @@ function ViewQr({ base64, loading, onRefresh, onSwitchToPairing }) {
 
       {/* QR frame */}
       <div style={{
-        position: 'relative', padding: 10, borderRadius: 14, background: '#fff',
+        position: 'relative', padding: 10, borderRadius: 14, background: T.white,
         border: `2px solid ${T.border}`, boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
       }}>
         {loading || !base64 ? (

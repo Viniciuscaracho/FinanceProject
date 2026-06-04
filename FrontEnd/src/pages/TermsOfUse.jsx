@@ -44,7 +44,7 @@ export function TermsOfUse() {
   return (
     <div style={{ background: T.bg, minHeight: '100vh', ...DISPLAY }}>
       {/* Header */}
-      <header style={{ background: '#fff', borderBottom: `1px solid ${T.border}`, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 16, position: 'sticky', top: 0, zIndex: 10 }}>
+      <header style={{ background: T.white, borderBottom: `1px solid ${T.border}`, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 16, position: 'sticky', top: 0, zIndex: 10 }}>
         <button
           onClick={() => navigate(-1)}
           style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: T.brand, fontWeight: 500, fontSize: 14 }}

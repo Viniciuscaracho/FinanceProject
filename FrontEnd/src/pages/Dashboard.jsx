@@ -465,7 +465,7 @@ function WhatsAppDashboardCard({ isMobile }) {
 
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 20, padding: '20px 24px' }}>
           <div style={{
-            position: 'relative', padding: 8, borderRadius: 12, background: '#fff',
+            position: 'relative', padding: 8, borderRadius: 12, background: T.white,
             border: `2px solid ${T.border}`, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', flexShrink: 0,
           }}>
             {qrLoading || !qrBase64 ? (
@@ -532,7 +532,7 @@ function WhatsAppDashboardCard({ isMobile }) {
       border: '1px solid #BBF7D0', borderRadius: 10,
       padding: isMobile ? '12px 14px' : '10px 16px',
     }}>
-      <div style={{ width: 34, height: 34, borderRadius: 9, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 1px 6px rgba(37,211,102,0.2)' }}>
+      <div style={{ width: 34, height: 34, borderRadius: 9, background: T.white, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 1px 6px rgba(37,211,102,0.2)' }}>
         <WaIcon size={18} />
       </div>
       <div style={{ flex: 1, minWidth: 160 }}>

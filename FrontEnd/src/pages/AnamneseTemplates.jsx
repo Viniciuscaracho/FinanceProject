@@ -250,7 +250,7 @@ function FieldEditor({ field, onChange, onRemove, onMoveUp, onMoveDown, isFirst,
       border: `1px solid ${T.border}`,
       borderRadius: 10,
       padding: '12px 14px',
-      background: '#fff',
+      background: T.white,
       marginBottom: 10,
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -289,7 +289,7 @@ function FieldEditor({ field, onChange, onRemove, onMoveUp, onMoveDown, isFirst,
                 style={{
                   padding: '7px 10px', borderRadius: 7,
                   border: `1px solid ${T.border}`, fontSize: 13,
-                  cursor: 'pointer', background: '#fff', fontFamily: 'inherit',
+                  cursor: 'pointer', background: T.white, color: T.text, fontFamily: 'inherit',
                   width: '100%',
                 }}
               >

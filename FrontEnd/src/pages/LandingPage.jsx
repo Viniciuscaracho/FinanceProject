@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Accordion,
@@ -56,7 +57,7 @@ function AppPreview() {
   const [tab, setTab] = useState(0)
 
   return (
-    <div style={{ background: T.white, borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.10)' }}>
+    <div style={{ background: T.white, borderRadius: 20, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.10)' }}>
       <div style={{ background: T.light, borderBottom: `1px solid ${T.border}`, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ display: 'flex', gap: 5 }}>
           {['#FC6058','#FEC02F','#2ACA44'].map(c => <span key={c} style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'block' }} />)}
@@ -209,7 +210,7 @@ function BookingUI() {
 
   if (confirmed) {
     return (
-      <div style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.border}`, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}>
+      <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}>
         <div style={{ background: T.brand, padding: '20px 24px' }}>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', margin: '0 0 3px', ...DISPLAY }}>Dra. Camila Rocha · CRN 12345</p>
           <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', margin: 0, ...DISPLAY }}>Confirmação de consulta</p>
@@ -241,7 +242,7 @@ function BookingUI() {
   }
 
   return (
-    <div style={{ background: T.white, borderRadius: 14, border: `1px solid ${T.border}`, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}>
+    <div style={{ background: T.white, borderRadius: 20, border: `1px solid ${T.border}`, overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}>
       <div style={{ background: T.brand, padding: '20px 24px' }}>
         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', margin: '0 0 3px', ...DISPLAY }}>Dra. Camila Rocha · CRN 12345</p>
         <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', margin: 0, ...DISPLAY }}>Agendar consulta</p>
@@ -341,7 +342,7 @@ function WeekUI() {
   const [view, setView] = useState('semana')
 
   return (
-    <div style={{ background: '#18181B', borderRadius: 14, overflow: 'hidden', border: '1px solid #2A2A2D' }}>
+    <div style={{ background: '#18181B', borderRadius: 20, overflow: 'hidden', border: '1px solid #2A2A2D' }}>
       <div style={{ padding: '16px 20px', borderBottom: '1px solid #2A2A2D', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <div>
           <p style={{ fontSize: 10, color: '#666', margin: 0, ...DISPLAY }}>Maio 2026</p>
@@ -656,14 +657,14 @@ export function LandingPage() {
         borderBottom: `1px solid ${scrolled ? T.border : 'transparent'}`,
         backdropFilter: scrolled ? 'blur(12px)' : 'none',
       }}>
-        <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div className="max-w-7xl mx-auto px-6 sm:px-10" style={{ height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
             <span style={{ fontSize: 17, fontWeight: 700, color: T.text, letterSpacing: '-0.02em' }}>OrbiNutri</span>
-            <a href="/descobrir" className="hidden sm:block" style={{ fontSize: 13, fontWeight: 500, color: T.muted, textDecoration: 'none', transition: 'color 0.15s' }}
-              onMouseEnter={e => e.target.style.color = T.text}
-              onMouseLeave={e => e.target.style.color = T.muted}>
+            <Link to="/descobrir" className="hidden sm:flex" style={{ alignItems: 'center', fontSize: 13, fontWeight: 500, color: T.muted, textDecoration: 'none', transition: 'color 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.color = T.text}
+              onMouseLeave={e => e.currentTarget.style.color = T.muted}>
               Descobrir nutricionistas
-            </a>
+            </Link>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <a href="/login" className="hidden sm:block" style={{
@@ -673,7 +674,7 @@ export function LandingPage() {
             }}>
               Entrar
             </a>
-            <a href="/login?tab=register" style={{
+            <a href="/login" style={{
               fontSize: 13, fontWeight: 600, color: T.white, background: T.text,
               padding: '8px 18px', borderRadius: 8, textDecoration: 'none',
             }}>
@@ -685,8 +686,8 @@ export function LandingPage() {
 
       {/* ── Hero ─────────────────────────────────────────── */}
       <section style={{ background: T.bg, minHeight: '100dvh', display: 'flex', alignItems: 'center', paddingTop: 60 }}>
-        <div className="max-w-6xl mx-auto px-6 sm:px-10 w-full" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
-          <div className="grid grid-cols-1 lg:grid-cols-[45fr_55fr] gap-12 lg:gap-16 items-center">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 w-full" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-12 lg:gap-20 items-center">
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -698,11 +699,11 @@ export function LandingPage() {
               </p>
 
               <h1 style={{
-                fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+                fontSize: 'clamp(2.75rem, 5.5vw, 4.5rem)',
                 fontWeight: 700,
                 color: T.text,
-                lineHeight: 1.08,
-                letterSpacing: '-0.03em',
+                lineHeight: 1.05,
+                letterSpacing: '-0.035em',
                 marginBottom: '1.5rem',
               }}>
                 Pare de usar<br />
@@ -710,15 +711,15 @@ export function LandingPage() {
                 <em style={{ fontStyle: 'normal', color: T.brand }}>para 1 trabalho.</em>
               </h1>
 
-              <p style={{ fontSize: '1.05rem', color: T.muted, lineHeight: 1.7, maxWidth: '46ch', marginBottom: '2rem' }}>
+              <p style={{ fontSize: '1.1rem', color: T.muted, lineHeight: 1.75, maxWidth: '48ch', marginBottom: '2rem' }}>
                 Plano alimentar ao vivo no app do paciente, agenda com Google Calendar integrado
                 e financeiro sem planilha. Tudo conectado — sem exportar PDF, sem alternar entre Webdiet, Livance e planilha.
               </p>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: '1rem' }}>
-                <a href="/login?tab=register" style={{
+                <a href="/login" style={{
                   display: 'inline-flex', alignItems: 'center', gap: 8,
-                  padding: '12px 24px', background: T.text, color: T.white,
+                  padding: '13px 26px', background: T.text, color: T.white,
                   borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none',
                 }}>
                   Criar conta grátis <ArrowRight size={14} />
@@ -753,7 +754,7 @@ export function LandingPage() {
 
       {/* ── Números ──────────────────────────────────────── */}
       <section style={{ background: T.white, borderTop: `1px solid ${T.border}` }}>
-        <div className="max-w-6xl mx-auto px-6 sm:px-10">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10">
           <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#E3E2DF]">
             {[
               { n: '3h',       label: 'por semana economizadas',   sub: 'em gestão administrativa' },
@@ -777,9 +778,9 @@ export function LandingPage() {
 
         {/* Feature 1: Agendamento */}
         <section style={{ background: T.bg, borderTop: `1px solid ${T.border}` }}>
-          <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
-            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-start">
-              <AnimatedSection style={{ paddingTop: '1rem' }}>
+          <div className="max-w-7xl mx-auto px-6 sm:px-10" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-center">
+              <AnimatedSection>
                 <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Agendamento</p>
                 <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
                   Um link.<br />O paciente agenda<br />sozinho.
@@ -807,10 +808,10 @@ export function LandingPage() {
 
         {/* Feature 2: Agenda + Google Calendar */}
         <section style={{ background: T.dark, borderTop: `1px solid #1f1f1f` }}>
-          <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
-            <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-12 lg:gap-20 items-start">
+          <div className="max-w-7xl mx-auto px-6 sm:px-10" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-12 lg:gap-20 items-center">
               <AnimatedSection><WeekUI /></AnimatedSection>
-              <AnimatedSection delay={0.1} style={{ paddingTop: '1rem' }}>
+              <AnimatedSection delay={0.1}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Agenda & Google Calendar</p>
                 <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
                   A semana<br />inteira de<br />um olhar.
@@ -837,9 +838,9 @@ export function LandingPage() {
 
         {/* Feature 3: Plano alimentar */}
         <section style={{ background: T.white, borderTop: `1px solid ${T.border}` }}>
-          <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
-            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-start">
-              <AnimatedSection style={{ paddingTop: '1rem' }}>
+          <div className="max-w-7xl mx-auto px-6 sm:px-10" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-center">
+              <AnimatedSection>
                 <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Plano alimentar</p>
                 <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
                   O plano que<br />atualiza sozinho.<br />
@@ -868,9 +869,9 @@ export function LandingPage() {
 
         {/* Feature 4: Prontuários */}
         <section style={{ background: T.bg, borderTop: `1px solid ${T.border}` }}>
-          <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
-            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-start">
-              <AnimatedSection style={{ paddingTop: '1rem' }}>
+          <div className="max-w-7xl mx-auto px-6 sm:px-10" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-center">
+              <AnimatedSection>
                 <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Prontuários</p>
                 <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
                   O histórico<br />completo de<br />cada paciente.
@@ -898,31 +899,42 @@ export function LandingPage() {
 
         {/* Feature 5: Financeiro */}
         <section style={{ background: T.white, borderTop: `1px solid ${T.border}` }}>
-          <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem' }}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20" style={{ marginBottom: '3.5rem' }}>
-              <div>
+          <div className="max-w-7xl mx-auto px-6 sm:px-10" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-center">
+              <AnimatedSection>
                 <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Financeiro</p>
-                <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, margin: 0 }}>
-                  Da consulta ao<br />fechamento. Sem planilha.
+                <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
+                  Da consulta ao<br />fechamento.<br />
+                  <em style={{ fontStyle: 'normal', color: T.brand }}>Sem planilha.</em>
                 </h2>
-              </div>
-              <div style={{ paddingTop: '0.25rem' }}>
-                <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, maxWidth: '48ch' }}>
+                <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, marginBottom: '1.5rem', maxWidth: '40ch' }}>
                   Cada consulta vira automaticamente uma entrada financeira. Honorários, pagamentos recebidos e inadimplências organizados em tempo real — o fechamento do mês leva menos de dois minutos.
                 </p>
-              </div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[
+                    'Consulta confirmada vira receita automaticamente',
+                    'Visão mensal de entradas, saídas e saldo',
+                    'Fechamento do mês em menos de 2 minutos',
+                  ].map(item => (
+                    <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#444', lineHeight: 1.5 }}>
+                      <Check size={14} color="#16a34a" style={{ flexShrink: 0, marginTop: 3 }} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </AnimatedSection>
+              <AnimatedSection delay={0.1} style={{ borderRadius: 20, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}>
+                <FinanceDashboard />
+              </AnimatedSection>
             </div>
-            <AnimatedSection delay={0.05} style={{ borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.border}`, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
-              <FinanceDashboard />
-            </AnimatedSection>
           </div>
         </section>
 
         {/* Feature 6: Vitrine */}
         <section style={{ background: T.bg, borderTop: `1px solid ${T.border}` }}>
-          <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
-            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-start">
-              <AnimatedSection style={{ paddingTop: '1rem' }}>
+          <div className="max-w-7xl mx-auto px-6 sm:px-10" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-center">
+              <AnimatedSection>
                 <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Vitrine pública</p>
                 <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
                   Seja encontrado<br />por quem busca<br />um nutricionista.
@@ -951,7 +963,7 @@ export function LandingPage() {
 
       {/* ── Depoimentos ──────────────────────────────────── */}
       <section style={{ background: T.dark, borderTop: `1px solid #1f1f1f`, padding: '6rem 0' }}>
-        <div className="max-w-6xl mx-auto px-6 sm:px-10">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10">
           <AnimatedSection style={{ maxWidth: '52ch', marginBottom: '5rem' }}>
             <p style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 700, color: '#fff', lineHeight: 1.3, letterSpacing: '-0.025em', marginBottom: '1.5rem' }}>
               "Antes eu mandava o plano por PDF e toda atualização virava um transtorno. Agora o paciente abre o app e já está lá. Economizo pelo menos 3 horas por semana."
@@ -981,8 +993,8 @@ export function LandingPage() {
 
       {/* ── Pricing ──────────────────────────────────────── */}
       <section style={{ background: T.white, borderTop: `1px solid ${T.border}`, padding: '6rem 0' }}>
-        <div className="max-w-6xl mx-auto px-6 sm:px-10">
-          <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-16 items-start">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-16 items-center">
             <AnimatedSection>
               <div>
                 <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.5rem' }}>
@@ -1012,7 +1024,7 @@ export function LandingPage() {
             </AnimatedSection>
 
             <AnimatedSection delay={0.1}>
-              <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 14, padding: '2.5rem 2rem' }}>
+              <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 20, padding: '2.5rem 2rem' }}>
                 <div style={{ marginBottom: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
                     <span style={{ fontSize: 14, color: T.muted, fontWeight: 500 }}>R$</span>
@@ -1040,7 +1052,7 @@ export function LandingPage() {
 
       {/* ── FAQ ──────────────────────────────────────────── */}
       <section style={{ background: T.bg, borderTop: `1px solid ${T.border}`, padding: '5rem 0' }}>
-        <div className="max-w-2xl mx-auto px-6 sm:px-10">
+        <div className="max-w-3xl mx-auto px-6 sm:px-10">
           <AnimatedSection>
             <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: T.text, letterSpacing: '-0.025em', marginBottom: '2.5rem' }}>
               Perguntas frequentes
@@ -1068,47 +1080,43 @@ export function LandingPage() {
       </section>
 
       {/* ── CTA ──────────────────────────────────────────── */}
-      <section id="cta" style={{ background: T.brand, padding: '5rem 0' }}>
+      <section id="cta" style={{ background: T.dark, padding: '6rem 0' }}>
         <div className="max-w-2xl mx-auto px-6 sm:px-10 text-center">
-          <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1rem' }}>
-            Comece a organizar suas consultas hoje.
-          </h2>
-          <p style={{ fontSize: '0.975rem', color: 'rgba(255,255,255,0.65)', marginBottom: '2rem' }}>
-            14 dias grátis. Sem cartão. Cancele quando quiser.
+          <p style={{ fontSize: 11, fontWeight: 700, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '1.25rem' }}>
+            Comece hoje
           </p>
-          <form onSubmit={e => { e.preventDefault(); window.location.href = '/login?tab=register' }}
-            style={{ display: 'flex', gap: 8, maxWidth: 420, margin: '0 auto', flexWrap: 'wrap' }}>
-            <input
-              type="email"
-              required
-              placeholder="seu@email.com"
-              style={{
-                flex: 1, minWidth: 0, padding: '12px 16px',
-                background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)',
-                borderRadius: 10, fontSize: 14, color: '#fff',
-                outline: 'none', ...DISPLAY,
-              }}
-            />
-            <button type="submit" style={{
-              padding: '12px 22px', background: '#fff', color: T.brand,
-              border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700,
-              cursor: 'pointer', whiteSpace: 'nowrap', ...DISPLAY,
-            }}>
-              Criar conta grátis
-            </button>
-          </form>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: '1rem' }}>
+          <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: '1.25rem' }}>
+            14 dias grátis.<br />Sem compromisso.
+          </h2>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginBottom: '2.5rem', flexWrap: 'wrap' }}>
+            {['Sem cartão de crédito', 'Cancele quando quiser', 'Tudo incluído'].map(item => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>
+                <Check size={13} color={T.brand} />
+                {item}
+              </div>
+            ))}
+          </div>
+          <a href="/login" style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            padding: '15px 40px', background: '#fff', color: T.dark,
+            borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            ...DISPLAY,
+          }}>
+            Criar conta com Google
+          </a>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: '1.5rem' }}>
             Ao criar sua conta você concorda com os{' '}
-            <a href="/termos-de-uso" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline' }}>Termos de Uso</a>
+            <a href="/termos-de-uso" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>Termos de Uso</a>
             {' '}e{' '}
-            <a href="/politica-de-privacidade" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline' }}>Política de Privacidade</a>.
+            <a href="/politica-de-privacidade" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'underline' }}>Política de Privacidade</a>.
           </p>
         </div>
       </section>
 
       {/* ── Footer ───────────────────────────────────────── */}
       <footer style={{ background: T.white, borderTop: `1px solid ${T.border}` }}>
-        <div className="max-w-6xl mx-auto px-6 sm:px-10" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
+        <div className="max-w-7xl mx-auto px-6 sm:px-10" style={{ paddingTop: '3rem', paddingBottom: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '2rem', marginBottom: '3rem' }}>
             <div style={{ maxWidth: 280 }}>
               <p style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 8 }}>OrbiNutri</p>

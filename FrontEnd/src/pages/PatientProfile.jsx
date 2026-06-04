@@ -265,7 +265,7 @@ function AppointmentNoteCard({ apt }) {
       {previewUrl && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
           onClick={() => setPreviewUrl(null)}>
-          <div className="dm-modal-box" style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', maxWidth: 800, width: '100%', maxHeight: '90vh' }}>
+          <div className="dm-modal-box" style={{ background: T.white, borderRadius: 12, overflow: 'hidden', maxWidth: 800, width: '100%', maxHeight: '90vh' }}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', padding: 8, borderBottom: `1px solid ${T.border}` }}>
               <button type="button" onClick={() => setPreviewUrl(null)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 4 }}>✕</button>
@@ -879,7 +879,7 @@ export function PatientProfile() {
           {showTemplatePicker && (
             <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
               onClick={e => { if (e.target === e.currentTarget) setShowTemplatePicker(false) }}>
-              <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ background: T.white, borderRadius: 16, width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.18)', overflow: 'hidden', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
                 {/* Header */}
                 <div style={{ padding: '20px 20px 0', flexShrink: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -902,7 +902,7 @@ export function PatientProfile() {
                     <>
                       {/* Plano em branco */}
                       <button type="button" onClick={() => setSelectedTemplate(null)}
-                        style={{ width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 10, border: `2px solid ${selectedTemplate === null ? T.brand : T.border}`, background: selectedTemplate === null ? '#EEF2FF' : '#fff', cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}>
+                        style={{ width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 10, border: `2px solid ${selectedTemplate === null ? T.brand : T.border}`, background: selectedTemplate === null ? T.chip : T.white, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span style={{ fontSize: 20 }}>📄</span>
                           <div>
@@ -924,7 +924,7 @@ export function PatientProfile() {
                             const isSelected = selectedTemplate?.id === tpl.id
                             return (
                               <button key={tpl.id} type="button" onClick={() => setSelectedTemplate(tpl)}
-                                style={{ width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 10, border: `2px solid ${isSelected ? T.brand : T.border}`, background: isSelected ? '#EEF2FF' : '#fff', cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}>
+                                style={{ width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 10, border: `2px solid ${isSelected ? T.brand : T.border}`, background: isSelected ? T.chip : T.white, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                   <span style={{ fontSize: 20 }}>🥗</span>
                                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -1256,7 +1256,7 @@ export function PatientProfile() {
         {showNewDocDialog && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
             onClick={e => { if (e.target === e.currentTarget) setShowNewDocDialog(false) }}>
-            <div className="dm-modal-box" style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 440, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+            <div className="dm-modal-box" style={{ background: T.white, borderRadius: 14, width: '100%', maxWidth: 440, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: T.text, margin: '0 0 16px' }}>Novo Documento</h3>
 
               <label style={{ fontSize: 12, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Título *</label>

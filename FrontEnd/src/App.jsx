@@ -51,6 +51,19 @@ function ProtectedRoute({ children }) {
   return children
 }
 
+function Root() {
+  const { isAuthenticated, loading } = useAuth()
+  if (loading) return <PageSkeleton />
+  if (!isAuthenticated) return <LandingPage />
+  return (
+    <Layout>
+      <Suspense fallback={<PageSkeleton />}>
+        <Dashboard />
+      </Suspense>
+    </Layout>
+  )
+}
+
 function NutriRoot() {
   const { isAuthenticated, loading } = useAuth()
   if (loading) return <PageSkeleton />
@@ -73,7 +86,8 @@ function AppContent() {
         {isNutriDomain && <Route path="/" element={<NutriRoot />} />}
         {isNutriDomain && <Route path="/landing" element={<Navigate to="/" replace />} />}
         {isNutriDomain && <Route path="/landing-nutri" element={<Navigate to="/" replace />} />}
-        {!isNutriDomain && <Route path="/landing" element={<LandingPage />} />}
+        {!isNutriDomain && <Route path="/" element={<Root />} />}
+        {!isNutriDomain && <Route path="/landing" element={<Navigate to="/" replace />} />}
         {!isNutriDomain && <Route path="/landing-nutri" element={<LandingPageNutri />} />}
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/auth/google" element={<GoogleAuthCallback />} />

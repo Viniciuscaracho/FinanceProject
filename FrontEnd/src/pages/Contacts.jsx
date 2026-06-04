@@ -619,9 +619,9 @@ export function Contacts() {
                                   fontSize: 11,
                                   fontWeight: 600,
                                   display: 'inline-block',
-                                  background: '#F3F4F6',
-                                  color: '#6B7280',
-                                  border: '1px solid #E5E7EB',
+                                  background: T.light,
+                                  color: T.muted,
+                                  border: `1px solid ${T.border}`,
                                 }}>
                                   Exemplo
                                 </span>

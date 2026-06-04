@@ -34,8 +34,8 @@ function DropdownMenuContent({
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         className={cn(
-          "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
-          "border border-gray-200 dark:border-gray-700",
+          "bg-popover text-foreground",
+          "border border-border",
           "shadow-lg shadow-black/10 dark:shadow-black/30",
           "backdrop-blur-sm",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
@@ -71,11 +71,11 @@ function DropdownMenuItem({
       className={cn(
         "relative flex cursor-pointer items-center gap-4 rounded-md px-3 py-2 text-sm w-full min-w-0",
         "outline-none select-none transition-colors duration-140",
-        "text-gray-900 dark:text-white",
-        "focus:bg-blue-50 dark:focus:bg-blue-900/30 focus:text-gray-900 dark:focus:text-white",
-        "data-[variant=destructive]:text-red-600 dark:data-[variant=destructive]:text-red-400 data-[variant=destructive]:focus:bg-red-50 dark:data-[variant=destructive]:focus:bg-red-900/30",
-        "data-[variant=destructive]:*:[svg]:!text-red-600 dark:data-[variant=destructive]:*:[svg]:!text-red-400",
-        "[&_svg:not([class*='text-'])]:text-gray-600 dark:[&_svg:not([class*='text-'])]:text-gray-400",
+        "text-foreground",
+        "focus:bg-accent focus:text-accent-foreground",
+        "data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10",
+        "data-[variant=destructive]:*:[svg]:!text-destructive",
+        "[&_svg:not([class*='text-'])]:text-muted-foreground",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-40",
         "data-[inset]:pl-8",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -150,7 +150,7 @@ function DropdownMenuLabel({
     <DropdownMenuPrimitive.Label
       data-slot="dropdown-menu-label"
       data-inset={inset}
-      className={cn("px-3 py-2 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400 data-[inset]:pl-8", className)}
+      className={cn("px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground data-[inset]:pl-8", className)}
       {...props} />
   );
 }
@@ -162,7 +162,7 @@ function DropdownMenuSeparator({
   return (
     <DropdownMenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn("bg-gray-200 dark:bg-gray-700 -mx-1 my-2 h-px", className)}
+      className={cn("bg-border -mx-1 my-2 h-px", className)}
       {...props} />
   );
 }

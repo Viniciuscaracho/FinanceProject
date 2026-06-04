@@ -182,10 +182,10 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
                             <div style={{
                               width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                              background: isSelected ? BRAND : '#E5E7EB',
+                              background: isSelected ? BRAND : T.light,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                              <Landmark size={14} style={{ color: isSelected ? '#fff' : '#6B7280' }} />
+                              <Landmark size={14} style={{ color: isSelected ? '#fff' : T.muted }} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <p style={{ fontSize: 13, fontWeight: 600, color: T.text, margin: 0 }} className="truncate">{account.name}</p>
