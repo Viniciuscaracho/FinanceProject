@@ -670,7 +670,7 @@ export function PublicDiscover() {
     if (append) setLoadingMore(true)
     else setLoading(true)
     try {
-      const data = await apiService.discoverSearch({ q: buildQ(q, chip), city, category: 'Nutricionista', page: pg, ...mapParams })
+      const data = await apiService.discoverSearch({ q: buildQ(q, chip), city, page: pg, ...mapParams })
       if (append) {
         setResults(prev => [...prev, ...(data.results || [])])
       } else {
