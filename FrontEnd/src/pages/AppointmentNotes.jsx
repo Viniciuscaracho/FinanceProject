@@ -56,7 +56,7 @@ import {
   Circle,
   ListTodo,
   ChevronRight,
-  Scissors,
+  Apple,
 } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
@@ -429,7 +429,7 @@ export function AppointmentNotes() {
                             {getStatusBadge(appointment.status)}
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
-                            <Scissors className="h-3 w-3 flex-shrink-0" />
+                            <Apple className="h-3 w-3 flex-shrink-0" />
                             <span className="truncate">{service}</span>
                             <span className="mx-0.5">·</span>
                             <Calendar className="h-3 w-3 flex-shrink-0" />
@@ -570,7 +570,7 @@ export function AppointmentNotes() {
                       <span>{selectedAppointment.contact?.name || selectedAppointment.whatsapp_number || '-'}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: T.text }}>
-                      <Scissors className="h-3.5 w-3.5 flex-shrink-0" style={{ color: T.muted }} />
+                      <Apple className="h-3.5 w-3.5 flex-shrink-0" style={{ color: T.muted }} />
                       <span>{selectedAppointment.service?.name || '-'}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: T.muted }}>

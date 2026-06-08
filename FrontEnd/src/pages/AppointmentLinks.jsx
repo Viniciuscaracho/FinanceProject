@@ -53,7 +53,7 @@ import {
   MoreHorizontal,
   Code2,
   Clock,
-  Scissors,
+  Apple,
   User,
   CalendarDays,
   ClipboardList,
@@ -941,7 +941,7 @@ export function AppointmentLinks() {
                       )}
                       {link.service && (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: T.muted }}>
-                          <Scissors size={12} /> {link.service.name}
+                          <Apple size={12} /> {link.service.name}
                         </span>
                       )}
                       {link.professional && (

@@ -6,7 +6,7 @@ import { ptBR } from 'date-fns/locale'
 import {
   Search, X, ChevronRight,
   Home, Calendar, Users, CreditCard, BarChart3, Globe,
-  Link2, Scissors, Clock, FileEdit, ClipboardList,
+  Link2, Apple, Clock, FileEdit, ClipboardList,
   Percent, Upload, FileText, Crown, Settings, Plus,
   ClipboardCheck, Utensils, ArrowUpRight, ArrowDownLeft,
   Loader2,
@@ -41,7 +41,7 @@ const PAGES = [
   { icon: Percent,       label: 'Comissões',            desc: 'Comissões por profissional',   path: '/commissions',        kw: '' },
   { icon: Link2,         label: 'Links de Agendamento', desc: 'Links públicos de agenda',     path: '/appointment-links',  kw: 'links booking url' },
   { icon: Users,         label: 'Profissionais',        desc: 'Equipe',                       path: '/professionals',      kw: 'equipe team staff colaboradores' },
-  { icon: Scissors,      label: 'Serviços',             desc: 'Catálogo de serviços',         path: '/services',           kw: 'servicos catalog procedimentos' },
+  { icon: Apple,         label: 'Serviços',             desc: 'Catálogo de serviços',         path: '/services',           kw: 'servicos catalog procedimentos' },
   { icon: Clock,         label: 'Horários',             desc: 'Horários de atendimento',      path: '/working-hours',      kw: 'horario disponibilidade availability grade' },
   { icon: FileEdit,      label: 'Documentos',           desc: 'Modelos de documentos',        path: '/document-templates', kw: 'templates docs modelos' },
   { icon: ClipboardList, label: 'Anamnese',             desc: 'Formulários de anamnese',      path: '/anamnese',           kw: 'forms formularios questionario' },

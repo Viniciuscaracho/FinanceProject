@@ -10,7 +10,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale/pt-BR'
 import {
   User,
-  Scissors,
+  Apple,
   Clock,
   Phone,
   Edit,
@@ -443,7 +443,7 @@ export function AppointmentsTable({ onEdit, onDelete, onOpenConsultation }) {
         header: 'Serviço',
         cell: ({ getValue }) => (
           <div className="flex items-center gap-2">
-            <Scissors className="w-4 h-4 text-gray-400 shrink-0" />
+            <Apple className="w-4 h-4 text-gray-400 shrink-0" />
             <span>{getValue()}</span>
           </div>
         ),

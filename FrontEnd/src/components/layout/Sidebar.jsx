@@ -3,7 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom'
 import {
   Home, CreditCard, Users, BarChart3, Upload, FileText,
   X, ChevronLeft, ChevronRight, ChevronDown,
-  Calendar, Scissors, Clock, Link2, Crown, Shield, Percent, FileEdit, Globe, ClipboardList, UtensilsCrossed,
+  Calendar, Apple, Clock, Link2, Crown, Shield, Percent, FileEdit, Globe, ClipboardList, UtensilsCrossed,
 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useAuth } from '../../contexts/AuthContext'
@@ -29,7 +29,7 @@ const NAV = [
     items: [
       { icon: Link2,         label: 'Links',         path: '/appointment-links' },
       { icon: Users,         label: 'Profissionais', path: '/professionals' },
-      { icon: Scissors,      label: 'Serviços',      path: '/services' },
+      { icon: Apple,         label: 'Serviços',      path: '/services' },
       { icon: Clock,         label: 'Horários',      path: '/working-hours' },
       { icon: FileEdit,         label: 'Documentos',    path: '/document-templates' },
       { icon: ClipboardList,    label: 'Anamnese',      path: '/anamnese' },

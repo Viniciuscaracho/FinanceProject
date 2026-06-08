@@ -36,8 +36,14 @@ class Food < ApplicationRecord
 
   scope :global,          -> { where(account_id: nil) }
   scope :for_account,     ->(account_id) { where(account_id: account_id) }
-  scope :search,          ->(q) { where('unaccent(name) ILIKE unaccent(?)', "%#{q}%") }
+  scope :search,          ->(q) {
+    where(
+      "unaccent(name) ILIKE unaccent(?) OR unaccent(COALESCE(brand, '')) ILIKE unaccent(?)",
+      "%#{q}%", "%#{q}%"
+    )
+  }
   scope :taco,            -> { where(source: 'taco') }
+  scope :open_food_facts, -> { where(source: 'open_food_facts') }
 
   VITAMIN_KEYS = %w[
     vitamin_a_mcg vitamin_c_mg vitamin_d_mcg vitamin_b12_mcg

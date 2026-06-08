@@ -8,7 +8,7 @@ import {
   BarChart3,
   MoreHorizontal,
   Crown,
-  Scissors,
+  Apple,
   Clock,
   Link2,
   Percent,
@@ -46,7 +46,7 @@ const moreMenuGroups = [
     items: [
       { icon: Users,    label: 'Pacientes',      path: '/contacts' },
       { icon: Users,    label: 'Profissionais',  path: '/professionals' },
-      { icon: Scissors, label: 'Serviços',        path: '/services' },
+      { icon: Apple,    label: 'Serviços',        path: '/services' },
     ],
   },
   {

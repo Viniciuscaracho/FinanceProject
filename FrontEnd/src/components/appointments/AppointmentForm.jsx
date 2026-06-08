@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/responsive-dialog'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon, Loader2, Clock, User, Scissors, Phone, DollarSign, AlertCircle, AlertTriangle, RefreshCw, ExternalLink, Plus, X, Video, MapPin } from 'lucide-react'
+import { CalendarIcon, Loader2, Clock, User, Apple, Phone, DollarSign, AlertCircle, AlertTriangle, RefreshCw, ExternalLink, Plus, X, Video, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { STATUS_LABELS, PAYMENT_STATUS_LABELS } from '@/utils/appointmentUtils'
@@ -583,7 +583,7 @@ export function AppointmentForm({
                 "text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2",
                 isMobile && "text-xs"
               )}>
-                <Scissors className={cn("h-4 w-4", isMobile && "h-3 w-3")} />
+                <Apple className={cn("h-4 w-4", isMobile && "h-3 w-3")} />
                 Informações do Serviço
               </h3>
 
@@ -623,7 +623,7 @@ export function AppointmentForm({
               {/* Serviços — lista dinâmica */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
-                  <Scissors className="h-4 w-4" />
+                  <Apple className="h-4 w-4" />
                   Serviço(s) *
                 </Label>
 

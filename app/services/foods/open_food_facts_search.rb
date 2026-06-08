@@ -6,12 +6,15 @@ module Foods
 
     def self.by_name(query, limit: 20)
       response = connection.get('/cgi/search.pl') do |req|
-        req.params['search_terms'] = query
+        req.params['search_terms']  = query
         req.params['search_simple'] = 1
         req.params['action']        = 'process'
         req.params['json']          = 1
         req.params['page_size']     = limit
         req.params['fields']        = 'id,product_name,brands,nutriments'
+        req.params['sort_by']       = 'unique_scans_n'
+        req.params['cc']            = 'br'
+        req.params['lc']            = 'pt'
       end
 
       data = JSON.parse(response.body)
@@ -32,8 +35,8 @@ module Foods
 
     def self.connection
       Faraday.new(url: BASE_URL) do |f|
-        f.options.timeout      = 5
-        f.options.open_timeout = 3
+        f.options.timeout      = 8
+        f.options.open_timeout = 5
         f.adapter Faraday.default_adapter
       end
     end

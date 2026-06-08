@@ -117,7 +117,12 @@ function FoodSearch({ onSelect, onClose }) {
         <div style={{ padding: '10px 12px', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
           <Search size={15} style={{ color: T.muted, flexShrink: 0 }} />
           <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)}
-            placeholder={source === 'open_food_facts' ? 'Buscar em fabricantes (ex: Nestlé, Quaker...)' : 'Buscar alimento (ex: arroz, frango, banana...)'}
+            placeholder={
+              source === 'open_food_facts' ? 'Buscar por marca ou produto (ex: Integral Médica, whey...)' :
+              source === 'taco'            ? 'Buscar alimento TACO (ex: arroz, frango, banana...)' :
+              source === 'custom'          ? 'Buscar nos seus alimentos...' :
+                                            'Buscar em todos (TACO, marcas, meus alimentos...)'
+            }
             style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, fontFamily: 'inherit', color: T.text }} />
           {loading && <Loader2 size={14} className="animate-spin" style={{ color: T.muted }} />}
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.muted, padding: 2 }}><X size={16} /></button>
@@ -347,8 +352,10 @@ function MealCard({ meal, day, plan, contactId, onUpdate, onRemove }) {
 // ── DayCard ───────────────────────────────────────────────────────────────────
 
 function DayCard({ day, plan, contactId, onUpdate, onRemoveDay, onOpenTargets }) {
-  const [open, setOpen]         = useState(true)
+  const [open, setOpen]             = useState(true)
   const [addingMeal, setAddingMeal] = useState(false)
+  const [customOpen, setCustomOpen] = useState(false)
+  const [customName, setCustomName] = useState('')
 
   const handleAddMeal = async (name) => {
     if (!name.trim()) return
@@ -406,13 +413,32 @@ function DayCard({ day, plan, contactId, onUpdate, onRemoveDay, onOpenTargets })
           ))}
 
           {/* Botões de adição rápida */}
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
-            {MEAL_DEFAULTS.filter(n => !day.meals.find(m => m.name === n)).slice(0, 4).map(name => (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4, alignItems: 'center' }}>
+            {MEAL_DEFAULTS.filter(n => !day.meals.find(m => m.name === n)).map(name => (
               <button key={name} type="button" onClick={() => handleAddMeal(name)} disabled={addingMeal}
                 style={{ fontSize: 11, padding: '6px 12px', borderRadius: 20, background: T.chip, border: `1px solid ${T.border}`, cursor: 'pointer', color: T.brand, fontFamily: 'inherit', minHeight: 34 }}>
                 + {name}
               </button>
             ))}
+            {customOpen ? (
+              <form onSubmit={e => { e.preventDefault(); if (customName.trim()) { handleAddMeal(customName.trim()); setCustomName(''); setCustomOpen(false) } }}
+                style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                <input autoFocus value={customName} onChange={e => setCustomName(e.target.value)}
+                  onBlur={() => { if (!customName.trim()) setCustomOpen(false) }}
+                  onKeyDown={e => { if (e.key === 'Escape') { setCustomOpen(false); setCustomName('') } }}
+                  placeholder="Nome da refeição..."
+                  style={{ fontSize: 11, padding: '6px 10px', borderRadius: 20, border: `1px solid ${T.brand}`, outline: 'none', fontFamily: 'inherit', minHeight: 34, width: 160 }} />
+                <button type="submit" disabled={!customName.trim() || addingMeal}
+                  style={{ fontSize: 11, padding: '6px 12px', borderRadius: 20, background: T.brand, border: 'none', cursor: 'pointer', color: '#fff', fontFamily: 'inherit', minHeight: 34 }}>
+                  Adicionar
+                </button>
+              </form>
+            ) : (
+              <button type="button" onClick={() => setCustomOpen(true)}
+                style={{ fontSize: 11, padding: '6px 12px', borderRadius: 20, background: T.chip, border: `1px dashed ${T.border}`, cursor: 'pointer', color: T.muted, fontFamily: 'inherit', minHeight: 34 }}>
+                + Personalizada
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -449,7 +475,10 @@ function TargetsModal({ plan, contactId, planId, onSave, onClose }) {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const res = await apiService.updateMealPlan(contactId, planId, values)
+      const numericValues = Object.fromEntries(
+        Object.entries(values).map(([k, v]) => [k, v === '' ? 0 : Number(v) || 0])
+      )
+      const res = await apiService.updateMealPlan(contactId, planId, numericValues)
       onSave(res.meal_plan); onClose()
       toast.success('Metas salvas!')
     } catch { toast.error('Erro ao salvar metas') }
@@ -471,7 +500,7 @@ function TargetsModal({ plan, contactId, planId, onSave, onClose }) {
                 {f.label}
               </label>
               <input type="number" min="0" value={values[f.key]} placeholder={f.placeholder}
-                onChange={e => setValues(p => ({ ...p, [f.key]: Number(e.target.value) }))}
+                onChange={e => setValues(p => ({ ...p, [f.key]: e.target.value }))}
                 style={{ width: '100%', padding: '10px', borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', minHeight: 44 }} />
             </div>
           ))}

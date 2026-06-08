@@ -3,7 +3,7 @@ import { ptBR } from 'date-fns/locale/pt-BR'
 import { Badge } from '@/components/ui/badge'
 import { STATUS_LABELS, PAYMENT_STATUS_LABELS, STATUS_COLORS, PAYMENT_STATUS_COLORS } from '@/utils/appointmentUtils'
 import { formatCurrency } from '@/utils/format'
-import { User, Clock, Scissors, DollarSign, Phone } from 'lucide-react'
+import { User, Clock, Apple, DollarSign, Phone } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function CalendarTooltip({ appointment }) {
@@ -46,7 +46,7 @@ export function CalendarTooltip({ appointment }) {
 
       <div className="space-y-2 text-sm border-t border-gray-200 dark:border-gray-700 pt-3">
         <div className="flex items-center gap-2.5">
-          <Scissors className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+          <Apple className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
           <span className="text-gray-700 dark:text-gray-300 truncate">{appointment.service?.name || 'Serviço'}</span>
         </div>
         

@@ -29,7 +29,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
-  Scissors,
+  Apple,
   Plus,
   Edit,
   Trash2,
@@ -255,7 +255,7 @@ export function Services() {
       >
         {filteredServices.length === 0 ? (
           <div className="text-center py-12" style={{ color: T.muted }}>
-            <Scissors className="w-12 h-12 mx-auto mb-4" style={{ color: T.border }} />
+            <Apple className="w-12 h-12 mx-auto mb-4" style={{ color: T.border }} />
             <p>Nenhum serviço encontrado</p>
           </div>
         ) : (
@@ -498,7 +498,7 @@ export function Services() {
             <DialogHeader>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 10, background: T.chip, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Scissors className="h-5 w-5" style={{ color: T.brand }} />
+                  <Apple className="h-5 w-5" style={{ color: T.brand }} />
                 </div>
                 <div>
                   <DialogTitle style={{ margin: 0 }}>

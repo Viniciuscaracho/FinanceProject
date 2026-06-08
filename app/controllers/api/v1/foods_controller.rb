@@ -12,10 +12,20 @@ module Api
 
         return render json: { foods: [] } if q.length < 2
 
-        foods = if source == 'open_food_facts'
-          results = Foods::OpenFoodFactsSearch.by_name(q)
-          render json: { foods: results.map { |r| off_food_json(r) } } and return
-        elsif source == 'custom'
+        if source == 'open_food_facts'
+          local_global  = Food.global.open_food_facts.search(q).order(:name).limit(15)
+          local_account = Food.for_account(Current.account.id).open_food_facts.search(q).order(:name).limit(5)
+          local_json    = (local_global + local_account).uniq(&:id).map { |f| food_json(f) }
+
+          live_json = Foods::OpenFoodFactsSearch.by_name(q).map { |r| off_food_json(r) }
+
+          saved_ext_ids = local_json.filter_map { |f| f[:external_id] }
+          new_live      = live_json.reject { |f| saved_ext_ids.include?(f[:external_id]) }
+
+          render json: { foods: (local_json + new_live).first(30) } and return
+        end
+
+        foods = if source == 'custom'
           Food.for_account(Current.account.id).search(q).order(:name).limit(20)
         elsif source == 'taco'
           Food.global.taco.search(q).order(:name).limit(20)
@@ -70,6 +80,7 @@ module Api
       def food_json(food)
         {
           id:               food.id,
+          external_id:      food.external_id,
           name:             food.name,
           brand:            food.brand,
           source:           food.source,

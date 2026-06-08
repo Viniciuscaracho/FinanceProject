@@ -64,10 +64,10 @@ function TrialSection({ account, onRefresh }) {
   const [extending, setExtending] = useState(false)
 
   const handleExtend = async () => {
-    if (days < 1) return toast.error('Informe um número de dias válido')
+    if (Number(days) < 1) return toast.error('Informe um número de dias válido')
     try {
       setExtending(true)
-      const response = await apiService.extendAdminTrial(account.id, days)
+      const response = await apiService.extendAdminTrial(account.id, Number(days))
       toast.success(response.message || 'Trial estendido')
       onRefresh()
     } catch (e) {
@@ -120,7 +120,7 @@ function TrialSection({ account, onRefresh }) {
             <Input
               type="number"
               value={days}
-              onChange={(e) => setDays(Number(e.target.value))}
+              onChange={(e) => setDays(e.target.value)}
               min={1}
               max={365}
               className="w-20 h-7 text-xs"
@@ -152,7 +152,10 @@ function EditAccountModal({ account, onClose, onSaved }) {
   const handleSave = async () => {
     try {
       setSaving(true)
-      await apiService.updateAdminAccount(account.id, form)
+      await apiService.updateAdminAccount(account.id, {
+        ...form,
+        max_active_users: Number(form.max_active_users) || 1,
+      })
       toast.success('Conta atualizada')
       onSaved()
       onClose()
@@ -196,7 +199,7 @@ function EditAccountModal({ account, onClose, onSaved }) {
           <div>
             <label className="text-xs text-gray-500 block mb-1">Máx. usuários ativos</label>
             <Input type="number" min={1} value={form.max_active_users}
-              onChange={(e) => setForm(f => ({ ...f, max_active_users: Number(e.target.value) }))} />
+              onChange={(e) => setForm(f => ({ ...f, max_active_users: e.target.value }))} />
           </div>
 
           <div>

@@ -23,7 +23,7 @@ import {
   Calendar,
   Clock,
   User,
-  Scissors,
+  Apple,
   DollarSign,
   Save,
   Loader2,
