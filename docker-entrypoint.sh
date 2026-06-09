@@ -49,6 +49,11 @@ then
       end
     "
   fi
+
+  if [ "${SEED_NUTRI_DISCOVER}" = "true" ]; then
+    echo "Seeding nutricionistas para vitrine..."
+    bundle exec rails runner "load Rails.root.join('db/seeds/nutri_discover.rb')"
+  fi
 fi
 
 exec "$@"
