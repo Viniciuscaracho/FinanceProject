@@ -11,7 +11,7 @@ function useIsMobile() {
   return mobile
 }
 import { Helmet } from 'react-helmet-async'
-import { ArrowLeft, MapPin, Phone, Mail, Clock, Loader2, Calendar, MessageCircle, ChevronRight, Star } from 'lucide-react'
+import { ArrowLeft, MapPin, Phone, Mail, Clock, Loader2, Calendar, MessageCircle, ChevronRight, Star, Instagram } from 'lucide-react'
 import { apiService } from '../lib/api'
 
 /* ─── Tokens ─────────────────────────────────── */
@@ -44,6 +44,10 @@ function formatDuration(min) {
   if (min < 60) return `${min} min`
   const h = Math.floor(min / 60), m = min % 60
   return m ? `${h}h ${m}min` : `${h}h`
+}
+
+function openInstagram(url) {
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 function openWA(phone, name) {
@@ -279,6 +283,25 @@ export function PublicProfessionalProfile() {
                 {!isMobile && <span style={{ marginLeft: 6 }}>WhatsApp</span>}
               </button>
             )}
+            {professional.instagram_url && (
+              <button
+                onClick={() => openInstagram(professional.instagram_url)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: isMobile ? 0 : 6,
+                  padding: isMobile ? '9px 12px' : '9px 16px',
+                  background: '#E1306C18', color: '#E1306C',
+                  border: '1.5px solid #E1306C30', borderRadius: 10,
+                  fontSize: 13, fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  minHeight: 40, minWidth: isMobile ? 42 : 'auto',
+                  justifyContent: 'center',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                <Instagram size={16} />
+                {!isMobile && <span style={{ marginLeft: 5 }}>Instagram</span>}
+              </button>
+            )}
             {professional.booking_token && (
               <button
                 onClick={() => navigate(`/agendar/${professional.booking_token}`)}
@@ -324,6 +347,20 @@ export function PublicProfessionalProfile() {
             </span>
           )}
         </div>
+
+        {/* Specialties */}
+        {professional.specialties?.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+            {professional.specialties.map(sp => (
+              <span key={sp} style={{
+                fontSize: 11, fontWeight: 600, padding: '3px 10px',
+                borderRadius: 20, background: '#F3F4F6', color: '#6B7280',
+              }}>
+                {sp}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Description */}
         {professional.description && (
@@ -414,7 +451,7 @@ export function PublicProfessionalProfile() {
         )}
 
         {/* Contato */}
-        {(professional.phone || professional.email) && (
+        {(professional.phone || professional.email || professional.instagram_url) && (
           <section>
             <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: T.muted }}>
               Contato
@@ -453,6 +490,26 @@ export function PublicProfessionalProfile() {
                   <div>
                     <p style={{ margin: 0, fontSize: 11, color: T.muted, fontWeight: 500 }}>E-mail</p>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: 14 }}>{professional.email}</p>
+                  </div>
+                </a>
+              )}
+              {professional.instagram_url && (
+                <a href={professional.instagram_url} target="_blank" rel="noopener noreferrer" className="contact-chip"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '12px 16px', background: T.white,
+                    border: `1px solid ${T.border}`, borderRadius: 12,
+                    fontSize: 13, color: T.text, textDecoration: 'none',
+                    fontFamily: 'inherit', transition: 'opacity 160ms',
+                  }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: '#FFF0F5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Instagram size={14} style={{ color: '#E1306C' }} />
+                  </div>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 11, color: T.muted, fontWeight: 500 }}>Instagram</p>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: 14 }}>
+                      {professional.instagram_url.replace(/^https?:\/\/(www\.)?instagram\.com\/?/, '@').replace(/\/$/, '')}
+                    </p>
                   </div>
                 </a>
               )}

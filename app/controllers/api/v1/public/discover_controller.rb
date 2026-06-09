@@ -43,21 +43,16 @@ module Api
             )
           end
 
-          # Busca por raio (Haversine) quando lat/lng/radius fornecidos
-          if params[:latitude].present? && params[:longitude].present?
-            lat    = params[:latitude].to_f
-            lng    = params[:longitude].to_f
-            radius = [params[:radius].to_f, 1.0].max # mínimo 1 km
-
+          # Busca por bounds (viewport do mapa) — sw/ne lat/lng
+          if params[:sw_lat].present? && params[:ne_lat].present?
             accounts_query = accounts_query.joins(
-              "LEFT JOIN addresses addr_r ON addr_r.addressable_id = people.id " \
-              "AND addr_r.addressable_type = 'Person'"
+              "LEFT JOIN addresses addr_b ON addr_b.addressable_id = people.id " \
+              "AND addr_b.addressable_type = 'Person'"
             ).where(
-              "addr_r.latitude IS NOT NULL AND addr_r.longitude IS NOT NULL AND " \
-              "(6371 * acos(LEAST(1.0, cos(radians(?)) * cos(radians(addr_r.latitude)) * " \
-              "cos(radians(addr_r.longitude) - radians(?)) + sin(radians(?)) * " \
-              "sin(radians(addr_r.latitude))))) <= ?",
-              lat, lng, lat, radius
+              "addr_b.latitude IS NOT NULL AND addr_b.longitude IS NOT NULL AND " \
+              "addr_b.latitude BETWEEN ? AND ? AND addr_b.longitude BETWEEN ? AND ?",
+              params[:sw_lat].to_f, params[:ne_lat].to_f,
+              params[:sw_lng].to_f, params[:ne_lng].to_f
             )
           end
 
@@ -77,6 +72,7 @@ module Api
                            .find_by(id: params[:id], directory_visible: true, suspended: false)
           return render json: { error: 'Profissional não encontrado' }, status: :not_found unless account
 
+          account.increment!(:profile_views)
           render json: profile_json(account)
         rescue StandardError => e
           Rails.logger.error "Discover error: #{e.class}: #{e.message}"
@@ -115,6 +111,8 @@ module Api
               latitude:  address&.latitude,
               longitude: address&.longitude
             },
+            specialties:       account.specialties.presence || [],
+            instagram_url:     account.instagram_url,
             services_count:    account.services.size,
             services_preview:  account.services.first(3).map { |s|
               { name: s.name, price_cents: s.selling_price_cents }
@@ -147,6 +145,8 @@ module Api
               latitude:      address&.latitude,
               longitude:     address&.longitude
             },
+            specialties:   account.specialties.presence || [],
+            instagram_url: account.instagram_url,
             services: account.services.map { |s|
               {
                 id:               s.id,

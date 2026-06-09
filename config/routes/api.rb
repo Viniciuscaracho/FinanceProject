@@ -47,6 +47,7 @@ namespace :api, defaults: { format: 'json' } do
     get  'oauth/google_oauth_url',       to: 'auth#google_oauth_url'
     get  'auth/google_oauth_callback',   to: 'auth#google_oauth_callback'
     post 'auth/accept_terms',            to: 'auth#accept_terms'
+    post 'auth/dev_login', to: 'auth#dev_login' if Rails.env.development?
 
     # Google Calendar integration
     scope :google_calendar do

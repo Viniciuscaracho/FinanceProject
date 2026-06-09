@@ -193,6 +193,19 @@ class ApiService {
     return response;
   }
 
+  async devLogin(email) {
+    const response = await this.request('/auth/dev_login', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+
+    if (response.success && response.token) {
+      this.setToken(response.token);
+    }
+
+    return response;
+  }
+
   async supabaseLogin(accessToken) {
     const response = await this.request('/auth/supabase_login', {
       method: 'POST',

@@ -3,6 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2 } from 'lucide-react';
 
+const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
 const GOOGLE_SVG = (
   <svg width="20" height="20" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <path d="M17.64 9.2a10.3 10.3 0 0 0-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -18,11 +20,22 @@ export function Login() {
   const googleErrorDetail = searchParams.get('detail');
 
   const [isLoading, setIsLoading] = useState(false);
-  const { loginWithGoogle, error } = useAuth();
+  const [devEmail, setDevEmail] = useState('');
+  const [devError, setDevError] = useState(null);
+  const { loginWithGoogle, devLogin, error } = useAuth();
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     await loginWithGoogle();
+    setIsLoading(false);
+  };
+
+  const handleDevLogin = async (e) => {
+    e.preventDefault();
+    setDevError(null);
+    setIsLoading(true);
+    const result = await devLogin(devEmail);
+    if (!result.success) setDevError(result.error || 'Usuário não encontrado');
     setIsLoading(false);
   };
 
@@ -166,6 +179,54 @@ export function Login() {
           {' '}e{' '}
           <a href="/politica-de-privacidade" style={{ color: '#6B7280', textDecoration: 'underline' }}>Privacidade</a>
         </p>
+
+        {IS_LOCAL && (
+          <form onSubmit={handleDevLogin} style={{ width: '100%', marginTop: '28px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px',
+            }}>
+              <div style={{ flex: 1, height: '1px', background: '#E5E7EB' }} />
+              <span style={{ fontSize: '11px', color: '#9CA3AF', whiteSpace: 'nowrap', fontFamily: 'monospace' }}>
+                DEV · login local
+              </span>
+              <div style={{ flex: 1, height: '1px', background: '#E5E7EB' }} />
+            </div>
+
+            {devError && (
+              <div style={{ marginBottom: '12px' }}>
+                <Alert variant="destructive">
+                  <AlertDescription>{devError}</AlertDescription>
+                </Alert>
+              </div>
+            )}
+
+            <input
+              type="email"
+              placeholder="E-mail do usuário"
+              value={devEmail}
+              onChange={(e) => setDevEmail(e.target.value)}
+              required
+              style={{
+                width: '100%', height: '44px', borderRadius: '10px',
+                border: '1.5px solid #E5E7EB', padding: '0 12px',
+                fontSize: '14px', color: '#111827', outline: 'none',
+                marginBottom: '12px', boxSizing: 'border-box',
+              }}
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              style={{
+                width: '100%', height: '44px', borderRadius: '10px',
+                background: '#374151', color: '#fff', border: 'none',
+                fontSize: '14px', fontWeight: 500, cursor: isLoading ? 'not-allowed' : 'pointer',
+                opacity: isLoading ? 0.65 : 1,
+              }}
+            >
+              {isLoading ? <Loader2 style={{ width: '18px', height: '18px', margin: '0 auto', animation: 'spin 1s linear infinite' }} /> : 'Entrar'}
+            </button>
+          </form>
+        )}
       </div>
 
       <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px', marginTop: '24px', zIndex: 10 }}>

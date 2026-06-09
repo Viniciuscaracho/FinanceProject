@@ -3,9 +3,9 @@
 module Api
   module V1
     class AuthController < Api::V1::ApplicationController
-      skip_before_action :authenticate_user!, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register]
-      skip_before_action :set_current_account, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register]
-      skip_before_action :create_or_refresh_session, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register]
+      skip_before_action :authenticate_user!, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register, :dev_login]
+      skip_before_action :set_current_account, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register, :dev_login]
+      skip_before_action :create_or_refresh_session, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register, :dev_login]
       before_action :set_user, only: [:me, :logout, :accept_terms]
       before_action :force_json_format
 
@@ -162,6 +162,17 @@ module Api
           accepted_privacy_at: Time.current
         )
         render json: { success: true, user: user_data(@user) }
+      end
+
+      def dev_login
+        return render json: { success: false, error: 'Não disponível' }, status: :forbidden unless Rails.env.development?
+
+        user = User.find_by(email: params[:email].to_s.strip.downcase)
+        return render json: { success: false, error: 'Usuário não encontrado' }, status: :not_found unless user
+
+        render json: { success: true, user: user_data(user), token: generate_token(user) }
+      rescue => e
+        render json: { success: false, error: e.message }, status: :internal_server_error
       end
 
       def login_simple

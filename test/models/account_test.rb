@@ -31,13 +31,16 @@
 #  google_contacts_token_expires_at                     :datetime
 #  google_refresh_token                                 :string
 #  google_token_expires_at                              :datetime
+#  instagram_url                                        :string
 #  max_active_users                                     :integer          default(3), not null
 #  max_storage_size_in_bytes                            :bigint           default(5368709120), not null
 #  pix_key                                              :string
 #  preferences                                          :jsonb            not null
 #  processor_plan_name                                  :string
 #  profession_category                                  :string
+#  profile_views                                        :integer          default(0), not null
 #  relation_type_cd(Relation type)                      :integer
+#  specialties                                          :string           default([]), is an Array
 #  subscription_status                                  :string           default("incomplete")
 #  suspended                                            :boolean          default(FALSE), not null
 #  transactions_count                                   :integer

@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   AlertCircle, Loader2, Plus, User, FileText,
   CheckCircle2, Calendar, TrendingUp, TrendingDown,
-  X, Check, SmartphoneNfc, RefreshCw, CheckCircle,
+  X, Check, SmartphoneNfc, RefreshCw, CheckCircle, Globe, ArrowRight,
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { apiService } from '../lib/api'
@@ -88,6 +88,88 @@ function Empty({ text }) {
     <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '24px 20px', margin: 0 }}>
       {text}
     </p>
+  )
+}
+
+/* ─── Vitrine Banner ─────────────────────────────── */
+function VitrineBanner() {
+  const navigate = useNavigate()
+  const [acct, setAcct] = useState(null)
+
+  useEffect(() => {
+    apiService.getAccountSettings()
+      .then(r => setAcct(r.account))
+      .catch(() => {})
+  }, [])
+
+  if (!acct) return null
+
+  const co   = acct.company || {}
+  const addr = (co.addresses || [])[0] || {}
+
+  const fields = [
+    acct.profession_category,
+    acct.directory_description,
+    co.logo_url,
+    co.cover_url,
+    addr.city,
+    co.phone_number,
+    acct.instagram_url,
+    (acct.specialties || []).length > 0,
+  ]
+  const done  = fields.filter(Boolean).length
+  const total = fields.length
+  const pct   = Math.round((done / total) * 100)
+
+  // Oculta se vitrine ativa e perfil >= 80%
+  if (acct.directory_visible && pct >= 80) return null
+
+  const inactive = !acct.directory_visible
+
+  return (
+    <div
+      onClick={() => navigate('/vitrine')}
+      style={{
+        borderRadius: 12, cursor: 'pointer', overflow: 'hidden',
+        background: inactive
+          ? 'linear-gradient(135deg, #3a43a0 0%, #5b52d9 100%)'
+          : T.white,
+        border: inactive ? 'none' : `1.5px solid ${T.brand}40`,
+        padding: '16px 20px',
+        display: 'flex', alignItems: 'center', gap: 14,
+        transition: 'opacity 140ms',
+      }}
+      onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+      onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+    >
+      <div style={{
+        width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+        background: inactive ? 'rgba(255,255,255,0.18)' : T.chip,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Globe size={18} style={{ color: inactive ? '#fff' : T.brand }} />
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: inactive ? '#fff' : T.text }}>
+          {inactive ? 'Apareça para novos pacientes' : 'Complete seu perfil público'}
+        </p>
+        {inactive ? (
+          <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
+            Ative sua vitrine e seja encontrada no Descobrir
+          </p>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+            <div style={{ flex: 1, height: 4, borderRadius: 4, background: T.border, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${pct}%`, background: T.brand, borderRadius: 4, transition: 'width 500ms ease' }} />
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: T.brand, flexShrink: 0 }}>{pct}%</span>
+          </div>
+        )}
+      </div>
+
+      <ArrowRight size={16} style={{ color: inactive ? 'rgba(255,255,255,0.7)' : T.muted, flexShrink: 0 }} />
+    </div>
   )
 }
 
@@ -807,6 +889,8 @@ export function Dashboard() {
           )
         })}
       </div>
+
+      <VitrineBanner />
 
       <SetupChecklist allApts={allApts} />
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, MapPin, Loader2, Navigation, Minus, Plus, Map, LayoutGrid, ArrowLeft, Clock } from 'lucide-react'
+import { Search, MapPin, Loader2, Navigation, ArrowLeft, Clock, Map } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { apiService } from '../lib/api'
@@ -214,7 +214,62 @@ function CompactCard({ professional, highlighted, onClick, onHover }) {
 }
 
 /* ─── Painel deslizante ─────────────────────────── */
-function ProfessionalPanel({ open, professionalId, previewData, onClose, navigate }) {
+function MiniMap({ location }) {
+  const containerRef = useRef(null)
+  const instanceRef  = useRef(null)
+  const lat = location?.latitude
+  const lng = location?.longitude
+
+  useEffect(() => {
+    if (!lat || !lng || !containerRef.current) return
+    if (instanceRef.current) { instanceRef.current.remove(); instanceRef.current = null }
+
+    const map = L.map(containerRef.current, {
+      center: [lat, lng], zoom: 15,
+      zoomControl: false, scrollWheelZoom: false,
+      dragging: false, touchZoom: false, doubleClickZoom: false,
+      attributionControl: false,
+    })
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd', maxZoom: 20,
+    }).addTo(map)
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="width:22px;height:22px;background:#5B52D9;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(91,82,217,0.5)"></div>`,
+      iconSize: [22, 22], iconAnchor: [11, 11],
+    })
+    L.marker([lat, lng], { icon }).addTo(map)
+    instanceRef.current = map
+    return () => { map.remove(); instanceRef.current = null }
+  }, [lat, lng])
+
+  const address = [location?.address_line1, location?.district, location?.city, location?.state]
+    .filter(Boolean).join(', ')
+
+  if (!lat && !address) return null
+
+  return (
+    <div style={{ marginTop: 20 }}>
+      <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: T.muted }}>
+        LOCALIZAÇÃO
+      </p>
+      {lat && lng && (
+        <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${T.border}`, height: 160, marginBottom: 8, isolation: 'isolate' }}>
+          <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+        </div>
+      )}
+      {address && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+          <MapPin size={13} style={{ color: T.brand, flexShrink: 0, marginTop: 1 }} />
+          <p style={{ margin: 0, fontSize: 12, color: T.muted, lineHeight: 1.5 }}>{address}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ProfessionalPanel({ open, professionalId, previewData, onClose, navigate, mapMode = false, onPrev, onNext, currentIndex, totalCount }) {
   const [profile,     setProfile]     = useState(null)
   const [loading,     setLoading]     = useState(false)
   const [selectedSvc, setSelectedSvc] = useState(null)
@@ -227,10 +282,11 @@ function ProfessionalPanel({ open, professionalId, previewData, onClose, navigat
       .then(setProfile).catch(() => {}).finally(() => setLoading(false))
   }, [open, professionalId])
 
+  // Em mapMode o layout já é overflow:hidden — só bloqueia scroll no modo lista/mobile
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : ''
+    if (!mapMode) document.body.style.overflow = open ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
-  }, [open])
+  }, [open, mapMode])
 
   const handleBook = () => {
     if (profile?.booking_token) navigate(`/agendar/${profile.booking_token}`)
@@ -246,28 +302,31 @@ function ProfessionalPanel({ open, professionalId, previewData, onClose, navigat
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        onClick={onClose}
-        style={{
-          position: 'fixed', inset: 0, zIndex: 100,
-          background: 'rgba(0,0,0,0.45)',
-          backdropFilter: 'blur(3px)',
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'all' : 'none',
-          transition: 'opacity 280ms',
-        }}
-      />
+      {/* Backdrop — só no modo lista/mobile (no mapMode o mapa fica visível à direita) */}
+      {!mapMode && (
+        <div
+          onClick={onClose}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(0,0,0,0.45)',
+            backdropFilter: 'blur(3px)',
+            opacity: open ? 1 : 0,
+            pointerEvents: open ? 'all' : 'none',
+            transition: 'opacity 280ms',
+          }}
+        />
+      )}
 
-      {/* Drawer */}
+      {/* Drawer — da esquerda em mapMode (cobre a coluna de cards), da direita no modo lista */}
       <div style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 101,
-        width: 'min(460px, 100vw)',
+        position: 'fixed', top: 0, bottom: 0, zIndex: 101,
+        ...(mapMode
+          ? { left: 0, width: '360px', transform: open ? 'translateX(0)' : 'translateX(-100%)', boxShadow: '16px 0 40px rgba(0,0,0,0.12)' }
+          : { right: 0, width: 'min(460px, 100vw)', transform: open ? 'translateX(0)' : 'translateX(100%)', boxShadow: '-16px 0 60px rgba(0,0,0,0.15)' }
+        ),
         background: T.white,
-        transform: open ? 'translateX(0)' : 'translateX(100%)',
         transition: 'transform 320ms cubic-bezier(0.32,0,0.16,1)',
         display: 'flex', flexDirection: 'column',
-        boxShadow: '-16px 0 60px rgba(0,0,0,0.15)',
         overflow: 'hidden',
         ...DISPLAY,
       }}>
@@ -277,7 +336,7 @@ function ProfessionalPanel({ open, professionalId, previewData, onClose, navigat
           flexShrink: 0,
           paddingTop: 'env(safe-area-inset-top, 0px)',
         }}>
-          {/* Nav bar — toque maior */}
+          {/* Nav bar */}
           <div style={{ padding: isMobile ? '4px 16px 0' : '8px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button
               onClick={onClose}
@@ -291,10 +350,44 @@ function ProfessionalPanel({ open, professionalId, previewData, onClose, navigat
             >
               <ArrowLeft size={16} /> Voltar
             </button>
-            {city && (
-              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                <MapPin size={10} />{city}
-              </span>
+
+            {/* Setas de navegação — prev/next na lista */}
+            {(onPrev || onNext) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                {totalCount > 0 && (
+                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, marginRight: 6 }}>
+                    {(currentIndex ?? 0) + 1}/{totalCount}
+                  </span>
+                )}
+                <button
+                  onClick={onPrev}
+                  disabled={!onPrev}
+                  title="Anterior"
+                  style={{
+                    width: 32, height: 32, borderRadius: '50%', border: 'none',
+                    background: onPrev ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)',
+                    color: onPrev ? '#fff' : 'rgba(255,255,255,0.3)',
+                    cursor: onPrev ? 'pointer' : 'default',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 16, fontWeight: 700, transition: 'background 150ms',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >‹</button>
+                <button
+                  onClick={onNext}
+                  disabled={!onNext}
+                  title="Próximo"
+                  style={{
+                    width: 32, height: 32, borderRadius: '50%', border: 'none',
+                    background: onNext ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)',
+                    color: onNext ? '#fff' : 'rgba(255,255,255,0.3)',
+                    cursor: onNext ? 'pointer' : 'default',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 16, fontWeight: 700, transition: 'background 150ms',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >›</button>
+              </div>
             )}
           </div>
 
@@ -408,6 +501,10 @@ function ProfessionalPanel({ open, professionalId, previewData, onClose, navigat
           )}
 
           {!loading && profile && (
+            <MiniMap location={profile.location} />
+          )}
+
+          {!loading && profile && (
             <button
               onClick={() => { onClose(); navigate(`/descobrir/${profile.id}`) }}
               style={{
@@ -463,73 +560,56 @@ function ProfessionalPanel({ open, professionalId, previewData, onClose, navigat
 /* ─── Mapa (desktop only) ───────────────────────── */
 const SAO_PAULO = [-23.5505, -46.6333]
 
-function DiscoverMap({ results, onSearch, highlightedId, onHoverPin, onCardClick }) {
-  const mapRef      = useRef(null)
-  const mapObj      = useRef(null)
-  const circleRef   = useRef(null)
-  const centerRef   = useRef(null)
-  const markersRef  = useRef({})
-  const debounceRef = useRef(null)
+function DiscoverMap({ results, onSearch, highlightedId, onHoverPin, onCardClick, sizeKey, showGeo = true, selectedId, flyToTarget }) {
+  const mapRef     = useRef(null)
+  const mapObj     = useRef(null)
+  const markersRef = useRef({})
+  const flyingRef  = useRef(false)
 
-  const [center,     setCenter]     = useState(SAO_PAULO)
-  const [radius,     setRadius]     = useState(10)
+  const [dirty,      setDirty]      = useState(false)
   const [searching,  setSearching]  = useState(false)
   const [geoLoading, setGeoLoading] = useState(false)
 
-  const doSearch = useCallback(async (lat, lng, r) => {
-    setSearching(true)
-    try { await onSearch(lat, lng, r) }
-    finally { setSearching(false) }
-  }, [onSearch])
+  const getBounds = useCallback(() => {
+    if (!mapObj.current) return null
+    const b = mapObj.current.getBounds()
+    return { sw_lat: b.getSouth(), sw_lng: b.getWest(), ne_lat: b.getNorth(), ne_lng: b.getEast() }
+  }, [])
 
-  const schedule = useCallback((lat, lng, r) => {
-    clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => doSearch(lat, lng, r), 700)
-  }, [doSearch])
+  const doSearch = useCallback(async () => {
+    const bounds = getBounds()
+    if (!bounds) return
+    setSearching(true); setDirty(false)
+    try { await onSearch(bounds) }
+    finally { setSearching(false) }
+  }, [getBounds, onSearch])
 
   useEffect(() => {
     if (mapObj.current) return
     const map = L.map(mapRef.current, { center: SAO_PAULO, zoom: 11, zoomControl: false })
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors', maxZoom: 19,
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap contributors © CARTO', maxZoom: 20, subdomains: 'abcd',
     }).addTo(map)
     L.control.zoom({ position: 'bottomright' }).addTo(map)
+
+    map.on('dragend', () => { if (!flyingRef.current) setDirty(true) })
+    map.on('zoomend', () => { if (!flyingRef.current) setDirty(true) })
+
     mapObj.current = map
-
-    const crossIcon = L.divIcon({
-      html: `<div style="width:30px;height:30px;border-radius:50%;border:3px solid #5B52D9;background:rgba(91,82,217,0.15);display:flex;align-items:center;justify-content:center;">
-               <div style="width:9px;height:9px;border-radius:50%;background:#5B52D9;"></div>
-             </div>`,
-      className: '', iconAnchor: [15, 15],
-    })
-    const marker = L.marker(SAO_PAULO, { icon: crossIcon, draggable: true }).addTo(map)
-    centerRef.current = marker
-
-    const circle = L.circle(SAO_PAULO, {
-      radius: 10000, color: '#5B52D9', fillColor: '#5B52D9',
-      fillOpacity: 0.06, weight: 2, dashArray: '5 4',
-    }).addTo(map)
-    circleRef.current = circle
-
-    marker.on('drag', () => { circle.setLatLng(marker.getLatLng()) })
-    marker.on('dragend', () => {
-      const { lat, lng } = marker.getLatLng()
-      setCenter([lat, lng]); schedule(lat, lng, radius)
-    })
-    map.on('click', (e) => {
-      const { lat, lng } = e.latlng
-      marker.setLatLng([lat, lng]); circle.setLatLng([lat, lng])
-      map.panTo([lat, lng], { animate: true, duration: 0.3 })
-      setCenter([lat, lng]); schedule(lat, lng, radius)
-    })
-    return () => { clearTimeout(debounceRef.current); map.remove(); mapObj.current = null }
+    return () => { map.remove(); mapObj.current = null }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { circleRef.current?.setRadius(radius * 1000) }, [radius])
   useEffect(() => {
-    circleRef.current?.setLatLng(center)
-    centerRef.current?.setLatLng(center)
-  }, [center])
+    if (mapObj.current) setTimeout(() => mapObj.current?.invalidateSize(), 320)
+  }, [sizeKey])
+
+  // flyTo quando um profissional é selecionado (panel aberto)
+  useEffect(() => {
+    if (!flyToTarget || !mapObj.current) return
+    flyingRef.current = true
+    mapObj.current.flyTo([flyToTarget.lat, flyToTarget.lng], 15, { animate: true, duration: 0.8 })
+    mapObj.current.once('moveend', () => { flyingRef.current = false })
+  }, [flyToTarget]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!mapObj.current) return
@@ -538,11 +618,20 @@ function DiscoverMap({ results, onSearch, highlightedId, onHoverPin, onCardClick
     results.forEach(pro => {
       const lat = pro.location?.latitude; const lng = pro.location?.longitude
       if (!lat || !lng) return
-      const hl = pro.id === highlightedId
-      const icon = L.divIcon({
-        html: `<div style="background:${hl ? '#111' : '#5B52D9'};color:#fff;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;font-family:'Space Grotesk',system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid #fff;">${pro.name.split(' ')[0]}</div>`,
-        className: '', iconAnchor: [0, 0],
-      })
+      const isSel = pro.id === selectedId
+      const hl    = pro.id === highlightedId
+      const label = pro.name.split(' ')[0]
+
+      let markerHtml
+      if (isSel) {
+        markerHtml = `<div style="background:#fff;color:#5B52D9;border-radius:20px;padding:5px 13px;font-size:12px;font-weight:800;font-family:'Space Grotesk',system-ui,sans-serif;white-space:nowrap;box-shadow:0 4px 18px rgba(91,82,217,0.4);border:2.5px solid #5B52D9;transform:scale(1.15);transform-origin:bottom left;">${label}</div>`
+      } else if (hl) {
+        markerHtml = `<div style="background:#111;color:#fff;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;font-family:'Space Grotesk',system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff;">${label}</div>`
+      } else {
+        markerHtml = `<div style="background:#5B52D9;color:#fff;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;font-family:'Space Grotesk',system-ui,sans-serif;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid #fff;">${label}</div>`
+      }
+
+      const icon = L.divIcon({ html: markerHtml, className: '', iconAnchor: [0, 0] })
       const logoHtml = pro.logo_url
         ? `<img src="${pro.logo_url}" style="width:38px;height:38px;border-radius:7px;object-fit:cover;flex-shrink:0;">`
         : `<div style="width:38px;height:38px;border-radius:7px;background:#EEEDFB;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#5B52D9;flex-shrink:0;">${getInitials(pro.name)}</div>`
@@ -553,12 +642,13 @@ function DiscoverMap({ results, onSearch, highlightedId, onHoverPin, onCardClick
         ${pro.location?.city ? `<p style="margin:0 0 8px;font-size:11px;color:#6B7280">📍 ${[pro.location.district, pro.location.city].filter(Boolean).join(', ')}</p>` : ''}
         <a href="/descobrir/${pro.id}" style="display:block;text-align:center;background:#5B52D9;color:#fff;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;text-decoration:none">Ver perfil →</a>
       </div>`
-      const m = L.marker([lat, lng], { icon }).addTo(mapObj.current).bindPopup(popup, { maxWidth: 230, className: 'orbi-popup' })
+      const m = L.marker([lat, lng], { icon }).addTo(mapObj.current)
       m.on('mouseover', () => onHoverPin(pro.id))
       m.on('mouseout',  () => onHoverPin(null))
+      m.on('click',     () => onCardClick(pro))
       markersRef.current[pro.id] = m
     })
-  }, [results, highlightedId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [results, highlightedId, selectedId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGeo = () => {
     if (!navigator.geolocation) return
@@ -566,61 +656,39 @@ function DiscoverMap({ results, onSearch, highlightedId, onHoverPin, onCardClick
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         const { latitude: lat, longitude: lng } = coords
-        setCenter([lat, lng])
+        flyingRef.current = true
         mapObj.current?.flyTo([lat, lng], 13, { animate: true, duration: 1 })
-        setGeoLoading(false); doSearch(lat, lng, radius)
+        mapObj.current?.once('moveend', () => { flyingRef.current = false; doSearch() })
+        setGeoLoading(false)
       },
       () => setGeoLoading(false), { timeout: 8000 }
     )
   }
 
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
-      {/* Sidebar — só existe em telas ≥ 640px */}
-      <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', borderRight: `1px solid ${T.border}`, background: T.bg }}>
-        <div style={{ padding: '12px 14px', borderBottom: `1px solid ${T.border}` }}>
-          <button onClick={handleGeo} disabled={geoLoading}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 12px', borderRadius: 7, border: `1px solid ${T.border}`, background: T.white, color: T.brand, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', width: '100%', justifyContent: 'center', minHeight: 40 }}>
-            {geoLoading ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Navigation size={12} />}
-            Minha localização
-          </button>
-        </div>
-        <div style={{ padding: '10px 14px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: T.muted, flexShrink: 0 }}>Raio</span>
-          <input type="range" min="1" max="100" step="1" value={radius} onChange={e => setRadius(Number(e.target.value))} style={{ flex: 1, accentColor: T.brand }} />
-          <button onClick={() => setRadius(r => Math.max(1, r - 5))} style={{ width: 26, height: 26, borderRadius: 5, border: `1px solid ${T.border}`, background: T.white, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Minus size={10} /></button>
-          <span style={{ fontSize: 12, fontWeight: 700, color: T.brand, minWidth: 38, textAlign: 'center' }}>{radius} km</span>
-          <button onClick={() => setRadius(r => Math.min(100, r + 5))} style={{ width: 26, height: 26, borderRadius: 5, border: `1px solid ${T.border}`, background: T.white, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Plus size={10} /></button>
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {searching ? (
-            Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} style={{ height: 70, background: T.white, borderRadius: 10, border: `1px solid ${T.border}`, animation: 'pulse 1.4s ease-in-out infinite' }} />
-            ))
-          ) : results.length === 0 ? (
-            <p style={{ textAlign: 'center', paddingTop: 40, fontSize: 13, color: T.muted }}>
-              Clique no mapa para buscar nutricionistas na região
-            </p>
-          ) : (
-            results.filter(r => r.location?.latitude).map(pro => (
-              <CompactCard key={pro.id} professional={pro} highlighted={highlightedId === pro.id} onHover={onHoverPin} onClick={() => onCardClick(pro)} />
-            ))
-          )}
-        </div>
-      </div>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
-      {/* Mapa */}
-      <div style={{ flex: 1, position: 'relative' }}>
-        <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
-        {searching && (
-          <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 900, background: T.white, borderRadius: 8, padding: '7px 14px', boxShadow: '0 2px 12px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 600, color: T.brand }}>
+      {/* Procurar nesta área */}
+      <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', zIndex: 900 }}>
+        {searching ? (
+          <div style={{ background: T.white, borderRadius: 20, padding: '9px 18px', boxShadow: '0 2px 14px rgba(0,0,0,0.14)', display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 600, color: T.brand, whiteSpace: 'nowrap' }}>
             <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Buscando…
           </div>
-        )}
-        <div style={{ position: 'absolute', bottom: 36, left: '50%', transform: 'translateX(-50%)', background: 'rgba(14,14,14,0.7)', backdropFilter: 'blur(5px)', color: '#fff', borderRadius: 7, padding: '5px 11px', fontSize: 10, fontWeight: 500, zIndex: 900, whiteSpace: 'nowrap', pointerEvents: 'none' }}>
-          Clique no mapa para buscar na região
-        </div>
+        ) : dirty ? (
+          <button onClick={doSearch} style={{ background: T.white, border: 'none', borderRadius: 20, padding: '9px 18px', boxShadow: '0 2px 14px rgba(0,0,0,0.16)', fontSize: 13, fontWeight: 700, color: T.text, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'inherit', whiteSpace: 'nowrap', WebkitTapHighlightColor: 'transparent' }}>
+            <Search size={13} style={{ color: T.brand }} /> Procurar nesta área
+          </button>
+        ) : null}
       </div>
+
+      {/* Minha localização — só no modo mapa (ampliado) */}
+      {showGeo && (
+        <button onClick={handleGeo} disabled={geoLoading} style={{ position: 'absolute', top: 54, right: 12, zIndex: 900, background: T.white, border: 'none', borderRadius: 8, padding: '8px 12px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: T.brand, fontFamily: 'inherit', WebkitTapHighlightColor: 'transparent' }}>
+          {geoLoading ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Navigation size={12} />}
+          Minha localização
+        </button>
+      )}
 
       <style>{`
         .orbi-popup .leaflet-popup-content-wrapper { border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); padding: 0; }
@@ -637,7 +705,7 @@ export function PublicDiscover() {
   const isMobile    = useIsMobile()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const [viewMode,     setViewMode]     = useState('list')
+
   const [searchQ,      setSearchQ]      = useState(searchParams.get('q') || '')
   const [searchCity,   setSearchCity]   = useState(searchParams.get('city') || '')
   const [activeChip,   setActiveChip]   = useState('')
@@ -648,21 +716,45 @@ export function PublicDiscover() {
   const [loadingMore,  setLoadingMore]  = useState(false)
   const [hoveredId,    setHoveredId]    = useState(null)
 
+  const [viewMode,     setViewMode]     = useState('list')
+
   const [panelOpen,    setPanelOpen]    = useState(false)
   const [panelId,      setPanelId]      = useState(null)
   const [panelPreview, setPanelPreview] = useState(null)
-
-  /* em mobile não há modo mapa — volta para lista se a tela encolher */
-  useEffect(() => {
-    if (isMobile && viewMode === 'map') setViewMode('list')
-  }, [isMobile, viewMode])
+  const [flyToTarget,  setFlyToTarget]  = useState(null)
+  const autoSwitchedRef = useRef(false)
 
   const openPanel = (professional) => {
     setPanelId(professional.id)
     setPanelPreview(professional)
     setPanelOpen(true)
+    const lat = professional.location?.latitude
+    const lng = professional.location?.longitude
+    if (!isMobile) {
+      // Auto-switch para mapMode ao abrir painel: o painel cobre a coluna da esquerda, mapa fica visível
+      if (viewMode === 'list') {
+        setViewMode('map')
+        autoSwitchedRef.current = true
+      }
+      if (lat && lng) setFlyToTarget({ lat, lng, _id: professional.id })
+    }
   }
-  const closePanel = () => setPanelOpen(false)
+
+  const closePanel = () => {
+    setPanelOpen(false)
+    if (autoSwitchedRef.current) {
+      setViewMode('list')
+      autoSwitchedRef.current = false
+    }
+  }
+
+  const currentPanelIndex = panelId ? results.findIndex(r => r.id === panelId) : -1
+  const handlePanelPrev = currentPanelIndex > 0
+    ? () => openPanel(results[currentPanelIndex - 1])
+    : null
+  const handlePanelNext = currentPanelIndex >= 0 && currentPanelIndex < results.length - 1
+    ? () => openPanel(results[currentPanelIndex + 1])
+    : null
 
   const buildQ = (q, chip) => [q, chip].filter(Boolean).join(' ')
 
@@ -703,8 +795,8 @@ export function PublicDiscover() {
     fetchPage(searchQ, activeChip, searchCity, next, true)
   }
 
-  const handleMapSearch = useCallback((lat, lng, radius) => {
-    return fetchPage(searchQ, activeChip, searchCity, 0, false, { latitude: lat, longitude: lng, radius })
+  const handleMapSearch = useCallback((bounds) => {
+    return fetchPage(searchQ, activeChip, searchCity, 0, false, bounds)
   }, [fetchPage, searchQ, activeChip, searchCity])
 
   const px = isMobile ? '16px' : '24px'
@@ -729,28 +821,6 @@ export function PublicDiscover() {
             </span>
           )}
 
-          {/* Toggle Lista/Mapa — apenas desktop */}
-          {!isMobile && (
-            <div style={{ marginLeft: 'auto', display: 'flex', background: T.light, borderRadius: 8, padding: 3, gap: 2 }}>
-              {[
-                { id: 'list', Icon: LayoutGrid, label: 'Lista' },
-                { id: 'map',  Icon: Map,        label: 'Mapa'  },
-              ].map(({ id, Icon, label }) => (
-                <button key={id} onClick={() => setViewMode(id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 5,
-                    padding: '5px 10px', borderRadius: 6, border: 'none',
-                    background: viewMode === id ? T.white : 'transparent',
-                    color: viewMode === id ? T.brand : T.muted,
-                    fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
-                    cursor: 'pointer', transition: 'all 140ms',
-                    boxShadow: viewMode === id ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                  }}>
-                  <Icon size={13} /> {label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Row 2: busca + chips */}
@@ -812,27 +882,20 @@ export function PublicDiscover() {
       </div>
 
       {/* ── Conteúdo ─────────────────────────────── */}
-      {viewMode === 'map' && !isMobile ? (
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          <DiscoverMap
-            results={results}
-            onSearch={handleMapSearch}
-            highlightedId={hoveredId}
-            onHoverPin={setHoveredId}
-            onCardClick={openPanel}
-          />
-        </div>
-      ) : (
+      {isMobile ? (
+        /* Mobile: só lista */
         <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
-          <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '16px 16px 80px' : '24px 24px 60px' }}>
+          <div style={{ padding: '16px 16px 80px' }}>
             {loading ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
-                {Array.from({ length: isMobile ? 4 : 9 }).map((_, i) => <SkeletonCard key={i} />)}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} style={{ height: 80, background: T.light, borderRadius: 10, animation: 'pulse 1.4s ease-in-out infinite' }} />
+                ))}
               </div>
             ) : results.length === 0 ? (
-              <div style={{ textAlign: 'center', paddingTop: 80 }}>
+              <div style={{ textAlign: 'center', paddingTop: 60 }}>
                 <p style={{ fontSize: 15, fontWeight: 600, color: T.text, margin: '0 0 8px' }}>Nenhuma nutricionista encontrada</p>
-                <p style={{ fontSize: 13, color: T.muted, margin: '0 0 20px' }}>Tente uma busca diferente ou mude o filtro de especialidade.</p>
+                <p style={{ fontSize: 13, color: T.muted, margin: '0 0 20px' }}>Tente uma busca diferente.</p>
                 <button onClick={() => { setSearchQ(''); setSearchCity(''); setActiveChip(''); fetchPage('', '', '', 0, false) }}
                   style={{ padding: '10px 20px', background: T.brand, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>
                   Ver todas
@@ -840,34 +903,155 @@ export function PublicDiscover() {
               </div>
             ) : (
               <>
-                <p style={{ fontSize: 12, color: T.muted, margin: '0 0 16px' }}>
-                  <span style={{ fontWeight: 700, color: T.text }}>{total}</span> nutricionista{total !== 1 ? 's' : ''} encontrada{total !== 1 ? 's' : ''}
-                  {activeChip && <> em <span style={{ color: T.brand, fontWeight: 600 }}>{activeChip}</span></>}
-                </p>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
-                  {results.map(pro => (
-                    <RichCard
-                      key={pro.id}
-                      professional={pro}
-                      highlighted={hoveredId === pro.id}
-                      onClick={() => openPanel(pro)}
-                      onHover={setHoveredId}
-                    />
-                  ))}
-                </div>
-
-                {results.length < total && (
-                  <div style={{ textAlign: 'center', marginTop: 36 }}>
-                    <button onClick={handleLoadMore} disabled={loadingMore}
-                      style={{ padding: '11px 28px', border: `1px solid ${T.border}`, borderRadius: 8, background: T.white, color: T.text, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', opacity: loadingMore ? 0.5 : 1, display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 44 }}>
-                      {loadingMore
-                        ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Carregando…</>
-                        : `Ver mais ${total - results.length} nutricionistas`}
-                    </button>
+                {results.map(pro => (
+                  <div key={pro.id} style={{ marginBottom: 10 }}>
+                    <CompactCard professional={pro} highlighted={hoveredId === pro.id} onHover={setHoveredId} onClick={() => openPanel(pro)} />
                   </div>
+                ))}
+                {results.length < total && (
+                  <button onClick={handleLoadMore} disabled={loadingMore}
+                    style={{ width: '100%', padding: '12px', border: `1px solid ${T.border}`, borderRadius: 8, background: T.white, color: T.text, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48 }}>
+                    {loadingMore ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Carregando…</> : `Ver mais ${total - results.length}`}
+                  </button>
                 )}
               </>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* Desktop: split com dois modos */
+        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+
+          {/* Painel esquerdo */}
+          <div style={{
+            width: viewMode === 'list' ? 'calc(100% - 380px)' : 360,
+            flexShrink: 0,
+            borderRight: `1px solid ${T.border}`,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            background: T.bg,
+            transition: 'width 300ms cubic-bezier(0.4,0,0.2,1)',
+          }}>
+            {viewMode === 'list' ? (
+              /* Modo lista: RichCards em grid */
+              <div style={{ padding: '16px 20px 60px' }}>
+                {total > 0 && (
+                  <p style={{ margin: '0 0 14px', fontSize: 12, color: T.muted }}>
+                    <span style={{ fontWeight: 700, color: T.text }}>{total}</span> nutricionista{total !== 1 ? 's' : ''} encontrada{total !== 1 ? 's' : ''}
+                    {activeChip && <> em <span style={{ color: T.brand, fontWeight: 600 }}>{activeChip}</span></>}
+                  </p>
+                )}
+                {loading ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+                    {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+                  </div>
+                ) : results.length === 0 ? (
+                  <div style={{ textAlign: 'center', paddingTop: 80 }}>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: T.text, margin: '0 0 8px' }}>Nenhuma nutricionista encontrada</p>
+                    <p style={{ fontSize: 13, color: T.muted, margin: '0 0 20px' }}>Tente uma busca diferente ou mude o filtro.</p>
+                    <button onClick={() => { setSearchQ(''); setSearchCity(''); setActiveChip(''); fetchPage('', '', '', 0, false) }}
+                      style={{ padding: '10px 20px', background: T.brand, color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}>
+                      Ver todas
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+                      {results.map(pro => (
+                        <RichCard key={pro.id} professional={pro} highlighted={hoveredId === pro.id} onClick={() => openPanel(pro)} onHover={setHoveredId} />
+                      ))}
+                    </div>
+                    {results.length < total && (
+                      <div style={{ textAlign: 'center', marginTop: 32 }}>
+                        <button onClick={handleLoadMore} disabled={loadingMore}
+                          style={{ padding: '11px 28px', border: `1px solid ${T.border}`, borderRadius: 8, background: T.white, color: T.text, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8, minHeight: 44, opacity: loadingMore ? 0.5 : 1 }}>
+                          {loadingMore ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Carregando…</> : `Ver mais ${total - results.length} nutricionistas`}
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : (
+              /* Modo mapa: CompactCards */
+              <div style={{ padding: '10px 12px 60px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {total > 0 && (
+                  <p style={{ margin: '0 0 4px', fontSize: 11, color: T.muted }}>
+                    <span style={{ fontWeight: 700, color: T.text }}>{total}</span> encontrada{total !== 1 ? 's' : ''}
+                  </p>
+                )}
+                {loading ? (
+                  Array.from({ length: 7 }).map((_, i) => (
+                    <div key={i} style={{ height: 76, background: T.white, borderRadius: 10, border: `1px solid ${T.border}`, animation: 'pulse 1.4s ease-in-out infinite' }} />
+                  ))
+                ) : results.length === 0 ? (
+                  <p style={{ textAlign: 'center', paddingTop: 40, fontSize: 13, color: T.muted }}>
+                    Mova o mapa e clique em "Procurar nesta área"
+                  </p>
+                ) : (
+                  <>
+                    {results.map(pro => (
+                      <CompactCard key={pro.id} professional={pro} highlighted={hoveredId === pro.id} onHover={setHoveredId} onClick={() => openPanel(pro)} />
+                    ))}
+                    {results.length < total && (
+                      <button onClick={handleLoadMore} disabled={loadingMore}
+                        style={{ width: '100%', padding: '10px', border: `1px solid ${T.border}`, borderRadius: 8, background: T.white, color: T.text, fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 42 }}>
+                        {loadingMore ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Carregando…</> : `Ver mais ${total - results.length}`}
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Mapa — zIndex: 1 cria stacking context própria, isolando os z-indices internos do Leaflet (200–700) do backdrop/panel (z-index 100/101) */}
+          <div style={{ flex: 1, position: 'relative', zIndex: 1, overflow: 'hidden', transition: 'flex 300ms cubic-bezier(0.4,0,0.2,1)' }}>
+            <DiscoverMap
+              results={results}
+              onSearch={handleMapSearch}
+              highlightedId={hoveredId}
+              onHoverPin={setHoveredId}
+              onCardClick={openPanel}
+              sizeKey={viewMode}
+              showGeo={viewMode === 'map'}
+              selectedId={panelId}
+              flyToTarget={flyToTarget}
+            />
+            {viewMode === 'list' ? (
+              /* Ampliar mapa — visível no mini-mapa */
+              <button
+                onClick={() => setViewMode('map')}
+                style={{
+                  position: 'absolute', top: 12, right: 12,
+                  zIndex: 900, background: T.white, color: T.text, border: 'none',
+                  borderRadius: 20, padding: '7px 14px',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  fontFamily: 'inherit', whiteSpace: 'nowrap',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
+                <Map size={12} /> Ampliar mapa
+              </button>
+            ) : (
+              /* X para minimizar — volta ao modo lista e fecha painel se estiver aberto */
+              <button
+                onClick={() => { setViewMode('list'); setPanelOpen(false); autoSwitchedRef.current = false }}
+                style={{
+                  position: 'absolute', top: 12, right: 12,
+                  zIndex: 900, background: T.white, color: T.text, border: 'none',
+                  borderRadius: '50%', width: 34, height: 34,
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+                  fontSize: 18, fontWeight: 400, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  lineHeight: 1, WebkitTapHighlightColor: 'transparent',
+                }}
+                title="Minimizar mapa"
+              >
+                ×
+              </button>
             )}
           </div>
         </div>
@@ -880,6 +1064,11 @@ export function PublicDiscover() {
         previewData={panelPreview}
         onClose={closePanel}
         navigate={navigate}
+        mapMode={viewMode === 'map' && !isMobile}
+        onPrev={handlePanelPrev}
+        onNext={handlePanelNext}
+        currentIndex={currentPanelIndex}
+        totalCount={results.length}
       />
 
       <style>{`

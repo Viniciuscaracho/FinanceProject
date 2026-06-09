@@ -115,8 +115,9 @@ module Api
           :directory_visible,
           :profession_category,
           :directory_description,
+          :instagram_url,
           :pix_key,
-          { company_attributes: }
+          { specialties: [], company_attributes: }
         )
       end
 
@@ -132,9 +133,12 @@ module Api
           invoice_due_days: account.invoice_due_days,
           invoice_tax_percentage: account.invoice_tax_percentage,
           invoice_tax_already_applied: account.invoice_tax_already_applied,
+          profile_views: account.profile_views,
           directory_visible: account.directory_visible,
           profession_category: account.profession_category,
           directory_description: account.directory_description,
+          instagram_url: account.instagram_url,
+          specialties: account.specialties || [],
           pix_key: account.pix_key,
           company: company_data(account.company)
         }

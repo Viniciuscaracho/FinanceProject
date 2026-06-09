@@ -18,6 +18,7 @@ export const useAuth = () => {
       isImpersonating: false,
       login: async () => ({ success: false, error: 'AuthProvider ausente' }),
       loginSimple: async () => ({ success: false, error: 'AuthProvider ausente' }),
+      devLogin: async () => ({ success: false, error: 'AuthProvider ausente' }),
       loginWithSupabase: async () => ({ success: false, error: 'AuthProvider ausente' }),
       loginWithGoogle: async () => {},
       loginWithToken: async () => ({ success: false, error: 'AuthProvider ausente' }),
@@ -134,6 +135,24 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       setError(error.message);
       return { success: false, error: error.message };
+    }
+  };
+
+  const devLogin = async (email) => {
+    try {
+      setError(null);
+      const response = await apiService.devLogin(email);
+      if (response.success) {
+        setUser(response.user);
+        return { success: true };
+      }
+      const msg = response.error || 'Usuário não encontrado';
+      setError(msg);
+      return { success: false, error: msg };
+    } catch (error) {
+      const msg = error.message || 'Erro ao fazer login';
+      setError(msg);
+      return { success: false, error: msg };
     }
   };
 
@@ -392,6 +411,7 @@ export const AuthProvider = ({ children }) => {
     error,
     login,
     loginSimple,
+    devLogin,
     loginWithSupabase,
     loginWithGoogle,
     loginWithToken,
