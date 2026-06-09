@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -637,10 +638,6 @@ export function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    document.title = 'OrbiNutri — Gestão completa para nutricionistas'
-  }, [])
-
-  useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', fn, { passive: true })
     return () => window.removeEventListener('scroll', fn)
@@ -648,6 +645,10 @@ export function LandingPage() {
 
   return (
     <div style={{ ...DISPLAY }}>
+      <Helmet>
+        <title>OrbiNutri — Gestão completa para nutricionistas</title>
+        <link rel="canonical" href="https://app.orbinutri.com.br/" />
+      </Helmet>
 
       {/* ── Nav ──────────────────────────────────────────── */}
       <header style={{

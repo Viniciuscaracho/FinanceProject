@@ -1,0 +1,23 @@
+User-agent: *
+
+# Páginas que redirecionam para / via JS
+Disallow: /landing
+Disallow: /landing-nutri
+
+# Rotas de app autenticado
+Disallow: /login
+Disallow: /auth/
+
+# Links tokenizados (privados por natureza)
+Disallow: /agendar/
+Disallow: /anamnese/
+Disallow: /d/
+Disallow: /plano/
+
+# Páginas públicas indexáveis
+Allow: /
+Allow: /descobrir
+Allow: /politica-de-privacidade
+Allow: /termos-de-uso
+
+Sitemap: https://app.orbinutri.com.br/sitemap.xml

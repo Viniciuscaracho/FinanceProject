@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, MapPin, Loader2, Navigation, ArrowLeft, Clock, Map } from 'lucide-react'
 import L from 'leaflet'
@@ -803,13 +804,18 @@ export function PublicDiscover() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: T.bg, ...DISPLAY, overflow: 'hidden' }}>
+      <Helmet>
+        <title>Encontre nutricionistas | Orbi</title>
+        <meta name="description" content="Descubra nutricionistas perto de você. Perfis verificados, agendamento online e atendimento presencial ou online." />
+        <link rel="canonical" href="https://app.orbinutri.com.br/descobrir" />
+      </Helmet>
 
       {/* ── Header ──────────────────────────────── */}
       <div style={{ flexShrink: 0, background: T.white, borderBottom: `1px solid ${T.border}`, zIndex: 40 }}>
 
         {/* Row 1 */}
         <div style={{ maxWidth: 1280, margin: '0 auto', padding: `0 ${px}`, height: 48, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={() => navigate('/landing')}
+          <button onClick={() => navigate('/')}
             style={{ fontSize: 15, fontWeight: 700, color: T.text, background: 'none', border: 'none', cursor: 'pointer', padding: 0, letterSpacing: '-0.02em', flexShrink: 0 }}>
             Orbi
           </button>
