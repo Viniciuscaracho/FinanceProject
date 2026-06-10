@@ -24,6 +24,8 @@ export default defineConfig({
           'vendor-charts': ['recharts'],
           'vendor-calendar': ['react-big-calendar'],
           'vendor-date': ['date-fns'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-map': ['leaflet'],
         },
       },
     },

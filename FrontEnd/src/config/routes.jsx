@@ -1,13 +1,15 @@
 import { lazy } from 'react'
 
-// Public pages - carregam imediatamente
+// LandingPage — eager (primeira tela para usuários não autenticados)
 export { LandingPage } from '../pages/LandingPage'
-export { PublicAppointmentBooking } from '../pages/PublicAppointmentBooking'
-export { AppointmentManage } from '../pages/AppointmentManage'
-export { PublicDiscover } from '../pages/PublicDiscover'
-export { PublicProfessionalProfile } from '../pages/PublicProfessionalProfile'
-export { PublicAnamneseForm } from '../pages/PublicAnamneseForm'
-export { PublicPatientDocument } from '../pages/PublicPatientDocument'
+
+// Páginas públicas — lazy loaded para reduzir o bundle inicial
+export const PublicAppointmentBooking = lazy(() => import('../pages/PublicAppointmentBooking').then(m => ({ default: m.PublicAppointmentBooking })))
+export const AppointmentManage = lazy(() => import('../pages/AppointmentManage').then(m => ({ default: m.AppointmentManage })))
+export const PublicDiscover = lazy(() => import('../pages/PublicDiscover').then(m => ({ default: m.PublicDiscover })))
+export const PublicProfessionalProfile = lazy(() => import('../pages/PublicProfessionalProfile').then(m => ({ default: m.PublicProfessionalProfile })))
+export const PublicAnamneseForm = lazy(() => import('../pages/PublicAnamneseForm').then(m => ({ default: m.PublicAnamneseForm })))
+export const PublicPatientDocument = lazy(() => import('../pages/PublicPatientDocument').then(m => ({ default: m.PublicPatientDocument })))
 
 // Protected pages - lazy loaded
 export const Dashboard = lazy(() => import('../pages/Dashboard').then(m => ({ default: m.Dashboard })))

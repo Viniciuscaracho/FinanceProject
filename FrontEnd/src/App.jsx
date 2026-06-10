@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { HelmetProvider } from 'react-helmet-async'
@@ -14,12 +14,13 @@ import { CommandPaletteProvider } from './contexts/CommandPaletteContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import { PageSkeleton } from './components/Skeleton'
 import { LandingPage, Dashboard, PublicAppointmentBooking, AppointmentManage, PublicDiscover, PublicProfessionalProfile, PublicAnamneseForm, PublicPatientDocument, protectedRoutes } from './config/routes'
-import PublicMealPlan from './pages/PublicMealPlan'
-import { LandingPageNutri } from './pages/LandingPageNutri'
-import { GoogleAuthCallback } from './pages/GoogleAuthCallback'
-import { PrivacyPolicy } from './pages/PrivacyPolicy'
-import { TermsOfUse } from './pages/TermsOfUse'
 import { TermsAcceptanceModal } from './components/TermsAcceptanceModal'
+
+const LandingPageNutri  = lazy(() => import('./pages/LandingPageNutri').then(m => ({ default: m.LandingPageNutri })))
+const GoogleAuthCallback = lazy(() => import('./pages/GoogleAuthCallback').then(m => ({ default: m.GoogleAuthCallback })))
+const PrivacyPolicy     = lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })))
+const TermsOfUse        = lazy(() => import('./pages/TermsOfUse').then(m => ({ default: m.TermsOfUse })))
+const PublicMealPlan    = lazy(() => import('./pages/PublicMealPlan'))
 
 const isNutriDomain = window.location.hostname.includes('orbinutri')
 import './App.css'
@@ -88,18 +89,42 @@ function AppContent() {
         {isNutriDomain && <Route path="/landing-nutri" element={<Navigate to="/" replace />} />}
         {!isNutriDomain && <Route path="/" element={<Root />} />}
         {!isNutriDomain && <Route path="/landing" element={<Navigate to="/" replace />} />}
-        {!isNutriDomain && <Route path="/landing-nutri" element={<LandingPageNutri />} />}
+        {!isNutriDomain && (
+          <Route path="/landing-nutri" element={
+            <Suspense fallback={<PageSkeleton />}><LandingPageNutri /></Suspense>
+          } />
+        )}
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
-        <Route path="/auth/google" element={<GoogleAuthCallback />} />
-        <Route path="/descobrir" element={<PublicDiscover />} />
-        <Route path="/descobrir/:id" element={<PublicProfessionalProfile />} />
-        <Route path="/agendar/:token" element={<PublicAppointmentBooking />} />
-        <Route path="/agendar/gerenciar/:manage_token" element={<AppointmentManage />} />
-        <Route path="/anamnese/responder/:token" element={<PublicAnamneseForm />} />
-        <Route path="/d/:token" element={<PublicPatientDocument />} />
-        <Route path="/plano/:token" element={<PublicMealPlan />} />
-        <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
-        <Route path="/termos-de-uso" element={<TermsOfUse />} />
+        <Route path="/auth/google" element={
+          <Suspense fallback={<PageSkeleton />}><GoogleAuthCallback /></Suspense>
+        } />
+        <Route path="/descobrir" element={
+          <Suspense fallback={<PageSkeleton />}><PublicDiscover /></Suspense>
+        } />
+        <Route path="/descobrir/:id" element={
+          <Suspense fallback={<PageSkeleton />}><PublicProfessionalProfile /></Suspense>
+        } />
+        <Route path="/agendar/:token" element={
+          <Suspense fallback={<PageSkeleton />}><PublicAppointmentBooking /></Suspense>
+        } />
+        <Route path="/agendar/gerenciar/:manage_token" element={
+          <Suspense fallback={<PageSkeleton />}><AppointmentManage /></Suspense>
+        } />
+        <Route path="/anamnese/responder/:token" element={
+          <Suspense fallback={<PageSkeleton />}><PublicAnamneseForm /></Suspense>
+        } />
+        <Route path="/d/:token" element={
+          <Suspense fallback={<PageSkeleton />}><PublicPatientDocument /></Suspense>
+        } />
+        <Route path="/plano/:token" element={
+          <Suspense fallback={<PageSkeleton />}><PublicMealPlan /></Suspense>
+        } />
+        <Route path="/politica-de-privacidade" element={
+          <Suspense fallback={<PageSkeleton />}><PrivacyPolicy /></Suspense>
+        } />
+        <Route path="/termos-de-uso" element={
+          <Suspense fallback={<PageSkeleton />}><TermsOfUse /></Suspense>
+        } />
 
         {protectedRoutes.map(({ path, element: Page }) => (
           <Route
