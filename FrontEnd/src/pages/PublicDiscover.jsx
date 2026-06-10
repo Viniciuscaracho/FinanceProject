@@ -725,7 +725,7 @@ function buildSeoMeta(searchQ, activeChip, searchCity) {
   if (activeChip) params.set('especialidade', activeChip)
   if (searchCity) params.set('city', searchCity)
   const qs        = params.toString()
-  const canonical = `https://app.orbinutri.com.br/descobrir${qs ? `?${qs}` : ''}`
+  const canonical = `https://orbinutri.com.br/descobrir${qs ? `?${qs}` : ''}`
 
   const keywords = [
     'nutricionista',
@@ -860,39 +860,39 @@ export function PublicDiscover() {
         <meta property="og:url" content={seo.canonical} />
         <meta property="og:title" content={seo.title} />
         <meta property="og:description" content={seo.description} />
-        <meta property="og:image" content="https://app.orbinutri.com.br/og-image.png" />
+        <meta property="og:image" content="https://orbinutri.com.br/og-image.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta name="twitter:image" content="https://app.orbinutri.com.br/og-image.png" />
+        <meta name="twitter:image" content="https://orbinutri.com.br/og-image.png" />
         <script type="application/ld+json">{JSON.stringify({
           '@context': 'https://schema.org',
           '@graph': [
             {
               '@type': 'WebSite',
-              '@id': 'https://app.orbinutri.com.br/#website',
-              url: 'https://app.orbinutri.com.br',
+              '@id': 'https://orbinutri.com.br/#website',
+              url: 'https://orbinutri.com.br',
               name: 'OrbiNutri',
               publisher: {
                 '@type': 'Organization',
-                '@id': 'https://app.orbinutri.com.br/#organization',
+                '@id': 'https://orbinutri.com.br/#organization',
                 name: 'OrbiNutri',
               },
               potentialAction: {
                 '@type': 'SearchAction',
                 target: {
                   '@type': 'EntryPoint',
-                  urlTemplate: 'https://app.orbinutri.com.br/descobrir?q={search_term_string}',
+                  urlTemplate: 'https://orbinutri.com.br/descobrir?q={search_term_string}',
                 },
                 'query-input': 'required name=search_term_string',
               },
             },
             {
               '@type': 'CollectionPage',
-              '@id': 'https://app.orbinutri.com.br/descobrir',
-              url: 'https://app.orbinutri.com.br/descobrir',
+              '@id': 'https://orbinutri.com.br/descobrir',
+              url: 'https://orbinutri.com.br/descobrir',
               name: 'Encontre nutricionistas | OrbiNutri',
               description: 'Descubra nutricionistas perto de você. Perfis verificados, agendamento online e atendimento presencial ou online.',
-              isPartOf: { '@id': 'https://app.orbinutri.com.br/#website' },
+              isPartOf: { '@id': 'https://orbinutri.com.br/#website' },
             },
           ],
         })}</script>

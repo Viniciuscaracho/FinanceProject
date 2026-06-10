@@ -211,14 +211,14 @@ export function PublicProfessionalProfile() {
         <meta property="og:description" content={seoDescription} />
         <meta property="og:type" content="profile" />
         <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:image" content={professional.logo_url || 'https://app.orbinutri.com.br/og-image.png'} />
+        <meta property="og:image" content={professional.logo_url || 'https://orbinutri.com.br/og-image.png'} />
         <meta property="og:image:width" content={professional.logo_url ? '400' : '1200'} />
         <meta property="og:image:height" content={professional.logo_url ? '400' : '630'} />
         <meta property="og:locale" content="pt_BR" />
         <meta name="twitter:card" content={professional.logo_url ? 'summary' : 'summary_large_image'} />
         <meta name="twitter:title" content={seoTitle} />
         <meta name="twitter:description" content={seoDescription} />
-        <meta name="twitter:image" content={professional.logo_url || 'https://app.orbinutri.com.br/og-image.png'} />
+        <meta name="twitter:image" content={professional.logo_url || 'https://orbinutri.com.br/og-image.png'} />
         {category && city && <meta name="keywords" content={`${category.toLowerCase()} em ${city}${district ? `, ${category.toLowerCase()} em ${district}` : ''}${state ? `, ${category.toLowerCase()} ${state}` : ''}, agendar ${category.toLowerCase()}`} />}
       </Helmet>
       <SchemaOrg professional={professional} />

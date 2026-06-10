@@ -20,4 +20,4 @@ Allow: /descobrir
 Allow: /politica-de-privacidade
 Allow: /termos-de-uso
 
-Sitemap: https://app.orbinutri.com.br/sitemap.xml
+Sitemap: https://orbinutri.com.br/sitemap.xml
