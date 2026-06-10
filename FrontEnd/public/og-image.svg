@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0E1117;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a1f2e;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4C60AA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6B80CC;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="20" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)" />
+
+  <!-- Decorative circles -->
+  <circle cx="1050" cy="120" r="200" fill="#4C60AA" opacity="0.08" />
+  <circle cx="150" cy="520" r="160" fill="#4C60AA" opacity="0.06" />
+
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="1200" height="4" fill="url(#accent)" />
+
+  <!-- Logo icon -->
+  <rect x="80" y="200" width="56" height="56" rx="16" fill="url(#accent)" />
+  <text x="108" y="239" font-family="Space Grotesk, system-ui, sans-serif" font-size="28" font-weight="800" fill="white" text-anchor="middle">O</text>
+
+  <!-- Brand name -->
+  <text x="152" y="243" font-family="Space Grotesk, system-ui, sans-serif" font-size="32" font-weight="700" fill="white" letter-spacing="-0.5">OrbiNutri</text>
+
+  <!-- Main headline -->
+  <text x="80" y="340" font-family="Space Grotesk, system-ui, sans-serif" font-size="64" font-weight="700" fill="white" letter-spacing="-2">Gestão completa</text>
+  <text x="80" y="415" font-family="Space Grotesk, system-ui, sans-serif" font-size="64" font-weight="700" letter-spacing="-2">
+    <tspan fill="#4C60AA">para nutricionistas</tspan>
+  </text>
+
+  <!-- Subtitle -->
+  <text x="80" y="475" font-family="Space Grotesk, system-ui, sans-serif" font-size="26" fill="#9ca3af" letter-spacing="-0.3">Agenda · Pacientes · WhatsApp · Financeiro</text>
+
+  <!-- Feature pills -->
+  <rect x="80" y="510" width="170" height="42" rx="21" fill="#4C60AA" opacity="0.2" />
+  <text x="165" y="537" font-family="Space Grotesk, system-ui, sans-serif" font-size="17" fill="#7C9CCC" text-anchor="middle">Agendamento</text>
+
+  <rect x="264" y="510" width="188" height="42" rx="21" fill="#4C60AA" opacity="0.2" />
+  <text x="358" y="537" font-family="Space Grotesk, system-ui, sans-serif" font-size="17" fill="#7C9CCC" text-anchor="middle">Retorno automático</text>
+
+  <rect x="466" y="510" width="160" height="42" rx="21" fill="#4C60AA" opacity="0.2" />
+  <text x="546" y="537" font-family="Space Grotesk, system-ui, sans-serif" font-size="17" fill="#7C9CCC" text-anchor="middle">Cobrança PIX</text>
+
+  <!-- Right side decorative app mockup -->
+  <rect x="780" y="140" width="360" height="350" rx="20" fill="#161b27" opacity="0.9" />
+  <rect x="780" y="140" width="360" height="350" rx="20" fill="none" stroke="#ffffff14" stroke-width="1" />
+
+  <!-- Mockup header -->
+  <rect x="780" y="140" width="360" height="48" rx="20" fill="#1e2535" />
+  <rect x="780" y="165" width="360" height="23" fill="#1e2535" />
+  <circle cx="804" cy="164" r="5" fill="#FC6058" />
+  <circle cx="822" cy="164" r="5" fill="#FEC02F" />
+  <circle cx="840" cy="164" r="5" fill="#2ACA44" />
+
+  <!-- Mockup sidebar -->
+  <rect x="780" y="188" width="48" height="302" fill="#0e1117" opacity="0.6" />
+  <rect x="797" y="210" width="14" height="14" rx="4" fill="#4C60AA" opacity="0.9" />
+  <rect x="797" y="234" width="14" height="14" rx="4" fill="#ffffff20" />
+  <rect x="797" y="258" width="14" height="14" rx="4" fill="#ffffff20" />
+
+  <!-- Mockup content rows -->
+  <rect x="840" y="200" width="280" height="36" rx="8" fill="#ffffff06" />
+  <circle cx="858" cy="218" r="10" fill="#4C60AA" opacity="0.6" />
+  <rect x="876" y="211" width="80" height="8" rx="4" fill="#ffffff30" />
+  <rect x="876" y="224" width="50" height="6" rx="3" fill="#ffffff18" />
+  <rect x="1080" y="212" width="32" height="12" rx="6" fill="#4C60AA" opacity="0.5" />
+
+  <rect x="840" y="246" width="280" height="36" rx="8" fill="#4C60AA" opacity="0.12" />
+  <circle cx="858" cy="264" r="10" fill="#4C60AA" opacity="0.8" />
+  <rect x="876" y="257" width="70" height="8" rx="4" fill="#ffffff40" />
+  <rect x="876" y="270" width="45" height="6" rx="3" fill="#ffffff25" />
+  <rect x="1080" y="258" width="32" height="12" rx="6" fill="#4C60AA" opacity="0.7" />
+
+  <rect x="840" y="292" width="280" height="36" rx="8" fill="#ffffff06" />
+  <circle cx="858" cy="310" r="10" fill="#4C60AA" opacity="0.5" />
+  <rect x="876" y="303" width="90" height="8" rx="4" fill="#ffffff28" />
+  <rect x="876" y="316" width="55" height="6" rx="3" fill="#ffffff16" />
+
+  <rect x="840" y="338" width="280" height="36" rx="8" fill="#ffffff06" />
+  <circle cx="858" cy="356" r="10" fill="#4C60AA" opacity="0.4" />
+  <rect x="876" y="349" width="65" height="8" rx="4" fill="#ffffff22" />
+  <rect x="876" y="362" width="40" height="6" rx="3" fill="#ffffff14" />
+
+  <!-- Stats bottom strip on mockup -->
+  <rect x="840" y="395" width="130" height="60" rx="8" fill="#ffffff06" />
+  <text x="855" y="417" font-family="Space Grotesk, system-ui, sans-serif" font-size="11" fill="#6B6B6B">Faturamento</text>
+  <text x="855" y="442" font-family="Space Grotesk, system-ui, sans-serif" font-size="18" font-weight="700" fill="white">R$ 4.800</text>
+
+  <rect x="980" y="395" width="130" height="60" rx="8" fill="#ffffff06" />
+  <text x="995" y="417" font-family="Space Grotesk, system-ui, sans-serif" font-size="11" fill="#6B6B6B">Consultas</text>
+  <text x="995" y="442" font-family="Space Grotesk, system-ui, sans-serif" font-size="18" font-weight="700" fill="white">24 / mês</text>
+
+  <!-- Bottom URL -->
+  <text x="80" y="600" font-family="Space Grotesk, system-ui, sans-serif" font-size="18" fill="#4C60AA" opacity="0.7">app.orbinutri.com.br</text>
+</svg>

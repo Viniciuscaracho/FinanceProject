@@ -647,7 +647,53 @@ export function LandingPage() {
     <div style={{ ...DISPLAY }}>
       <Helmet>
         <title>OrbiNutri — Gestão completa para nutricionistas</title>
+        <meta name="description" content="Agenda online, gestão de pacientes e vitrine profissional para nutricionistas. Lembretes por WhatsApp, cobranças automáticas e controle financeiro." />
         <link rel="canonical" href="https://app.orbinutri.com.br/" />
+        <meta property="og:url" content="https://app.orbinutri.com.br/" />
+        <meta property="og:title" content="OrbiNutri — Gestão completa para nutricionistas" />
+        <meta property="og:description" content="Agenda online, gestão de pacientes e vitrine profissional para nutricionistas. Lembretes por WhatsApp, cobranças automáticas e controle financeiro." />
+        <meta property="og:image" content="https://app.orbinutri.com.br/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:image" content="https://app.orbinutri.com.br/og-image.png" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'Organization',
+              '@id': 'https://app.orbinutri.com.br/#organization',
+              name: 'OrbiNutri',
+              url: 'https://app.orbinutri.com.br',
+              logo: {
+                '@type': 'ImageObject',
+                url: 'https://app.orbinutri.com.br/icon-512.png',
+                width: 512,
+                height: 512,
+              },
+              description: 'Plataforma de gestão para nutricionistas com agenda online, gestão de pacientes e vitrine profissional.',
+              areaServed: 'BR',
+              knowsAbout: ['Nutrição', 'Software de gestão para nutricionistas', 'Agendamento online'],
+            },
+            {
+              '@type': 'SoftwareApplication',
+              '@id': 'https://app.orbinutri.com.br/#app',
+              name: 'OrbiNutri',
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web, iOS, Android',
+              inLanguage: 'pt-BR',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'BRL',
+                description: 'Plano gratuito disponível',
+              },
+              featureList: 'Agenda online, gestão de pacientes, vitrine profissional, lembretes por WhatsApp, cobranças automáticas, controle financeiro',
+              screenshot: 'https://app.orbinutri.com.br/og-image.png',
+              url: 'https://app.orbinutri.com.br',
+              publisher: { '@id': 'https://app.orbinutri.com.br/#organization' },
+            },
+          ],
+        })}</script>
       </Helmet>
 
       {/* ── Nav ──────────────────────────────────────────── */}

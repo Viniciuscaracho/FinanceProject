@@ -79,36 +79,60 @@ function ProfilePhoto({ name, src, size = 112 }) {
 
 /* ─── Schema.org JSON-LD ──────────────────────── */
 function SchemaOrg({ professional }) {
-  const name = professional.name || ''
+  const name        = professional.name || ''
   const description = professional.description || ''
-  const city = professional.location?.city || ''
-  const district = professional.location?.district || ''
-  const state = professional.location?.state || ''
-  const phone = professional.phone || ''
-  const email = professional.email || ''
-  const url = typeof window !== 'undefined' ? window.location.href : ''
+  const city        = professional.location?.city || ''
+  const district    = professional.location?.district || ''
+  const state       = professional.location?.state || ''
+  const phone       = professional.phone || ''
+  const email       = professional.email || ''
+  const url         = typeof window !== 'undefined' ? window.location.href : ''
+  const category    = professional.profession_category || ''
+
+  const address = (city || state) ? {
+    '@type': 'PostalAddress',
+    addressLocality: city || undefined,
+    addressRegion: state || undefined,
+    streetAddress: district || undefined,
+    addressCountry: 'BR',
+  } : undefined
+
+  const offers = professional.services?.length > 0
+    ? professional.services.map(svc => ({
+        '@type': 'Offer',
+        name: svc.name,
+        description: svc.description || undefined,
+        price: svc.price_cents ? (svc.price_cents / 100).toFixed(2) : undefined,
+        priceCurrency: svc.price_cents ? 'BRL' : undefined,
+        seller: { '@type': 'Person', name },
+      }))
+    : undefined
+
+  const sameAs = [
+    professional.instagram_url,
+  ].filter(Boolean)
 
   const schema = {
     '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
-    name,
-    description,
-    url,
-    telephone: phone || undefined,
-    email: email || undefined,
-    image: professional.logo_url || undefined,
-    address: (city || state) ? {
-      '@type': 'PostalAddress',
-      addressLocality: city,
-      addressRegion: state,
-      streetAddress: district || undefined,
-      addressCountry: 'BR',
-    } : undefined,
-    priceRange: professional.services?.length > 0 ? '$$' : undefined,
-    ...(professional.profession_category ? {
-      knowsAbout: professional.profession_category,
-      jobTitle: professional.profession_category,
-    } : {}),
+    '@graph': [
+      {
+        '@type': ['Person', 'LocalBusiness'],
+        '@id': url,
+        name,
+        description: description || undefined,
+        url,
+        telephone: phone || undefined,
+        email: email || undefined,
+        image: professional.logo_url || undefined,
+        jobTitle: category || undefined,
+        knowsAbout: category || undefined,
+        address,
+        offers,
+        sameAs: sameAs.length > 0 ? sameAs : undefined,
+        priceRange: offers ? '$$' : undefined,
+        areaServed: city ? { '@type': 'City', name: city } : undefined,
+      },
+    ],
   }
 
   return (
@@ -187,11 +211,14 @@ export function PublicProfessionalProfile() {
         <meta property="og:description" content={seoDescription} />
         <meta property="og:type" content="profile" />
         <meta property="og:url" content={canonicalUrl} />
-        {professional.logo_url && <meta property="og:image" content={professional.logo_url} />}
+        <meta property="og:image" content={professional.logo_url || 'https://app.orbinutri.com.br/og-image.png'} />
+        <meta property="og:image:width" content={professional.logo_url ? '400' : '1200'} />
+        <meta property="og:image:height" content={professional.logo_url ? '400' : '630'} />
         <meta property="og:locale" content="pt_BR" />
-        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:card" content={professional.logo_url ? 'summary' : 'summary_large_image'} />
         <meta name="twitter:title" content={seoTitle} />
         <meta name="twitter:description" content={seoDescription} />
+        <meta name="twitter:image" content={professional.logo_url || 'https://app.orbinutri.com.br/og-image.png'} />
         {category && city && <meta name="keywords" content={`${category.toLowerCase()} em ${city}${district ? `, ${category.toLowerCase()} em ${district}` : ''}${state ? `, ${category.toLowerCase()} ${state}` : ''}, agendar ${category.toLowerCase()}`} />}
       </Helmet>
       <SchemaOrg professional={professional} />

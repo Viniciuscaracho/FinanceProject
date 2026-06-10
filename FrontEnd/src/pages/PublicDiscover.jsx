@@ -700,6 +700,45 @@ function DiscoverMap({ results, onSearch, highlightedId, onHoverPin, onCardClick
   )
 }
 
+/* ─── SEO helpers ───────────────────────────────── */
+function buildSeoMeta(searchQ, activeChip, searchCity) {
+  const chipLabel = SPECIALTY_CHIPS.find(c => c.value === activeChip)?.label || null
+  const cidade    = searchCity ? searchCity.trim() : null
+
+  let title, description
+
+  if (chipLabel && cidade) {
+    title       = `Nutricionistas de ${chipLabel} em ${cidade} | OrbiNutri`
+    description = `Encontre nutricionistas especializados em ${chipLabel.toLowerCase()} em ${cidade}. Perfis verificados com agendamento online pelo OrbiNutri.`
+  } else if (chipLabel) {
+    title       = `Nutricionistas de ${chipLabel} | OrbiNutri`
+    description = `Encontre nutricionistas especializados em ${chipLabel.toLowerCase()}. Perfis verificados com agendamento online e atendimento presencial ou online.`
+  } else if (cidade) {
+    title       = `Nutricionistas em ${cidade} | OrbiNutri`
+    description = `Encontre nutricionistas em ${cidade}. Perfis verificados com agendamento online pelo OrbiNutri.`
+  } else {
+    title       = 'Encontre nutricionistas | OrbiNutri'
+    description = 'Descubra nutricionistas perto de você. Perfis verificados, agendamento online e atendimento presencial ou online.'
+  }
+
+  const params = new URLSearchParams()
+  if (activeChip) params.set('especialidade', activeChip)
+  if (searchCity) params.set('city', searchCity)
+  const qs        = params.toString()
+  const canonical = `https://app.orbinutri.com.br/descobrir${qs ? `?${qs}` : ''}`
+
+  const keywords = [
+    'nutricionista',
+    chipLabel    ? `nutricionista ${chipLabel.toLowerCase()}`     : null,
+    cidade       ? `nutricionista em ${cidade}`                  : null,
+    cidade && chipLabel ? `nutricionista ${chipLabel.toLowerCase()} ${cidade}` : null,
+    'agendamento online nutricionista',
+    'consulta nutricional online',
+  ].filter(Boolean).join(', ')
+
+  return { title, description, canonical, keywords }
+}
+
 /* ─── Página principal ──────────────────────────── */
 export function PublicDiscover() {
   const navigate    = useNavigate()
@@ -709,7 +748,7 @@ export function PublicDiscover() {
 
   const [searchQ,      setSearchQ]      = useState(searchParams.get('q') || '')
   const [searchCity,   setSearchCity]   = useState(searchParams.get('city') || '')
-  const [activeChip,   setActiveChip]   = useState('')
+  const [activeChip,   setActiveChip]   = useState(searchParams.get('especialidade') || '')
   const [results,      setResults]      = useState([])
   const [total,        setTotal]        = useState(0)
   const [page,         setPage]         = useState(0)
@@ -778,17 +817,24 @@ export function PublicDiscover() {
     fetchPage(searchQ, activeChip, searchCity, 0, false)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const syncParams = (q, chip, city) => {
+    setSearchParams(Object.fromEntries(
+      Object.entries({ q, especialidade: chip, city }).filter(([, v]) => v)
+    ))
+  }
+
   const handleSearch = (e) => {
     e?.preventDefault()
     setPage(0)
     fetchPage(searchQ, activeChip, searchCity, 0, false)
-    setSearchParams(Object.fromEntries(Object.entries({ q: searchQ, city: searchCity }).filter(([, v]) => v)))
+    syncParams(searchQ, activeChip, searchCity)
   }
 
   const handleChip = (value) => {
     const next = activeChip === value ? '' : value
     setActiveChip(next); setPage(0)
     fetchPage(searchQ, next, searchCity, 0, false)
+    syncParams(searchQ, next, searchCity)
   }
 
   const handleLoadMore = () => {
@@ -802,12 +848,54 @@ export function PublicDiscover() {
 
   const px = isMobile ? '16px' : '24px'
 
+  const seo = buildSeoMeta(searchQ, activeChip, searchCity)
+
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: T.bg, ...DISPLAY, overflow: 'hidden' }}>
       <Helmet>
-        <title>Encontre nutricionistas | Orbi</title>
-        <meta name="description" content="Descubra nutricionistas perto de você. Perfis verificados, agendamento online e atendimento presencial ou online." />
-        <link rel="canonical" href="https://app.orbinutri.com.br/descobrir" />
+        <title>{seo.title}</title>
+        <meta name="description" content={seo.description} />
+        <meta name="keywords" content={seo.keywords} />
+        <link rel="canonical" href={seo.canonical} />
+        <meta property="og:url" content={seo.canonical} />
+        <meta property="og:title" content={seo.title} />
+        <meta property="og:description" content={seo.description} />
+        <meta property="og:image" content="https://app.orbinutri.com.br/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:image" content="https://app.orbinutri.com.br/og-image.png" />
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'WebSite',
+              '@id': 'https://app.orbinutri.com.br/#website',
+              url: 'https://app.orbinutri.com.br',
+              name: 'OrbiNutri',
+              publisher: {
+                '@type': 'Organization',
+                '@id': 'https://app.orbinutri.com.br/#organization',
+                name: 'OrbiNutri',
+              },
+              potentialAction: {
+                '@type': 'SearchAction',
+                target: {
+                  '@type': 'EntryPoint',
+                  urlTemplate: 'https://app.orbinutri.com.br/descobrir?q={search_term_string}',
+                },
+                'query-input': 'required name=search_term_string',
+              },
+            },
+            {
+              '@type': 'CollectionPage',
+              '@id': 'https://app.orbinutri.com.br/descobrir',
+              url: 'https://app.orbinutri.com.br/descobrir',
+              name: 'Encontre nutricionistas | OrbiNutri',
+              description: 'Descubra nutricionistas perto de você. Perfis verificados, agendamento online e atendimento presencial ou online.',
+              isPartOf: { '@id': 'https://app.orbinutri.com.br/#website' },
+            },
+          ],
+        })}</script>
       </Helmet>
 
       {/* ── Header ──────────────────────────────── */}
