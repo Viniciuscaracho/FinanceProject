@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { apiService } from '../lib/api'
+import { trackEvent } from '../lib/analytics'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -420,6 +421,7 @@ export function PublicAppointmentBooking() {
           }).catch(() => {})
         }
         setAppointmentResult(result)
+        trackEvent('booking_confirmed')
         setStep(4)
       } else {
         setFormError(result.errors?.join(', ') || result.error || 'Erro ao criar agendamento')

@@ -15,6 +15,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import { PageSkeleton } from './components/Skeleton'
 import { LandingPage, Dashboard, PublicAppointmentBooking, AppointmentManage, PublicDiscover, PublicProfessionalProfile, PublicAnamneseForm, PublicPatientDocument, protectedRoutes } from './config/routes'
 import { TermsAcceptanceModal } from './components/TermsAcceptanceModal'
+import { Analytics } from './components/Analytics'
 
 const LandingPageNutri  = lazy(() => import('./pages/LandingPageNutri').then(m => ({ default: m.LandingPageNutri })))
 const GoogleAuthCallback = lazy(() => import('./pages/GoogleAuthCallback').then(m => ({ default: m.GoogleAuthCallback })))
@@ -83,6 +84,7 @@ function AppContent() {
 
   return (
     <Router>
+      <Analytics />
       <Routes>
         {isNutriDomain && <Route path="/" element={<NutriRoot />} />}
         {isNutriDomain && <Route path="/landing" element={<Navigate to="/" replace />} />}

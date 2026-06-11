@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { apiService } from '../lib/api';
 import { supabase, getCurrentUser, getCurrentSession, isSupabaseAvailable, mfaEnroll, mfaChallenge, mfaVerify, mfaUnenroll, mfaListFactors } from '../lib/supabase';
+import { trackEvent } from '../lib/analytics'
 
 const AuthContext = createContext();
 
@@ -127,6 +128,7 @@ export const AuthProvider = ({ children }) => {
       
       if (response.success) {
         setUser(response.user);
+        trackEvent('sign_up', { method: 'email' });
         return { success: true };
       } else {
         setError(response.error || 'Login falhou');
