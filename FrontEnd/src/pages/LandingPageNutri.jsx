@@ -548,6 +548,32 @@ export function LandingPageNutri() {
             },
           ],
         })}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: [
+            {
+              '@type': 'Question',
+              name: 'O plano alimentar funciona como substituto do Webdiet?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Para o essencial, sim. Você monta o plano por alimentos com kcal e macros calculados automaticamente. O paciente acessa pelo celular sem PDF. Funcionalidades como diário alimentar por foto ficam para uma versão futura.' },
+            },
+            {
+              '@type': 'Question',
+              name: 'Como funciona a integração com o Google Calendar?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Você conecta sua conta Google nas configurações. A partir daí cada consulta confirmada aparece automaticamente na sua agenda com o link do Google Meet incluído e convite enviado ao paciente.' },
+            },
+            {
+              '@type': 'Question',
+              name: 'Posso ter mais de um nutricionista na mesma conta?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Sim. Cadastre sua equipe, configure a agenda de cada um individualmente e acompanhe os atendimentos separadamente.' },
+            },
+            {
+              '@type': 'Question',
+              name: 'Posso cancelar quando quiser?',
+              acceptedAnswer: { '@type': 'Answer', text: 'Sim. Sem multa e sem fidelidade. Cancele pela própria plataforma a qualquer momento.' },
+            },
+          ],
+        })}</script>
       </Helmet>
 
       {/* ── Nav ─────────────────────────────────────────── */}
