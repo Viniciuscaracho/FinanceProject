@@ -375,6 +375,15 @@ export function PublicProfessionalProfile() {
           )}
         </div>
 
+        {/* Registro profissional */}
+        {professional.professional_registration && (
+          <div style={{ marginBottom: 10 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: T.muted, letterSpacing: '0.04em' }}>
+              {professional.professional_registration}
+            </span>
+          </div>
+        )}
+
         {/* Specialties */}
         {professional.specialties?.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>

@@ -33,7 +33,8 @@ const CHECKS = (acct, co, form) => [
   { key: 'category',    label: 'Categoria',            done: !!(form?.profession_category) },
   { key: 'description', label: 'Descrição pública',    done: !!(form?.directory_description) },
   { key: 'specialties', label: 'Especialidades',       done: !!(form?.specialties?.length) },
-  { key: 'instagram',   label: 'Instagram',            done: !!(form?.instagram_url) },
+  { key: 'instagram',        label: 'Instagram',            done: !!(form?.instagram_url) },
+  { key: 'registration',     label: 'Registro profissional', done: !!(form?.professional_registration) },
   { key: 'phone',       label: 'Telefone',             done: !!(form?.phone_number) },
   { key: 'city',        label: 'Cidade / bairro',      done: !!(form?.address_city) },
 ]
@@ -513,7 +514,7 @@ export function Vitrine() {
   const [dirtyInfo,   setDirtyInfo]   = useState(false)
   const [form, setForm] = useState({
     screen_name_natural: '', profession_category: '', directory_description: '',
-    instagram_url: '', specialties: [], phone_number: '',
+    instagram_url: '', professional_registration: '', specialties: [], phone_number: '',
     address_city: '', address_district: '', address_state: '',
   })
   const [logoUrl,      setLogoUrl]      = useState(null)
@@ -556,6 +557,7 @@ export function Vitrine() {
           profession_category: a.profession_category || '',
           directory_description: a.directory_description || '',
           instagram_url: a.instagram_url || '',
+          professional_registration: a.professional_registration || '',
           specialties: a.specialties || [],
           phone_number: a.company?.phone_number || '',
           address_city: address.city || '',
@@ -590,6 +592,7 @@ export function Vitrine() {
     profession_category: form.profession_category,
     directory_description: form.directory_description,
     instagram_url: form.instagram_url,
+    professional_registration: form.professional_registration,
     specialties: form.specialties,
     company_attributes: {
       id: co.id,
@@ -855,6 +858,18 @@ export function Vitrine() {
                   value={form.instagram_url}
                   onChange={e => updateForm({ instagram_url: e.target.value })}
                   placeholder="https://instagram.com/seuperfil"
+                  style={inputSx}
+                />
+              </div>
+
+              {/* Registro profissional */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: T.muted }}>Registro profissional</label>
+                <input
+                  className="vitrine-field"
+                  value={form.professional_registration}
+                  onChange={e => updateForm({ professional_registration: e.target.value })}
+                  placeholder="Ex: CRN-2 12345/P"
                   style={inputSx}
                 />
               </div>

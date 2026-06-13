@@ -116,6 +116,7 @@ module Api
           :profession_category,
           :directory_description,
           :instagram_url,
+          :professional_registration,
           :pix_key,
           { specialties: [], company_attributes: }
         )
@@ -138,6 +139,7 @@ module Api
           profession_category: account.profession_category,
           directory_description: account.directory_description,
           instagram_url: account.instagram_url,
+          professional_registration: account.professional_registration,
           specialties: account.specialties || [],
           pix_key: account.pix_key,
           company: company_data(account.company)

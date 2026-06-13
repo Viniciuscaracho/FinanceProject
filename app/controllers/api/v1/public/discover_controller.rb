@@ -145,8 +145,9 @@ module Api
               latitude:      address&.latitude,
               longitude:     address&.longitude
             },
-            specialties:   account.specialties.presence || [],
-            instagram_url: account.instagram_url,
+            specialties:               account.specialties.presence || [],
+            instagram_url:             account.instagram_url,
+            professional_registration: account.professional_registration,
             services: account.services.map { |s|
               {
                 id:               s.id,

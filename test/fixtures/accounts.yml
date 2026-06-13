@@ -36,6 +36,7 @@
 #  preferences                                          :jsonb            not null
 #  processor_plan_name                                  :string
 #  profession_category                                  :string
+#  professional_registration                            :string
 #  profile_views                                        :integer          default(0), not null
 #  relation_type_cd(Relation type)                      :integer
 #  specialties                                          :string           default([]), is an Array

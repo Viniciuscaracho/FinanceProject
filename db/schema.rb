@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_06_08_100002) do
+ActiveRecord::Schema[7.0].define(version: 2026_06_13_105457) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -101,6 +101,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_08_100002) do
     t.string "instagram_url"
     t.string "specialties", default: [], array: true
     t.integer "profile_views", default: 0, null: false
+    t.string "professional_registration"
     t.index ["company_id"], name: "index_accounts_on_company_id"
     t.index ["directory_visible"], name: "index_accounts_on_directory_visible"
     t.index ["discarded_at"], name: "index_accounts_on_discarded_at"
