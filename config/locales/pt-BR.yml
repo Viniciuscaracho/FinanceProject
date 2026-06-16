@@ -1109,7 +1109,7 @@ pt-BR:
     videos_modal:
       video_lessons_for_beginners: "Videoaulas para iniciantes"
     initial_modal:
-      welcome_procfy: "Seja bem-vindo ao BarberManagement"
+      welcome_orbi: "Seja bem-vindo ao Orbi"
       welcome_user: "Olá <strong>%{name}</strong>, preparamos um material de ajuda para você começar bem no <strong>BarberManagement</strong>. Aproveite e boa gestão!"
       video_lessons_for_beginners: "Videoaulas para iniciantes"
       help_guides: "Guias de ajuda"

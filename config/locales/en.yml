@@ -787,7 +787,7 @@ en:
     videos_modal:
       video_lessons_for_beginners: "Video lessons for beginners"
     initial_modal:
-      welcome_procfy: "Welcome to BarberManagement"
+      welcome_orbi: "Welcome to Orbi"
       welcome_user: "Hello <strong>%{name}</strong>, we've prepared some help material for you to start well on <strong>BarberManagement</strong>. Enjoy and good management!"
       video_lessons_for_beginners: "Video lessons for beginners"
       help_guides: "Help guides"
