@@ -191,11 +191,202 @@ NUTRIS = [
       { name: 'Acompanhamento Mensal', price: 350_00, duration: 60, modality: 'online' },
     ]
   },
+  {
+    first_name: 'Mariana', last_name: 'Souza',
+    email: 'mariana.souza.nutri@discover-demo.orbi',
+    business_name: 'Mariana Souza Nutrição',
+    phone: '(11) 97412-8830',
+    professional_registration: 'CRN-3 68294/P',
+    description: 'Nutricionista funcional com foco em detox, modulação intestinal e emagrecimento sustentável. Atendimento individualizado baseado em exames e rotina do paciente. Presencial em Vila Madalena e online.',
+    specialties: ['emagrecimento', 'online'],
+    instagram_url: 'https://instagram.com/marianasouz.nutri',
+    photo_gender: 'women', photo_index: 8,
+    ratings_count: 91, ratings_average: 4.8, patients_count: 340,
+    address: { line1: 'Rua Harmonia, 422', district: 'Vila Madalena', city: 'São Paulo', state: 'SP', postcode: '05435-000', lat: -23.5541, lng: -46.6924 },
+    services: [
+      { name: 'Consulta Nutricional',  price: 230_00, duration: 60, modality: 'presencial' },
+      { name: 'Programa Detox 21 dias', price: 590_00, duration: 60, modality: 'online' },
+      { name: 'Retorno',               price: 140_00, duration: 45, modality: 'online' },
+    ]
+  },
+  {
+    first_name: 'Rafael', last_name: 'Mendes',
+    email: 'rafael.mendes.nutri@discover-demo.orbi',
+    business_name: 'Rafael Mendes Esporte e Saúde',
+    phone: '(11) 99031-5647',
+    professional_registration: 'CRN-3 71058/P',
+    description: 'Nutricionista esportivo especializado em corrida de rua, triathlon e natação. Periodização nutricional para competições e desempenho de alto nível. Parceiro oficial de clubes de corrida da zona sul.',
+    specialties: ['esportiva', 'emagrecimento'],
+    instagram_url: 'https://instagram.com/rafaelmendessport',
+    photo_gender: 'men', photo_index: 4,
+    ratings_count: 77, ratings_average: 4.9, patients_count: 290,
+    address: { line1: 'Av. Brigadeiro Faria Lima, 2601', district: 'Itaim Bibi', city: 'São Paulo', state: 'SP', postcode: '01452-000', lat: -23.5843, lng: -46.6721 },
+    services: [
+      { name: 'Avaliação Esportiva Completa', price: 320_00, duration: 75, modality: 'presencial' },
+      { name: 'Plano para Corrida/Triathlon', price: 580_00, duration: 90, modality: 'online' },
+      { name: 'Retorno Mensal',               price: 160_00, duration: 45, modality: 'online' },
+    ]
+  },
+  {
+    first_name: 'Isabela', last_name: 'Carmo',
+    email: 'isabela.carmo.nutri@discover-demo.orbi',
+    business_name: 'Isabela Carmo — Emagrecimento',
+    phone: '(11) 94788-2310',
+    professional_registration: 'CRN-3 59437/P',
+    description: 'Especialista em emagrecimento com abordagem comportamental e emocional. Ajudo pessoas a reeducar a relação com a comida de forma definitiva, sem dietas restritivas. Mais de 400 pacientes transformados.',
+    specialties: ['emagrecimento', 'saúde feminina'],
+    instagram_url: 'https://instagram.com/isabelacarmonemagrecimento',
+    photo_gender: 'women', photo_index: 9,
+    ratings_count: 156, ratings_average: 4.9, patients_count: 430,
+    address: { line1: 'Rua James Holland, 88', district: 'Brooklin', city: 'São Paulo', state: 'SP', postcode: '04726-050', lat: -23.6126, lng: -46.6968 },
+    services: [
+      { name: 'Consulta Comportamental',  price: 270_00, duration: 75, modality: 'presencial' },
+      { name: 'Programa 90 dias',         price: 1_290_00, duration: 60, modality: 'online' },
+      { name: 'Sessão de Retorno',        price: 170_00, duration: 45, modality: 'online' },
+    ]
+  },
+  {
+    first_name: 'Gustavo', last_name: 'Nunes',
+    email: 'gustavo.nunes.nutri@discover-demo.orbi',
+    business_name: 'Dr. Gustavo Nunes',
+    phone: '(11) 98654-7123',
+    professional_registration: 'CRN-3 53881/P',
+    description: 'Nutricionista clínico com doutorado em endocrinologia nutricional. Especialista em diabetes, resistência à insulina, obesidade e síndrome metabólica. Atendimento baseado em evidências científicas.',
+    specialties: ['emagrecimento'],
+    instagram_url: nil,
+    photo_gender: 'men', photo_index: 5,
+    ratings_count: 44, ratings_average: 4.7, patients_count: 198,
+    address: { line1: 'Rua Nova Cintra, 15', district: 'Campo Belo', city: 'São Paulo', state: 'SP', postcode: '04613-030', lat: -23.6177, lng: -46.6644 },
+    services: [
+      { name: 'Consulta Metabólica',       price: 350_00, duration: 75, modality: 'presencial' },
+      { name: 'Protocolo Diabetes/IR',     price: 650_00, duration: 90, modality: 'presencial' },
+      { name: 'Teleconsulta',              price: 250_00, duration: 60, modality: 'online' },
+    ]
+  },
+  {
+    first_name: 'Larissa', last_name: 'Alves',
+    email: 'larissa.alves.nutri@discover-demo.orbi',
+    business_name: 'Larissa Alves — Saúde Feminina',
+    phone: '(11) 96923-0481',
+    professional_registration: 'CRN-3 64712/P',
+    description: 'Nutricionista especializada em saúde feminina, fertilidade, SOP, endometriose e menopausa. Atendimento acolhedor e personalizado para cada fase da vida da mulher. Teleatendimento disponível.',
+    specialties: ['saúde feminina', 'gestação', 'hormonal'],
+    instagram_url: 'https://instagram.com/larissaalvesnutri',
+    photo_gender: 'women', photo_index: 10,
+    ratings_count: 108, ratings_average: 4.9, patients_count: 475,
+    address: { line1: 'Rua Cotoxó, 741', district: 'Perdizes', city: 'São Paulo', state: 'SP', postcode: '05021-000', lat: -23.5354, lng: -46.6647 },
+    services: [
+      { name: 'Consulta Saúde Feminina',  price: 260_00, duration: 60, modality: 'presencial' },
+      { name: 'Programa Fertilidade',     price: 780_00, duration: 90, modality: 'online' },
+      { name: 'Retorno',                  price: 150_00, duration: 45, modality: 'online' },
+    ]
+  },
+  {
+    first_name: 'Renata', last_name: 'Cardoso',
+    email: 'renata.cardoso.nutri@discover-demo.orbi',
+    business_name: 'Dra. Renata Cardoso',
+    phone: '(11) 97230-6084',
+    professional_registration: 'CRN-3 47926/P',
+    description: 'Nutricionista pediatra com mestrado em nutrição materno-infantil. Atendo bebês desde a introdução alimentar, crianças com seletividade e adolescentes. Método LOVE responsivo e BLW.',
+    specialties: ['infantil', 'gestação'],
+    instagram_url: 'https://instagram.com/drarenataCardoso',
+    photo_gender: 'women', photo_index: 11,
+    ratings_count: 134, ratings_average: 5.0, patients_count: 560,
+    address: { line1: 'Rua Ministro Godói, 1204', district: 'Pompeia', city: 'São Paulo', state: 'SP', postcode: '05015-001', lat: -23.5264, lng: -46.6834 },
+    services: [
+      { name: 'Consulta Infantil',         price: 240_00, duration: 60, modality: 'presencial' },
+      { name: 'Introdução Alimentar BLW',  price: 290_00, duration: 75, modality: 'presencial' },
+      { name: 'Retorno Online',            price: 140_00, duration: 40, modality: 'online' },
+    ]
+  },
+  {
+    first_name: 'André', last_name: 'Ribeiro',
+    email: 'andre.ribeiro.nutri@discover-demo.orbi',
+    business_name: 'André Ribeiro — Low Carb',
+    phone: '(11) 95187-3390',
+    professional_registration: 'CRN-3 66340/P',
+    description: 'Especialista em dietas low carb, cetogênica e jejum intermitente. Atendimento prático e sem radicalismos, focado em resultados duradouros para quem tem rotina agitada.',
+    specialties: ['emagrecimento', 'esportiva'],
+    instagram_url: 'https://instagram.com/andreribeirolowcarb',
+    photo_gender: 'men', photo_index: 6,
+    ratings_count: 62, ratings_average: 4.8, patients_count: 220,
+    address: { line1: 'Rua Voluntários da Pátria, 1818', district: 'Santana', city: 'São Paulo', state: 'SP', postcode: '02011-000', lat: -23.5009, lng: -46.6279 },
+    services: [
+      { name: 'Consulta Nutricional',    price: 210_00, duration: 60, modality: 'presencial' },
+      { name: 'Plano Low Carb Completo', price: 450_00, duration: 75, modality: 'online' },
+      { name: 'Retorno',                 price: 130_00, duration: 40, modality: 'online' },
+    ]
+  },
+  {
+    first_name: 'Vanessa', last_name: 'Dutra',
+    email: 'vanessa.dutra.nutri@discover-demo.orbi',
+    business_name: 'Vanessa Dutra Nutrição',
+    phone: '(11) 98041-5720',
+    professional_registration: 'CRN-3 52193/P',
+    description: 'Nutricionista oncológica e clínica com ampla experiência em suporte nutricional para pacientes em tratamento de câncer, pós-cirúrgicos e em cuidados paliativos. Atendimento domiciliar disponível.',
+    specialties: ['emagrecimento'],
+    instagram_url: nil,
+    photo_gender: 'women', photo_index: 12,
+    ratings_count: 49, ratings_average: 4.9, patients_count: 185,
+    address: { line1: 'Rua Domingos de Morais, 2564', district: 'Vila Mariana', city: 'São Paulo', state: 'SP', postcode: '04035-001', lat: -23.5870, lng: -46.6330 },
+    services: [
+      { name: 'Consulta Oncológica',      price: 280_00, duration: 60, modality: 'presencial' },
+      { name: 'Acompanhamento Semanal',   price: 220_00, duration: 45, modality: 'online' },
+      { name: 'Visita Domiciliar',        price: 380_00, duration: 90, modality: 'presencial' },
+    ]
+  },
+  {
+    first_name: 'Diego', last_name: 'Campos',
+    email: 'diego.campos.nutri@discover-demo.orbi',
+    business_name: 'Diego Campos Performance',
+    phone: '(11) 99762-4483',
+    professional_registration: 'CRN-3 73512/P',
+    description: 'Nutricionista especializado em hipertrofia, recomposição corporal e powerlifting. Protocolos baseados em ciência para maximizar ganho muscular com inteligência. Atendo atletas amadores e profissionais.',
+    specialties: ['esportiva'],
+    instagram_url: 'https://instagram.com/diegocamposperformance',
+    photo_gender: 'men', photo_index: 7,
+    ratings_count: 85, ratings_average: 4.8, patients_count: 315,
+    address: { line1: 'Av. Brigadeiro Luís Antônio, 3012', district: 'Bela Vista', city: 'São Paulo', state: 'SP', postcode: '01317-000', lat: -23.5597, lng: -46.6457 },
+    services: [
+      { name: 'Avaliação de Composição',   price: 290_00, duration: 60, modality: 'presencial' },
+      { name: 'Plano Hipertrofia Premium', price: 560_00, duration: 90, modality: 'presencial' },
+      { name: 'Consultoria Online',        price: 220_00, duration: 50, modality: 'online' },
+    ]
+  },
+  {
+    first_name: 'Lívia', last_name: 'Torres',
+    email: 'livia.torres.nutri@discover-demo.orbi',
+    business_name: 'Lívia Torres — Plant-Based',
+    phone: '(11) 96514-9037',
+    professional_registration: 'CRN-3 60873/P',
+    description: 'Nutricionista vegana e especialista em dietas plant-based, vegetarianismo e veganismo. Cardápios saborosos, nutritivos e sem carências. Consultora de restaurantes e empresas de alimentação saudável.',
+    specialties: ['vegetariana', 'emagrecimento', 'online'],
+    instagram_url: 'https://instagram.com/liviatorresplant',
+    photo_gender: 'women', photo_index: 13,
+    ratings_count: 119, ratings_average: 4.9, patients_count: 510,
+    address: { line1: 'Rua Tuiuti, 890', district: 'Tatuapé', city: 'São Paulo', state: 'SP', postcode: '03307-001', lat: -23.5392, lng: -46.5684 },
+    services: [
+      { name: 'Consulta Plant-Based',    price: 220_00, duration: 60, modality: 'presencial' },
+      { name: 'Cardápio Vegano Completo', price: 420_00, duration: 75, modality: 'online' },
+      { name: 'Retorno',                 price: 130_00, duration: 40, modality: 'online' },
+    ]
+  },
 ].freeze
 
 def attach_photo(company, method_name, url, filename)
-  io = URI.open(url, 'rb')
-  company.public_send(method_name).attach(io: io, filename: filename, content_type: 'image/jpeg')
+  io = URI.open(url, 'rb', read_timeout: 15, open_timeout: 10)
+  blob = ActiveStorage::Blob.create_and_upload!(io: io, filename: filename, content_type: 'image/jpeg')
+  ActiveStorage::Attachment.where(
+    record_type: company.class.polymorphic_name,
+    record_id:   company.id,
+    name:        method_name.to_s
+  ).delete_all
+  ActiveStorage::Attachment.create!(
+    record_type: company.class.polymorphic_name,
+    record_id:   company.id,
+    name:        method_name.to_s,
+    blob_id:     blob.id
+  )
 rescue => e
   puts "    ⚠️  Foto '#{method_name}' falhou (#{e.class}: #{e.message})"
 end
