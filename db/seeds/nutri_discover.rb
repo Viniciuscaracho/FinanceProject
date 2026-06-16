@@ -373,6 +373,30 @@ NUTRIS = [
   },
 ].freeze
 
+# Mapa de IDs Unsplash por perfil — headshots profissionais com crop=faces
+DISCOVER_UNSPLASH = {
+  ['women', 1]  => 'photo-1573496359142-b8d87734a5a2',
+  ['women', 2]  => 'photo-1580489944761-15a19d654956',
+  ['women', 3]  => 'photo-1594824476967-48c8b964273f',
+  ['women', 4]  => 'photo-1551836022-d5d88e9218df',
+  ['women', 5]  => 'photo-1529626455594-4ff0802cfb7e',
+  ['women', 6]  => 'photo-1544005313-94ddf0286df2',
+  ['women', 7]  => 'photo-1438761681033-6461ffad8d80',
+  ['women', 8]  => 'photo-1494790108377-be9c29b29330',
+  ['women', 9]  => 'photo-1573497019940-1c28c88b4f3e',
+  ['women', 10] => 'photo-1559839734-2b71ea197ec2',
+  ['women', 11] => 'photo-1489424731084-a5d8b219a5bb',
+  ['women', 12] => 'photo-1517841905240-472988babdf9',
+  ['women', 13] => 'photo-1534528741775-53994a69daeb',
+  ['men',   1]  => 'photo-1519085360753-af0119f7cbe7',
+  ['men',   2]  => 'photo-1472099645785-5658abf4ff4e',
+  ['men',   3]  => 'photo-1507003211169-0a1dd7228f2d',
+  ['men',   4]  => 'photo-1500648767791-00dcc994a43e',
+  ['men',   5]  => 'photo-1560250097-0b93528c311a',
+  ['men',   6]  => 'photo-1568602471122-7832951cc4c5',
+  ['men',   7]  => 'photo-1492562080023-ab3db95bfbce',
+}.freeze
+
 def attach_photo(company, method_name, url, filename)
   io = URI.open(url, 'rb', read_timeout: 15, open_timeout: 10)
   blob = ActiveStorage::Blob.create_and_upload!(io: io, filename: filename, content_type: 'image/jpeg')
@@ -467,9 +491,10 @@ NUTRIS.each_with_index do |p, idx|
       )
 
       # Fotos
-      logo_url  = "https://randomuser.me/api/portraits/#{p[:photo_gender]}/#{p[:photo_index]}.jpg"
-      cover_url = "https://picsum.photos/seed/nutri#{cover_seed}/1200/400"
-      attach_photo(company, :logo,        logo_url,  "logo_#{p[:photo_gender]}_#{p[:photo_index]}.jpg")
+      unsplash_id = DISCOVER_UNSPLASH[[p[:photo_gender], p[:photo_index]]]
+      logo_url    = unsplash_id ? "https://images.unsplash.com/#{unsplash_id}?w=400&h=400&fit=crop&crop=faces&auto=format&q=85" : nil
+      cover_url   = "https://picsum.photos/seed/nutri#{cover_seed}/1200/400"
+      attach_photo(company, :logo, logo_url, "#{unsplash_id}.jpg") if logo_url
       attach_photo(company, :cover_image, cover_url, "cover_nutri#{cover_seed}.jpg")
 
       puts " ✅ #{addr[:district]}, #{addr[:city]}"
