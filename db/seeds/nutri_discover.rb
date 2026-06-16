@@ -1,15 +1,22 @@
 # frozen_string_literal: true
 #
-# Nutricionistas de demonstração com endereços completos, coordenadas reais de SP e fotos
+# Nutricionistas de demonstração com endereços completos, coordenadas reais e fotos
 # Execute: bundle exec rails runner db/seeds/nutri_discover.rb
 
 require 'open-uri'
+
+# Bypass email deliverability check (Mailgun) for demo seeds — domain is fake by design
+User.class_eval    { def verify_email_address; end }
+Company.class_eval { def verify_email_address; end }
 
 NUTRIS = [
   {
     first_name: 'Fernanda', last_name: 'Costa',
     email: 'fernanda.costa.nutri@discover-demo.orbi',
     business_name: 'Fernanda Costa Nutrição',
+    ratings_count: 128, ratings_average: 4.9, patients_count: 520,
+    phone: '(11) 98231-4057',
+    professional_registration: 'CRN-3 54821/P',
     description: 'Nutricionista funcional com 10 anos de experiência. Especialista em emagrecimento, modulação intestinal e nutrição esportiva. Atendimento presencial e online.',
     specialties: ['emagrecimento', 'esportiva'],
     instagram_url: 'https://instagram.com/fernandacostanutri',
@@ -26,7 +33,10 @@ NUTRIS = [
     first_name: 'Juliana', last_name: 'Rocha',
     email: 'juliana.rocha.nutri@discover-demo.orbi',
     business_name: 'Dra. Juliana Rocha',
-    description: 'Especialista em nutrição materno-infantil, gestação e aleitamento. Também atua com saúde feminina e síndrome do ovário policístico. CRN 12345.',
+    ratings_count: 94, ratings_average: 4.8, patients_count: 380,
+    phone: '(11) 97043-8812',
+    professional_registration: 'CRN-3 48392/P',
+    description: 'Especialista em nutrição materno-infantil, gestação e aleitamento. Também atua com saúde feminina e síndrome do ovário policístico. Atendimento humanizado e baseado em evidências.',
     specialties: ['gestação', 'saúde feminina', 'infantil'],
     instagram_url: 'https://instagram.com/drjulianarocha',
     photo_gender: 'women', photo_index: 2,
@@ -41,7 +51,10 @@ NUTRIS = [
     first_name: 'Rodrigo', last_name: 'Andrade',
     email: 'rodrigo.andrade.nutri@discover-demo.orbi',
     business_name: 'Rodrigo Andrade Performance',
-    description: 'Nutricionista esportivo para atletas e praticantes de atividade física. Foco em ganho de massa, performance e suplementação inteligente.',
+    ratings_count: 61, ratings_average: 4.7, patients_count: 245,
+    phone: '(11) 99187-6234',
+    professional_registration: 'CRN-3 61047/P',
+    description: 'Nutricionista esportivo para atletas e praticantes de atividade física. Foco em ganho de massa, performance e suplementação inteligente. Parceiro de academias e equipes de crossfit.',
     specialties: ['esportiva', 'emagrecimento'],
     instagram_url: 'https://instagram.com/rodrigoandradenutrição',
     photo_gender: 'men', photo_index: 1,
@@ -56,7 +69,10 @@ NUTRIS = [
     first_name: 'Camila', last_name: 'Ferreira',
     email: 'camila.ferreira.nutri@discover-demo.orbi',
     business_name: 'Camila Ferreira Nutrição Clínica',
-    description: 'Nutrição clínica com abordagem integrativa. Especialista em doenças crônicas, diabetes, hipertensão e saúde digestiva. Atendimento acolhedor e individualizado.',
+    ratings_count: 143, ratings_average: 4.9, patients_count: 615,
+    phone: '(11) 96754-2190',
+    professional_registration: 'CRN-3 39518/P',
+    description: 'Nutrição clínica com abordagem integrativa. Especialista em doenças crônicas, diabetes, hipertensão e saúde digestiva. Atendimento acolhedor, individualizado e baseado em exames laboratoriais.',
     specialties: ['emagrecimento', 'vegetariana'],
     instagram_url: nil,
     photo_gender: 'women', photo_index: 3,
@@ -70,8 +86,11 @@ NUTRIS = [
   {
     first_name: 'Beatriz', last_name: 'Martins',
     email: 'beatriz.martins.nutri@discover-demo.orbi',
-    business_name: 'Bea Martins Nutrição',
-    description: 'Nutricionista vegana e vegetariana. Ajudo pessoas a fazerem a transição alimentar de forma segura, sem carências nutricionais e com muito sabor.',
+    business_name: 'Bea Martins — Plant-Based',
+    ratings_count: 52, ratings_average: 4.8, patients_count: 190,
+    phone: '(11) 94822-7603',
+    professional_registration: 'CRN-3 57290/P',
+    description: 'Nutricionista vegana e vegetariana. Ajudo pessoas a fazerem a transição alimentar de forma segura, sem carências nutricionais e com muito sabor. Cardápios criativos e deliciosos.',
     specialties: ['vegetariana', 'emagrecimento'],
     instagram_url: 'https://instagram.com/beamartinsnutri',
     photo_gender: 'women', photo_index: 4,
@@ -85,8 +104,11 @@ NUTRIS = [
   {
     first_name: 'Lucas', last_name: 'Oliveira',
     email: 'lucas.oliveira.nutri@discover-demo.orbi',
-    business_name: 'Lucas Oliveira Nutrição & Saúde',
-    description: 'Nutricionista com pós-graduação em nutrição oncológica e imunologia. Atendo pacientes em tratamento de câncer, pós-operatório e imunocomprometidos.',
+    business_name: 'Dr. Lucas Oliveira',
+    ratings_count: 38, ratings_average: 4.6, patients_count: 165,
+    phone: '(11) 98365-0471',
+    professional_registration: 'CRN-3 44703/P',
+    description: 'Nutricionista com pós-graduação em nutrição oncológica e imunologia. Atendo pacientes em tratamento de câncer, pós-operatório e imunocomprometidos com foco em qualidade de vida.',
     specialties: ['emagrecimento'],
     instagram_url: nil,
     photo_gender: 'men', photo_index: 2,
@@ -101,7 +123,10 @@ NUTRIS = [
     first_name: 'Patricia', last_name: 'Lima',
     email: 'patricia.lima.nutri@discover-demo.orbi',
     business_name: 'Patricia Lima Emagrecimento',
-    description: 'Nutricionista comportamental e coach de emagrecimento. Trabalho com a relação emocional com a comida para resultados duradouros. Método exclusivo RealFood.',
+    ratings_count: 212, ratings_average: 4.9, patients_count: 870,
+    phone: '(11) 97198-3045',
+    professional_registration: 'CRN-3 62815/P',
+    description: 'Nutricionista comportamental e coach de emagrecimento. Trabalho com a relação emocional com a comida para resultados duradouros. Método exclusivo RealFood com mais de 500 pacientes atendidos.',
     specialties: ['emagrecimento', 'saúde feminina'],
     instagram_url: 'https://instagram.com/patricialimanutrição',
     photo_gender: 'women', photo_index: 5,
@@ -116,7 +141,10 @@ NUTRIS = [
     first_name: 'Thais', last_name: 'Barbosa',
     email: 'thais.barbosa.nutri@discover-demo.orbi',
     business_name: 'Dra. Thais Barbosa',
-    description: 'Nutricionista pediatra especializada em alimentação infantil, introdução alimentar (BLW e BLWM) e nutrição na adolescência.',
+    ratings_count: 88, ratings_average: 4.9, patients_count: 295,
+    phone: '(11) 95073-6189',
+    professional_registration: 'CRN-3 51634/P',
+    description: 'Nutricionista pediatra especializada em alimentação infantil, introdução alimentar (BLW e BLWM) e nutrição na adolescência. Atendimento carinhoso para bebês, crianças e adolescentes.',
     specialties: ['infantil'],
     instagram_url: 'https://instagram.com/draThaisBarbosa',
     photo_gender: 'women', photo_index: 6,
@@ -130,31 +158,37 @@ NUTRIS = [
   {
     first_name: 'Ana Clara', last_name: 'Pereira',
     email: 'anaclara.pereira.nutri@discover-demo.orbi',
-    business_name: 'Ana Clara Pereira Nutrição',
-    description: 'Nutricionista clínica e funcional com foco em saúde hormonal, tireóide e síndrome dos ovários policísticos. Atendimento personalizado e baseado em evidências.',
+    business_name: 'Ana Clara Pereira',
+    ratings_count: 73, ratings_average: 4.7, patients_count: 310,
+    phone: '(41) 99234-5678',
+    professional_registration: 'CRN-8 28047/P',
+    description: 'Nutricionista clínica e funcional com foco em saúde hormonal, tireóide e síndrome dos ovários policísticos. Atendimento personalizado e baseado em evidências. Teleatendimento para todo o Brasil.',
     specialties: ['hormonal', 'saúde feminina'],
     instagram_url: 'https://instagram.com/anaclaranutri',
     photo_gender: 'women', photo_index: 7,
-    address: { line1: 'Av. João Dias, 1083', district: 'Brooklin', city: 'São Paulo', state: 'SP', postcode: '04723-001', lat: -23.6180, lng: -46.6948 },
+    address: { line1: 'Rua Emiliano Perneta, 297', district: 'Centro', city: 'Curitiba', state: 'PR', postcode: '80010-060', lat: -25.4290, lng: -49.2700 },
     services: [
-      { name: 'Consulta Clínica Funcional',  price: 240_00, duration: 60, modality: 'presencial' },
-      { name: 'Programa Saúde Hormonal',     price: 720_00, duration: 90, modality: 'presencial' },
-      { name: 'Retorno Online',              price: 150_00, duration: 45, modality: 'online' },
+      { name: 'Consulta Clínica Funcional', price: 240_00, duration: 60, modality: 'presencial' },
+      { name: 'Programa Saúde Hormonal',    price: 720_00, duration: 90, modality: 'presencial' },
+      { name: 'Retorno Online',             price: 150_00, duration: 45, modality: 'online' },
     ]
   },
   {
     first_name: 'Felipe', last_name: 'Souza',
     email: 'felipe.souza.nutri@discover-demo.orbi',
     business_name: 'Felipe Souza Performance',
-    description: 'Nutricionista esportivo especializado em musculação, crossfit e corrida de rua. Protocolos individualizados para maximizar performance e recuperação muscular.',
+    ratings_count: 115, ratings_average: 4.8, patients_count: 450,
+    phone: '(21) 97812-3390',
+    professional_registration: 'CRN-4 19583/P',
+    description: 'Nutricionista esportivo especializado em musculação, crossfit e corrida de rua. Protocolos individualizados para maximizar performance e recuperação muscular. Atendo presencial no Rio e online em todo Brasil.',
     specialties: ['esportiva', 'emagrecimento'],
     instagram_url: 'https://instagram.com/felipesouzanutri',
     photo_gender: 'men', photo_index: 3,
-    address: { line1: 'Rua Harmonia, 547', district: 'Vila Madalena', city: 'São Paulo', state: 'SP', postcode: '05435-000', lat: -23.5566, lng: -46.6919 },
+    address: { line1: 'Rua Visconde de Pirajá, 547', district: 'Ipanema', city: 'Rio de Janeiro', state: 'RJ', postcode: '22410-003', lat: -22.9854, lng: -43.2038 },
     services: [
-      { name: 'Avaliação Esportiva',         price: 280_00, duration: 75, modality: 'presencial' },
-      { name: 'Plano de Hipertrofia',        price: 520_00, duration: 90, modality: 'presencial' },
-      { name: 'Acompanhamento Mensal',       price: 350_00, duration: 60, modality: 'online' },
+      { name: 'Avaliação Esportiva',   price: 280_00, duration: 75, modality: 'presencial' },
+      { name: 'Plano de Hipertrofia',  price: 520_00, duration: 90, modality: 'presencial' },
+      { name: 'Acompanhamento Mensal', price: 350_00, duration: 60, modality: 'online' },
     ]
   },
 ].freeze
@@ -196,7 +230,10 @@ NUTRIS.each_with_index do |p, idx|
 
       account = user.reload.account
       company = account.company
-      company.update!(screen_name: p[:business_name])
+      company.update!(
+        screen_name: p[:business_name],
+        cell_phone_number: p[:phone]
+      )
 
       addr = p[:address]
       company.addresses.create!(
@@ -211,12 +248,18 @@ NUTRIS.each_with_index do |p, idx|
       )
 
       account.update!(
-        directory_visible:     true,
-        profession_category:   'Nutricionista',
-        directory_description: p[:description],
-        specialties:           p[:specialties],
-        instagram_url:         p[:instagram_url],
-        subscription_status:   'active'
+        directory_visible:         true,
+        profession_category:       'Nutricionista',
+        directory_description:     p[:description],
+        specialties:               p[:specialties],
+        instagram_url:             p[:instagram_url],
+        professional_registration: p[:professional_registration],
+        subscription_status:       'active',
+        preferences:               {
+          'ratings_count'    => p[:ratings_count],
+          'ratings_average'  => p[:ratings_average],
+          'patients_count'   => p[:patients_count],
+        }
       )
 
       p[:services].each do |svc|

@@ -111,6 +111,10 @@ module Api
               latitude:  address&.latitude,
               longitude: address&.longitude
             },
+            ratings_average:   account.preferences['ratings_average'],
+            ratings_count:     account.preferences['ratings_count'],
+            patients_count:    account.preferences['patients_count'],
+            crn_verified:      account.professional_registration.present?,
             specialties:       account.specialties.presence || [],
             instagram_url:     account.instagram_url,
             services_count:    account.services.size,

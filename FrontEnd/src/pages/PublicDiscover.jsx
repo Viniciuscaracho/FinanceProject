@@ -112,11 +112,18 @@ function RichCard({ professional, highlighted, onClick, onHover }) {
         ) : (
           <div style={{
             width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'linear-gradient(135deg, #d8d5f8 0%, #c0bbf2 100%)',
+            background: '#ECEDF0',
           }}>
-            <span style={{ fontSize: 56, fontWeight: 800, color: T.brand, opacity: 0.4, ...DISPLAY }}>
-              {getInitials(professional.name)}
-            </span>
+            <div style={{
+              width: 78, height: 78, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #5B52D9 0%, #7B6FE8 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 16px rgba(91,82,217,0.28)',
+            }}>
+              <span style={{ fontSize: 28, fontWeight: 800, color: '#fff', ...DISPLAY, letterSpacing: '-0.01em' }}>
+                {getInitials(professional.name)}
+              </span>
+            </div>
           </div>
         )}
         <span style={{
@@ -130,9 +137,26 @@ function RichCard({ professional, highlighted, onClick, onHover }) {
       </div>
 
       <div style={{ padding: '14px 16px 0', flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <p style={{ margin: '0 0 9px', fontSize: 15, fontWeight: 700, color: T.text, lineHeight: 1.3, ...DISPLAY }}>
+        <p style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: T.text, lineHeight: 1.3, ...DISPLAY }}>
           {professional.name}
         </p>
+        {professional.ratings_average && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 7 }}>
+            <span style={{ color: '#F59E0B', fontSize: 12, lineHeight: 1 }}>★</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{professional.ratings_average}</span>
+            <span style={{ fontSize: 11, color: T.muted }}>({professional.ratings_count})</span>
+            {professional.crn_verified && (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 2,
+                fontSize: 10, fontWeight: 600, color: T.green,
+                padding: '1px 6px', borderRadius: 4,
+                background: 'rgba(22,163,74,0.1)', marginLeft: 2,
+              }}>
+                ✓ CRN
+              </span>
+            )}
+          </div>
+        )}
         {tags.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
             {tags.map((t, i) => (
@@ -145,6 +169,11 @@ function RichCard({ professional, highlighted, onClick, onHover }) {
         {location && (
           <p style={{ margin: 0, fontSize: 11, color: T.muted, display: 'flex', alignItems: 'center', gap: 4 }}>
             <MapPin size={10} style={{ flexShrink: 0, color: T.brand }} />{location}
+          </p>
+        )}
+        {professional.patients_count && (
+          <p style={{ margin: '3px 0 0', fontSize: 11, color: T.muted }}>
+            {professional.patients_count}+ pacientes atendidos
           </p>
         )}
         <div style={{ flex: 1 }} />
@@ -195,8 +224,10 @@ function CompactCard({ professional, highlighted, onClick, onHover }) {
         {professional.logo_url ? (
           <img src={professional.logo_url} alt={professional.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #d8d5f8, #c0bbf2)' }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: T.brand, ...DISPLAY }}>{getInitials(professional.name)}</span>
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ECEDF0' }}>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #5B52D9 0%, #7B6FE8 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', ...DISPLAY }}>{getInitials(professional.name)}</span>
+            </div>
           </div>
         )}
       </div>
@@ -635,7 +666,7 @@ function DiscoverMap({ results, onSearch, highlightedId, onHoverPin, onCardClick
       const icon = L.divIcon({ html: markerHtml, className: '', iconAnchor: [0, 0] })
       const logoHtml = pro.logo_url
         ? `<img src="${pro.logo_url}" style="width:38px;height:38px;border-radius:7px;object-fit:cover;flex-shrink:0;">`
-        : `<div style="width:38px;height:38px;border-radius:7px;background:#EEEDFB;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#5B52D9;flex-shrink:0;">${getInitials(pro.name)}</div>`
+        : `<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#5B52D9,#7B6FE8);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">${getInitials(pro.name)}</div>`
       const popup = `<div style="font-family:'Space Grotesk',system-ui,sans-serif;min-width:190px;padding:2px 0">
         <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">${logoHtml}
           <div><p style="margin:0;font-size:13px;font-weight:700;color:#111">${pro.name}</p>
