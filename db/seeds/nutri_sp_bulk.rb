@@ -1,120 +1,35 @@
 # frozen_string_literal: true
 #
 # Gerador de 80 nutricionistas demo — SP e região
-# 50% com foto distribuídas entre 3 fontes: Unsplash, Pexels, Generated.photos
-#
-# Generated.photos (grátis): https://generated.photos → get API key →
-#   set env GENERATED_PHOTOS_API_KEY antes de rodar
+# 50% com foto — fonte: Pexels (CDN direto, sem API key)
 
 require 'open-uri'
-require 'json'
-require 'net/http'
 
 User.class_eval    { def verify_email_address; end }
 Company.class_eval { def verify_email_address; end }
 
-# ── Fontes de fotos ────────────────────────────────────────────────────────
+# ── Fotos Pexels curadas ───────────────────────────────────────────────────
 
-# Unsplash: headshots profissionais curados com crop=faces automático
-UNSPLASH_WOMEN = %w[
-  photo-1494790108377-be9c29b29330
-  photo-1438761681033-6461ffad8d80
-  photo-1544005313-94ddf0286df2
-  photo-1551836022-d5d88e9218df
-  photo-1559839734-2b71ea197ec2
-  photo-1573497019940-1c28c88b4f3e
-  photo-1489424731084-a5d8b219a5bb
-  photo-1529626455594-4ff0802cfb7e
-  photo-1517841905240-472988babdf9
-  photo-1564564321837-a57b7070ac4f
-  photo-1502685104226-ee32379fefbe
-  photo-1607746882042-944635dfe10e
-  photo-1487412720507-e7ab37603c6f
-  photo-1534528741775-53994a69daeb
-  photo-1531746020798-e6953c6e8e04
-  photo-1508214751196-bcfd4ca60f91
-  photo-1614436163996-25cee5e21474
-].freeze
-
-UNSPLASH_MEN = %w[
-  photo-1507003211169-0a1dd7228f2d
-  photo-1500648767791-00dcc994a43e
-  photo-1560250097-0b93528c311a
-  photo-1568602471122-7832951cc4c5
-  photo-1492562080023-ab3db95bfbce
-  photo-1506794778202-cad84cf45f1d
-  photo-1504257432389-52343af06ae3
-  photo-1522529599102-193c0d76b5b6
-  photo-1570295999919-56ceb5ecca61
-].freeze
-
-# Pexels: CDN direto, sem API key necessária
 PEXELS_WOMEN = [
-  774909, 1239291, 415829, 762020, 1065084,
-  733872, 1587009, 2379005, 1181690, 3756679,
-  712513, 3764119, 5327585, 2709388, 1181686,
-  3184405, 3762875,
+  774909,  1239291, 415829,  762020,  1065084,
+  733872,  1587009, 2379005, 1181690, 3756679,
+  712513,  3764119, 5327585, 2709388, 1181686,
+  3184405, 3762875, 1197132, 1130626, 2379004,
+  1181695, 3764565,
 ].freeze
 
 PEXELS_MEN = [
-  220453, 614810, 1222271, 91227, 432059,
+  220453,  614810,  1222271, 91227,   432059,
   1212984, 2182970, 3785079, 1681010, 1043471,
+  3778603, 2422280, 2897883, 3785104, 1516680,
+  1080213, 2379003,
 ].freeze
 
-def unsplash_url(id)
-  "https://images.unsplash.com/#{id}?w=400&h=400&fit=crop&crop=faces&auto=format&q=85"
-end
-
-def pexels_url(id)
+def pexels_url(gender, pool_idx)
+  pool = gender == 'women' ? PEXELS_WOMEN : PEXELS_MEN
+  id   = pool[pool_idx % pool.size]
   "https://images.pexels.com/photos/#{id}/pexels-photo-#{id}.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=400&w=400"
 end
-
-# Generated.photos: retorna URL aleatória da API (grátis, 100/mês)
-GENERATED_CACHE = { 'female' => [], 'male' => [] }
-
-def generated_photo_url(gender)
-  api_key = ENV['GENERATED_PHOTOS_API_KEY']
-  return nil unless api_key.present?
-
-  g = gender == 'women' ? 'female' : 'male'
-
-  # Busca em lote na primeira chamada de cada gênero
-  if GENERATED_CACHE[g].empty?
-    uri = URI("https://api.generated.photos/api/v1/faces?api_key=#{api_key}&per_page=25&pose=straight_on&emotion=smiling&gender=#{g}&age=25-45&order_by=random")
-    resp = Net::HTTP.get_response(uri)
-    if resp.is_a?(Net::HTTPSuccess)
-      data = JSON.parse(resp.body)
-      GENERATED_CACHE[g] = (data['faces'] || []).map { |f| f.dig('urls', 'medium') }.compact
-    end
-  end
-
-  GENERATED_CACHE[g].shift
-rescue => e
-  puts "    [generated.photos] #{e.message}"
-  nil
-end
-
-# Decide qual URL usar para cada perfil com foto
-# Distribui: source 0=Unsplash, 1=Pexels, 2=Generated.photos
-def photo_url_for(gender, source_idx, pool_idx)
-  case source_idx % 3
-  when 0 # Unsplash
-    pool = gender == 'women' ? UNSPLASH_WOMEN : UNSPLASH_MEN
-    id   = pool[pool_idx % pool.size]
-    unsplash_url(id)
-  when 1 # Pexels
-    pool = gender == 'women' ? PEXELS_WOMEN : PEXELS_MEN
-    id   = pool[pool_idx % pool.size]
-    pexels_url(id)
-  when 2 # Generated.photos (fallback: Unsplash)
-    generated_photo_url(gender) || begin
-      pool = gender == 'women' ? UNSPLASH_WOMEN : UNSPLASH_MEN
-      unsplash_url(pool[(pool_idx + 8) % pool.size])
-    end
-  end
-end
-
-SOURCE_LABELS = { 0 => 'Unsplash', 1 => 'Pexels', 2 => 'Generated' }.freeze
 
 # ── Nomes ──────────────────────────────────────────────────────────────────
 FEMALE_FIRST = %w[
@@ -183,18 +98,29 @@ NEIGHBORHOODS = [
   { street: 'Rua Borges de Figueiredo',       n: '222',  d: 'Mooca',              c: 'São Paulo',              s: 'SP', p: '03110-010', lat: -23.5580, lng: -46.6050 },
 ].freeze
 
-# ── Especialidades ─────────────────────────────────────────────────────────
-SPECIALTY_SETS = [
+# ── Especialidades por gênero ──────────────────────────────────────────────
+FEMALE_SPECIALTIES = [
   { specs: ['emagrecimento'],              focus: 'emagrecimento sustentável e reeducação alimentar' },
   { specs: ['esportiva', 'emagrecimento'], focus: 'nutrição esportiva e performance atlética' },
   { specs: ['saúde feminina'],             focus: 'saúde hormonal feminina e bem-estar integral' },
   { specs: ['gestação', 'infantil'],       focus: 'nutrição na gestação e alimentação infantil' },
   { specs: ['vegetariana', 'online'],      focus: 'alimentação plant-based e veganismo saudável' },
   { specs: ['emagrecimento', 'online'],    focus: 'emagrecimento comportamental com atendimento online' },
-  { specs: ['esportiva'],                  focus: 'hipertrofia, recomposição corporal e suplementação' },
   { specs: ['infantil'],                   focus: 'nutrição pediátrica e introdução alimentar' },
   { specs: ['saúde feminina', 'hormonal'], focus: 'SOP, endometriose e saúde hormonal feminina' },
   { specs: ['emagrecimento'],              focus: 'nutrição clínica e controle de peso duradouro' },
+  { specs: ['vegetariana'],               focus: 'alimentação vegana e saúde preventiva' },
+].freeze
+
+MALE_SPECIALTIES = [
+  { specs: ['emagrecimento'],              focus: 'emagrecimento sustentável e reeducação alimentar' },
+  { specs: ['esportiva', 'emagrecimento'], focus: 'nutrição esportiva e performance atlética' },
+  { specs: ['esportiva'],                  focus: 'hipertrofia, recomposição corporal e suplementação' },
+  { specs: ['vegetariana', 'online'],      focus: 'alimentação plant-based e veganismo saudável' },
+  { specs: ['emagrecimento', 'online'],    focus: 'emagrecimento comportamental com atendimento online' },
+  { specs: ['infantil'],                   focus: 'nutrição pediátrica e introdução alimentar' },
+  { specs: ['emagrecimento'],              focus: 'nutrição clínica e controle de peso duradouro' },
+  { specs: ['esportiva'],                  focus: 'performance, força e periodização nutricional' },
 ].freeze
 
 DESCRIPTION_TEMPLATES = [
@@ -259,70 +185,60 @@ end
 rng = Random.new(42)  # seed fixo → nomes/bairros reproduzíveis
 
 profiles = []
-photo_counter = { women: 0, men: 0 }
+photo_idx = { 'women' => 0, 'men' => 0 }
 
 44.times do |i|
   nb    = NEIGHBORHOODS[i % NEIGHBORHOODS.size]
-  sset  = SPECIALTY_SETS[i % SPECIALTY_SETS.size]
+  sset  = FEMALE_SPECIALTIES[i % FEMALE_SPECIALTIES.size]
   first = FEMALE_FIRST[rng.rand(FEMALE_FIRST.size)]
   last  = LAST_NAMES[rng.rand(LAST_NAMES.size)]
   slug  = "#{first.downcase.gsub(/[^a-z]/,'')}.#{last.downcase.gsub(/[^a-z]/,'')}.#{i}f"
   pts   = rng.rand(80..950)
   years = rng.rand(3..18)
-
-  has_photo   = i.even?
-  source_idx  = photo_counter[:women]
-  photo_counter[:women] += 1 if has_photo
+  has_photo = i.even?
 
   profiles << {
     gender: 'women', first: first, last: last,
     email: "#{slug}@discover-demo.orbi",
     biz: ["#{first} #{last} Nutrição", "Dra. #{first} #{last}",
-          "#{first} #{last} — #{sset[:specs].first.capitalize}"].sample,
+          "#{first} #{last} — #{sset[:specs].first.capitalize}"][i % 3],
     phone: gen_phone, crn: gen_crn,
     desc: gen_description(sset[:focus], nb[:d], years, pts),
-    specs: sset[:specs], nb: nb,
-    services: gen_services(sset[:specs]),
+    specs: sset[:specs], nb: nb, services: gen_services(sset[:specs]),
     rc: rng.rand(20..220), ra: (rng.rand(45..50) / 10.0), pts: pts,
-    has_photo: has_photo, source_idx: source_idx, pool_idx: i,
+    has_photo: has_photo, pool_idx: (photo_idx['women'].tap { photo_idx['women'] += 1 if has_photo }),
   }
 end
 
 36.times do |i|
   nb    = NEIGHBORHOODS[(i + 11) % NEIGHBORHOODS.size]
-  sset  = SPECIALTY_SETS[(i + 2) % SPECIALTY_SETS.size]
+  sset  = MALE_SPECIALTIES[i % MALE_SPECIALTIES.size]
   first = MALE_FIRST[rng.rand(MALE_FIRST.size)]
   last  = LAST_NAMES[rng.rand(LAST_NAMES.size)]
   slug  = "#{first.downcase.gsub(/[^a-z]/,'')}.#{last.downcase.gsub(/[^a-z]/,'')}.#{i}m"
   pts   = rng.rand(80..950)
   years = rng.rand(3..18)
-
-  has_photo  = i.even?
-  source_idx = photo_counter[:men]
-  photo_counter[:men] += 1 if has_photo
+  has_photo = i.even?
 
   profiles << {
     gender: 'men', first: first, last: last,
     email: "#{slug}@discover-demo.orbi",
     biz: ["#{first} #{last} Nutrição", "Dr. #{first} #{last}",
-          "#{first} #{last} Performance"].sample,
+          "#{first} #{last} Performance"][i % 3],
     phone: gen_phone, crn: gen_crn,
     desc: gen_description(sset[:focus], nb[:d], years, pts),
-    specs: sset[:specs], nb: nb,
-    services: gen_services(sset[:specs]),
+    specs: sset[:specs], nb: nb, services: gen_services(sset[:specs]),
     rc: rng.rand(18..180), ra: (rng.rand(44..50) / 10.0), pts: pts,
-    has_photo: has_photo, source_idx: source_idx, pool_idx: i,
+    has_photo: has_photo, pool_idx: (photo_idx['men'].tap { photo_idx['men'] += 1 if has_photo }),
   }
 end
 
 # ── Execução ───────────────────────────────────────────────────────────────
 puts "\n#{'='*70}"
-puts "🥦 GERANDO #{profiles.size} NUTRICIONISTAS — SP e REGIÃO"
-has_gen_photos = ENV['GENERATED_PHOTOS_API_KEY'].present?
-puts "📸 Fontes: Unsplash + Pexels#{has_gen_photos ? ' + Generated.photos' : ' (sem Generated.photos — set GENERATED_PHOTOS_API_KEY)'}"
+puts "🥦 GERANDO #{profiles.size} NUTRICIONISTAS — SP e REGIÃO (fotos: Pexels)"
 puts "#{'='*70}\n"
 
-totals = { created: 0, skipped: 0, errors: 0, photos: { unsplash: 0, pexels: 0, generated: 0, failed: 0 } }
+totals = { created: 0, skipped: 0, errors: 0, photos: 0, photo_failed: 0 }
 
 profiles.each_with_index do |p, idx|
   nb = p[:nb]
@@ -378,15 +294,15 @@ profiles.each_with_index do |p, idx|
         active: true, settings: {}
       )
 
-      # Foto logo (50% dos perfis)
-      source_label = nil
+      # Foto logo (50% dos perfis) — Pexels
+      has_logo = false
       if p[:has_photo]
-        url = photo_url_for(p[:gender], p[:source_idx], p[:pool_idx])
-        if url && attach_photo_bulk(company, :logo, url)
-          source_label = SOURCE_LABELS[p[:source_idx] % 3]
-          totals[:photos][source_label.downcase.to_sym] += 1
+        url = pexels_url(p[:gender], p[:pool_idx])
+        if attach_photo_bulk(company, :logo, url)
+          totals[:photos] += 1
+          has_logo = true
         else
-          totals[:photos][:failed] += 1
+          totals[:photo_failed] += 1
         end
       end
 
@@ -394,7 +310,7 @@ profiles.each_with_index do |p, idx|
       attach_photo_bulk(company, :cover_image, "https://picsum.photos/seed/sp#{idx + 100}/1200/400")
 
       print " #{nb[:d]}, #{nb[:c]}"
-      print source_label ? " 📸#{source_label}" : ' 👤'
+      print has_logo ? ' 📸' : ' 👤'
       puts
       totals[:created] += 1
     end
@@ -406,5 +322,5 @@ end
 
 puts "\n#{'='*70}"
 puts "✅ Criados: #{totals[:created]}  |  ⏭ Pulados: #{totals[:skipped]}  |  ❌ Erros: #{totals[:errors]}"
-puts "📸 Fotos — Unsplash: #{totals[:photos][:unsplash]}  |  Pexels: #{totals[:photos][:pexels]}  |  Generated: #{totals[:photos][:generated]}  |  Falhou: #{totals[:photos][:failed]}"
+puts "📸 Fotos OK: #{totals[:photos]}  |  Falhou: #{totals[:photo_failed]}"
 puts "#{'='*70}\n"
