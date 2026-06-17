@@ -13,13 +13,13 @@ Company.class_eval { def verify_email_address; end }
 
 # ── Busca fotos via Pexels API ─────────────────────────────────────────────
 
-def fetch_pexels_ids(query, per_page: 30)
+def fetch_pexels_ids(query, per_page: 40, page: 2)
   api_key = ENV['PEXELS_API_KEY']
   unless api_key.present?
     puts "⚠️  PEXELS_API_KEY não definida — usando IDs de fallback"
     return []
   end
-  uri = URI("https://api.pexels.com/v1/search?query=#{URI.encode_www_form_component(query)}&per_page=#{per_page}&orientation=square&size=medium")
+  uri = URI("https://api.pexels.com/v1/search?query=#{URI.encode_www_form_component(query)}&per_page=#{per_page}&page=#{page}&orientation=square&size=medium")
   req = Net::HTTP::Get.new(uri)
   req['Authorization'] = api_key
   resp = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(req) }
@@ -46,9 +46,9 @@ FALLBACK_MEN = [
   91228,   432060,  614811,
 ].freeze
 
-puts "🔍 Buscando fotos no Pexels API..."
-PHOTO_POOL_WOMEN = fetch_pexels_ids('professional nutritionist woman portrait', per_page: 30).presence || FALLBACK_WOMEN
-PHOTO_POOL_MEN   = fetch_pexels_ids('professional nutritionist man portrait',   per_page: 25).presence || FALLBACK_MEN
+puts "🔍 Buscando fotos no Pexels API (page 2 — sem sobreposição com nutri_discover)..."
+PHOTO_POOL_WOMEN = fetch_pexels_ids('professional woman nutritionist portrait', per_page: 60, page: 2).presence || FALLBACK_WOMEN
+PHOTO_POOL_MEN   = fetch_pexels_ids('professional man nutritionist portrait',   per_page: 45, page: 2).presence || FALLBACK_MEN
 puts "   #{PHOTO_POOL_WOMEN.size} fotos femininas | #{PHOTO_POOL_MEN.size} fotos masculinas"
 puts "   IDs (mulheres): #{PHOTO_POOL_WOMEN.first(5).join(', ')}..."
 
@@ -214,7 +214,7 @@ rng = Random.new(42)  # seed fixo → nomes/bairros reproduzíveis
 profiles = []
 photo_idx = { 'women' => 0, 'men' => 0 }
 
-44.times do |i|
+115.times do |i|
   nb    = NEIGHBORHOODS[i % NEIGHBORHOODS.size]
   sset  = FEMALE_SPECIALTIES[i % FEMALE_SPECIALTIES.size]
   first = FEMALE_FIRST[rng.rand(FEMALE_FIRST.size)]
@@ -237,7 +237,7 @@ photo_idx = { 'women' => 0, 'men' => 0 }
   }
 end
 
-36.times do |i|
+85.times do |i|
   nb    = NEIGHBORHOODS[(i + 11) % NEIGHBORHOODS.size]
   sset  = MALE_SPECIALTIES[i % MALE_SPECIALTIES.size]
   first = MALE_FIRST[rng.rand(MALE_FIRST.size)]
@@ -262,7 +262,7 @@ end
 
 # ── Execução ───────────────────────────────────────────────────────────────
 puts "\n#{'='*70}"
-puts "🥦 GERANDO #{profiles.size} NUTRICIONISTAS — SP e REGIÃO (fotos: Pexels)"
+puts "🥦 GERANDO #{profiles.size} NUTRICIONISTAS — SP e REGIÃO (fotos: Pexels page 2)"
 puts "#{'='*70}\n"
 
 totals = { created: 0, skipped: 0, errors: 0, photos: 0, photo_failed: 0 }

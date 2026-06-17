@@ -58,7 +58,14 @@ module Api
 
           total      = accounts_query.distinct.count
           page       = [params[:page].to_i, 0].max
-          ids        = accounts_query.distinct.select("accounts.id").limit(PAGE_SIZE).offset(page * PAGE_SIZE).map(&:id)
+          has_logo   = "EXISTS(SELECT 1 FROM active_storage_attachments asa WHERE asa.record_type = 'Person' AND asa.record_id = people.id AND asa.name = 'logo')"
+          ids        = accounts_query
+                         .select("accounts.id, (#{has_logo}) AS has_logo")
+                         .order(Arel.sql("has_logo DESC, accounts.id DESC"))
+                         .distinct
+                         .limit(PAGE_SIZE)
+                         .offset(page * PAGE_SIZE)
+                         .map(&:id)
           accounts   = Account.where(id: ids).includes(company: [:address, { logo_attachment: :blob }, { cover_image_attachment: :blob }], services: [], appointment_links: [])
 
           render json: { results: accounts.map { |a| card_json(a) }, total: total, page: page }
