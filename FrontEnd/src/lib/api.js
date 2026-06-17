@@ -1709,6 +1709,10 @@ class ApiService {
     return this.request('/public/discover/categories')
   }
 
+  async discoverHide(id) {
+    return this.request(`/public/discover/${id}`, { method: 'DELETE' })
+  }
+
   // ── Google Calendar ──────────────────────────────────────────────────────────
 
   async getGoogleCalendarStatus() {

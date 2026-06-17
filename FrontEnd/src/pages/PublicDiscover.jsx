@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, MapPin, Loader2, Navigation, ArrowLeft, Clock, Map } from 'lucide-react'
+import { Search, MapPin, Loader2, Navigation, ArrowLeft, Clock, Map, Trash2 } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { apiService } from '../lib/api'
+import { useAuth } from '../contexts/AuthContext'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -80,7 +81,7 @@ function SkeletonCard() {
 }
 
 /* ─── Card da lista ─────────────────────────────── */
-function RichCard({ professional, highlighted, onClick, onHover }) {
+function RichCard({ professional, highlighted, onClick, onHover, onHide }) {
   const location = [professional.location?.district, professional.location?.city].filter(Boolean).join(', ')
   const tags = (professional.services_preview || []).slice(0, 3).map(s => s.name)
   const minPrice = (professional.services_preview || []).reduce(
@@ -134,6 +135,21 @@ function RichCard({ professional, highlighted, onClick, onHover }) {
         }}>
           Nutricionista
         </span>
+        {onHide && (
+          <button
+            onClick={e => { e.stopPropagation(); onHide(professional.id) }}
+            title="Ocultar perfil"
+            style={{
+              position: 'absolute', top: 8, right: 8,
+              width: 28, height: 28, borderRadius: 6,
+              background: 'rgba(220,38,38,0.85)', backdropFilter: 'blur(4px)',
+              border: 'none', cursor: 'pointer', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', padding: 0,
+            }}
+          >
+            <Trash2 size={13} color="#fff" />
+          </button>
+        )}
       </div>
 
       <div style={{ padding: '14px 16px 0', flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -204,7 +220,7 @@ function RichCard({ professional, highlighted, onClick, onHover }) {
 }
 
 /* ─── Card compacto (mapa) ──────────────────────── */
-function CompactCard({ professional, highlighted, onClick, onHover }) {
+function CompactCard({ professional, highlighted, onClick, onHover, onHide }) {
   const location = [professional.location?.district, professional.location?.city].filter(Boolean).join(' · ')
   return (
     <div
@@ -241,6 +257,19 @@ function CompactCard({ professional, highlighted, onClick, onHover }) {
           </p>
         )}
       </div>
+      {onHide && (
+        <button
+          onClick={e => { e.stopPropagation(); onHide(professional.id) }}
+          title="Ocultar perfil"
+          style={{
+            flexShrink: 0, width: 28, height: 28, borderRadius: 6,
+            background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.3)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+          }}
+        >
+          <Trash2 size={12} color="#DC2626" />
+        </button>
+      )}
     </div>
   )
 }
@@ -775,6 +804,7 @@ export function PublicDiscover() {
   const navigate    = useNavigate()
   const isMobile    = useIsMobile()
   const [searchParams, setSearchParams] = useSearchParams()
+  const { user }    = useAuth()
 
 
   const [searchQ,      setSearchQ]      = useState(searchParams.get('q') || '')
@@ -782,6 +812,17 @@ export function PublicDiscover() {
   const [activeChip,   setActiveChip]   = useState(searchParams.get('especialidade') || '')
   const [results,      setResults]      = useState([])
   const [total,        setTotal]        = useState(0)
+
+  const handleHide = useCallback(async (id) => {
+    if (!window.confirm('Ocultar este perfil da vitrine?')) return
+    try {
+      await apiService.discoverHide(id)
+      setResults(prev => prev.filter(p => p.id !== id))
+      setTotal(prev => prev - 1)
+    } catch (e) {
+      alert('Erro ao ocultar: ' + e.message)
+    }
+  }, [])
   const [page,         setPage]         = useState(0)
   const [loading,      setLoading]      = useState(true)
   const [loadingMore,  setLoadingMore]  = useState(false)
@@ -1030,7 +1071,7 @@ export function PublicDiscover() {
               <>
                 {results.map(pro => (
                   <div key={pro.id} style={{ marginBottom: 10 }}>
-                    <CompactCard professional={pro} highlighted={hoveredId === pro.id} onHover={setHoveredId} onClick={() => openPanel(pro)} />
+                    <CompactCard professional={pro} highlighted={hoveredId === pro.id} onHover={setHoveredId} onClick={() => openPanel(pro)} onHide={user?.admin ? handleHide : undefined} />
                   </div>
                 ))}
                 {results.length < total && (
@@ -1083,7 +1124,7 @@ export function PublicDiscover() {
                   <>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
                       {results.map(pro => (
-                        <RichCard key={pro.id} professional={pro} highlighted={hoveredId === pro.id} onClick={() => openPanel(pro)} onHover={setHoveredId} />
+                        <RichCard key={pro.id} professional={pro} highlighted={hoveredId === pro.id} onClick={() => openPanel(pro)} onHover={setHoveredId} onHide={user?.admin ? handleHide : undefined} />
                       ))}
                     </div>
                     {results.length < total && (
@@ -1116,7 +1157,7 @@ export function PublicDiscover() {
                 ) : (
                   <>
                     {results.map(pro => (
-                      <CompactCard key={pro.id} professional={pro} highlighted={hoveredId === pro.id} onHover={setHoveredId} onClick={() => openPanel(pro)} />
+                      <CompactCard key={pro.id} professional={pro} highlighted={hoveredId === pro.id} onHover={setHoveredId} onClick={() => openPanel(pro)} onHide={user?.admin ? handleHide : undefined} />
                     ))}
                     {results.length < total && (
                       <button onClick={handleLoadMore} disabled={loadingMore}

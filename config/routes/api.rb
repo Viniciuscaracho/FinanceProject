@@ -17,9 +17,10 @@ namespace :api, defaults: { format: 'json' } do
       get 'appointment_data/:token/full', to: 'appointment_data#full'
 
       # Vitrine pública — descobrir profissionais
-      get  'discover',             to: 'discover#index'
-      get  'discover/categories',  to: 'discover#categories'
-      get  'discover/:id',         to: 'discover#show'
+      get    'discover',             to: 'discover#index'
+      get    'discover/categories',  to: 'discover#categories'
+      get    'discover/:id',         to: 'discover#show'
+      delete 'discover/:id',         to: 'discover#hide'
 
       # Anamnese pública — preenchimento pelo paciente via link
       get  'anamnese/:token', to: 'anamnese#show'
