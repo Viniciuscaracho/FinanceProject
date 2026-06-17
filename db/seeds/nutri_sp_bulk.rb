@@ -1,32 +1,59 @@
 # frozen_string_literal: true
 #
 # Gerador de 80 nutricionistas demo — SP e região
-# 50% com foto — fonte: Pexels (CDN direto, sem API key)
+# 50% com foto — fonte: Pexels API (set PEXELS_API_KEY no EasyPanel)
+# Pexels API gratuita: https://www.pexels.com/api/
 
 require 'open-uri'
+require 'net/http'
+require 'json'
 
 User.class_eval    { def verify_email_address; end }
 Company.class_eval { def verify_email_address; end }
 
-# ── Fotos Pexels curadas ───────────────────────────────────────────────────
+# ── Busca fotos via Pexels API ─────────────────────────────────────────────
 
-PEXELS_WOMEN = [
-  774909,  1239291, 415829,  762020,  1065084,
-  733872,  1587009, 2379005, 1181690, 3756679,
-  712513,  3764119, 5327585, 2709388, 1181686,
-  3184405, 3762875, 1197132, 1130626, 2379004,
-  1181695, 3764565,
+def fetch_pexels_ids(query, per_page: 30)
+  api_key = ENV['PEXELS_API_KEY']
+  unless api_key.present?
+    puts "⚠️  PEXELS_API_KEY não definida — usando IDs de fallback"
+    return []
+  end
+  uri = URI("https://api.pexels.com/v1/search?query=#{URI.encode_www_form_component(query)}&per_page=#{per_page}&orientation=square&size=medium")
+  req = Net::HTTP::Get.new(uri)
+  req['Authorization'] = api_key
+  resp = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(req) }
+  data = JSON.parse(resp.body)
+  data['photos'].map { |p| p['id'] }
+rescue => e
+  puts "⚠️  Pexels API erro: #{e.message} — usando fallback"
+  []
+end
+
+# Fallback: IDs curados separados dos usados em nutri_discover.rb
+FALLBACK_WOMEN = [
+  2709388, 1181686, 3184405, 3762875, 1197132,
+  1130626, 2379004, 1181695, 3764565, 3756678,
+  5327584, 2385090, 1642228, 2406949, 1082308,
+  3771532, 1181681, 1043474, 1130620, 733852,
+  2379006, 1587010,
 ].freeze
 
-PEXELS_MEN = [
-  220453,  614810,  1222271, 91227,   432059,
-  1212984, 2182970, 3785079, 1681010, 1043471,
-  3778603, 2422280, 2897883, 3785104, 1516680,
-  1080213, 2379003,
+FALLBACK_MEN = [
+  3785079, 1681010, 1043471, 3778603, 2422280,
+  2897883, 3785104, 1516680, 1080213, 2379003,
+  1516679, 2897882, 2422281, 1222272, 2182971,
+  91228,   432060,  614811,
 ].freeze
+
+puts "🔍 Buscando fotos no Pexels API..."
+PHOTO_POOL_WOMEN = fetch_pexels_ids('professional nutritionist woman portrait', per_page: 30).presence || FALLBACK_WOMEN
+PHOTO_POOL_MEN   = fetch_pexels_ids('professional nutritionist man portrait',   per_page: 25).presence || FALLBACK_MEN
+puts "   #{PHOTO_POOL_WOMEN.size} fotos femininas | #{PHOTO_POOL_MEN.size} fotos masculinas"
+puts "   IDs (mulheres): #{PHOTO_POOL_WOMEN.first(5).join(', ')}..."
 
 def pexels_url(gender, pool_idx)
-  pool = gender == 'women' ? PEXELS_WOMEN : PEXELS_MEN
+  pool = gender == 'women' ? PHOTO_POOL_WOMEN : PHOTO_POOL_MEN
   id   = pool[pool_idx % pool.size]
   "https://images.pexels.com/photos/#{id}/pexels-photo-#{id}.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=400&w=400"
 end
