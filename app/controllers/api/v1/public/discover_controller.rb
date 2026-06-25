@@ -7,7 +7,6 @@ module Api
         include ActiveStorage::SetCurrent
         PAGE_SIZE = 24
 
-        before_action :require_platform_admin!, only: [:hide]
 
         CATEGORIES = %w[
           Psicólogo Advogado Nutricionista Personal\ Trainer Barbeiro Cabeleireiro
@@ -103,22 +102,6 @@ module Api
         end
 
         private
-
-        def require_platform_admin!
-          token = request.headers['Authorization']&.sub(/\ABearer\s+/i, '')
-          return render json: { error: 'Unauthorized' }, status: :unauthorized unless token
-
-          user = begin
-            decoded = JSON.parse(Base64.strict_decode64(token))
-            exp = decoded['exp']
-            return render json: { error: 'Token expirado' }, status: :unauthorized if exp && Time.current.to_i > exp
-            User.find_by(id: decoded['user_id'])
-          rescue
-            nil
-          end
-
-          render json: { error: 'Forbidden' }, status: :forbidden unless user&.admin?
-        end
 
         def base_query
           Account

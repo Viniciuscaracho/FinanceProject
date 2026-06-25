@@ -813,9 +813,14 @@ export function PublicDiscover() {
   const [results,      setResults]      = useState([])
   const [total,        setTotal]        = useState(0)
 
-  const handleHide = useCallback((id) => {
-    setResults(prev => prev.filter(p => p.id !== id))
-    setTotal(prev => prev - 1)
+  const handleHide = useCallback(async (id) => {
+    try {
+      await apiService.discoverHide(id)
+      setResults(prev => prev.filter(p => p.id !== id))
+      setTotal(prev => prev - 1)
+    } catch (e) {
+      console.error('Erro ao ocultar perfil:', e)
+    }
   }, [])
   const [page,         setPage]         = useState(0)
   const [loading,      setLoading]      = useState(true)
