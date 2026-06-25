@@ -813,15 +813,9 @@ export function PublicDiscover() {
   const [results,      setResults]      = useState([])
   const [total,        setTotal]        = useState(0)
 
-  const handleHide = useCallback(async (id) => {
-    if (!window.confirm('Ocultar este perfil da vitrine?')) return
-    try {
-      await apiService.discoverHide(id)
-      setResults(prev => prev.filter(p => p.id !== id))
-      setTotal(prev => prev - 1)
-    } catch (e) {
-      alert('Erro ao ocultar: ' + e.message)
-    }
+  const handleHide = useCallback((id) => {
+    setResults(prev => prev.filter(p => p.id !== id))
+    setTotal(prev => prev - 1)
   }, [])
   const [page,         setPage]         = useState(0)
   const [loading,      setLoading]      = useState(true)
@@ -1071,7 +1065,7 @@ export function PublicDiscover() {
               <>
                 {results.map(pro => (
                   <div key={pro.id} style={{ marginBottom: 10 }}>
-                    <CompactCard professional={pro} highlighted={hoveredId === pro.id} onHover={setHoveredId} onClick={() => openPanel(pro)} onHide={user?.admin ? handleHide : undefined} />
+                    <CompactCard professional={pro} highlighted={hoveredId === pro.id} onHover={setHoveredId} onClick={() => openPanel(pro)} onHide={handleHide} />
                   </div>
                 ))}
                 {results.length < total && (
@@ -1124,7 +1118,7 @@ export function PublicDiscover() {
                   <>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
                       {results.map(pro => (
-                        <RichCard key={pro.id} professional={pro} highlighted={hoveredId === pro.id} onClick={() => openPanel(pro)} onHover={setHoveredId} onHide={user?.admin ? handleHide : undefined} />
+                        <RichCard key={pro.id} professional={pro} highlighted={hoveredId === pro.id} onClick={() => openPanel(pro)} onHover={setHoveredId} onHide={handleHide} />
                       ))}
                     </div>
                     {results.length < total && (
@@ -1157,7 +1151,7 @@ export function PublicDiscover() {
                 ) : (
                   <>
                     {results.map(pro => (
-                      <CompactCard key={pro.id} professional={pro} highlighted={hoveredId === pro.id} onHover={setHoveredId} onClick={() => openPanel(pro)} onHide={user?.admin ? handleHide : undefined} />
+                      <CompactCard key={pro.id} professional={pro} highlighted={hoveredId === pro.id} onHover={setHoveredId} onClick={() => openPanel(pro)} onHide={handleHide} />
                     ))}
                     {results.length < total && (
                       <button onClick={handleLoadMore} disabled={loadingMore}
