@@ -156,12 +156,7 @@ export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen
       }}>
         {!collapsed && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-            <div style={{
-              width: 28, height: 28, background: BRAND, borderRadius: 7,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <span style={{ color: '#fff', fontWeight: 800, fontSize: 13 }}>O</span>
-            </div>
+            <img src="/orbi-logo.png" width={28} height={28} alt="Orbi" style={{ flexShrink: 0 }} />
             <div style={{ minWidth: 0 }}>
               <p style={{ fontSize: 13, fontWeight: 700, color: isDarkMode ? '#fff' : '#111', margin: 0, letterSpacing: '-0.02em' }}>Orbi</p>
               <p style={{ fontSize: 10, color: iconDim, margin: 0 }}>Gestão Profissional</p>

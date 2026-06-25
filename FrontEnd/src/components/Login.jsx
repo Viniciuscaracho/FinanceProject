@@ -74,7 +74,10 @@ export function Login() {
 
       {/* Logo */}
       <div style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 10 }}>
-        <a href="/" style={{ color: 'white', fontWeight: 700, fontSize: '18px', letterSpacing: '-0.3px', textDecoration: 'none' }}>Orbi</a>
+        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <img src="/orbi-logo.png" width={30} height={30} alt="Orbi" />
+          <span style={{ color: 'white', fontWeight: 700, fontSize: '18px', letterSpacing: '-0.3px' }}>Orbi</span>
+        </a>
       </div>
 
       {/* Card */}

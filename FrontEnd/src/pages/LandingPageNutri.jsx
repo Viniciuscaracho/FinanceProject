@@ -71,7 +71,7 @@ function AppPreview() {
       <div style={{ display: 'flex', height: 400 }}>
         {/* sidebar */}
         <div style={{ width: 52, background: '#0D1710', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 16, gap: 12 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: T.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: '#fff', ...DISPLAY }}>N</div>
+          <img src="/orbi-logo.png" width={28} height={28} alt="Orbi" />
           <div style={{ width: '60%', height: 1, background: '#ffffff18', marginTop: 4 }} />
           {SIDEBAR_PATHS.map((path, i) => (
             <div key={i}
