@@ -2,12 +2,13 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Camera, Copy, Check, ExternalLink, Loader2, Eye, EyeOff,
   MapPin, Phone, X, Instagram, Globe, Share2, BarChart2,
-  ImageIcon, User, ChevronRight, Save, Sparkles, ArrowUpRight, Move,
+  ImageIcon, User, ChevronRight, Save, Sparkles, ArrowUpRight, Move, Code,
 } from 'lucide-react'
 import { apiService } from '../lib/api'
 import { toast } from 'sonner'
 import { T, DISPLAY } from '@/lib/tokens'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { profileSlug } from '@/lib/seoSlugs'
 
 const BASE_URL = import.meta.env.VITE_PUBLIC_URL || window.location.origin
 
@@ -502,6 +503,136 @@ const inputSx = {
   border: '1px solid var(--border)', borderRadius: 8,
   padding: '8px 12px', fontFamily: "'Space Grotesk', system-ui, sans-serif",
   outline: 'none', width: '100%', boxSizing: 'border-box', transition: 'border-color 150ms',
+}
+
+/* ─── Badge embedável ────────────────────────── */
+const BADGE_STYLES = [
+  {
+    id: 'green',
+    label: 'Verde (padrão)',
+    preview: { bg: '#16a34a', color: '#fff', border: 'none' },
+  },
+  {
+    id: 'white',
+    label: 'Branco',
+    preview: { bg: '#fff', color: '#16a34a', border: '1.5px solid #16a34a' },
+  },
+  {
+    id: 'dark',
+    label: 'Escuro',
+    preview: { bg: '#111827', color: '#fff', border: 'none' },
+  },
+]
+
+function generateBadgeHtml(slug, name, style) {
+  const styles = {
+    green: `background:#16a34a;color:#fff;border:none`,
+    white: `background:#fff;color:#16a34a;border:1.5px solid #16a34a`,
+    dark:  `background:#111827;color:#fff;border:none`,
+  }
+  const url = `https://orbinutri.com.br/nutricionista/${slug}`
+  return `<a href="${url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:8px;text-decoration:none;font-family:system-ui,sans-serif;font-size:14px;font-weight:600;${styles[style]}">\n  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>\n  Agende comigo no OrbiNutri\n</a>`
+}
+
+function BadgeSection({ acct, name }) {
+  const [activeStyle, setActiveStyle] = useState('green')
+  const [copied, setCopied] = useState(false)
+
+  if (!acct?.id) return null
+  const slug = profileSlug(name || acct.company?.screen_name || 'profissional', acct.id)
+  const html = generateBadgeHtml(slug, name, activeStyle)
+
+  function copyBadge() {
+    navigator.clipboard.writeText(html).then(() => {
+      setCopied(true)
+      toast.success('Código copiado!')
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  const st = BADGE_STYLES.find(b => b.id === activeStyle).preview
+
+  return (
+    <Panel>
+      <SectionHeader label="Badge para seu site" icon={Code} />
+      <Divider />
+      <div style={{ padding: '14px 20px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        <p style={{ margin: 0, fontSize: 12, color: T.muted, lineHeight: 1.5 }}>
+          Cole o código abaixo no seu site ou blog. Cada clique leva direto ao seu perfil no OrbiNutri.
+        </p>
+
+        {/* Preview do badge */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0' }}>
+          <a
+            href={`https://orbinutri.com.br/nutricionista/${slug}`}
+            target="_blank" rel="noopener noreferrer"
+            onClick={e => e.preventDefault()}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '10px 18px', borderRadius: 8, textDecoration: 'none',
+              fontFamily: 'system-ui, sans-serif', fontSize: 14, fontWeight: 600,
+              background: st.bg, color: st.color, border: st.border || 'none',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.10)',
+            }}
+          >
+            <ExternalLink size={15} />
+            Agende comigo no OrbiNutri
+          </a>
+        </div>
+
+        {/* Seletor de estilo */}
+        <div style={{ display: 'flex', gap: 6 }}>
+          {BADGE_STYLES.map(b => (
+            <button
+              key={b.id}
+              onClick={() => setActiveStyle(b.id)}
+              style={{
+                flex: 1, padding: '6px 8px', borderRadius: 7, fontSize: 11, fontWeight: 500,
+                cursor: 'pointer', fontFamily: 'inherit', transition: 'all 150ms',
+                border: activeStyle === b.id ? `2px solid ${T.green}` : `1px solid ${T.border}`,
+                background: activeStyle === b.id ? T.green + '10' : T.bg,
+                color: activeStyle === b.id ? T.green : T.muted,
+              }}
+            >
+              {b.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Código HTML */}
+        <div style={{ position: 'relative' }}>
+          <pre style={{
+            margin: 0, padding: '12px 14px', background: '#0f172a', borderRadius: 8,
+            fontSize: 11, color: '#94a3b8', overflowX: 'auto', lineHeight: 1.6,
+            fontFamily: "'Fira Code', 'Cascadia Code', monospace",
+            whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+          }}>
+            {html}
+          </pre>
+          <button
+            onClick={copyBadge}
+            style={{
+              position: 'absolute', top: 8, right: 8,
+              display: 'flex', alignItems: 'center', gap: 4,
+              padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              background: copied ? '#16a34a' : '#1e293b',
+              color: copied ? '#fff' : '#94a3b8',
+              transition: 'all 150ms',
+            }}
+          >
+            {copied ? <Check size={11} /> : <Copy size={11} />}
+            {copied ? 'Copiado!' : 'Copiar'}
+          </button>
+        </div>
+
+        <p style={{ margin: 0, fontSize: 11, color: T.muted }}>
+          Funciona em qualquer site, WordPress, Linktree ou e-mail marketing.
+        </p>
+      </div>
+    </Panel>
+  )
 }
 
 /* ─── Page ───────────────────────────────────── */
@@ -1070,6 +1201,7 @@ export function Vitrine() {
               <div style={{ padding: '14px 20px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {profileUrl && <CopyField label="Perfil público" value={profileUrl} />}
                 {bookingUrl && <CopyField label="Link de agendamento" value={bookingUrl} />}
+                {acct?.id && <CopyField label="Link para avaliação" value={`${BASE_URL}/avaliar/${acct.id}`} />}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', marginTop: 2 }}>
                   <span style={{ fontSize: 10, color: T.muted }}>Cole em:</span>
                   {['Bio do Instagram', 'WhatsApp', 'E-mail', 'Cartão de visitas'].map(t => (
@@ -1079,6 +1211,9 @@ export function Vitrine() {
               </div>
             </Panel>
           )}
+
+          {/* Badge embedável */}
+          <BadgeSection acct={acct} name={form.screen_name_natural || co.screen_name} />
         </div>
       </div>
     </div>

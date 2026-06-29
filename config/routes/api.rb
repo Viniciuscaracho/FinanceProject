@@ -16,9 +16,15 @@ namespace :api, defaults: { format: 'json' } do
       get 'appointment_data/:token/config', to: 'appointment_data#link_config'
       get 'appointment_data/:token/full', to: 'appointment_data#full'
 
+      # Avaliações públicas de profissionais
+      get  'reviews/profile/:id',   to: 'reviews#profile_for_review'
+      get  'reviews/:account_id',   to: 'reviews#index'
+      post 'reviews/:account_id',   to: 'reviews#create'
+
       # Vitrine pública — descobrir profissionais
       get    'discover',             to: 'discover#index'
       get    'discover/categories',  to: 'discover#categories'
+      get    'discover/sitemap',     to: 'discover#sitemap'
       get    'discover/:id',         to: 'discover#show'
       delete 'discover/:id',         to: 'discover#hide'
 

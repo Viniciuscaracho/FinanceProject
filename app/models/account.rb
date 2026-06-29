@@ -165,6 +165,7 @@ class Account < ApplicationRecord
   has_one :webhook,              class_name: 'Webhook', inverse_of: :account, dependent: :destroy
   has_one  :whatsapp_config,    dependent: :destroy
   has_many :whatsapp_messages,  dependent: :destroy
+  has_many :reviews,            dependent: :destroy
 
   # integrations
   has_many :integration_stores, dependent: :delete_all

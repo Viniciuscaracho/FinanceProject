@@ -17,11 +17,16 @@ import { LandingPage, Dashboard, PublicAppointmentBooking, AppointmentManage, Pu
 import { TermsAcceptanceModal } from './components/TermsAcceptanceModal'
 import { Analytics } from './components/Analytics'
 
-const LandingPageNutri  = lazy(() => import('./pages/LandingPageNutri').then(m => ({ default: m.LandingPageNutri })))
-const GoogleAuthCallback = lazy(() => import('./pages/GoogleAuthCallback').then(m => ({ default: m.GoogleAuthCallback })))
-const PrivacyPolicy     = lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })))
-const TermsOfUse        = lazy(() => import('./pages/TermsOfUse').then(m => ({ default: m.TermsOfUse })))
-const PublicMealPlan    = lazy(() => import('./pages/PublicMealPlan'))
+const LandingPageNutri       = lazy(() => import('./pages/LandingPageNutri').then(m => ({ default: m.LandingPageNutri })))
+const GoogleAuthCallback     = lazy(() => import('./pages/GoogleAuthCallback').then(m => ({ default: m.GoogleAuthCallback })))
+const PrivacyPolicy          = lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })))
+const TermsOfUse             = lazy(() => import('./pages/TermsOfUse').then(m => ({ default: m.TermsOfUse })))
+const PublicMealPlan         = lazy(() => import('./pages/PublicMealPlan'))
+const NutritionistDirectory  = lazy(() => import('./pages/NutritionistDirectory'))
+const NutritionistProfile    = lazy(() => import('./pages/NutritionistProfile'))
+const NutritionistNearMe     = lazy(() => import('./pages/NutritionistNearMe'))
+const PublicReviewForm       = lazy(() => import('./pages/PublicReviewForm'))
+const OgImageTemplate        = lazy(() => import('./pages/OgImageTemplate'))
 
 const isNutriDomain = window.location.hostname.includes('orbinutri')
 import './App.css'
@@ -105,6 +110,32 @@ function AppContent() {
         } />
         <Route path="/descobrir/:id" element={
           <Suspense fallback={<PageSkeleton />}><PublicProfessionalProfile /></Suspense>
+        } />
+
+        {/* SEO directory — /nutricionistas/* */}
+        <Route path="/nutricionistas/perto-de-mim" element={
+          <Suspense fallback={<PageSkeleton />}><NutritionistNearMe /></Suspense>
+        } />
+        <Route path="/nutricionistas" element={
+          <Suspense fallback={<PageSkeleton />}><NutritionistDirectory /></Suspense>
+        } />
+        <Route path="/nutricionistas/especialidade/:spec" element={
+          <Suspense fallback={<PageSkeleton />}><NutritionistDirectory /></Suspense>
+        } />
+        <Route path="/nutricionistas/:cidade" element={
+          <Suspense fallback={<PageSkeleton />}><NutritionistDirectory /></Suspense>
+        } />
+        <Route path="/nutricionistas/:cidade/:segment" element={
+          <Suspense fallback={<PageSkeleton />}><NutritionistDirectory /></Suspense>
+        } />
+        <Route path="/nutricionista/:slug" element={
+          <Suspense fallback={<PageSkeleton />}><NutritionistProfile /></Suspense>
+        } />
+        <Route path="/avaliar/:id" element={
+          <Suspense fallback={<PageSkeleton />}><PublicReviewForm /></Suspense>
+        } />
+        <Route path="/og/nutricionista/:slug" element={
+          <Suspense fallback={null}><OgImageTemplate /></Suspense>
         } />
         <Route path="/agendar/:token" element={
           <Suspense fallback={<PageSkeleton />}><PublicAppointmentBooking /></Suspense>

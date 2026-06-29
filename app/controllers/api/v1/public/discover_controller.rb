@@ -33,14 +33,31 @@ module Api
           end
 
           # Campo único "cidade ou bairro" — busca em city E district, sem exigir acento
-          if params[:city].present?
+          if params[:city].present? || params[:district].present?
             accounts_query = accounts_query.joins(
               "LEFT JOIN addresses ON addresses.addressable_id = people.id " \
               "AND addresses.addressable_type = 'Person'"
             )
+            if params[:district].present?
+              accounts_query = accounts_query.where(
+                "unaccent(addresses.district) ILIKE unaccent(:d)", d: "%#{params[:district]}%"
+              )
+              if params[:city].present?
+                accounts_query = accounts_query.where(
+                  "unaccent(addresses.city) ILIKE unaccent(:c)", c: "%#{params[:city]}%"
+                )
+              end
+            else
+              accounts_query = accounts_query.where(
+                "unaccent(addresses.city) ILIKE unaccent(:loc) OR unaccent(addresses.district) ILIKE unaccent(:loc)",
+                loc: "%#{params[:city]}%"
+              )
+            end
+          end
+
+          if params[:specialty].present?
             accounts_query = accounts_query.where(
-              "unaccent(addresses.city) ILIKE unaccent(:loc) OR unaccent(addresses.district) ILIKE unaccent(:loc)",
-              loc: "%#{params[:city]}%"
+              "? = ANY(accounts.specialties)", params[:specialty]
             )
           end
 
@@ -60,9 +77,25 @@ module Api
           total      = accounts_query.distinct.count
           page       = [params[:page].to_i, 0].max
           has_logo   = "EXISTS(SELECT 1 FROM active_storage_attachments asa WHERE asa.record_type = 'Person' AND asa.record_id = people.id AND asa.name = 'logo')"
+
+          # Ordenação por distância quando lat/lng fornecidos
+          order_clause = if params[:lat].present? && params[:lng].present?
+            lat = params[:lat].to_f; lng = params[:lng].to_f
+            dist_sql = "(6371 * acos(LEAST(1, cos(radians(#{lat})) * cos(radians(addr_b.latitude)) * cos(radians(addr_b.longitude) - radians(#{lng})) + sin(radians(#{lat})) * sin(radians(addr_b.latitude)))))"
+            # Reusa o join de bounds se já existir, senão adiciona
+            unless params[:sw_lat].present?
+              accounts_query = accounts_query.joins(
+                "LEFT JOIN addresses addr_b ON addr_b.addressable_id = people.id AND addr_b.addressable_type = 'Person'"
+              )
+            end
+            "#{dist_sql} ASC NULLS LAST"
+          else
+            "has_logo DESC, accounts.id DESC"
+          end
+
           ids        = accounts_query
                          .select("accounts.id, (#{has_logo}) AS has_logo")
-                         .order(Arel.sql("has_logo DESC, accounts.id DESC"))
+                         .order(Arel.sql(order_clause))
                          .distinct
                          .limit(PAGE_SIZE)
                          .offset(page * PAGE_SIZE)
@@ -76,8 +109,12 @@ module Api
         end
 
         def show
+          # Suporta tanto ID numérico quanto slug (nome-id, ex: "camila-rocha-42")
+          raw = params[:id].to_s
+          account_id = raw =~ /\A\d+\z/ ? raw.to_i : raw.split('-').last.to_i
+
           account = Account.includes(company: [:address, { logo_attachment: :blob }, { cover_image_attachment: :blob }], services: [], appointment_links: [])
-                           .find_by(id: params[:id], directory_visible: true, suspended: false)
+                           .find_by(id: account_id, directory_visible: true, suspended: false)
           return render json: { error: 'Profissional não encontrado' }, status: :not_found unless account
 
           account.increment!(:profile_views)
@@ -85,6 +122,34 @@ module Api
         rescue StandardError => e
           Rails.logger.error "Discover error: #{e.class}: #{e.message}"
           render json: { error: 'Erro interno do servidor' }, status: :internal_server_error
+        end
+
+        def sitemap
+          accounts = Account
+            .joins(:company)
+            .where(directory_visible: true, suspended: false, discarded_at: nil)
+            .includes(company: [:address])
+            .select('accounts.id, accounts.specialties, accounts.profession_category, people.screen_name, people.first_name, people.last_name')
+
+          entries = accounts.map do |a|
+            company = a.company
+            name    = (company&.screen_name.presence || "#{company&.first_name} #{company&.last_name}").strip
+            slug    = "#{name.downcase.gsub(/[^a-z0-9]+/, '-').gsub(/^-|-$/, '')}-#{a.id}"
+            city    = company&.address&.city
+            district = company&.address&.district
+            { id: a.id, slug: slug, city: city, district: district, specialties: a.specialties }
+          end
+
+          cities      = entries.map { |e| e[:city] }.compact.uniq.sort
+          districts   = entries.filter_map { |e| [e[:city], e[:district]] if e[:city] && e[:district] }.uniq
+          specialties = entries.flat_map { |e| e[:specialties] }.compact.uniq.sort
+
+          render json: {
+            profiles:    entries.map { |e| e.slice(:id, :slug) },
+            cities:      cities,
+            districts:   districts,
+            specialties: specialties
+          }
         end
 
         def hide

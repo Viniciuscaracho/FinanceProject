@@ -1713,6 +1713,23 @@ class ApiService {
     return this.request(`/public/discover/${id}`, { method: 'DELETE' })
   }
 
+  // ── Reviews ──────────────────────────────────────────────────────────────────
+
+  async getReviewProfile(accountId) {
+    return this.request(`/public/reviews/profile/${accountId}`)
+  }
+
+  async getReviews(accountId) {
+    return this.request(`/public/reviews/${accountId}`)
+  }
+
+  async submitReview(accountId, data) {
+    return this.request(`/public/reviews/${accountId}`, {
+      method: 'POST',
+      body: JSON.stringify({ review: data }),
+    })
+  }
+
   // ── Google Calendar ──────────────────────────────────────────────────────────
 
   async getGoogleCalendarStatus() {

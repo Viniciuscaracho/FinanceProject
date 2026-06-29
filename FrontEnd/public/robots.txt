@@ -17,6 +17,9 @@ Disallow: /plano/
 # Páginas públicas indexáveis
 Allow: /
 Allow: /descobrir
+Allow: /nutricionistas
+Allow: /nutricionistas/
+Allow: /nutricionista/
 Allow: /politica-de-privacidade
 Allow: /termos-de-uso
 
