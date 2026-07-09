@@ -2170,6 +2170,43 @@ class ApiService {
     if (!res.ok) throw new Error(data.error || 'Plano não encontrado')
     return data
   }
+
+  // ── Coaching ──────────────────────────────────────────────────────────────────
+
+  async getCoachingProfile(contactId) {
+    return this.request(`/coaching/contacts/${contactId}/coaching_profile`)
+  }
+
+  async updateCoachingProfile(contactId, data) {
+    return this.request(`/coaching/contacts/${contactId}/coaching_profile`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getCoachingAlerts() {
+    return this.request('/coaching/alerts')
+  }
+
+  async getTimelineEvents(contactId, q) {
+    const qs = q ? `?q=${encodeURIComponent(q)}` : ''
+    return this.request(`/coaching/contacts/${contactId}/timeline_events${qs}`)
+  }
+
+  async createTimelineEvent(contactId, rawInput) {
+    return this.request(`/coaching/contacts/${contactId}/timeline_events`, {
+      method: 'POST',
+      body: JSON.stringify({ raw_input: rawInput }),
+    })
+  }
+
+  async getPreVisitSummary(appointmentId) {
+    return this.request(`/appointments/${appointmentId}/pre_visit_summary`, { method: 'POST' })
+  }
+
+  async createFeedbackDraft(contactId) {
+    return this.request(`/coaching/contacts/${contactId}/feedback_draft`, { method: 'POST' })
+  }
 }
 
 export const apiService = new ApiService(); 

@@ -1,5 +1,31 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: reviews
+#
+#  id             :bigint           not null, primary key
+#  approved       :boolean          default(TRUE), not null
+#  comment        :text
+#  rating         :integer          not null
+#  reviewer_email :string
+#  reviewer_name  :string           not null
+#  source         :string           default("direct")
+#  created_at     :datetime         not null
+#  updated_at     :datetime         not null
+#  account_id     :bigint           not null
+#  appointment_id :bigint
+#
+# Indexes
+#
+#  index_reviews_on_account_id               (account_id)
+#  index_reviews_on_account_id_and_approved  (account_id,approved)
+#  index_reviews_on_created_at               (created_at)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#
 class Review < ApplicationRecord
   belongs_to :account
 

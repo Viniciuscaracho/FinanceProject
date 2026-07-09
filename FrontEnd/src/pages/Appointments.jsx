@@ -48,6 +48,7 @@ import {
   Trash2,
   Download,
   CalendarDays,
+  Brain,
 } from 'lucide-react'
 import { apiService } from '../lib/api'
 import { format } from 'date-fns'
@@ -111,6 +112,12 @@ function AppointmentsPage() {
     setNewlyCreatedAppointment,
   } = useAppointmentsContext()
   
+  // Estados para resumo pré-atendimento
+  const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false)
+  const [summaryText, setSummaryText] = useState('')
+  const [loadingSummary, setLoadingSummary] = useState(false)
+  const [summaryAppointment, setSummaryAppointment] = useState(null)
+
   // Estados para aba de Anotações
   const [notesSearchTerm, setNotesSearchTerm] = useState('')
   const [notesStatusFilter, setNotesStatusFilter] = useState('all')
@@ -161,6 +168,21 @@ function AppointmentsPage() {
   const handleOpenConsultation = (appointment) => {
     const contactId = appointment.client?.id || appointment.contact?.id || appointment.contact_id
     if (contactId) navigate(`/contacts/${contactId}`)
+  }
+
+  const handlePreVisitSummary = async (appointment) => {
+    setSummaryAppointment(appointment)
+    setSummaryText('')
+    setIsSummaryDialogOpen(true)
+    setLoadingSummary(true)
+    try {
+      const data = await apiService.getPreVisitSummary(appointment.id)
+      setSummaryText(data.summary || 'Sem resumo gerado.')
+    } catch (err) {
+      setSummaryText('Erro ao gerar resumo: ' + (err.message || 'tente novamente.'))
+    } finally {
+      setLoadingSummary(false)
+    }
   }
 
   // Aba de Anotações: deriva dos appointments já carregados pelo contexto (sem nova requisição)
@@ -603,6 +625,14 @@ function AppointmentsPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => handlePreVisitSummary(appointment)}
+                                title="Preparar atendimento (resumo IA)"
+                              >
+                                <Brain className="h-4 w-4 text-violet-500" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleOpenConsultation(appointment)}
                                 title="Abrir atendimento"
                               >
@@ -708,6 +738,54 @@ function AppointmentsPage() {
                   ) : (
                     'Salvar'
                   )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Dialog de resumo pré-atendimento */}
+          <Dialog open={isSummaryDialogOpen} onOpenChange={setIsSummaryDialogOpen}>
+            <DialogContent className="sm:max-w-2xl overflow-y-auto max-h-[90vh]">
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-10 h-10 rounded-[10px] bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center flex-shrink-0">
+                    <Brain className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                  </div>
+                  <div>
+                    <DialogTitle style={{ margin: 0 }}>Preparar Atendimento</DialogTitle>
+                    <DialogDescription style={{ margin: 0 }}>
+                      Resumo gerado por IA com base no histórico do atleta.
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+              {summaryAppointment && (
+                <div className="flex flex-wrap gap-3 p-3 rounded-lg bg-muted/50 border border-border/60 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5 flex-shrink-0" />
+                    {summaryAppointment.contact?.name || summaryAppointment.client?.name || summaryAppointment.whatsapp_number || '-'}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <CalendarDays className="h-3.5 w-3.5 flex-shrink-0" />
+                    {format(new Date(summaryAppointment.start_time), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  </span>
+                </div>
+              )}
+              <div className="min-h-[120px]">
+                {loadingSummary ? (
+                  <div className="flex items-center gap-2 text-muted-foreground py-8 justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Gerando resumo com IA...</span>
+                  </div>
+                ) : (
+                  <div className="whitespace-pre-wrap text-sm leading-relaxed p-1">
+                    {summaryText}
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsSummaryDialogOpen(false)}>
+                  Fechar
                 </Button>
               </DialogFooter>
             </DialogContent>

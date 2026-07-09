@@ -155,6 +155,9 @@ gem 'wicked', '~> 2.0'
 gem 'with_advisory_lock', '~> 5.0'
 gem 'workflow-activerecord', '~> 6.0'
 
+# Anthropic / Claude AI
+gem 'anthropic', '~> 0.3'
+
 # API Documentation
 gem 'rswag-api', '~> 2.13'
 gem 'rswag-ui', '~> 2.13'

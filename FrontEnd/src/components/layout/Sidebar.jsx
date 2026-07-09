@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import {
-  Home, CreditCard, Users, BarChart3, Upload, FileText,
+  Home, Users,
   X, ChevronLeft, ChevronRight, ChevronDown,
-  Calendar, Apple, Clock, Link2, Crown, Shield, Percent, FileEdit, Globe, ClipboardList, UtensilsCrossed,
+  Calendar, Apple, Clock, Link2, Crown, Shield, FileEdit, Globe, ClipboardList, UtensilsCrossed, Brain,
 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useAuth } from '../../contexts/AuthContext'
@@ -18,7 +18,7 @@ const NAV = [
       { icon: Home,       label: 'Início',       path: '/' },
       { icon: Calendar,   label: 'Agendamentos', path: '/appointments' },
       { icon: Users,      label: 'Pacientes',    path: '/contacts' },
-      { icon: CreditCard, label: 'Transações',   path: '/transactions' },
+      { icon: Brain,      label: 'Coaching',     path: '/coaching' },
       { icon: Globe,      label: 'Vitrine',      path: '/vitrine' },
     ],
   },
@@ -34,17 +34,6 @@ const NAV = [
       { icon: FileEdit,         label: 'Documentos',    path: '/document-templates' },
       { icon: ClipboardList,    label: 'Anamnese',      path: '/anamnese' },
       { icon: UtensilsCrossed,  label: 'Modelos Alim.', path: '/meal-plan-templates' },
-    ],
-  },
-  {
-    label: 'Avançado',
-    collapsible: true,
-    storageKey: 'orbi_advanced_nav',
-    items: [
-      { icon: BarChart3, label: 'Relatórios',  path: '/reports' },
-      { icon: Percent,   label: 'Comissões',   path: '/commissions' },
-      { icon: Upload,    label: 'Importações', path: '/imports' },
-      { icon: FileText,  label: 'Conciliações', path: '/reconciliations' },
     ],
   },
   {

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_06_13_105457) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_09_100002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -388,6 +388,21 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_13_105457) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["country", "code"], name: "index_banks_on_country_and_code", unique: true
+  end
+
+  create_table "coaching_profiles", force: :cascade do |t|
+    t.bigint "contact_id", null: false
+    t.bigint "account_id", null: false
+    t.text "goal"
+    t.text "limitations"
+    t.datetime "next_reassessment_at"
+    t.datetime "last_feedback_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "last_feedback_at"], name: "index_coaching_profiles_on_account_id_and_last_feedback_at"
+    t.index ["account_id", "next_reassessment_at"], name: "index_coaching_profiles_on_account_id_and_next_reassessment_at"
+    t.index ["account_id"], name: "index_coaching_profiles_on_account_id"
+    t.index ["contact_id"], name: "index_coaching_profiles_on_contact_id"
   end
 
   create_table "company_nfse_configs", force: :cascade do |t|
@@ -995,6 +1010,22 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_13_105457) do
     t.index ["synced_by_id"], name: "index_relationship_stores_on_synced_by_id"
   end
 
+  create_table "reviews", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "reviewer_name", null: false
+    t.string "reviewer_email"
+    t.integer "rating", null: false
+    t.text "comment"
+    t.boolean "approved", default: true, null: false
+    t.string "source", default: "direct"
+    t.bigint "appointment_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "approved"], name: "index_reviews_on_account_id_and_approved"
+    t.index ["account_id"], name: "index_reviews_on_account_id"
+    t.index ["created_at"], name: "index_reviews_on_created_at"
+  end
+
   create_table "secondary_cnaes", force: :cascade do |t|
     t.bigint "person_id", null: false
     t.bigint "cnae_id", null: false
@@ -1217,6 +1248,22 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_13_105457) do
     t.datetime "updated_at", null: false
     t.integer "taggings_count", default: 0
     t.index ["name"], name: "index_tags_on_name", unique: true
+  end
+
+  create_table "timeline_events", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.bigint "account_user_id"
+    t.text "raw_input"
+    t.string "source", default: "manual"
+    t.string "sono"
+    t.string "carga"
+    t.text "observacao"
+    t.text "proxima_acao"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "contact_id", "created_at"], name: "idx_timeline_events_account_contact_date"
+    t.index ["account_id"], name: "index_timeline_events_on_account_id"
   end
 
   create_table "transactions", force: :cascade do |t|
@@ -1467,6 +1514,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_13_105457) do
   add_foreign_key "bank_accounts", "banks"
   add_foreign_key "bank_accounts", "users", column: "created_by_id"
   add_foreign_key "bank_accounts", "users", column: "updated_by_id"
+  add_foreign_key "coaching_profiles", "accounts"
+  add_foreign_key "coaching_profiles", "people", column: "contact_id"
   add_foreign_key "company_nfse_configs", "people", column: "company_id"
   add_foreign_key "contracts", "document_templates", column: "contract_template_id"
   add_foreign_key "contracts", "people", column: "contact_id"
@@ -1507,6 +1556,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_13_105457) do
   add_foreign_key "relationship_stores", "accounts"
   add_foreign_key "relationship_stores", "integration_stores"
   add_foreign_key "relationship_stores", "users", column: "synced_by_id"
+  add_foreign_key "reviews", "accounts"
   add_foreign_key "secondary_cnaes", "enums", column: "cnae_id"
   add_foreign_key "secondary_cnaes", "people"
   add_foreign_key "segments", "segments", column: "parent_id"
@@ -1527,6 +1577,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_06_13_105457) do
   add_foreign_key "subscription_invoices", "subscriptions"
   add_foreign_key "subscriptions", "accounts"
   add_foreign_key "taggings", "tags"
+  add_foreign_key "timeline_events", "account_users"
+  add_foreign_key "timeline_events", "accounts"
+  add_foreign_key "timeline_events", "people", column: "contact_id"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "appointments"
   add_foreign_key "transactions", "bank_accounts"

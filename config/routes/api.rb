@@ -311,6 +311,23 @@ namespace :api, defaults: { format: 'json' } do
       get 'webhook', to: 'whats_app_webhook#verify'
     end
     
+    # Coaching layer
+    namespace :coaching do
+      get 'alerts', to: 'alerts#index'
+      resources :contacts, only: [] do
+        resources :timeline_events, only: %i[index create]
+        resource :coaching_profile, only: %i[show update]
+        member do
+          post :feedback_draft, to: 'feedback_drafts#create'
+        end
+      end
+    end
+    resources :appointments, only: [] do
+      member do
+        post :pre_visit_summary, to: 'coaching/pre_visit_summaries#create'
+      end
+    end
+
     # Admin routes (exclusivo para dono do sistema)
     get 'admin/dashboard', to: 'admin#dashboard'
     

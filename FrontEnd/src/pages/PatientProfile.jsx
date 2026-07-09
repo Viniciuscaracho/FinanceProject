@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Mail, Phone, FileText, Target, ClipboardList, Calendar, TrendingUp, Copy, ExternalLink, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Link2, UtensilsCrossed, Paperclip, Upload, Download, Eye, AlertCircle, CheckCircle2, MessageCircle, History } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, FileText, Target, ClipboardList, Calendar, TrendingUp, Copy, ExternalLink, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Link2, UtensilsCrossed, Paperclip, Upload, Download, Eye, AlertCircle, CheckCircle2, MessageCircle, History, Brain, Search, Mic, MicOff } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { toast } from 'sonner'
 import { apiService } from '@/lib/api'
@@ -511,10 +511,24 @@ export function PatientProfile() {
   const [newDoc, setNewDoc]               = useState({ title: '', document_type: 'plano_alimentar', content: '' })
   const [savingDoc, setSavingDoc]         = useState(false)
 
+  // Coaching
+  const [timelineEvents, setTimelineEvents]     = useState([])
+  const [coachingInput, setCoachingInput]       = useState('')
+  const [savingCoaching, setSavingCoaching]     = useState(false)
+  const [coachingSearch, setCoachingSearch]     = useState('')
+  const [feedbackDraft, setFeedbackDraft]       = useState(null)
+  const [loadingDraft, setLoadingDraft]         = useState(false)
+  const [isRecording, setIsRecording]           = useState(false)
+  const recognitionRef = useRef(null)
+  const [coachingProfile, setCoachingProfile]   = useState(null)
+  const [editingProfile, setEditingProfile]     = useState(false)
+  const [profileForm, setProfileForm]           = useState({ goal: '', limitations: '', next_reassessment_at: '' })
+  const [savingProfile, setSavingProfile]       = useState(false)
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [contactRes, goalsRes, docsRes, anamneseRes, plansRes, templatesRes, notesRes, docTplsRes] = await Promise.all([
+      const [contactRes, goalsRes, docsRes, anamneseRes, plansRes, templatesRes, notesRes, docTplsRes, timelineRes, profileRes] = await Promise.all([
         apiService.getContact(id),
         apiService.getPatientGoals(id).catch(() => ({ goals: [] })),
         apiService.getPatientDocuments(id).catch(() => ({ documents: [] })),
@@ -523,6 +537,8 @@ export function PatientProfile() {
         apiService.getAnamneseTemplates().catch(() => ({ templates: [] })),
         apiService.getPatientNotes(id).catch(() => ({ notes: [] })),
         apiService.getProfessionalDocumentTemplates(1, 50).catch(() => ({ templates: [] })),
+        apiService.getTimelineEvents(id).catch(() => ({ events: [] })),
+        apiService.getCoachingProfile(id).catch(() => ({ profile: null })),
       ])
       setContact(contactRes.contact || contactRes)
       setGoals(goalsRes.goals || [])
@@ -532,6 +548,10 @@ export function PatientProfile() {
       setAnamneseTemplates(templatesRes.templates || [])
       setPatientNotes(notesRes.notes || [])
       setDocTemplates(docTplsRes.templates || [])
+      setTimelineEvents(timelineRes.events || [])
+      const p = profileRes.profile || null
+      setCoachingProfile(p)
+      setProfileForm({ goal: p?.goal || '', limitations: p?.limitations || '', next_reassessment_at: p?.next_reassessment_at?.slice(0,10) || '' })
     } catch (e) {
       toast.error('Erro ao carregar perfil')
     } finally {
@@ -660,6 +680,82 @@ export function PatientProfile() {
       setSavingDoc(false)
     }
   }
+
+  // Coaching handlers
+  const handleSaveCoachingProfile = async () => {
+    setSavingProfile(true)
+    try {
+      const res = await apiService.updateCoachingProfile(id, profileForm)
+      setCoachingProfile(res.profile)
+      setEditingProfile(false)
+      toast.success('Perfil de coaching salvo')
+    } catch {
+      toast.error('Erro ao salvar perfil')
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
+  const handleCreateTimelineEvent = async () => {
+    if (!coachingInput.trim()) return
+    setSavingCoaching(true)
+    try {
+      const res = await apiService.createTimelineEvent(id, coachingInput.trim())
+      setTimelineEvents(prev => [res.event, ...prev])
+      setCoachingInput('')
+      toast.success('Registro salvo e estruturado pela IA')
+    } catch {
+      toast.error('Erro ao salvar registro')
+    } finally {
+      setSavingCoaching(false)
+    }
+  }
+
+  const handleFeedbackDraft = async () => {
+    setLoadingDraft(true)
+    setFeedbackDraft(null)
+    try {
+      const res = await apiService.createFeedbackDraft(id)
+      setFeedbackDraft(res.draft)
+    } catch {
+      toast.error('Erro ao gerar rascunho')
+    } finally {
+      setLoadingDraft(false)
+    }
+  }
+
+  const toggleRecording = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      toast.error('Reconhecimento de voz não suportado neste navegador')
+      return
+    }
+    if (isRecording) {
+      recognitionRef.current?.stop()
+      setIsRecording(false)
+      return
+    }
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'pt-BR'
+    recognition.continuous = true
+    recognition.interimResults = false
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join(' ')
+      setCoachingInput(prev => (prev ? prev + ' ' + transcript : transcript))
+    }
+    recognition.onerror = () => { setIsRecording(false); toast.error('Erro no reconhecimento de voz') }
+    recognition.onend = () => setIsRecording(false)
+    recognitionRef.current = recognition
+    recognition.start()
+    setIsRecording(true)
+  }
+
+  const filteredEvents = coachingSearch.trim()
+    ? timelineEvents.filter(e =>
+        (e.raw_input || '').toLowerCase().includes(coachingSearch.toLowerCase()) ||
+        (e.observacao || '').toLowerCase().includes(coachingSearch.toLowerCase())
+      )
+    : timelineEvents
 
   const handleOpenTemplatePicker = async () => {
     setShowTemplatePicker(true)
@@ -1203,6 +1299,143 @@ export function PatientProfile() {
                 )}
               </div>
             ))}
+          </div>
+        </Section>
+
+        {/* COACHING */}
+        <Section icon={Brain} title="Coaching" count={timelineEvents.length} defaultOpen={false}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* Perfil de coaching */}
+            {editingProfile ? (
+              <div style={{ border: `1px solid ${T.brand}30`, borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Objetivo</label>
+                  <textarea value={profileForm.goal} onChange={e => setProfileForm(p => ({ ...p, goal: e.target.value }))}
+                    rows={2} placeholder="Ex: hipertrofia, emagrecimento, melhora de desempenho..."
+                    style={{ width: '100%', padding: '8px 10px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Limitações</label>
+                  <textarea value={profileForm.limitations} onChange={e => setProfileForm(p => ({ ...p, limitations: e.target.value }))}
+                    rows={2} placeholder="Ex: dor no joelho, hérnia de disco..."
+                    style={{ width: '100%', padding: '8px 10px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Próxima reavaliação</label>
+                  <input type="date" value={profileForm.next_reassessment_at} onChange={e => setProfileForm(p => ({ ...p, next_reassessment_at: e.target.value }))}
+                    style={{ padding: '7px 10px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none' }} />
+                </div>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingProfile(false)} style={{ fontSize: 11, height: 28 }}>Cancelar</Button>
+                  <Button size="sm" onClick={handleSaveCoachingProfile} disabled={savingProfile} style={{ fontSize: 11, height: 28, gap: 4 }}>
+                    {savingProfile ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Salvar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                <div style={{ fontSize: 12, color: T.muted, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {coachingProfile?.goal && <span><strong style={{ color: T.text }}>Objetivo:</strong> {coachingProfile.goal}</span>}
+                  {coachingProfile?.limitations && <span><strong style={{ color: T.text }}>Limitações:</strong> {coachingProfile.limitations}</span>}
+                  {coachingProfile?.next_reassessment_at && <span><strong style={{ color: T.text }}>Reavaliação:</strong> {new Date(coachingProfile.next_reassessment_at).toLocaleDateString('pt-BR')}</span>}
+                  {!coachingProfile?.goal && !coachingProfile?.limitations && (
+                    <span style={{ fontStyle: 'italic' }}>Nenhum perfil preenchido</span>
+                  )}
+                </div>
+                <button type="button" onClick={() => setEditingProfile(true)}
+                  style={{ background: 'none', border: `1px solid ${T.border}`, borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: 11, color: T.brand, fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  Editar perfil
+                </button>
+              </div>
+            )}
+
+            {/* Registro rápido */}
+            <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
+              <div style={{ padding: '10px 14px 6px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.text, flex: 1 }}>Registro rápido</span>
+                <button type="button" onClick={toggleRecording} title={isRecording ? 'Parar gravação' : 'Gravar por voz'}
+                  style={{ background: isRecording ? '#EF4444' : T.chip, border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: isRecording ? '#fff' : T.brand, fontSize: 11, fontWeight: 600 }}>
+                  {isRecording ? <MicOff size={13} /> : <Mic size={13} />}
+                  {isRecording ? 'Parar' : 'Voz'}
+                </button>
+              </div>
+              <textarea
+                value={coachingInput}
+                onChange={e => setCoachingInput(e.target.value)}
+                placeholder="Cole a transcrição ou descreva o atendimento... A IA vai estruturar sono, carga, observação e próxima ação."
+                rows={4}
+                style={{ width: '100%', padding: '10px 14px', border: 'none', outline: 'none', resize: 'vertical', fontFamily: 'inherit', fontSize: 13, color: T.text, background: T.white, boxSizing: 'border-box' }}
+              />
+              <div style={{ padding: '8px 14px', borderTop: `1px solid ${T.border}`, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button size="sm" onClick={handleCreateTimelineEvent} disabled={savingCoaching || !coachingInput.trim()} style={{ fontSize: 11, gap: 6 }}>
+                  {savingCoaching ? <Loader2 size={11} className="animate-spin" /> : <Brain size={11} />}
+                  {savingCoaching ? 'Processando IA...' : 'Registrar'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Rascunho de feedback */}
+            {timelineEvents.length > 0 && (
+              <div>
+                <Button size="sm" variant="outline" onClick={handleFeedbackDraft} disabled={loadingDraft} style={{ fontSize: 12, gap: 6 }}>
+                  {loadingDraft ? <Loader2 size={12} className="animate-spin" /> : <MessageCircle size={12} />}
+                  Gerar rascunho de feedback
+                </Button>
+                {feedbackDraft && (
+                  <div style={{ marginTop: 8, padding: '12px 14px', background: T.chip, borderRadius: 8, fontSize: 13, color: T.text, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                    {feedbackDraft}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Busca na timeline */}
+            {timelineEvents.length > 0 && (
+              <div style={{ position: 'relative' }}>
+                <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: T.muted }} />
+                <input
+                  value={coachingSearch}
+                  onChange={e => setCoachingSearch(e.target.value)}
+                  placeholder="Buscar na timeline..."
+                  style={{ width: '100%', padding: '7px 12px 7px 30px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12, fontFamily: 'inherit', outline: 'none', color: T.text, boxSizing: 'border-box' }}
+                />
+              </div>
+            )}
+
+            {/* Timeline */}
+            {timelineEvents.length === 0 ? (
+              <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '8px 0' }}>
+                Nenhum registro de coaching ainda
+              </p>
+            ) : (
+              filteredEvents.map(ev => (
+                <div key={ev.id} style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                  <div style={{ padding: '8px 14px', background: '#FAFAFA', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 11, color: T.muted }}>
+                      {new Date(ev.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                    </span>
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: T.chip, color: T.brand }}>
+                      {ev.source === 'whatsapp' ? 'WhatsApp' : 'Manual'}
+                    </span>
+                  </div>
+                  <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {ev.sono && (
+                      <div style={{ fontSize: 12 }}><span style={{ fontWeight: 600, color: T.muted }}>Sono: </span><span style={{ color: T.text }}>{ev.sono}</span></div>
+                    )}
+                    {ev.carga && (
+                      <div style={{ fontSize: 12 }}><span style={{ fontWeight: 600, color: T.muted }}>Carga: </span><span style={{ color: T.text }}>{ev.carga}</span></div>
+                    )}
+                    {ev.observacao && (
+                      <div style={{ fontSize: 12 }}><span style={{ fontWeight: 600, color: T.muted }}>Observação: </span><span style={{ color: T.text }}>{ev.observacao}</span></div>
+                    )}
+                    {ev.proxima_acao && (
+                      <div style={{ fontSize: 12 }}><span style={{ fontWeight: 600, color: T.muted }}>Próxima ação: </span><span style={{ color: T.text }}>{ev.proxima_acao}</span></div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </Section>
 

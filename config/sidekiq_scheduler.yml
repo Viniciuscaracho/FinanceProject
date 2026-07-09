@@ -26,3 +26,7 @@ trial_expiry_reminders:
     cron: '0 8 * * * America/Sao_Paulo'
     class: TrialExpiryReminderJob
     enabled: true
+coaching_alerts_daily:
+    cron: '0 8 * * * America/Sao_Paulo'
+    class: CoachingAlertsJob
+    enabled: true

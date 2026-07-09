@@ -38,12 +38,14 @@ export const PatientProfile = lazy(() => import('../pages/PatientProfile').then(
 export const MealPlanBuilder         = lazy(() => import('../pages/MealPlanBuilder'))
 export const MealPlanTemplates       = lazy(() => import('../pages/MealPlanTemplates'))
 export const MealPlanTemplateBuilder = lazy(() => import('../pages/MealPlanTemplateBuilder'))
+export const CoachingDashboard = lazy(() => import('../pages/CoachingDashboard').then(m => ({ default: m.CoachingDashboard })))
 
 export const protectedRoutes = [
   { path: '/',                              element: Dashboard },
   { path: '/transactions',                  element: Transactions },
   { path: '/contacts',                      element: Contacts },
   { path: '/contacts/:id',                  element: PatientProfile },
+  { path: '/coaching',                      element: CoachingDashboard },
   { path: '/contacts/:contactId/meal-plans/:planId', element: MealPlanBuilder },
   { path: '/meal-plan-templates',                   element: MealPlanTemplates },
   { path: '/meal-plan-templates/:templateId',        element: MealPlanTemplateBuilder },
