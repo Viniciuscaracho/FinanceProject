@@ -238,6 +238,30 @@ module WhatsApp
         config&.configured? || false
       end
 
+      # Baixa um arquivo de mídia (áudio, imagem) via Evolution API e retorna
+      # { base64:, mimetype:, filename: } ou nil em caso de falha.
+      def download_media(account:, message_key:, message_body:)
+        params = effective_params(account)
+        return nil unless params
+
+        response = HTTParty.post(
+          "#{params[:base_url]}/chat/getBase64FromMediaMessage/#{params[:instance]}",
+          headers: { 'Content-Type' => 'application/json', 'apikey' => params[:api_key] },
+          body: { message: { key: message_key, message: message_body }, convertToMp4: false }.to_json,
+          timeout: 30
+        )
+
+        return nil unless response.success?
+
+        body = response.parsed_response
+        return nil if body['base64'].blank?
+
+        { base64: body['base64'], mimetype: body['mimetype'].presence || 'audio/ogg', filename: body['fileName'].presence || 'audio.ogg' }
+      rescue StandardError => e
+        Rails.logger.error "[WhatsApp::EvolutionApiClient.download_media] #{e.message}"
+        nil
+      end
+
       private
 
       def post_text_message(base_url:, api_key:, instance:, phone:, message:, retries:, tag:)

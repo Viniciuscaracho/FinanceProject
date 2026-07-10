@@ -91,14 +91,40 @@ module Api
         messages = data.is_a?(Array) ? data : [data]
         messages.each do |msg|
           from    = msg.dig(:key, :remoteJid) || msg[:remoteJid]
-          body    = msg.dig(:message, :conversation) || msg.dig(:message, :extendedTextMessage, :text)
-          next if from.blank? || body.blank?
+          next if from.blank?
+          next if from.include?('@g.us') # ignora grupos
 
-          WhatsApp::ProcessMessageJob.perform_later(
-            account_id:      account.id,
-            message:         body,
-            whatsapp_number: from.split('@').first
-          )
+          from_me = msg.dig(:key, :fromMe)
+
+          # Áudio PTT enviado pelo treinador → transcrição Whisper → coaching
+          if msg.dig(:message, :audioMessage).present? && from_me
+            msg_hash  = msg.respond_to?(:to_unsafe_h) ? msg.to_unsafe_h : msg.to_h
+            ::Coaching::ProcessWhatsappAudioJob.perform_later(
+              account_id:   account.id,
+              message_key:  msg_hash['key']  || {},
+              message_body: msg_hash['message'] || {},
+              from:         from.split('@').first
+            )
+            next
+          end
+
+          body = msg.dig(:message, :conversation) || msg.dig(:message, :extendedTextMessage, :text)
+          next if body.blank?
+
+          # Texto do próprio treinador = nota sobre atleta (formato "Nome: texto")
+          if from_me
+            ::Coaching::ProcessWhatsappMessageJob.perform_later(
+              account_id:      account.id,
+              message:         body,
+              whatsapp_number: from.split('@').first
+            )
+          else
+            WhatsApp::ProcessMessageJob.perform_later(
+              account_id:      account.id,
+              message:         body,
+              whatsapp_number: from.split('@').first
+            )
+          end
         end
       end
 
