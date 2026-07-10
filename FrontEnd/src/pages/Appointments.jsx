@@ -118,6 +118,21 @@ function AppointmentsPage() {
   const [loadingSummary, setLoadingSummary] = useState(false)
   const [summaryAppointment, setSummaryAppointment] = useState(null)
 
+  // Alertas de coaching indexados por contact_id
+  const [coachingAlertMap, setCoachingAlertMap] = useState({})
+  useEffect(() => {
+    apiService.getCoachingDashboard()
+      .then(res => {
+        const map = {}
+        ;(res.alerts || []).forEach(a => {
+          if (!map[a.contact_id]) map[a.contact_id] = []
+          map[a.contact_id].push(a)
+        })
+        setCoachingAlertMap(map)
+      })
+      .catch(() => {})
+  }, [])
+
   // Estados para aba de Anotações
   const [notesSearchTerm, setNotesSearchTerm] = useState('')
   const [notesStatusFilter, setNotesStatusFilter] = useState('all')
@@ -626,9 +641,11 @@ function AppointmentsPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handlePreVisitSummary(appointment)}
-                                title="Preparar atendimento (resumo IA)"
+                                title="Preparar atendimento"
+                                className="gap-1.5 text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20"
                               >
-                                <Brain className="h-4 w-4 text-violet-500" />
+                                <Brain className="h-3.5 w-3.5" />
+                                <span className="text-xs font-medium">Preparar</span>
                               </Button>
                               <Button
                                 variant="ghost"
@@ -778,12 +795,20 @@ function AppointmentsPage() {
                     <span>Gerando resumo com IA...</span>
                   </div>
                 ) : (
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed p-1">
-                    {summaryText}
-                  </div>
+                  <SummaryContent text={summaryText} />
                 )}
               </div>
-              <DialogFooter>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const cid = summaryAppointment?.contact?.id || summaryAppointment?.contact_id || summaryAppointment?.client?.id
+                    if (cid) { setIsSummaryDialogOpen(false); navigate(`/contacts/${cid}`) }
+                  }}
+                  disabled={!summaryAppointment?.contact?.id && !summaryAppointment?.contact_id && !summaryAppointment?.client?.id}
+                >
+                  Ver perfil do atleta
+                </Button>
                 <Button variant="outline" onClick={() => setIsSummaryDialogOpen(false)}>
                   Fechar
                 </Button>
@@ -825,6 +850,52 @@ function AppointmentsPage() {
       </Tabs>
 
       </div>
+    </div>
+  )
+}
+
+function SummaryContent({ text }) {
+  if (!text) return null
+
+  const lines = text.split('\n')
+
+  return (
+    <div className="text-sm leading-relaxed space-y-1 p-1">
+      {lines.map((line, i) => {
+        const trimmed = line.trim()
+
+        if (!trimmed) return <div key={i} className="h-2" />
+
+        // Seção ===
+        if (trimmed.startsWith('===') || trimmed.startsWith('**')) {
+          return (
+            <p key={i} className="text-xs font-bold text-muted-foreground uppercase tracking-wide pt-2">
+              {trimmed.replace(/^[=*\s]+|[=*\s]+$/g, '')}
+            </p>
+          )
+        }
+
+        // Bullet • - * ▪ →
+        if (/^[•\-\*▪→·]/.test(trimmed)) {
+          return (
+            <div key={i} className="flex gap-2 items-start">
+              <span className="text-violet-500 font-bold mt-0.5 flex-shrink-0">·</span>
+              <span>{trimmed.replace(/^[•\-\*▪→·]\s*/, '')}</span>
+            </div>
+          )
+        }
+
+        // Alertas com emoji
+        if (/^[⚠️🚨📉📅🔔ℹ️]/.test(trimmed)) {
+          return (
+            <div key={i} className="flex gap-2 items-start bg-amber-50 dark:bg-amber-900/10 rounded px-2 py-1">
+              <span>{trimmed}</span>
+            </div>
+          )
+        }
+
+        return <p key={i}>{trimmed}</p>
+      })}
     </div>
   )
 }
