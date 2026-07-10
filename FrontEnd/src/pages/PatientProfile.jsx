@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Mail, Phone, FileText, Target, ClipboardList, Calendar, TrendingUp, Copy, ExternalLink, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Link2, UtensilsCrossed, Paperclip, Upload, Download, Eye, AlertCircle, CheckCircle2, MessageCircle, History, Brain, Search, Mic, MicOff } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, FileText, Target, ClipboardList, Calendar, TrendingUp, Copy, ExternalLink, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Link2, UtensilsCrossed, Paperclip, Upload, Download, Eye, AlertCircle, CheckCircle2, MessageCircle, History, Brain, Search, Mic, MicOff, Moon, Dumbbell, StickyNote, ArrowRight } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { toast } from 'sonner'
 import { apiService } from '@/lib/api'
@@ -519,7 +519,9 @@ export function PatientProfile() {
   const [feedbackDraft, setFeedbackDraft]       = useState(null)
   const [loadingDraft, setLoadingDraft]         = useState(false)
   const [isRecording, setIsRecording]           = useState(false)
-  const recognitionRef = useRef(null)
+  const [isTranscribing, setIsTranscribing]     = useState(false)
+  const mediaRecorderRef = useRef(null)
+  const audioChunksRef   = useRef([])
   const [coachingProfile, setCoachingProfile]   = useState(null)
   const [editingProfile, setEditingProfile]     = useState(false)
   const [profileForm, setProfileForm]           = useState({ goal: '', limitations: '', next_reassessment_at: '' })
@@ -724,30 +726,48 @@ export function PatientProfile() {
     }
   }
 
-  const toggleRecording = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      toast.error('Reconhecimento de voz não suportado neste navegador')
-      return
-    }
+  const toggleRecording = async () => {
     if (isRecording) {
-      recognitionRef.current?.stop()
-      setIsRecording(false)
+      mediaRecorderRef.current?.stop()
       return
     }
-    const recognition = new SpeechRecognition()
-    recognition.lang = 'pt-BR'
-    recognition.continuous = true
-    recognition.interimResults = false
-    recognition.onresult = (e) => {
-      const transcript = Array.from(e.results).map(r => r[0].transcript).join(' ')
-      setCoachingInput(prev => (prev ? prev + ' ' + transcript : transcript))
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      audioChunksRef.current = []
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
+      const recorder = new MediaRecorder(stream, { mimeType })
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data)
+      }
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        setIsRecording(false)
+
+        const blob = new Blob(audioChunksRef.current, { type: mimeType })
+        if (blob.size === 0) return
+
+        setIsTranscribing(true)
+        try {
+          const res = await apiService.uploadAudioNote(id, blob)
+          setTimelineEvents(prev => [res.event, ...prev])
+          toast.success('Áudio transcrito e salvo')
+        } catch {
+          toast.error('Erro ao transcrever áudio')
+        } finally {
+          setIsTranscribing(false)
+        }
+      }
+
+      mediaRecorderRef.current = recorder
+      recorder.start()
+      setIsRecording(true)
+    } catch {
+      toast.error('Acesso ao microfone negado')
     }
-    recognition.onerror = () => { setIsRecording(false); toast.error('Erro no reconhecimento de voz') }
-    recognition.onend = () => setIsRecording(false)
-    recognitionRef.current = recognition
-    recognition.start()
-    setIsRecording(true)
   }
 
   const filteredEvents = coachingSearch.trim()
@@ -1354,10 +1374,12 @@ export function PatientProfile() {
             <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ padding: '10px 14px 6px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: T.text, flex: 1 }}>Registro rápido</span>
-                <button type="button" onClick={toggleRecording} title={isRecording ? 'Parar gravação' : 'Gravar por voz'}
-                  style={{ background: isRecording ? '#EF4444' : T.chip, border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: isRecording ? '#fff' : T.brand, fontSize: 11, fontWeight: 600 }}>
-                  {isRecording ? <MicOff size={13} /> : <Mic size={13} />}
-                  {isRecording ? 'Parar' : 'Voz'}
+                <button type="button" onClick={toggleRecording} disabled={isTranscribing}
+                  className={isRecording ? 'animate-pulse' : ''}
+                  title={isRecording ? 'Parar gravação' : isTranscribing ? 'Transcrevendo…' : 'Gravar por voz'}
+                  style={{ background: isRecording ? '#EF4444' : T.chip, border: 'none', borderRadius: 6, padding: '4px 8px', cursor: isTranscribing ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: isRecording ? '#fff' : T.brand, fontSize: 11, fontWeight: 600, opacity: isTranscribing ? 0.6 : 1 }}>
+                  {isTranscribing ? <Loader2 size={13} className="animate-spin" /> : isRecording ? <MicOff size={13} /> : <Mic size={13} />}
+                  {isTranscribing ? 'Transcrevendo…' : isRecording ? 'Parar' : 'Voz'}
                 </button>
               </div>
               <textarea
@@ -1390,6 +1412,11 @@ export function PatientProfile() {
               </div>
             )}
 
+            {/* Tendências — strip dos últimos 5 registros */}
+            {timelineEvents.length >= 2 && (
+              <CoachingTrends events={timelineEvents.slice(0, 5)} />
+            )}
+
             {/* Busca na timeline */}
             {timelineEvents.length > 0 && (
               <div style={{ position: 'relative' }}>
@@ -1409,32 +1436,15 @@ export function PatientProfile() {
                 Nenhum registro de coaching ainda
               </p>
             ) : (
-              filteredEvents.map(ev => (
-                <div key={ev.id} style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
-                  <div style={{ padding: '8px 14px', background: '#FAFAFA', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 11, color: T.muted }}>
-                      {new Date(ev.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                    </span>
-                    <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: T.chip, color: T.brand }}>
-                      {ev.source === 'whatsapp' ? 'WhatsApp' : 'Manual'}
-                    </span>
-                  </div>
-                  <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {ev.sono && (
-                      <div style={{ fontSize: 12 }}><span style={{ fontWeight: 600, color: T.muted }}>Sono: </span><span style={{ color: T.text }}>{ev.sono}</span></div>
-                    )}
-                    {ev.carga && (
-                      <div style={{ fontSize: 12 }}><span style={{ fontWeight: 600, color: T.muted }}>Carga: </span><span style={{ color: T.text }}>{ev.carga}</span></div>
-                    )}
-                    {ev.observacao && (
-                      <div style={{ fontSize: 12 }}><span style={{ fontWeight: 600, color: T.muted }}>Observação: </span><span style={{ color: T.text }}>{ev.observacao}</span></div>
-                    )}
-                    {ev.proxima_acao && (
-                      <div style={{ fontSize: 12 }}><span style={{ fontWeight: 600, color: T.muted }}>Próxima ação: </span><span style={{ color: T.text }}>{ev.proxima_acao}</span></div>
-                    )}
-                  </div>
+              <div style={{ position: 'relative' }}>
+                {/* linha vertical */}
+                <div style={{ position: 'absolute', left: 15, top: 8, bottom: 8, width: 2, background: T.border, borderRadius: 2 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {filteredEvents.map(ev => (
+                    <TimelineCard key={ev.id} ev={ev} />
+                  ))}
                 </div>
-              ))
+              </div>
             )}
           </div>
         </Section>
@@ -1533,6 +1543,146 @@ export function PatientProfile() {
         )}
 
       </div>
+    </div>
+  )
+}
+
+// ─── Helpers de cor para sono/carga ──────────────────────────────────────────
+
+const PAIN_WORDS = ['dor', 'lesão', 'lesao', 'machuc', 'inflamação', 'inflamacao', 'torção', 'torcao', 'bursite', 'distensão', 'distensao', 'tendinite']
+const BAD_SLEEP  = ['mal', 'ruim', 'pouco', 'insônia', 'insonia', 'agitado', 'acordou', '3h', '4h', '5h']
+const GOOD_SLEEP = ['bem', 'bom', 'boa', 'ótimo', 'otimo', '8h', '9h', '7h', 'tranquilo']
+
+function hasPain(text)   { const t = (text || '').toLowerCase(); return PAIN_WORDS.some(w => t.includes(w)) }
+function sleepQuality(text) {
+  const t = (text || '').toLowerCase()
+  if (BAD_SLEEP.some(w => t.includes(w)))  return 'bad'
+  if (GOOD_SLEEP.some(w => t.includes(w))) return 'good'
+  return 'neutral'
+}
+
+// ─── TimelineCard ─────────────────────────────────────────────────────────────
+
+function TimelineCard({ ev }) {
+  const pain     = hasPain(ev.observacao) || hasPain(ev.raw_input)
+  const sleepQ   = sleepQuality(ev.sono)
+  const dotColor = pain ? '#EF4444' : sleepQ === 'bad' ? '#F59E0B' : T.brand
+
+  return (
+    <div style={{ display: 'flex', gap: 12, paddingLeft: 8 }}>
+      {/* dot */}
+      <div style={{ flexShrink: 0, width: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 3 }}>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, border: `2px solid ${T.white}`, outline: `1.5px solid ${dotColor}`, zIndex: 1 }} />
+      </div>
+
+      {/* card */}
+      <div style={{ flex: 1, border: `1px solid ${pain ? '#EF444440' : T.border}`, borderRadius: 10, overflow: 'hidden', background: pain ? '#FFF5F5' : T.white }}>
+        {/* header */}
+        <div style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${pain ? '#EF444430' : T.border}` }}>
+          <span style={{ fontSize: 11, color: T.muted }}>
+            {new Date(ev.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+          </span>
+          <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+            {pain && <span style={{ fontSize: 10, fontWeight: 700, color: '#EF4444', background: '#FEE2E2', borderRadius: 20, padding: '1px 7px' }}>dor</span>}
+            <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 20, background: T.chip, color: T.brand }}>
+              {ev.source === 'whatsapp' ? 'WhatsApp' : ev.source === 'whisper' ? '🎤 Áudio' : 'Manual'}
+            </span>
+          </div>
+        </div>
+
+        {/* chips + fields */}
+        <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {/* chips inline: sono + carga */}
+          {(ev.sono || ev.carga) && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+              {ev.sono && (
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '2px 9px',
+                  background: sleepQ === 'bad' ? '#FEF3C7' : sleepQ === 'good' ? '#D1FAE5' : T.chip,
+                  color:      sleepQ === 'bad' ? '#92400E' : sleepQ === 'good' ? '#065F46' : T.muted,
+                }}>
+                  <Moon size={10} /> {ev.sono}
+                </span>
+              )}
+              {ev.carga && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '2px 9px', background: '#EDE9FE', color: '#5B21B6' }}>
+                  <Dumbbell size={10} /> {ev.carga}
+                </span>
+              )}
+            </div>
+          )}
+
+          {ev.observacao && (
+            <div style={{ display: 'flex', gap: 5, alignItems: 'flex-start', fontSize: 12, color: T.text }}>
+              <StickyNote size={11} style={{ color: T.muted, marginTop: 1, flexShrink: 0 }} />
+              <span style={{ lineHeight: 1.4 }}>{ev.observacao}</span>
+            </div>
+          )}
+
+          {ev.proxima_acao && (
+            <div style={{ display: 'flex', gap: 5, alignItems: 'flex-start', fontSize: 12, color: T.brand }}>
+              <ArrowRight size={11} style={{ marginTop: 1, flexShrink: 0 }} />
+              <span style={{ lineHeight: 1.4 }}>{ev.proxima_acao}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── CoachingTrends ───────────────────────────────────────────────────────────
+
+function CoachingTrends({ events }) {
+  const sonoItems  = events.filter(e => e.sono).slice(0, 4).reverse()
+  const cargaItems = events.filter(e => e.carga).slice(0, 4).reverse()
+
+  if (!sonoItems.length && !cargaItems.length) return null
+
+  return (
+    <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tendências recentes</span>
+
+      {sonoItems.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Moon size={12} style={{ color: T.muted, flexShrink: 0 }} />
+          <span style={{ fontSize: 11, color: T.muted, width: 32, flexShrink: 0 }}>Sono</span>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {sonoItems.map((e, i) => {
+              const q = sleepQuality(e.sono)
+              return (
+                <span key={i} title={e.sono} style={{
+                  fontSize: 10, fontWeight: 600, borderRadius: 20, padding: '1px 7px',
+                  background: q === 'bad' ? '#FEF3C7' : q === 'good' ? '#D1FAE5' : T.chip,
+                  color:      q === 'bad' ? '#92400E' : q === 'good' ? '#065F46' : T.muted,
+                  maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {e.sono}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {cargaItems.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Dumbbell size={12} style={{ color: T.muted, flexShrink: 0 }} />
+          <span style={{ fontSize: 11, color: T.muted, width: 32, flexShrink: 0 }}>Carga</span>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {cargaItems.map((e, i) => (
+              <span key={i} title={e.carga} style={{
+                fontSize: 10, fontWeight: 600, borderRadius: 20, padding: '1px 7px',
+                background: '#EDE9FE', color: '#5B21B6',
+                maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {e.carga}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

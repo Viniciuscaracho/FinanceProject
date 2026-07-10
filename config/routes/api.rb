@@ -305,18 +305,20 @@ namespace :api, defaults: { format: 'json' } do
     end
     
     # WhatsApp Webhook
-    namespace :whatsapp do
+    scope '/whatsapp' do
       post 'webhook', to: 'whats_app_webhook#webhook'
-      post 'webhook/:account_id', to: 'whats_app_webhook#webhook' # Versão com account_id na URL
+      post 'webhook/:account_id', to: 'whats_app_webhook#webhook'
       get 'webhook', to: 'whats_app_webhook#verify'
     end
     
     # Coaching layer
     namespace :coaching do
       get 'alerts', to: 'alerts#index'
+      get 'dashboard', to: 'dashboard#index'
       resources :contacts, only: [] do
         resources :timeline_events, only: %i[index create]
         resource :coaching_profile, only: %i[show update]
+        resource :audio_notes, only: [:create]
         member do
           post :feedback_draft, to: 'feedback_drafts#create'
         end

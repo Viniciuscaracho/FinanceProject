@@ -2188,6 +2188,10 @@ class ApiService {
     return this.request('/coaching/alerts')
   }
 
+  async getCoachingDashboard() {
+    return this.request('/coaching/dashboard')
+  }
+
   async getTimelineEvents(contactId, q) {
     const qs = q ? `?q=${encodeURIComponent(q)}` : ''
     return this.request(`/coaching/contacts/${contactId}/timeline_events${qs}`)
@@ -2206,6 +2210,18 @@ class ApiService {
 
   async createFeedbackDraft(contactId) {
     return this.request(`/coaching/contacts/${contactId}/feedback_draft`, { method: 'POST' })
+  }
+
+  async uploadAudioNote(contactId, audioBlob) {
+    const formData = new FormData()
+    formData.append('audio', audioBlob, 'recording.webm')
+    const token = localStorage.getItem('auth_token')
+    const headers = token ? { Authorization: `Bearer ${token}` } : {}
+    return this.request(`/coaching/contacts/${contactId}/audio_notes`, {
+      method: 'POST',
+      body: formData,
+      headers,
+    })
   }
 }
 
