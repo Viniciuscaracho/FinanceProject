@@ -7,7 +7,7 @@
  */
 
 import { loadHarness } from "../harness/loader.js";
-import { createRepoTools } from "../llm/tools.js";
+import { createRepoTools, type AgentTool } from "../llm/tools.js";
 import type { FinalTool, LLMProvider } from "../llm/provider.js";
 import { ALL_AGENTS } from "./index.js";
 import type { AgentName, Plan, Task } from "../core/types.js";
@@ -39,6 +39,7 @@ export class Planner {
   async plan(
     task: Task,
     memory?: string,
+    mcpTools: AgentTool[] = [],
     onToolCall?: (label: string) => void,
   ): Promise<Plan> {
     const system = await loadHarness("planner");
@@ -52,7 +53,7 @@ export class Planner {
     const raw = await this.llm.runAgentLoop<Plan>({
       system,
       prompt,
-      tools: createRepoTools(task.repoRoot),
+      tools: [...createRepoTools(task.repoRoot), ...mcpTools],
       finalTool: PLAN_TOOL,
       traceLabel: "planner",
       onToolCall,

@@ -31,6 +31,9 @@ orbi-cli/
 │   ├── llm/
 │   │   ├── provider.ts          # Anthropic provider + agentic tool loop + tracing
 │   │   └── tools.ts             # repo-scoped read tools (list_dir/read_file/grep)
+│   ├── mcp/
+│   │   ├── config.ts            # load .orbi/mcp.json
+│   │   └── manager.ts           # connect MCP servers, wrap their tools as AgentTools
 │   └── core/
 │       ├── types.ts  logger.ts
 │       ├── telemetry.ts         # token/cost tracer (Observability)
@@ -73,6 +76,12 @@ Two layers of **memory** run alongside the pipeline:
 - **Short-term** — within one run, the plan brief and the agents' notes flow into
   the reviewer's prompt so it verifies with the full reasoning context.
 
+Agents reach external tools over **MCP** (Model Context Protocol). Configure
+servers in `.orbi/mcp.json` and orbi connects at the start of a run, lists each
+server's tools, and exposes them as first-class tools **alongside** the built-in
+read tools — the agents don't know or care which is which. Connections are shared
+across the parallel agents and closed when the run ends. Skip with `--no-mcp`.
+
 Every model round-trip is traced (tokens, cache, latency, estimated cost) and a
 per-stage summary is printed at the end (Observability).
 
@@ -114,7 +123,30 @@ npm run orbi -- eval evals/my-suite.json
 # Inspect or reset what the agents have learned:
 npm run orbi -- memory
 npm run orbi -- memory --clear
+
+# List the tools your configured MCP servers expose:
+npm run orbi -- mcp
 ```
+
+## MCP servers
+
+Give the agents extra tools (git, filesystem, GitHub, your own servers) by
+dropping an `.orbi/mcp.json` in the target repo — see `mcp.example.json`:
+
+```json
+{
+  "servers": {
+    "git": { "command": "uvx", "args": ["mcp-server-git", "--repository", "."] }
+  }
+}
+```
+
+Each server is launched over stdio (in the repo root), its tools are namespaced
+as `<server>__<tool>`, and they join the agents' tool set for the run. Per
+server, `tools` allowlists which tools to expose (**restrict to read-only tools**
+to keep agents exploring rather than mutating), and `disabled` turns one off.
+`orbi mcp` connects and lists what's available; a server that fails to start is
+warned and skipped, never aborting the run.
 
 Build a standalone binary:
 
@@ -137,6 +169,7 @@ can change a harness or the pipeline and *measure* the effect. See
   and register it in `agents/index.ts` + `core/types.ts` (`AgentName`).
 - **New read tool**: implement the `AgentTool` interface in `llm/tools.ts` and
   add it to `createRepoTools`.
+- **External tools via MCP**: add a server to `.orbi/mcp.json` — no code change.
 - **New validator**: implement the `Validator` interface in `core/validation.ts`.
 - **Tune planning/review**: edit `harness/planner/system.md` and
   `harness/reviewer/system.md` — no code change needed.

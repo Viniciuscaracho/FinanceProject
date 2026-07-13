@@ -23,6 +23,9 @@ import {
 } from "../core/validation.js";
 import { applyChangeSet } from "../core/workspace.js";
 import { MemoryStore, type MemoryEntry } from "../core/memory.js";
+import { loadMcpConfig } from "../mcp/config.js";
+import { McpManager } from "../mcp/manager.js";
+import type { AgentTool } from "../llm/tools.js";
 import type {
   AgentName,
   AgentResult,
@@ -55,6 +58,8 @@ export interface OrchestratorOptions {
   review?: boolean;
   /** Read/write long-term memory in `.orbi/memory.md` (default true). */
   memory?: boolean;
+  /** Connect to MCP servers from `.orbi/mcp.json` (default true when present). */
+  mcp?: boolean;
   /** Observability sink for token/cost tracing. */
   tracer?: Tracer;
 }
@@ -78,79 +83,112 @@ export class Orchestrator {
     if (memoryEnabled) await store.load();
     const mem = (scope: string) => (memoryEnabled ? store.forScope(scope) : "");
 
-    // 1. Plan.
-    const { plan, agents, brief } = await this.planStage(task, mem("planner"));
-    logger.step(`Agents: ${agents.join(", ")}`);
-    if (brief) logger.dim(`  brief: ${brief}`);
+    // Connect MCP servers (if configured) and expose their tools to every stage.
+    const { mcpTools, mcpManager } = await this.connectMcp(task);
 
-    // 2. Execute — agents run concurrently, each with the shared brief + memory.
-    const results = await Promise.all(
-      agents.map(async (name) => {
-        const agent = createAgent(name, this.llm);
-        logger.agent(name, "working…");
-        const result = await agent.run(task, {
+    try {
+      // 1. Plan.
+      const { plan, agents, brief } = await this.planStage(task, mem("planner"), mcpTools);
+      logger.step(`Agents: ${agents.join(", ")}`);
+      if (brief) logger.dim(`  brief: ${brief}`);
+
+      // 2. Execute — agents run concurrently, each with brief + memory + MCP tools.
+      const results = await Promise.all(
+        agents.map(async (name) => {
+          const agent = createAgent(name, this.llm);
+          logger.agent(name, "working…");
+          const result = await agent.run(task, {
+            brief,
+            memory: mem(name),
+            mcpTools,
+            onToolCall: (label) => logger.dim(`  [${name}] ${label}`),
+          });
+          if (result.error) logger.agent(name, `failed: ${result.error}`);
+          else
+            logger.agent(
+              name,
+              `${result.changes.length} change(s), ${result.notes.length} note(s)`,
+            );
+          return result;
+        }),
+      );
+
+      // 3. Consolidate.
+      let changeSet = this.consolidate(results, task);
+
+      // 4. Adversarial review (short-term memory: brief + agent notes flow in).
+      let review: Review | undefined;
+      let rejected: FileChange[] = [];
+      if (task.kind !== "review" && changeSet.changes.length > 0 && this.opts.review !== false) {
+        const agentNotes = results
+          .flatMap((r) => r.notes.map((n) => `[${r.agent}] ${n}`))
+          .join("\n");
+        const outcome = await this.reviewStage(task, changeSet, {
           brief,
-          memory: mem(name),
-          onToolCall: (label) => logger.dim(`  [${name}] ${label}`),
+          agentNotes,
+          memory: mem("reviewer"),
+          mcpTools,
         });
-        if (result.error) logger.agent(name, `failed: ${result.error}`);
-        else
-          logger.agent(
-            name,
-            `${result.changes.length} change(s), ${result.notes.length} note(s)`,
-          );
-        return result;
-      }),
-    );
-
-    // 3. Consolidate.
-    let changeSet = this.consolidate(results, task);
-
-    // 4. Adversarial review (short-term memory: brief + agent notes flow in).
-    let review: Review | undefined;
-    let rejected: FileChange[] = [];
-    if (task.kind !== "review" && changeSet.changes.length > 0 && this.opts.review !== false) {
-      const agentNotes = results
-        .flatMap((r) => r.notes.map((n) => `[${r.agent}] ${n}`))
-        .join("\n");
-      const outcome = await this.reviewStage(task, changeSet, {
-        brief,
-        agentNotes,
-        memory: mem("reviewer"),
-      });
-      review = outcome.review;
-      changeSet = outcome.accepted;
-      rejected = outcome.rejected;
-    }
-
-    // Persist lessons learned this run (deduped, capped) at the very end.
-    if (memoryEnabled) await this.persistMemory(store, results, review);
-
-    // 5. Validate.
-    const preValidators: Validator[] = [noConflictsValidator, wellFormedChangesValidator];
-    let validation = await runValidators(preValidators, changeSet, task.repoRoot);
-
-    // 6. Apply.
-    let applied = false;
-    if (task.apply && task.kind !== "review") {
-      if (!validation.passed) {
-        logger.warn("Pre-apply validation failed — not writing changes.");
-      } else if (changeSet.changes.length === 0) {
-        logger.info("No changes to apply.");
-      } else {
-        applied = await this.applyAndVerify(changeSet, task, (report) => {
-          validation = report;
-        });
+        review = outcome.review;
+        changeSet = outcome.accepted;
+        rejected = outcome.rejected;
       }
-    }
 
-    return { task, plan, agentResults: results, changeSet, review, rejected, validation, applied };
+      // Persist lessons learned this run (deduped, capped) at the very end.
+      if (memoryEnabled) await this.persistMemory(store, results, review);
+
+      // 5. Validate.
+      const preValidators: Validator[] = [noConflictsValidator, wellFormedChangesValidator];
+      let validation = await runValidators(preValidators, changeSet, task.repoRoot);
+
+      // 6. Apply.
+      let applied = false;
+      if (task.apply && task.kind !== "review") {
+        if (!validation.passed) {
+          logger.warn("Pre-apply validation failed — not writing changes.");
+        } else if (changeSet.changes.length === 0) {
+          logger.info("No changes to apply.");
+        } else {
+          applied = await this.applyAndVerify(changeSet, task, (report) => {
+            validation = report;
+          });
+        }
+      }
+
+      return { task, plan, agentResults: results, changeSet, review, rejected, validation, applied };
+    } finally {
+      await mcpManager?.dispose();
+    }
+  }
+
+  /** Connect configured MCP servers, or return no tools if none/disabled. */
+  private async connectMcp(
+    task: Task,
+  ): Promise<{ mcpTools: AgentTool[]; mcpManager?: McpManager }> {
+    if (this.opts.mcp === false) return { mcpTools: [] };
+    let config;
+    try {
+      config = await loadMcpConfig(task.repoRoot);
+    } catch (err) {
+      logger.warn(`Ignoring .orbi/mcp.json: ${(err as Error).message}`);
+      return { mcpTools: [] };
+    }
+    if (!config) return { mcpTools: [] };
+
+    logger.step("Connecting MCP servers…");
+    const mcpManager = new McpManager(task.repoRoot, config);
+    const mcpTools = await mcpManager.connect((msg) => logger.dim(`  [mcp] ${msg}`));
+    if (mcpTools.length > 0) {
+      logger.dim(`  ${mcpTools.length} MCP tool(s) available: ${mcpTools.map((t) => t.name).join(", ")}`);
+    }
+    return { mcpTools, mcpManager };
   }
 
   /** Decide which agents run, and produce a shared brief when planning. */
   private async planStage(
     task: Task,
     memory: string,
+    mcpTools: AgentTool[],
   ): Promise<{ plan?: Plan; agents: AgentName[]; brief: string }> {
     if (task.requestedAgents.length > 0) {
       return { agents: task.requestedAgents.filter((a) => ALL_AGENTS.includes(a)), brief: "" };
@@ -160,7 +198,7 @@ export class Orchestrator {
     }
     logger.step("Planning…");
     try {
-      const plan = await this.planner.plan(task, memory, (label) =>
+      const plan = await this.planner.plan(task, memory, mcpTools, (label) =>
         logger.dim(`  [planner] ${label}`),
       );
       const agents = plan.agents.length > 0 ? plan.agents : DEFAULT_ROUTING[task.kind];
@@ -175,7 +213,7 @@ export class Orchestrator {
   private async reviewStage(
     task: Task,
     changeSet: ChangeSet,
-    ctx: { brief?: string; agentNotes?: string; memory?: string },
+    ctx: { brief?: string; agentNotes?: string; memory?: string; mcpTools?: AgentTool[] },
   ): Promise<{ review?: Review; accepted: ChangeSet; rejected: FileChange[] }> {
     logger.step("Adversarial review…");
     let review: Review;

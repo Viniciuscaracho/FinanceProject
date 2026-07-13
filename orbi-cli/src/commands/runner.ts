@@ -26,10 +26,11 @@ export interface CliOptions {
   repo?: string;
   /** Post-apply validation commands (repeatable). */
   validate?: string[];
-  /** Commander sets these to false via --no-plan / --no-review / --no-memory. */
+  /** Commander sets these to false via --no-plan / --no-review / --no-memory / --no-mcp. */
   plan?: boolean;
   review?: boolean;
   memory?: boolean;
+  mcp?: boolean;
 }
 
 function parseAgents(value: string | undefined): AgentName[] {
@@ -70,6 +71,7 @@ export async function runCommand(
     plan: options.plan,
     review: options.review,
     memory: options.memory,
+    mcp: options.mcp,
     tracer,
   });
 

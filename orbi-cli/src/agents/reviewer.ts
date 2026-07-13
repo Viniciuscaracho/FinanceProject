@@ -7,7 +7,7 @@
  */
 
 import { loadHarness } from "../harness/loader.js";
-import { createRepoTools } from "../llm/tools.js";
+import { createRepoTools, type AgentTool } from "../llm/tools.js";
 import type { FinalTool, LLMProvider } from "../llm/provider.js";
 import type { ChangeSet, Review, Task } from "../core/types.js";
 
@@ -52,7 +52,7 @@ export class Reviewer {
   async review(
     task: Task,
     changeSet: ChangeSet,
-    ctx: { brief?: string; agentNotes?: string; memory?: string } = {},
+    ctx: { brief?: string; agentNotes?: string; memory?: string; mcpTools?: AgentTool[] } = {},
     onToolCall?: (label: string) => void,
   ): Promise<Review> {
     const system = await loadHarness("reviewer");
@@ -73,7 +73,7 @@ export class Reviewer {
     const raw = await this.llm.runAgentLoop<Review>({
       system,
       prompt,
-      tools: createRepoTools(task.repoRoot),
+      tools: [...createRepoTools(task.repoRoot), ...(ctx.mcpTools ?? [])],
       finalTool: REVIEW_TOOL,
       traceLabel: "reviewer",
       onToolCall,

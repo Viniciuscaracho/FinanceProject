@@ -50,6 +50,7 @@ export async function evalCommand(file: string | undefined, options: EvalCliOpti
       plan: golden.plan,
       review: golden.review,
       memory: false, // evals stay deterministic — no memory read/write
+      mcp: false, // evals don't depend on external MCP servers
       tracer,
     });
 

@@ -9,7 +9,7 @@
  */
 
 import { loadHarness } from "../harness/loader.js";
-import { createRepoTools } from "../llm/tools.js";
+import { createRepoTools, type AgentTool } from "../llm/tools.js";
 import type { FinalTool, LLMProvider } from "../llm/provider.js";
 import type { AgentName, AgentResult, FileChange, Task } from "../core/types.js";
 
@@ -73,7 +73,12 @@ export abstract class BaseAgent {
    */
   async run(
     task: Task,
-    opts: { brief?: string; memory?: string; onToolCall?: (label: string) => void } = {},
+    opts: {
+      brief?: string;
+      memory?: string;
+      mcpTools?: AgentTool[];
+      onToolCall?: (label: string) => void;
+    } = {},
   ): Promise<AgentResult> {
     let system: string;
     try {
@@ -86,7 +91,7 @@ export abstract class BaseAgent {
       const raw = await this.llm.runAgentLoop<RawAgentOutput>({
         system,
         prompt: this.buildPrompt(task, opts.brief, opts.memory),
-        tools: createRepoTools(task.repoRoot),
+        tools: [...createRepoTools(task.repoRoot), ...(opts.mcpTools ?? [])],
         finalTool: FINAL_TOOL,
         traceLabel: this.name,
         onToolCall: opts.onToolCall,
