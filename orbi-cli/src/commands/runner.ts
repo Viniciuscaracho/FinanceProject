@@ -1,12 +1,13 @@
 /**
  * Shared command plumbing: turns parsed CLI options into a `Task`, runs the
- * orchestrator, and prints a human-readable report.
+ * orchestrator with observability, and prints a human-readable report.
  */
 
 import path from "node:path";
 import { Orchestrator } from "../agents/orchestrator.js";
 import { AnthropicProvider } from "../llm/provider.js";
 import { commandValidator } from "../core/validation.js";
+import { Tracer } from "../core/telemetry.js";
 import { logger } from "../core/logger.js";
 import { ALL_AGENTS } from "../agents/index.js";
 import type {
@@ -25,6 +26,9 @@ export interface CliOptions {
   repo?: string;
   /** Post-apply validation commands (repeatable). */
   validate?: string[];
+  /** Commander sets these to false via --no-plan / --no-review. */
+  plan?: boolean;
+  review?: boolean;
 }
 
 function parseAgents(value: string | undefined): AgentName[] {
@@ -52,24 +56,27 @@ export async function runCommand(
     description: description.trim(),
     repoRoot,
     requestedAgents: parseAgents(options.agents),
-    // Review never writes; other commands write only with --apply.
     apply: kind === "review" ? false : Boolean(options.apply),
   };
 
+  const tracer = new Tracer();
   const postApplyValidators = (options.validate ?? []).map((cmd, i) =>
     commandValidator(`validate-${i + 1}`, cmd),
   );
 
-  const orchestrator = new Orchestrator(new AnthropicProvider(), {
+  const orchestrator = new Orchestrator(new AnthropicProvider({}, tracer), {
     postApplyValidators,
+    plan: options.plan,
+    review: options.review,
+    tracer,
   });
 
   logger.step(`orbi ${kind}: ${task.description}`);
   const result = await orchestrator.execute(task);
-  report(result);
+  report(result, tracer);
 }
 
-function report(result: OrchestrationResult): void {
+function report(result: OrchestrationResult, tracer: Tracer): void {
   logger.info("");
   logger.step("Summary");
 
@@ -85,12 +92,19 @@ function report(result: OrchestrationResult): void {
   const { changes, conflicts } = result.changeSet;
   if (result.task.kind !== "review") {
     logger.info("");
-    logger.step(`Proposed changes (${changes.length})`);
+    logger.step(`Accepted changes (${changes.length})`);
     for (const c of changes) {
       logger.info(`  ${c.op.padEnd(6)} ${c.path}  — ${c.rationale}`);
     }
-    if (conflicts.length > 0) {
-      logger.warn(`Conflicting paths: ${conflicts.join(", ")}`);
+    if (conflicts.length > 0) logger.warn(`Conflicting paths: ${conflicts.join(", ")}`);
+
+    if (result.rejected.length > 0) {
+      logger.info("");
+      logger.step(`Rejected by reviewer (${result.rejected.length})`);
+      for (const c of result.rejected) {
+        const reason = result.review?.verdicts.find((v) => v.path === c.path)?.reason ?? "";
+        logger.warn(`  ${c.path}  — ${reason}`);
+      }
     }
   }
 
@@ -103,6 +117,13 @@ function report(result: OrchestrationResult): void {
       logger.error(`  [${issue.validator}] ${issue.message}`);
     }
     process.exitCode = 1;
+  }
+
+  const trace = tracer.render();
+  if (trace) {
+    logger.info("");
+    logger.step("Trace (tokens / cost)");
+    logger.info(trace);
   }
 
   logger.info("");

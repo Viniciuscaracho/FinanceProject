@@ -1,0 +1,27 @@
+[
+  {
+    "name": "readme-typo-docs-only",
+    "kind": "fix",
+    "description": "There is a small wording improvement to make in orbi-cli/README.md: make the first sentence clearer. Only the docs agent should act.",
+    "agents": ["docs"],
+    "review": true,
+    "expect": {
+      "agents": ["docs"],
+      "pathMatches": ["README\\.md$"],
+      "maxChanges": 2,
+      "validationPasses": true
+    }
+  },
+  {
+    "name": "backend-only-scope",
+    "kind": "fix",
+    "description": "In orbi-cli, the AnthropicProvider default max_tokens constant should be reviewed for the streaming path. Only the backend agent should look at src/llm/provider.ts; no frontend or docs work.",
+    "agents": ["backend"],
+    "review": true,
+    "expect": {
+      "noConflicts": true,
+      "validationPasses": true,
+      "maxChanges": 3
+    }
+  }
+]

@@ -75,11 +75,37 @@ export interface Validator {
   validate(changeSet: ChangeSet, repoRoot: string): Promise<ValidationIssue[]>;
 }
 
+/** Output of the planning stage: which agents run and a shared brief. */
+export interface Plan {
+  agents: AgentName[];
+  /** Shared context injected into every selected agent's prompt. */
+  brief: string;
+}
+
+/** The reviewer's adversarial verdict on a single proposed change. */
+export interface ReviewVerdict {
+  path: string;
+  verdict: "accept" | "reject";
+  reason: string;
+}
+
+export interface Review {
+  verdicts: ReviewVerdict[];
+  summary: string;
+}
+
 /** Everything the orchestrator produces for one task. */
 export interface OrchestrationResult {
   task: Task;
+  /** Present when the planning stage ran. */
+  plan?: Plan;
   agentResults: AgentResult[];
+  /** Consolidated changes that survived review. */
   changeSet: ChangeSet;
+  /** Present when the review stage ran. */
+  review?: Review;
+  /** Changes the reviewer rejected (removed from `changeSet`). */
+  rejected: FileChange[];
   validation: ValidationReport;
   /** True when changes passed validation and were written to disk. */
   applied: boolean;

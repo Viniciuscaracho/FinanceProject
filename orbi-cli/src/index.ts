@@ -11,6 +11,7 @@ import { Command } from "commander";
 import { feature } from "./commands/feature.js";
 import { fix } from "./commands/fix.js";
 import { review } from "./commands/review.js";
+import { evalCommand } from "./commands/eval.js";
 import { logger } from "./core/logger.js";
 
 const program = new Command();
@@ -26,11 +27,13 @@ program
   )
   .version("0.1.0");
 
-// Options shared by every command.
+// Options shared by every task command.
 function withCommonOptions(cmd: Command): Command {
   return cmd
     .option("-a, --agents <list>", "restrict to a comma-separated set of agents")
     .option("-r, --repo <path>", "repository root (default: current directory)")
+    .option("--no-plan", "skip the LLM planning stage (use static routing)")
+    .option("--no-review", "skip the adversarial review stage")
     .option(
       "-v, --validate <command>",
       "post-apply validation command (repeatable, e.g. 'npm test')",
@@ -58,6 +61,12 @@ withCommonOptions(
     .command("review <description>")
     .description("Read-only multi-agent review — reports findings, writes nothing"),
 ).action(review);
+
+program
+  .command("eval [file]")
+  .description("Run golden tasks through the pipeline and score them (dry run)")
+  .option("-r, --repo <path>", "repository root (default: current directory)")
+  .action(evalCommand);
 
 program.parseAsync(process.argv).catch((err) => {
   logger.error(err instanceof Error ? err.message : String(err));

@@ -61,9 +61,13 @@ export abstract class BaseAgent {
 
   /**
    * Run this agent against a task.
-   * @param onToolCall optional observability hook fired for each read-tool call.
+   * @param opts.brief shared context from the planning stage.
+   * @param opts.onToolCall observability hook fired for each read-tool call.
    */
-  async run(task: Task, onToolCall?: (label: string) => void): Promise<AgentResult> {
+  async run(
+    task: Task,
+    opts: { brief?: string; onToolCall?: (label: string) => void } = {},
+  ): Promise<AgentResult> {
     let system: string;
     try {
       system = await loadHarness(this.name);
@@ -74,10 +78,11 @@ export abstract class BaseAgent {
     try {
       const raw = await this.llm.runAgentLoop<RawAgentOutput>({
         system,
-        prompt: this.buildPrompt(task),
+        prompt: this.buildPrompt(task, opts.brief),
         tools: createRepoTools(task.repoRoot),
         finalTool: FINAL_TOOL,
-        onToolCall,
+        traceLabel: this.name,
+        onToolCall: opts.onToolCall,
       });
       return {
         agent: this.name,
@@ -90,14 +95,16 @@ export abstract class BaseAgent {
     }
   }
 
-  protected buildPrompt(task: Task): string {
+  protected buildPrompt(task: Task, brief?: string): string {
     const reviewOnly =
       task.kind === "review"
         ? "\nThis is a REVIEW task: do not propose file changes; report findings as notes.\n"
         : "";
+    const sharedBrief = brief ? `\nShared plan brief:\n${brief}\n` : "";
     return [
       `Task kind: ${task.kind}`,
       `Task: ${task.description}`,
+      sharedBrief,
       reviewOnly,
       "Explore the repository with the read tools (list_dir, read_file, grep) to",
       "ground your work in the actual code, then call propose_changes.",

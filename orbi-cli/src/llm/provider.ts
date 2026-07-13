@@ -9,12 +9,15 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import type { AgentTool } from "./tools.js";
+import { estimateCost, type Tracer } from "../core/telemetry.js";
 
 export interface CompletionRequest {
   /** System prompt (the agent's loaded harness, or a planner prompt). */
   system: string;
   /** The user turn. */
   prompt: string;
+  /** Scope label for the tracer (e.g. an agent name). */
+  traceLabel?: string;
 }
 
 /** The tool the model calls to end the loop; its input is the structured result. */
@@ -65,7 +68,10 @@ export class AnthropicProvider implements LLMProvider {
   private readonly effort: NonNullable<AnthropicProviderOptions["effort"]>;
   private readonly maxTokens: number;
 
-  constructor(opts: AnthropicProviderOptions = {}) {
+  constructor(
+    opts: AnthropicProviderOptions = {},
+    private readonly tracer?: Tracer,
+  ) {
     // The SDK resolves credentials from ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN,
     // or an `ant auth login` profile — no key needs to be passed here.
     this.client = new Anthropic();
@@ -78,9 +84,12 @@ export class AnthropicProvider implements LLMProvider {
   }
 
   async complete(req: CompletionRequest): Promise<string> {
-    const message = await this.stream(req.system, [
-      { role: "user", content: req.prompt },
-    ]);
+    const message = await this.stream(
+      req.system,
+      [{ role: "user", content: req.prompt }],
+      undefined,
+      req.traceLabel ?? "complete",
+    );
     return this.extractText(message);
   }
 
@@ -101,9 +110,10 @@ export class AnthropicProvider implements LLMProvider {
 
     const messages: Anthropic.MessageParam[] = [{ role: "user", content: req.prompt }];
     const maxSteps = req.maxSteps ?? DEFAULT_MAX_STEPS;
+    const label = req.traceLabel ?? req.finalTool.name;
 
     for (let step = 0; step < maxSteps; step++) {
-      const message = await this.stream(req.system, messages, toolDefs);
+      const message = await this.stream(req.system, messages, toolDefs, label);
 
       const toolUses = message.content.filter(
         (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
@@ -154,7 +164,8 @@ export class AnthropicProvider implements LLMProvider {
   private async stream(
     system: string,
     messages: Anthropic.MessageParam[],
-    tools?: unknown[],
+    tools: unknown[] | undefined,
+    label: string,
   ): Promise<Anthropic.Message> {
     // `output_config`, adaptive `thinking`, and tool params are newer than some
     // pinned SDK type definitions, so the request body is assembled untyped and
@@ -170,7 +181,32 @@ export class AnthropicProvider implements LLMProvider {
       ...(tools ? { tools } : {}),
     } as unknown as Anthropic.MessageStreamParams;
 
-    return this.client.messages.stream(params).finalMessage();
+    const started = Date.now();
+    const message = await this.client.messages.stream(params).finalMessage();
+    this.trace(label, message, Date.now() - started);
+    return message;
+  }
+
+  private trace(label: string, message: Anthropic.Message, ms: number): void {
+    if (!this.tracer) return;
+    const u = message.usage as unknown as {
+      input_tokens?: number;
+      output_tokens?: number;
+      cache_read_input_tokens?: number;
+      cache_creation_input_tokens?: number;
+    };
+    const usage = {
+      inputTokens: u.input_tokens ?? 0,
+      outputTokens: u.output_tokens ?? 0,
+      cacheReadTokens: u.cache_read_input_tokens ?? 0,
+      cacheWriteTokens: u.cache_creation_input_tokens ?? 0,
+    };
+    this.tracer.record({
+      label,
+      ms,
+      ...usage,
+      costUSD: estimateCost(this.model, usage),
+    });
   }
 
   private extractText(message: Anthropic.Message): string {
