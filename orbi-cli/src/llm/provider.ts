@@ -8,27 +8,41 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import type { AgentTool } from "./tools.js";
 
 export interface CompletionRequest {
-  /** The agent's system prompt (its loaded harness). */
+  /** System prompt (the agent's loaded harness, or a planner prompt). */
   system: string;
-  /** The user turn — task description plus any repository context. */
+  /** The user turn. */
   prompt: string;
-  /**
-   * When provided, the model is constrained to emit JSON matching this schema
-   * and the raw JSON text is returned. Callers parse it.
-   */
-  jsonSchema?: Record<string, unknown>;
+}
+
+/** The tool the model calls to end the loop; its input is the structured result. */
+export interface FinalTool {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+}
+
+export interface ToolLoopRequest extends CompletionRequest {
+  /** Read tools the model may call while exploring. */
+  tools: AgentTool[];
+  /** Calling this tool ends the loop; its input is returned to the caller. */
+  finalTool: FinalTool;
+  /** Safety cap on tool-use iterations. */
+  maxSteps?: number;
+  /** Optional hook fired on each tool call, for logging/observability. */
+  onToolCall?: (label: string) => void;
 }
 
 export interface LLMProvider {
-  /** Free-text completion. */
+  /** Free-text completion (used by the planner). */
   complete(req: CompletionRequest): Promise<string>;
   /**
-   * Structured completion: returns the model's JSON text validated against
-   * `schema`. Throws if the model produced no usable JSON.
+   * Run an agentic loop: the model may call the read tools to explore, then
+   * calls `finalTool` to submit its structured answer. Returns that input.
    */
-  completeJSON<T>(req: CompletionRequest & { jsonSchema: Record<string, unknown> }): Promise<T>;
+  runAgentLoop<T>(req: ToolLoopRequest): Promise<T>;
 }
 
 export interface AnthropicProviderOptions {
@@ -43,6 +57,7 @@ export interface AnthropicProviderOptions {
 const DEFAULT_MODEL = "claude-opus-4-8";
 const DEFAULT_EFFORT = "high" as const;
 const DEFAULT_MAX_TOKENS = 32000;
+const DEFAULT_MAX_STEPS = 12;
 
 export class AnthropicProvider implements LLMProvider {
   private readonly client: Anthropic;
@@ -63,48 +78,99 @@ export class AnthropicProvider implements LLMProvider {
   }
 
   async complete(req: CompletionRequest): Promise<string> {
-    const message = await this.send(req);
+    const message = await this.stream(req.system, [
+      { role: "user", content: req.prompt },
+    ]);
     return this.extractText(message);
   }
 
-  async completeJSON<T>(
-    req: CompletionRequest & { jsonSchema: Record<string, unknown> },
-  ): Promise<T> {
-    const message = await this.send(req);
-    const text = this.extractText(message).trim();
-    if (!text) {
-      throw new Error("model returned no content for a structured request");
-    }
-    try {
-      return JSON.parse(text) as T;
-    } catch (err) {
-      throw new Error(
-        `model output was not valid JSON: ${(err as Error).message}\n---\n${text.slice(0, 500)}`,
+  async runAgentLoop<T>(req: ToolLoopRequest): Promise<T> {
+    const toolsByName = new Map(req.tools.map((t) => [t.name, t]));
+    const toolDefs = [
+      ...req.tools.map((t) => ({
+        name: t.name,
+        description: t.description,
+        input_schema: t.inputSchema,
+      })),
+      {
+        name: req.finalTool.name,
+        description: req.finalTool.description,
+        input_schema: req.finalTool.inputSchema,
+      },
+    ];
+
+    const messages: Anthropic.MessageParam[] = [{ role: "user", content: req.prompt }];
+    const maxSteps = req.maxSteps ?? DEFAULT_MAX_STEPS;
+
+    for (let step = 0; step < maxSteps; step++) {
+      const message = await this.stream(req.system, messages, toolDefs);
+
+      const toolUses = message.content.filter(
+        (b): b is Anthropic.ToolUseBlock => b.type === "tool_use",
       );
+
+      // The model finished exploring and submitted its structured answer.
+      const final = toolUses.find((b) => b.name === req.finalTool.name);
+      if (final) {
+        return final.input as T;
+      }
+
+      // No tool calls at all — nothing more to do; surface the text as an error.
+      if (toolUses.length === 0) {
+        throw new Error(
+          `agent ended without calling ${req.finalTool.name}: ${this.extractText(message).slice(0, 300)}`,
+        );
+      }
+
+      // Execute every requested read tool and feed the results back.
+      messages.push({ role: "assistant", content: message.content });
+      const results: Anthropic.ToolResultBlockParam[] = [];
+      for (const use of toolUses) {
+        const tool = toolsByName.get(use.name);
+        const input = (use.input ?? {}) as Record<string, unknown>;
+        req.onToolCall?.(tool ? tool.label(input) : `${use.name}(?)`);
+        let content: string;
+        let isError = false;
+        try {
+          content = tool ? await tool.execute(input) : `unknown tool: ${use.name}`;
+          isError = !tool;
+        } catch (err) {
+          content = (err as Error).message;
+          isError = true;
+        }
+        results.push({
+          type: "tool_result",
+          tool_use_id: use.id,
+          content,
+          is_error: isError,
+        });
+      }
+      messages.push({ role: "user", content: results });
     }
+
+    throw new Error(`agent exceeded ${maxSteps} steps without submitting a result`);
   }
 
-  private async send(req: CompletionRequest): Promise<Anthropic.Message> {
-    const outputConfig: Record<string, unknown> = { effort: this.effort };
-    if (req.jsonSchema) {
-      outputConfig.format = { type: "json_schema", schema: req.jsonSchema };
-    }
-
-    // `output_config` and adaptive `thinking` are newer than some pinned SDK
-    // type definitions, so the request body is assembled untyped and cast once
-    // here. Stream so a large max_tokens never trips the non-streaming HTTP
-    // timeout; get the accumulated message back with finalMessage().
+  private async stream(
+    system: string,
+    messages: Anthropic.MessageParam[],
+    tools?: unknown[],
+  ): Promise<Anthropic.Message> {
+    // `output_config`, adaptive `thinking`, and tool params are newer than some
+    // pinned SDK type definitions, so the request body is assembled untyped and
+    // cast once here. Stream so a large max_tokens never trips the non-streaming
+    // HTTP timeout; get the accumulated message back with finalMessage().
     const params = {
       model: this.model,
       max_tokens: this.maxTokens,
       thinking: { type: "adaptive" },
-      output_config: outputConfig,
-      system: [{ type: "text", text: req.system, cache_control: { type: "ephemeral" } }],
-      messages: [{ role: "user", content: req.prompt }],
+      output_config: { effort: this.effort },
+      system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
+      messages,
+      ...(tools ? { tools } : {}),
     } as unknown as Anthropic.MessageStreamParams;
 
-    const stream = this.client.messages.stream(params);
-    return stream.finalMessage();
+    return this.client.messages.stream(params).finalMessage();
   }
 
   private extractText(message: Anthropic.Message): string {

@@ -8,7 +8,6 @@
  *   4. Validate the change set, and only apply it to disk when validation passes.
  */
 
-import { spawnSync } from "node:child_process";
 import { logger } from "../core/logger.js";
 import type { LLMProvider } from "../llm/provider.js";
 import {
@@ -38,8 +37,6 @@ const DEFAULT_ROUTING: Record<CommandKind, AgentName[]> = {
 export interface OrchestratorOptions {
   /** Validators run *after* changes are written to disk (typecheck, tests). */
   postApplyValidators?: Validator[];
-  /** Cap on repository files listed in the context sent to agents. */
-  contextFileLimit?: number;
 }
 
 export class Orchestrator {
@@ -52,14 +49,15 @@ export class Orchestrator {
     const agents = this.route(task);
     logger.step(`Routing to agents: ${agents.join(", ")}`);
 
-    const context = this.buildContext(task);
-
-    // Fan out — every agent works the same task concurrently.
+    // Fan out — every agent works the same task concurrently, each exploring
+    // the repository through its own read tools rather than a shared dump.
     const results = await Promise.all(
       agents.map(async (name) => {
         const agent = createAgent(name, this.llm);
         logger.agent(name, "working…");
-        const result = await agent.run(task, context);
+        const result = await agent.run(task, (label) =>
+          logger.dim(`  [${name}] ${label}`),
+        );
         if (result.error) {
           logger.agent(name, `failed: ${result.error}`);
         } else {
@@ -154,21 +152,5 @@ export class Orchestrator {
     logger.error("Post-apply validation failed — rolling back.");
     await applied.rollback();
     return false;
-  }
-
-  /** Lightweight repo context: the tracked file tree (bounded). */
-  private buildContext(task: Task): string {
-    const limit = this.opts.contextFileLimit ?? 400;
-    const res = spawnSync("git", ["ls-files"], {
-      cwd: task.repoRoot,
-      encoding: "utf8",
-    });
-    if (res.status !== 0 || !res.stdout) {
-      return "(not a git repository — no file listing available)";
-    }
-    const files = res.stdout.split("\n").filter(Boolean);
-    const shown = files.slice(0, limit);
-    const suffix = files.length > limit ? `\n… and ${files.length - limit} more` : "";
-    return `Tracked files (${files.length}):\n${shown.join("\n")}${suffix}`;
   }
 }

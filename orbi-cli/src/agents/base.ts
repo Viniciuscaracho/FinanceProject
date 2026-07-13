@@ -1,17 +1,19 @@
 /**
  * Base class shared by every specialized agent.
  *
- * An agent is a thin wrapper: it loads its harness (system prompt), builds a
- * user prompt from the task plus repository context, asks the LLM for a
- * structured result, and normalizes that into an `AgentResult`. Subclasses only
- * declare their `name`; specialization lives entirely in the harness markdown.
+ * An agent loads its harness (system prompt), then runs an agentic loop: it may
+ * call read tools (list_dir, read_file, grep) to explore the repository, and
+ * finally calls `propose_changes` to submit a structured `AgentResult`. Nothing
+ * is dumped into the prompt upfront — the agent pulls the context it needs.
+ * Subclasses only declare their `name`; specialization lives in the harness.
  */
 
 import { loadHarness } from "../harness/loader.js";
-import type { LLMProvider } from "../llm/provider.js";
+import { createRepoTools } from "../llm/tools.js";
+import type { FinalTool, LLMProvider } from "../llm/provider.js";
 import type { AgentName, AgentResult, FileChange, Task } from "../core/types.js";
 
-/** JSON schema the model must satisfy — mirrors `AgentResult` (minus `agent`). */
+/** JSON schema for the `propose_changes` final tool — mirrors `AgentResult`. */
 const RESULT_SCHEMA: Record<string, unknown> = {
   type: "object",
   additionalProperties: false,
@@ -39,10 +41,17 @@ const RESULT_SCHEMA: Record<string, unknown> = {
   },
 };
 
+const FINAL_TOOL: FinalTool = {
+  name: "propose_changes",
+  description:
+    "Submit your final result. Call this once you have explored enough and decided on the changes (or that none are needed). In review mode, leave `changes` empty and put findings in `notes`.",
+  inputSchema: RESULT_SCHEMA,
+};
+
 interface RawAgentOutput {
-  summary: string;
-  changes: FileChange[];
-  notes: string[];
+  summary?: string;
+  changes?: FileChange[];
+  notes?: string[];
 }
 
 export abstract class BaseAgent {
@@ -50,8 +59,11 @@ export abstract class BaseAgent {
 
   constructor(protected readonly llm: LLMProvider) {}
 
-  /** Run this agent against a task with pre-gathered repository context. */
-  async run(task: Task, context: string): Promise<AgentResult> {
+  /**
+   * Run this agent against a task.
+   * @param onToolCall optional observability hook fired for each read-tool call.
+   */
+  async run(task: Task, onToolCall?: (label: string) => void): Promise<AgentResult> {
     let system: string;
     try {
       system = await loadHarness(this.name);
@@ -59,13 +71,13 @@ export abstract class BaseAgent {
       return this.failure((err as Error).message);
     }
 
-    const prompt = this.buildPrompt(task, context);
-
     try {
-      const raw = await this.llm.completeJSON<RawAgentOutput>({
+      const raw = await this.llm.runAgentLoop<RawAgentOutput>({
         system,
-        prompt,
-        jsonSchema: RESULT_SCHEMA,
+        prompt: this.buildPrompt(task),
+        tools: createRepoTools(task.repoRoot),
+        finalTool: FINAL_TOOL,
+        onToolCall,
       });
       return {
         agent: this.name,
@@ -78,7 +90,7 @@ export abstract class BaseAgent {
     }
   }
 
-  protected buildPrompt(task: Task, context: string): string {
+  protected buildPrompt(task: Task): string {
     const reviewOnly =
       task.kind === "review"
         ? "\nThis is a REVIEW task: do not propose file changes; report findings as notes.\n"
@@ -87,8 +99,8 @@ export abstract class BaseAgent {
       `Task kind: ${task.kind}`,
       `Task: ${task.description}`,
       reviewOnly,
-      "Repository context:",
-      context || "(no context provided)",
+      "Explore the repository with the read tools (list_dir, read_file, grep) to",
+      "ground your work in the actual code, then call propose_changes.",
     ].join("\n");
   }
 
