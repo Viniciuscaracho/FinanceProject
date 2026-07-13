@@ -36,11 +36,16 @@ const PLAN_TOOL: FinalTool = {
 export class Planner {
   constructor(private readonly llm: LLMProvider) {}
 
-  async plan(task: Task, onToolCall?: (label: string) => void): Promise<Plan> {
+  async plan(
+    task: Task,
+    memory?: string,
+    onToolCall?: (label: string) => void,
+  ): Promise<Plan> {
     const system = await loadHarness("planner");
     const prompt = [
       `Task kind: ${task.kind}`,
       `Task: ${task.description}`,
+      memory ? `\nKnown conventions & lessons from past runs:\n${memory}\n` : "",
       "Inspect the repository, then submit a plan.",
     ].join("\n");
 

@@ -36,6 +36,12 @@ const REVIEW_TOOL: FinalTool = {
         },
       },
       summary: { type: "string" },
+      memories: {
+        type: "array",
+        items: { type: "string" },
+        description:
+          "Durable lessons worth remembering across runs (e.g. a recurring mistake an agent keeps making). Omit if none.",
+      },
     },
   },
 };
@@ -46,17 +52,23 @@ export class Reviewer {
   async review(
     task: Task,
     changeSet: ChangeSet,
+    ctx: { brief?: string; agentNotes?: string; memory?: string } = {},
     onToolCall?: (label: string) => void,
   ): Promise<Review> {
     const system = await loadHarness("reviewer");
     const prompt = [
       `Task: ${task.description}`,
+      ctx.brief ? `\nPlan brief the agents followed:\n${ctx.brief}` : "",
+      ctx.agentNotes ? `\nNotes the agents surfaced:\n${ctx.agentNotes}` : "",
+      ctx.memory ? `\nKnown conventions & lessons from past runs:\n${ctx.memory}` : "",
       "",
       "Proposed changes to scrutinize:",
       serializeChanges(changeSet),
       "",
       "Inspect the current repository and return one verdict per change.",
-    ].join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
 
     const raw = await this.llm.runAgentLoop<Review>({
       system,
@@ -67,7 +79,7 @@ export class Reviewer {
       onToolCall,
     });
 
-    return { verdicts: raw.verdicts ?? [], summary: raw.summary ?? "" };
+    return { verdicts: raw.verdicts ?? [], summary: raw.summary ?? "", memories: raw.memories ?? [] };
   }
 }
 

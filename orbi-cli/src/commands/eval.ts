@@ -49,6 +49,7 @@ export async function evalCommand(file: string | undefined, options: EvalCliOpti
     const orchestrator = new Orchestrator(new AnthropicProvider({}, tracer), {
       plan: golden.plan,
       review: golden.review,
+      memory: false, // evals stay deterministic — no memory read/write
       tracer,
     });
 

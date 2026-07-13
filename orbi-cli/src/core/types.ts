@@ -43,6 +43,8 @@ export interface AgentResult {
   changes: FileChange[];
   /** Non-fatal notes, open questions, or follow-ups the agent surfaced. */
   notes: string[];
+  /** Durable lessons/conventions worth remembering across runs. */
+  memories: string[];
   /** Populated when the agent failed to run or returned unusable output. */
   error?: string;
 }
@@ -92,6 +94,8 @@ export interface ReviewVerdict {
 export interface Review {
   verdicts: ReviewVerdict[];
   summary: string;
+  /** Durable lessons the reviewer surfaced (e.g. a recurring mistake). */
+  memories: string[];
 }
 
 /** Everything the orchestrator produces for one task. */

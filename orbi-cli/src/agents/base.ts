@@ -38,6 +38,12 @@ const RESULT_SCHEMA: Record<string, unknown> = {
       },
     },
     notes: { type: "array", items: { type: "string" } },
+    memories: {
+      type: "array",
+      items: { type: "string" },
+      description:
+        "Durable lessons or conventions worth remembering across runs (e.g. 'this repo uses RSpec, not Minitest'). Omit if nothing generalizable was learned.",
+    },
   },
 };
 
@@ -52,6 +58,7 @@ interface RawAgentOutput {
   summary?: string;
   changes?: FileChange[];
   notes?: string[];
+  memories?: string[];
 }
 
 export abstract class BaseAgent {
@@ -66,7 +73,7 @@ export abstract class BaseAgent {
    */
   async run(
     task: Task,
-    opts: { brief?: string; onToolCall?: (label: string) => void } = {},
+    opts: { brief?: string; memory?: string; onToolCall?: (label: string) => void } = {},
   ): Promise<AgentResult> {
     let system: string;
     try {
@@ -78,7 +85,7 @@ export abstract class BaseAgent {
     try {
       const raw = await this.llm.runAgentLoop<RawAgentOutput>({
         system,
-        prompt: this.buildPrompt(task, opts.brief),
+        prompt: this.buildPrompt(task, opts.brief, opts.memory),
         tools: createRepoTools(task.repoRoot),
         finalTool: FINAL_TOOL,
         traceLabel: this.name,
@@ -89,30 +96,36 @@ export abstract class BaseAgent {
         summary: raw.summary ?? "",
         changes: (raw.changes ?? []).map((c) => ({ ...c, path: normalize(c.path) })),
         notes: raw.notes ?? [],
+        memories: raw.memories ?? [],
       };
     } catch (err) {
       return this.failure((err as Error).message);
     }
   }
 
-  protected buildPrompt(task: Task, brief?: string): string {
+  protected buildPrompt(task: Task, brief?: string, memory?: string): string {
     const reviewOnly =
       task.kind === "review"
         ? "\nThis is a REVIEW task: do not propose file changes; report findings as notes.\n"
         : "";
     const sharedBrief = brief ? `\nShared plan brief:\n${brief}\n` : "";
+    const knownMemory = memory
+      ? `\nKnown conventions & lessons from past runs (trust these):\n${memory}\n`
+      : "";
     return [
       `Task kind: ${task.kind}`,
       `Task: ${task.description}`,
       sharedBrief,
+      knownMemory,
       reviewOnly,
       "Explore the repository with the read tools (list_dir, read_file, grep) to",
       "ground your work in the actual code, then call propose_changes.",
+      "If you learn something durable about this repo, add it to `memories`.",
     ].join("\n");
   }
 
   private failure(message: string): AgentResult {
-    return { agent: this.name, summary: "", changes: [], notes: [], error: message };
+    return { agent: this.name, summary: "", changes: [], notes: [], memories: [], error: message };
   }
 }
 

@@ -12,6 +12,7 @@ import { feature } from "./commands/feature.js";
 import { fix } from "./commands/fix.js";
 import { review } from "./commands/review.js";
 import { evalCommand } from "./commands/eval.js";
+import { memoryCommand } from "./commands/memory.js";
 import { logger } from "./core/logger.js";
 
 const program = new Command();
@@ -34,6 +35,7 @@ function withCommonOptions(cmd: Command): Command {
     .option("-r, --repo <path>", "repository root (default: current directory)")
     .option("--no-plan", "skip the LLM planning stage (use static routing)")
     .option("--no-review", "skip the adversarial review stage")
+    .option("--no-memory", "skip reading/writing long-term memory")
     .option(
       "-v, --validate <command>",
       "post-apply validation command (repeatable, e.g. 'npm test')",
@@ -67,6 +69,13 @@ program
   .description("Run golden tasks through the pipeline and score them (dry run)")
   .option("-r, --repo <path>", "repository root (default: current directory)")
   .action(evalCommand);
+
+program
+  .command("memory")
+  .description("Inspect or clear the long-term memory in .orbi/memory.md")
+  .option("-r, --repo <path>", "repository root (default: current directory)")
+  .option("--clear", "delete all stored memories")
+  .action(memoryCommand);
 
 program.parseAsync(process.argv).catch((err) => {
   logger.error(err instanceof Error ? err.message : String(err));

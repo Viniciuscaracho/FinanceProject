@@ -4,8 +4,9 @@ A local, in-memory **multi-agent orchestrator** for code tasks. You give it a
 task; it **plans** which specialized agents (backend, frontend, QA, docs) to run,
 executes them in **parallel** (each with its own harness and repo read tools),
 consolidates their changes, runs an **adversarial review** that tries to refute
-each change, and **validates before accepting** — with a token/cost trace and a
-golden-task eval harness so you can iterate on prompts with feedback.
+each change, and **validates before accepting** — with long-term **memory** it
+carries across runs, a token/cost trace, and a golden-task eval harness so you
+can iterate on prompts with feedback.
 
 ```
 orbi-cli/
@@ -14,6 +15,7 @@ orbi-cli/
 │   ├── commands/
 │   │   ├── feature.ts fix.ts review.ts   # task commands
 │   │   ├── eval.ts              # orbi eval — score golden tasks
+│   │   ├── memory.ts            # orbi memory — inspect/clear long-term memory
 │   │   └── runner.ts            # shared: task setup + report + trace
 │   ├── agents/
 │   │   ├── orchestrator.ts      # plan → execute → review → validate → apply
@@ -33,6 +35,7 @@ orbi-cli/
 │       ├── types.ts  logger.ts
 │       ├── telemetry.ts         # token/cost tracer (Observability)
 │       ├── evals.ts             # golden-task scoring (Evals)
+│       ├── memory.ts            # long-term memory store (.orbi/memory.md)
 │       ├── validation.ts        # validators run before/after accepting changes
 │       └── workspace.ts         # apply changes with rollback
 └── evals/sample.json            # example golden tasks
@@ -60,6 +63,15 @@ The orchestrator runs a **plan → execute → review → validate → apply** p
    commands (typecheck, lint, tests) with `--validate`. Changes are written to
    disk only with `--apply` **and** only if validation passes — otherwise they are
    rolled back all-or-nothing.
+
+Two layers of **memory** run alongside the pipeline:
+
+- **Long-term** — a human-readable `.orbi/memory.md` in the target repo. Every
+  stage reads the relevant slice before working (repo-wide facts plus its own
+  scope), and each role proposes new lessons, which are persisted (deduped,
+  capped) at the end of the run. Skip with `--no-memory`.
+- **Short-term** — within one run, the plan brief and the agents' notes flow into
+  the reviewer's prompt so it verifies with the full reasoning context.
 
 Every model round-trip is traced (tokens, cache, latency, estimated cost) and a
 per-stage summary is printed at the end (Observability).
@@ -98,6 +110,10 @@ npm run orbi -- fix "Off-by-one in pagination" --no-plan --no-review
 # Run the eval suite (golden tasks, scored, with a cost trace):
 npm run orbi -- eval               # uses evals/sample.json
 npm run orbi -- eval evals/my-suite.json
+
+# Inspect or reset what the agents have learned:
+npm run orbi -- memory
+npm run orbi -- memory --clear
 ```
 
 Build a standalone binary:
@@ -124,6 +140,8 @@ can change a harness or the pipeline and *measure* the effect. See
 - **New validator**: implement the `Validator` interface in `core/validation.ts`.
 - **Tune planning/review**: edit `harness/planner/system.md` and
   `harness/reviewer/system.md` — no code change needed.
+- **Seed memory**: hand-edit `.orbi/memory.md` (one `- [scope] text` per line;
+  scope is `repo` or an agent name) to teach the agents your conventions.
 - **New golden tasks**: add a JSON suite (see `evals/sample.json`) and run
   `orbi eval <file>`.
 - **Different LLM backend**: implement `LLMProvider` in `llm/provider.ts`.
