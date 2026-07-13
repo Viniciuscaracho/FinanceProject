@@ -1,0 +1,28 @@
+{
+  "name": "orbi-cli",
+  "version": "0.1.0",
+  "description": "Local orchestrator CLI that runs specialized in-memory agents in parallel and validates their changes before accepting them.",
+  "type": "module",
+  "bin": {
+    "orbi": "./dist/index.js"
+  },
+  "scripts": {
+    "orbi": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.json && npm run copy:harness",
+    "copy:harness": "cp -R src/harness/. dist/harness/",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
