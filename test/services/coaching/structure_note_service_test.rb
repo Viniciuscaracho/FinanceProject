@@ -11,11 +11,7 @@ class Coaching::StructureNoteServiceTest < ActiveSupport::TestCase
   }.freeze
 
   test 'returns structured hash when API responds with valid JSON' do
-    mock_response = mock('response')
-    mock_response.stubs(:parsed_response).returns({
-      'content' => [{ 'text' => VALID_JSON.to_json }]
-    })
-    HTTParty.stubs(:post).returns(mock_response)
+    stub_anthropic_ok(VALID_JSON.to_json)
 
     result = Coaching::StructureNoteService.new('treinou bem, dormiu 7h').call
 
@@ -26,11 +22,7 @@ class Coaching::StructureNoteServiceTest < ActiveSupport::TestCase
   end
 
   test 'falls back when API returns malformed JSON' do
-    mock_response = mock('response')
-    mock_response.stubs(:parsed_response).returns({
-      'content' => [{ 'text' => 'não é json válido' }]
-    })
-    HTTParty.stubs(:post).returns(mock_response)
+    stub_anthropic_ok('não é json válido')
 
     input  = 'texto livre do treinador'
     result = Coaching::StructureNoteService.new(input).call
@@ -51,10 +43,8 @@ class Coaching::StructureNoteServiceTest < ActiveSupport::TestCase
     assert_equal input, result[:observacao]
   end
 
-  test 'falls back when API key is absent (nil response content)' do
-    mock_response = mock('response')
-    mock_response.stubs(:parsed_response).returns({ 'error' => 'unauthorized' })
-    HTTParty.stubs(:post).returns(mock_response)
+  test 'falls back when API returns non-2xx (e.g. 401 missing key)' do
+    stub_anthropic_error(401, '{"error":"unauthorized"}')
 
     input  = 'sem chave de api'
     result = Coaching::StructureNoteService.new(input).call
@@ -62,14 +52,36 @@ class Coaching::StructureNoteServiceTest < ActiveSupport::TestCase
     assert_equal input, result[:observacao]
   end
 
+  test 'falls back when API returns 429 rate limit' do
+    stub_anthropic_error(429, '{"error":"rate_limit_exceeded"}')
+
+    input = 'muitas requisições'
+    result = Coaching::StructureNoteService.new(input).call
+
+    assert_equal input, result[:observacao]
+  end
+
   test 'symbolizes keys in parsed response' do
-    mock_response = mock('response')
-    mock_response.stubs(:parsed_response).returns({
-      'content' => [{ 'text' => VALID_JSON.to_json }]
-    })
-    HTTParty.stubs(:post).returns(mock_response)
+    stub_anthropic_ok(VALID_JSON.to_json)
 
     result = Coaching::StructureNoteService.new('teste').call
     assert result.key?(:sono), 'Expected symbolized keys'
+  end
+
+  private
+
+  def stub_anthropic_ok(text)
+    mock_response = mock('response')
+    mock_response.stubs(:success?).returns(true)
+    mock_response.stubs(:parsed_response).returns({ 'content' => [{ 'text' => text }] })
+    HTTParty.stubs(:post).returns(mock_response)
+  end
+
+  def stub_anthropic_error(code, body)
+    mock_response = mock('response')
+    mock_response.stubs(:success?).returns(false)
+    mock_response.stubs(:code).returns(code)
+    mock_response.stubs(:body).returns(body)
+    HTTParty.stubs(:post).returns(mock_response)
   end
 end

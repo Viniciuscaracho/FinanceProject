@@ -2,8 +2,6 @@
 
 module Coaching
   class PreVisitSummaryService
-    ANTHROPIC_URL  = 'https://api.anthropic.com/v1/messages'
-    MODEL          = 'claude-haiku-4-5-20251001'
     EVENTS_LIMIT   = 10
     DELTA_BASELINE = 5   # número de eventos anteriores usados como referência de delta
 
@@ -13,24 +11,8 @@ module Coaching
     end
 
     def call
-      response = HTTParty.post(
-        ANTHROPIC_URL,
-        headers: {
-          'x-api-key'         => ENV['ANTHROPIC_API_KEY'],
-          'anthropic-version' => '2023-06-01',
-          'content-type'      => 'application/json'
-        },
-        body: {
-          model:      MODEL,
-          max_tokens: 1024,
-          messages:   [{ role: 'user', content: prompt }]
-        }.to_json
-      )
-
-      response.parsed_response.dig('content', 0, 'text').to_s.strip
-    rescue => e
-      Rails.logger.error "[Coaching::PreVisitSummaryService] #{e.class}: #{e.message}"
-      'Não foi possível gerar o resumo no momento.'
+      text = AnthropicClient.new('PreVisitSummaryService').complete(prompt: prompt, max_tokens: 1024)
+      text || 'Não foi possível gerar o resumo no momento.'
     end
 
     private
@@ -106,9 +88,7 @@ module Coaching
     # ── Alertas ───────────────────────────────────────────────────────────────
 
     def alerts_context
-      alerts = DetectorService.new(@account).call
-                              .select { |a| a[:contact_id] == @contact.id }
-
+      alerts = DetectorService.new(@account, contact_id: @contact.id).call
       return 'Nenhum alerta ativo.' if alerts.empty?
 
       alerts.map { |a| alert_line(a) }.join("\n")

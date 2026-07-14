@@ -33,8 +33,19 @@ class Coaching::PreVisitSummaryServiceTest < ActiveSupport::TestCase
     assert result.present?
   end
 
-  test 'retorna mensagem de fallback quando API falha' do
+  test 'retorna mensagem de fallback quando API falha com SocketError' do
     HTTParty.stubs(:post).raises(SocketError, 'connection refused')
+
+    result = Coaching::PreVisitSummaryService.new(@contact).call
+    assert_equal 'Não foi possível gerar o resumo no momento.', result
+  end
+
+  test 'retorna mensagem de fallback quando API retorna non-2xx' do
+    mock_response = mock('response')
+    mock_response.stubs(:success?).returns(false)
+    mock_response.stubs(:code).returns(503)
+    mock_response.stubs(:body).returns('{"error":"overloaded"}')
+    HTTParty.stubs(:post).returns(mock_response)
 
     result = Coaching::PreVisitSummaryService.new(@contact).call
     assert_equal 'Não foi possível gerar o resumo no momento.', result
@@ -187,9 +198,8 @@ class Coaching::PreVisitSummaryServiceTest < ActiveSupport::TestCase
 
   def stub_anthropic(text)
     mock_response = mock('response')
-    mock_response.stubs(:parsed_response).returns({
-      'content' => [{ 'text' => text }]
-    })
+    mock_response.stubs(:success?).returns(true)
+    mock_response.stubs(:parsed_response).returns({ 'content' => [{ 'text' => text }] })
     HTTParty.stubs(:post).returns(mock_response)
   end
 

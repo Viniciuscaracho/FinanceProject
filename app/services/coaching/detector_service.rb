@@ -16,18 +16,20 @@ module Coaching
       bursite distensão distensao lombalgia cervicalgia
     ].freeze
 
-    def initialize(account)
-      @account = account
+    def initialize(account, contact_id: nil)
+      @account    = account
+      @contact_id = contact_id
     end
 
     def call
-      [
+      alerts = [
         *alerts_sumiu,
         *alerts_sem_feedback,
         *alerts_reavaliacao,
         *alerts_dor,
         *alerts_frequencia
       ]
+      @contact_id ? alerts.select { |a| a[:contact_id] == @contact_id } : alerts
     end
 
     private

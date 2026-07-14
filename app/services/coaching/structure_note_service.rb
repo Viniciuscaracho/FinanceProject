@@ -2,32 +2,15 @@
 
 module Coaching
   class StructureNoteService
-    ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
-    MODEL         = 'claude-haiku-4-5-20251001'
-
     def initialize(raw_input)
       @raw_input = raw_input
     end
 
     def call
-      response = HTTParty.post(
-        ANTHROPIC_URL,
-        headers: {
-          'x-api-key'         => ENV['ANTHROPIC_API_KEY'],
-          'anthropic-version' => '2023-06-01',
-          'content-type'      => 'application/json'
-        },
-        body: {
-          model:      MODEL,
-          max_tokens: 512,
-          messages:   [{ role: 'user', content: prompt }]
-        }.to_json
-      )
+      text = AnthropicClient.new('StructureNoteService').complete(prompt: prompt, max_tokens: 512)
+      return fallback_structure if text.nil?
 
-      parse_response(response)
-    rescue => e
-      Rails.logger.error "[Coaching::StructureNoteService] #{e.class}: #{e.message}"
-      fallback_structure
+      parse_text(text)
     end
 
     private
@@ -50,11 +33,11 @@ module Coaching
       PROMPT
     end
 
-    def parse_response(response)
-      body = response.parsed_response
-      text = body.dig('content', 0, 'text').to_s.strip
-      JSON.parse(text).symbolize_keys
-    rescue JSON::ParserError
+    def parse_text(text)
+      clean = text.gsub(/\A```(?:json)?\s*/, '').gsub(/\s*```\z/, '').strip
+      JSON.parse(clean).symbolize_keys
+    rescue JSON::ParserError => e
+      Rails.logger.error "[Coaching::StructureNoteService] JSON::ParserError: #{e.message}"
       fallback_structure
     end
 
