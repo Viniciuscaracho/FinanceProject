@@ -23,9 +23,17 @@ When asked to "subir o dashboard" / show the screens / publish the UI for review
    deliberate design: a single-theme dark "terminal" UI. Honor it — reuse its
    CSS/markup/JS verbatim. Only swap the data source.
 2. **Load the `artifact-design` skill** before writing the page (Artifact requires it).
-3. **The Artifact sandbox can't reach the live server**, so the real dashboard's
-   `EventSource('/stream')` renders empty. Publish a **self-contained copy seeded
-   with sample runs** instead, and label it as static (`sample data`, not `live`).
+3. **The Artifact sandbox can't reach the live server** (CSP blocks localhost),
+   and I can't expose a public server URL from this environment. To host the app
+   on claude.ai, **simulate the server in-browser**: port `store.apply()` from
+   `server/store.ts` into the page, then **replay an event stream on timers** to
+   reproduce the live experience (pipeline animating, tools streaming, spinner→done,
+   cost accumulating). Add ▶ feature/fix/review controls to launch runs. This is
+   the interactive preview at `orbi-dashboard-preview.html` — it IS "all the screens
+   live on claude.ai", just not the real Node server. (A static seeded snapshot is
+   the fallback when interactivity isn't needed.)
+   - A real public server needs deploying to the user's own cloud (Dockerfile +
+     render.yaml/fly.toml/vercel.json) with their credentials — I can't do it from here.
 4. Adapt the page for the Artifact skeleton (it wraps the file in
    `<!doctype><head><body>`): drop the outer `<html>/<head>/<body>`, keep `<title>`,
    `<style>`, markup and `<script>`, and wrap the layout in a `<div class="app">`
