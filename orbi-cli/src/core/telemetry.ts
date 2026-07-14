@@ -48,6 +48,11 @@ export function estimateCost(model: string, u: Usage): number {
 export class Tracer {
   private readonly byLabel = new Map<string, Aggregate>();
 
+  constructor(
+    private readonly emitter?: import("./emitter.js").Emitter,
+    private readonly runId?: string,
+  ) {}
+
   record(span: Span): void {
     const agg =
       this.byLabel.get(span.label) ??
@@ -69,6 +74,21 @@ export class Tracer {
     agg.costUSD += span.costUSD;
     agg.calls += 1;
     this.byLabel.set(span.label, agg);
+
+    if (this.emitter && this.runId) {
+      this.emitter.emit({
+        kind: "span",
+        runId: this.runId,
+        label: span.label,
+        inputTokens: span.inputTokens,
+        outputTokens: span.outputTokens,
+        cacheReadTokens: span.cacheReadTokens,
+        cacheWriteTokens: span.cacheWriteTokens,
+        costUSD: span.costUSD,
+        ms: span.ms,
+        ts: Date.now(),
+      });
+    }
   }
 
   scopes(): Aggregate[] {

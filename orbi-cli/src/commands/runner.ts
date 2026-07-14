@@ -8,6 +8,7 @@ import { Orchestrator } from "../agents/orchestrator.js";
 import { AnthropicProvider } from "../llm/provider.js";
 import { commandValidator } from "../core/validation.js";
 import { Tracer } from "../core/telemetry.js";
+import { Emitter, newRunId } from "../core/emitter.js";
 import { logger } from "../core/logger.js";
 import { ALL_AGENTS } from "../agents/index.js";
 import type {
@@ -53,15 +54,29 @@ export async function runCommand(
   }
 
   const repoRoot = path.resolve(options.repo ?? process.cwd());
+  const runId = newRunId();
+  const emitter = new Emitter(runId);
+
   const task: Task = {
     kind,
+    runId,
     description: description.trim(),
     repoRoot,
     requestedAgents: parseAgents(options.agents),
     apply: kind === "review" ? false : Boolean(options.apply),
   };
 
-  const tracer = new Tracer();
+  // Announce run to dashboard before anything else.
+  emitter.emit({
+    kind: "run:start",
+    runId,
+    taskKind: kind,
+    description: task.description,
+    repoRoot,
+    ts: Date.now(),
+  });
+
+  const tracer = new Tracer(emitter, runId);
   const postApplyValidators = (options.validate ?? []).map((cmd, i) =>
     commandValidator(`validate-${i + 1}`, cmd),
   );
@@ -73,6 +88,7 @@ export async function runCommand(
     memory: options.memory,
     mcp: options.mcp,
     tracer,
+    emitter,
   });
 
   logger.step(`orbi ${kind}: ${task.description}`);

@@ -14,6 +14,7 @@ import { review } from "./commands/review.js";
 import { evalCommand } from "./commands/eval.js";
 import { memoryCommand } from "./commands/memory.js";
 import { mcpCommand } from "./commands/mcp.js";
+import { serverCommand } from "./commands/server.js";
 import { logger } from "./core/logger.js";
 
 const program = new Command();
@@ -84,6 +85,12 @@ program
   .description("List tools exposed by the MCP servers in .orbi/mcp.json")
   .option("-r, --repo <path>", "repository root (default: current directory)")
   .action(mcpCommand);
+
+program
+  .command("server")
+  .description("Start the observability dashboard at http://localhost:3000")
+  .option("-p, --port <number>", "port to listen on (default: 3000)")
+  .action(serverCommand);
 
 program.parseAsync(process.argv).catch((err) => {
   logger.error(err instanceof Error ? err.message : String(err));

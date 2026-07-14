@@ -9,6 +9,7 @@ import path from "node:path";
 import { Orchestrator } from "../agents/orchestrator.js";
 import { AnthropicProvider } from "../llm/provider.js";
 import { Tracer } from "../core/telemetry.js";
+import { newRunId } from "../core/emitter.js";
 import { scoreTask, type EvalResult, type GoldenTask } from "../core/evals.js";
 import { logger } from "../core/logger.js";
 import type { Task } from "../core/types.js";
@@ -41,6 +42,7 @@ export async function evalCommand(file: string | undefined, options: EvalCliOpti
     logger.step(`eval: ${golden.name}`);
     const task: Task = {
       kind: golden.kind,
+      runId: newRunId(),
       description: golden.description,
       repoRoot,
       requestedAgents: golden.agents ?? [],

@@ -14,6 +14,8 @@ export type CommandKind = "feature" | "fix" | "review";
 /** A unit of work handed to the orchestrator. */
 export interface Task {
   kind: CommandKind;
+  /** Unique run ID — used for dashboard telemetry. */
+  runId: string;
   /** Free-text description of what the user wants. */
   description: string;
   /** Absolute path of the repository the agents operate on. */

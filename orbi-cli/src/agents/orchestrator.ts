@@ -26,6 +26,7 @@ import { MemoryStore, type MemoryEntry } from "../core/memory.js";
 import { loadMcpConfig } from "../mcp/config.js";
 import { McpManager } from "../mcp/manager.js";
 import type { AgentTool } from "../llm/tools.js";
+import type { Emitter } from "../core/emitter.js";
 import type {
   AgentName,
   AgentResult,
@@ -62,6 +63,8 @@ export interface OrchestratorOptions {
   mcp?: boolean;
   /** Observability sink for token/cost tracing. */
   tracer?: Tracer;
+  /** Dashboard emitter for real-time event streaming. */
+  emitter?: Emitter;
 }
 
 export class Orchestrator {
@@ -77,6 +80,8 @@ export class Orchestrator {
   }
 
   async execute(task: Task): Promise<OrchestrationResult> {
+    const emit = this.opts.emitter;
+
     // Long-term memory: load once, inject the relevant slice into each stage.
     const memoryEnabled = this.opts.memory !== false;
     const store = new MemoryStore(task.repoRoot);
@@ -88,30 +93,47 @@ export class Orchestrator {
 
     try {
       // 1. Plan.
+      const endPlan = emit?.stageTimer("plan");
       const { plan, agents, brief } = await this.planStage(task, mem("planner"), mcpTools);
+      endPlan?.();
       logger.step(`Agents: ${agents.join(", ")}`);
       if (brief) logger.dim(`  brief: ${brief}`);
 
       // 2. Execute — agents run concurrently, each with brief + memory + MCP tools.
+      const endExecute = emit?.stageTimer("execute");
       const results = await Promise.all(
         agents.map(async (name) => {
+          emit?.emit({ kind: "agent:start", runId: task.runId, agent: name, ts: Date.now() });
           const agent = createAgent(name, this.llm);
           logger.agent(name, "working…");
           const result = await agent.run(task, {
             brief,
             memory: mem(name),
             mcpTools,
-            onToolCall: (label) => logger.dim(`  [${name}] ${label}`),
+            onToolCall: (label) => {
+              logger.dim(`  [${name}] ${label}`);
+              emit?.emit({ kind: "tool:call", runId: task.runId, agent: name, tool: label, ts: Date.now() });
+            },
           });
-          if (result.error) logger.agent(name, `failed: ${result.error}`);
-          else
-            logger.agent(
-              name,
-              `${result.changes.length} change(s), ${result.notes.length} note(s)`,
-            );
+          if (result.error) {
+            logger.agent(name, `failed: ${result.error}`);
+          } else {
+            logger.agent(name, `${result.changes.length} change(s), ${result.notes.length} note(s)`);
+          }
+          emit?.emit({
+            kind: "agent:end",
+            runId: task.runId,
+            agent: name,
+            summary: result.summary,
+            changeCount: result.changes.length,
+            noteCount: result.notes.length,
+            error: result.error,
+            ts: Date.now(),
+          });
           return result;
         }),
       );
+      endExecute?.();
 
       // 3. Consolidate.
       let changeSet = this.consolidate(results, task);
@@ -123,12 +145,14 @@ export class Orchestrator {
         const agentNotes = results
           .flatMap((r) => r.notes.map((n) => `[${r.agent}] ${n}`))
           .join("\n");
+        const endReview = emit?.stageTimer("review");
         const outcome = await this.reviewStage(task, changeSet, {
           brief,
           agentNotes,
           memory: mem("reviewer"),
           mcpTools,
         });
+        endReview?.();
         review = outcome.review;
         changeSet = outcome.accepted;
         rejected = outcome.rejected;
@@ -138,8 +162,10 @@ export class Orchestrator {
       if (memoryEnabled) await this.persistMemory(store, results, review);
 
       // 5. Validate.
+      const endValidate = emit?.stageTimer("validate");
       const preValidators: Validator[] = [noConflictsValidator, wellFormedChangesValidator];
       let validation = await runValidators(preValidators, changeSet, task.repoRoot);
+      endValidate?.();
 
       // 6. Apply.
       let applied = false;
@@ -149,11 +175,21 @@ export class Orchestrator {
         } else if (changeSet.changes.length === 0) {
           logger.info("No changes to apply.");
         } else {
+          const endApply = emit?.stageTimer("apply");
           applied = await this.applyAndVerify(changeSet, task, (report) => {
             validation = report;
           });
+          endApply?.();
         }
       }
+
+      emit?.emit({
+        kind: "run:end",
+        runId: task.runId,
+        applied,
+        validationPassed: validation.passed,
+        ts: Date.now(),
+      });
 
       return { task, plan, agentResults: results, changeSet, review, rejected, validation, applied };
     } finally {

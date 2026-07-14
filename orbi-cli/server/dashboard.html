@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Orbi — Agent Traces</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f14;
+    --surface: #161820;
+    --surface2: #1e2130;
+    --border: #2a2d3e;
+    --text: #e2e4ef;
+    --muted: #6b7080;
+    --cyan: #5eead4;
+    --blue: #60a5fa;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --red: #f87171;
+    --purple: #c084fc;
+    --orange: #fb923c;
+    --radius: 8px;
+    --font: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.6;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    grid-template-rows: 48px 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Header */
+  header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 14px; font-weight: 600; color: var(--cyan); letter-spacing: .04em; }
+  header .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted);
+    transition: background .3s;
+  }
+  header .dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  header .status { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+  /* Sidebar */
+  aside {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    background: var(--surface);
+  }
+  aside h2 { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; padding: 12px 16px 6px; }
+
+  .run-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .run-item:hover { background: var(--surface2); }
+  .run-item.active { background: var(--surface2); border-left: 2px solid var(--cyan); }
+  .run-item .run-kind { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .run-item .run-desc { font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 2px 0; }
+  .run-item .run-meta { display: flex; align-items: center; gap: 8px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600;
+  }
+  .badge.running { background: rgba(94,234,212,.12); color: var(--cyan); }
+  .badge.done    { background: rgba(74,222,128,.12); color: var(--green); }
+  .badge.failed  { background: rgba(248,113,113,.12); color: var(--red); }
+  .run-item .cost { font-size: 10px; color: var(--muted); margin-left: auto; }
+
+  /* Main */
+  main {
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; color: var(--muted); gap: 8px;
+  }
+  .empty .icon { font-size: 40px; }
+  .empty p { font-size: 12px; }
+
+  /* Section */
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .section-header { padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; display: flex; align-items: center; gap: 8px; }
+  .section-body { padding: 16px; }
+
+  /* Run header */
+  .run-header { display: flex; flex-direction: column; gap: 6px; }
+  .run-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .run-subtitle { font-size: 11px; color: var(--muted); }
+
+  /* Pipeline stages */
+  .pipeline {
+    display: flex; align-items: center; gap: 0; overflow-x: auto; padding-bottom: 4px;
+  }
+  .stage-node {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 80px;
+  }
+  .stage-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    background: var(--surface2); border: 2px solid var(--border);
+    transition: all .3s;
+  }
+  .stage-icon.active  { border-color: var(--cyan); box-shadow: 0 0 12px rgba(94,234,212,.3); }
+  .stage-icon.done    { border-color: var(--green); background: rgba(74,222,128,.1); }
+  .stage-icon.failed  { border-color: var(--red);   background: rgba(248,113,113,.1); }
+  .stage-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .stage-dur   { font-size: 9px; color: var(--cyan); }
+  .stage-arrow { flex: 1; height: 1px; background: var(--border); min-width: 16px; margin-bottom: 20px; }
+
+  /* Agents grid */
+  .agents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .agent-card {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .agent-card.running { border-color: rgba(94,234,212,.3); }
+  .agent-card.done    { border-color: rgba(74,222,128,.2); }
+  .agent-card.failed  { border-color: rgba(248,113,113,.2); }
+  .agent-name { font-size: 11px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
+  .agent-summary { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .agent-stats { display: flex; gap: 8px; }
+  .stat { font-size: 10px; color: var(--muted); }
+  .stat span { color: var(--text); }
+
+  /* Tool calls */
+  .tool-list { display: flex; flex-direction: column; gap: 4px; max-height: 140px; overflow-y: auto; }
+  .tool-entry {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; color: var(--muted); padding: 2px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tool-entry:last-child { border-bottom: none; }
+  .tool-name { color: var(--blue); }
+
+  /* Spans table */
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 6px 10px; text-align: right; font-size: 11px; border-bottom: 1px solid var(--border); }
+  th { text-align: left; color: var(--muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+  td:first-child, th:first-child { text-align: left; }
+  tr:last-child td { border-bottom: none; }
+  .cost-val { color: var(--yellow); }
+  .tfoot td { font-weight: 600; color: var(--cyan); border-top: 1px solid var(--border); }
+
+  /* Spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--cyan); border-radius: 50%; animation: spin .7s linear infinite; }
+
+  /* Pulse */
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.4 } }
+  .pulse { animation: pulse 1.5s ease-in-out infinite; }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="dot" id="dot"></div>
+  <h1>orbi traces</h1>
+  <span class="status" id="status">connecting…</span>
+</header>
+
+<aside>
+  <h2>Runs</h2>
+  <div id="run-list"></div>
+</aside>
+
+<main id="main">
+  <div class="empty">
+    <div class="icon">🤖</div>
+    <p>No runs yet. Start <code>orbi feature "…"</code> to see traces here.</p>
+  </div>
+</main>
+
+<script>
+const STAGE_META = {
+  plan:     { icon: '🗺️',  label: 'Plan' },
+  execute:  { icon: '⚡',  label: 'Execute' },
+  review:   { icon: '🔍',  label: 'Review' },
+  validate: { icon: '✅',  label: 'Validate' },
+  apply:    { icon: '💾',  label: 'Apply' },
+};
+
+const AGENT_COLOR = { backend: '#60a5fa', frontend: '#c084fc', qa: '#4ade80', docs: '#fb923c' };
+
+let runs = {};      // runId → RunRecord
+let selectedId = null;
+let liveConnected = false;
+
+// ── SSE ──────────────────────────────────────────────────────────────────────
+function connect() {
+  const es = new EventSource('/stream');
+  es.onopen = () => {
+    liveConnected = true;
+    document.getElementById('dot').classList.add('live');
+    document.getElementById('status').textContent = 'live';
+  };
+  es.onerror = () => {
+    liveConnected = false;
+    document.getElementById('dot').classList.remove('live');
+    document.getElementById('status').textContent = 'reconnecting…';
+    es.close();
+    setTimeout(connect, 3000);
+  };
+  es.onmessage = (e) => {
+    const run = JSON.parse(e.data);
+    runs[run.runId] = run;
+    renderSidebar();
+    if (!selectedId || selectedId === run.runId) {
+      if (!selectedId) selectRun(run.runId);
+      else renderDetail(run);
+    }
+  };
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const list = document.getElementById('run-list');
+  const sorted = Object.values(runs).sort((a, b) => b.startedAt - a.startedAt);
+  list.innerHTML = sorted.map(run => `
+    <div class="run-item ${selectedId === run.runId ? 'active' : ''}" onclick="selectRun('${run.runId}')">
+      <div class="run-kind">${run.taskKind}</div>
+      <div class="run-desc" title="${esc(run.description)}">${esc(run.description)}</div>
+      <div class="run-meta">
+        <span class="badge ${run.status}">${statusLabel(run)}</span>
+        <span class="cost">$${run.totalCostUSD.toFixed(4)}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function statusLabel(run) {
+  if (run.status === 'running') return '<span class="spinner"></span> running';
+  if (run.status === 'done') return run.applied ? '✓ applied' : '✓ done';
+  return '✗ failed';
+}
+
+function selectRun(id) {
+  selectedId = id;
+  renderSidebar();
+  renderDetail(runs[id]);
+}
+
+// ── Detail ────────────────────────────────────────────────────────────────────
+function renderDetail(run) {
+  const main = document.getElementById('main');
+  const dur = run.endedAt ? ((run.endedAt - run.startedAt) / 1000).toFixed(1) + 's' : '…';
+
+  main.innerHTML = `
+    <!-- Run header -->
+    <div class="section">
+      <div class="section-header">Run <span style="color:var(--cyan)">${run.runId}</span></div>
+      <div class="section-body run-header">
+        <div class="run-title">${esc(run.description)}</div>
+        <div class="run-subtitle">${run.taskKind} · ${esc(run.repoRoot)} · ${dur} · $${run.totalCostUSD.toFixed(4)}</div>
+      </div>
+    </div>
+
+    <!-- Pipeline -->
+    <div class="section">
+      <div class="section-header">Pipeline</div>
+      <div class="section-body">${renderPipeline(run)}</div>
+    </div>
+
+    <!-- Agents -->
+    ${Object.keys(run.agents).length > 0 ? `
+    <div class="section">
+      <div class="section-header">Agents</div>
+      <div class="section-body">
+        <div class="agents-grid">${Object.values(run.agents).map(a => renderAgent(a)).join('')}</div>
+      </div>
+    </div>` : ''}
+
+    <!-- Spans / cost -->
+    ${run.spans.length > 0 ? `
+    <div class="section">
+      <div class="section-header">Token trace</div>
+      <div class="section-body">${renderSpans(run)}</div>
+    </div>` : ''}
+  `;
+}
+
+function renderPipeline(run) {
+  const ORDER = ['plan','execute','review','validate','apply'];
+  const stageMap = {};
+  for (const s of run.stages) stageMap[s.stage] = s;
+
+  const nodes = ORDER.map(name => {
+    const meta = STAGE_META[name] || { icon: '▸', label: name };
+    const s = stageMap[name];
+    let cls = '';
+    let dur = '';
+    if (s) {
+      cls = s.endedAt ? 'done' : 'active pulse';
+      dur = s.durationMs != null ? (s.durationMs / 1000).toFixed(1) + 's' : '…';
+    }
+    return `<div class="stage-node">
+      <div class="stage-icon ${cls}">${meta.icon}</div>
+      <div class="stage-label">${meta.label}</div>
+      ${dur ? `<div class="stage-dur">${dur}</div>` : ''}
+    </div>`;
+  });
+
+  const items = [];
+  nodes.forEach((n, i) => {
+    items.push(n);
+    if (i < nodes.length - 1) items.push('<div class="stage-arrow"></div>');
+  });
+
+  return `<div class="pipeline">${items.join('')}</div>`;
+}
+
+function renderAgent(a) {
+  const color = AGENT_COLOR[a.name] || 'var(--text)';
+  const statusIcon = a.status === 'running' ? '<span class="spinner"></span>'
+    : a.status === 'done' ? '✓' : '✗';
+
+  const tools = a.toolCalls.slice(-20).map(t =>
+    `<div class="tool-entry"><span class="tool-name">${esc(t.tool)}</span></div>`
+  ).join('');
+
+  return `<div class="agent-card ${a.status}">
+    <div class="agent-name">
+      <span style="color:${color}">●</span>
+      ${a.name} ${statusIcon}
+    </div>
+    ${a.error ? `<div style="color:var(--red);font-size:10px">${esc(a.error)}</div>` : ''}
+    ${a.summary ? `<div class="agent-summary">${esc(a.summary)}</div>` : ''}
+    <div class="agent-stats">
+      <div class="stat">changes <span>${a.changeCount}</span></div>
+      <div class="stat">notes <span>${a.noteCount}</span></div>
+      <div class="stat">tools <span>${a.toolCalls.length}</span></div>
+    </div>
+    ${a.toolCalls.length > 0 ? `<div class="tool-list">${tools}</div>` : ''}
+  </div>`;
+}
+
+function renderSpans(run) {
+  const rows = run.spans
+    .slice()
+    .sort((a, b) => b.costUSD - a.costUSD)
+    .map(s => `<tr>
+      <td>${esc(s.label)}</td>
+      <td>${fmt(s.inputTokens)}</td>
+      <td>${fmt(s.cacheReadTokens)}</td>
+      <td>${fmt(s.outputTokens)}</td>
+      <td>${(s.ms / 1000).toFixed(1)}s</td>
+      <td class="cost-val">$${s.costUSD.toFixed(4)}</td>
+    </tr>`).join('');
+
+  return `<div style="overflow-x:auto"><table>
+    <thead><tr>
+      <th>scope</th><th>in</th><th>cache</th><th>out</th><th>time</th><th>cost</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr>
+      <td>TOTAL</td><td></td><td></td><td></td><td></td>
+      <td class="cost-val">$${run.totalCostUSD.toFixed(4)}</td>
+    </tr></tfoot>
+  </table></div>`;
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmt(n) {
+  return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
+}
+
+connect();
+</script>
+</body>
+</html>
