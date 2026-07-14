@@ -10,9 +10,9 @@ import { normalizeStatus } from '@/utils/appointmentUtils'
 import { useIsMobile, useBreakpoint } from '@/hooks/use-mobile'
 import { useAuth } from '@/contexts/AuthContext'
 import {
-  AlertCircle, Loader2, Plus, User, FileText,
+  AlertCircle, Loader2, Plus, User, Brain,
   CheckCircle2, Calendar, TrendingUp, TrendingDown,
-  X, Check, SmartphoneNfc, RefreshCw, CheckCircle, Globe, ArrowRight,
+  X, Check, SmartphoneNfc, RefreshCw, CheckCircle, Globe, ArrowRight, ChevronRight,
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { apiService } from '../lib/api'
@@ -304,6 +304,132 @@ function SetupChecklist({ allApts }) {
         ))}
       </div>
     </div>
+  )
+}
+
+/* ─── Coaching Panel ─────────────────────────────── */
+function AlertItem({ name, text, color, onClick }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
+        border: `1px solid ${T.border}`, transition: 'border-color 120ms',
+      }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = color}
+      onMouseLeave={e => e.currentTarget.style.borderColor = T.border}
+    >
+      <div style={{
+        width: 28, height: 28, borderRadius: '50%', background: color + '18',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color }}>{name?.charAt(0)?.toUpperCase() || '?'}</span>
+      </div>
+      <span style={{ fontSize: 13, fontWeight: 600, color: T.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {name}
+      </span>
+      <span style={{ fontSize: 11, fontWeight: 600, color, background: color + '15', borderRadius: 20, padding: '2px 8px', flexShrink: 0 }}>
+        {text}
+      </span>
+      <ChevronRight size={13} style={{ color: T.border, flexShrink: 0 }} />
+    </div>
+  )
+}
+
+function CoachingPanel() {
+  const navigate = useNavigate()
+  const [data, setData]       = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    apiService.getCoachingDashboard()
+      .then(res => setData(res))
+      .catch(() => setData({ alerts: [], active_contacts: [], total_events: 0 }))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const alerts         = data?.alerts || []
+  const activeContacts = data?.active_contacts || []
+  const urgent         = alerts.filter(a => ['sumiu', 'reclamou_de_dor'].includes(a.alert_type))
+  const attention      = alerts.filter(a => ['sem_feedback', 'perdeu_frequencia', 'reavaliacao_proxima'].includes(a.alert_type))
+
+  const alertBadgeColor = urgent.length > 0 ? '#EF4444' : '#F59E0B'
+
+  if (loading) return (
+    <Panel>
+      <SectionHeader label="Coaching" />
+      <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {[1, 2, 3].map(i => (
+          <div key={i} style={{ height: 44, borderRadius: 8, background: T.border, animation: 'skpulse 1.4s ease-in-out infinite', animationDelay: `${i * 80}ms` }} />
+        ))}
+      </div>
+    </Panel>
+  )
+
+  const hasData = alerts.length > 0 || activeContacts.length > 0
+
+  return (
+    <Panel>
+      <SectionHeader
+        label="Coaching"
+        badge={alerts.length}
+        badgeColor={alertBadgeColor}
+        action="Ver tudo"
+        onAction={() => navigate('/coaching')}
+      />
+      <div style={{ padding: '0 20px 16px' }}>
+        {!hasData ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '4px 0 4px' }}>
+            <p style={{ fontSize: 13, color: T.muted, margin: 0, flex: 1 }}>
+              Sem atividade de coaching ainda. Envie uma nota pelo WhatsApp: <strong>"Nome: texto"</strong>
+            </p>
+            <button
+              onClick={() => navigate('/contacts')}
+              style={{ fontSize: 12, fontWeight: 600, color: T.brand, background: T.chip, border: 'none', borderRadius: 7, padding: '6px 14px', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
+            >
+              Ver atletas →
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {urgent.map(a => (
+              <AlertItem
+                key={`u-${a.contact_id}`}
+                name={a.contact_name}
+                text={a.alert_type === 'sumiu' ? `sumiu há ${a.days_since}d` : 'relatou dor'}
+                color="#EF4444"
+                onClick={() => navigate(`/contacts/${a.contact_id}`)}
+              />
+            ))}
+            {attention.map(a => (
+              <AlertItem
+                key={`a-${a.contact_id}`}
+                name={a.contact_name}
+                text={
+                  a.alert_type === 'sem_feedback'
+                    ? (a.days_since != null ? `sem registro há ${a.days_since}d` : 'sem registro')
+                    : a.alert_type === 'perdeu_frequencia'
+                    ? `sem consulta há ${a.days_since}d`
+                    : (a.days_until != null ? `reavaliação em ${a.days_until}d` : 'reavaliação hoje')
+                }
+                color="#F59E0B"
+                onClick={() => navigate(`/contacts/${a.contact_id}`)}
+              />
+            ))}
+            {alerts.length === 0 && activeContacts.slice(0, 4).map(c => (
+              <AlertItem
+                key={`c-${c.contact_id}`}
+                name={c.contact_name}
+                text={`${c.events_count} registro${c.events_count !== 1 ? 's' : ''}`}
+                color={T.brand}
+                onClick={() => navigate(`/contacts/${c.contact_id}`)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </Panel>
   )
 }
 
@@ -863,7 +989,7 @@ export function Dashboard() {
           { icon: Calendar, label: 'Nova consulta',  path: '/appointments' },
           { icon: Plus,     label: 'Nova transação', path: '/transactions' },
           { icon: User,     label: 'Novo paciente',  path: '/contacts' },
-          { icon: FileText, label: 'Relatórios',     path: '/reports' },
+          { icon: Brain,    label: 'Coaching',       path: '/coaching' },
         ].map((a, i) => {
           const Icon = a.icon
           return (
@@ -895,6 +1021,8 @@ export function Dashboard() {
       <SetupChecklist allApts={allApts} />
 
       <WhatsAppDashboardCard isMobile={isMobile} />
+
+      <CoachingPanel />
 
       {/* Erro inline — não bloqueia layout, aparece como banner */}
       {error && (

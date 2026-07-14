@@ -19,6 +19,7 @@ import {
   UserPlus,
   Wallet,
   Globe,
+  Brain,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -29,9 +30,9 @@ import {
 } from '@/components/ui/sheet'
 
 const bottomNavItems = [
-  { icon: Home,       label: 'Início',    path: '/' },
-  { icon: Calendar,   label: 'Agenda',    path: '/appointments' },
-  { icon: CreditCard, label: 'Finanças',  path: '/transactions' },
+  { icon: Home,     label: 'Início',   path: '/' },
+  { icon: Calendar, label: 'Agenda',   path: '/appointments' },
+  { icon: Brain,    label: 'Coaching', path: '/coaching' },
 ]
 
 const moreMenuGroups = [
@@ -61,7 +62,8 @@ const moreMenuGroups = [
   {
     title: 'Financeiro',
     items: [
-      { icon: BarChart3, label: 'Relatórios', path: '/reports' },
+      { icon: CreditCard, label: 'Transações', path: '/transactions' },
+      { icon: BarChart3,  label: 'Relatórios', path: '/reports' },
     ],
   },
   {
@@ -76,7 +78,8 @@ const moreMenuGroups = [
 const quickActions = [
   { icon: CalendarPlus, label: 'Novo agendamento', path: '/appointments', state: { openNew: true } },
   { icon: Wallet,       label: 'Nova transação',   path: '/transactions', state: { openNew: true } },
-  { icon: UserPlus,     label: 'Novo paciente',     path: '/contacts',     state: { openNew: true } },
+  { icon: UserPlus,     label: 'Novo paciente',    path: '/contacts',     state: { openNew: true } },
+  { icon: Brain,        label: 'Ir para Coaching', path: '/coaching' },
 ]
 
 const moreMenuPaths = moreMenuGroups.flatMap(g => g.items.map(i => i.path))

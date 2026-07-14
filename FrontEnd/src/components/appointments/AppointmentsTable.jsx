@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useState, useEffect } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
@@ -68,7 +68,16 @@ import {
   normalizePaymentStatus,
 } from '@/utils/appointmentUtils'
 import { useAppointmentsContext } from '@/contexts/AppointmentsContext'
+import { apiService } from '@/lib/api'
 import { T, DISPLAY } from '@/lib/tokens'
+
+const ALERT_LABELS = {
+  sumiu:            { label: 'sumiu', color: '#EF4444' },
+  sem_feedback:     { label: 'sem registro', color: '#F59E0B' },
+  reclamou_de_dor:  { label: 'dor recente', color: '#EF4444' },
+  reavaliacao_proxima: { label: 'reavaliação', color: '#3B82F6' },
+  perdeu_frequencia:{ label: 'faltando', color: '#F59E0B' },
+}
 
 const STATUS_PILL_COLORS = {
   pending:   { color: '#F59E0B', label: 'Pendente'   },
@@ -185,9 +194,26 @@ function MobileAppointmentCard({
             <p className="font-semibold text-base text-text-primary truncate">
               {appointment.client?.name || appointment.client?.whatsapp_number || 'N/A'}
             </p>
-            <p className="text-sm text-text-secondary mt-0.5">
-              {appointment.service?.name || 'N/A'}
-            </p>
+            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+              <p className="text-sm text-text-secondary">
+                {appointment.service?.name || 'N/A'}
+              </p>
+              {(() => {
+                const cid = appointment.client?.id || appointment.contact_id
+                const alerts = coachingAlertMap[cid] || []
+                const top = alerts[0]
+                if (!top) return null
+                const cfg = ALERT_LABELS[top.alert_type] || { label: top.alert_type, color: '#F59E0B' }
+                return (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '1px 7px',
+                    background: `${cfg.color}18`, color: cfg.color, whiteSpace: 'nowrap',
+                  }}>
+                    ⚠ {cfg.label}
+                  </span>
+                )
+              })()}
+            </div>
           </div>
           <p className="text-lg font-bold text-[#5B7A9E] dark:text-[#7BA3D1] shrink-0">
             {formatCurrency(
@@ -377,6 +403,20 @@ export function AppointmentsTable({ onEdit, onDelete, onOpenConsultation }) {
     setSelectedAppointment,
     isSubmitting,
   } = useAppointmentsContext()
+
+  const [coachingAlertMap, setCoachingAlertMap] = useState({})
+  useEffect(() => {
+    apiService.getCoachingDashboard()
+      .then(res => {
+        const map = {}
+        ;(res.alerts || []).forEach(a => {
+          if (!map[a.contact_id]) map[a.contact_id] = []
+          map[a.contact_id].push(a)
+        })
+        setCoachingAlertMap(map)
+      })
+      .catch(() => {})
+  }, [])
 
   const handleStatusChange = useCallback(
     async (id, newStatus) => {

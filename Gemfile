@@ -57,6 +57,8 @@ gem 'sassc-rails', '~> 2.1.0'
 gem 'chronic'
 
 group :development, :test do
+  gem 'dotenv-rails', '~> 3.1'
+
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem 'annotate', '~> 3.2.0'
   gem 'bullet', '~> 7.0.1'

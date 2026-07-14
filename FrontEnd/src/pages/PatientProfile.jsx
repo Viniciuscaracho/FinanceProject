@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Mail, Phone, FileText, Target, ClipboardList, Calendar, TrendingUp, Copy, ExternalLink, Plus, Trash2, Loader2, Save, ChevronDown, ChevronUp, Link2, UtensilsCrossed, Paperclip, Upload, Download, Eye, AlertCircle, CheckCircle2, MessageCircle, History, Brain, Search, Mic, MicOff, Moon, Dumbbell, StickyNote, ArrowRight } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { apiService } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -463,6 +464,17 @@ function GoalCard({ goal, contactId, onUpdate, onDelete }) {
 
 const BLANK_GOAL = { title: '', unit: '', target_value: '', current_value: '', deadline: '', notes: '' }
 
+function timeAgo(isoString) {
+  if (!isoString) return null
+  const diff = Date.now() - new Date(isoString).getTime()
+  const days = Math.floor(diff / 86400000)
+  if (days === 0) return 'hoje'
+  if (days === 1) return 'ontem'
+  if (days < 7)  return `há ${days} dias`
+  if (days < 30) return `há ${Math.floor(days / 7)} sem.`
+  return `há ${Math.floor(days / 30)} meses`
+}
+
 export function PatientProfile() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -526,6 +538,8 @@ export function PatientProfile() {
   const [editingProfile, setEditingProfile]     = useState(false)
   const [profileForm, setProfileForm]           = useState({ goal: '', limitations: '', next_reassessment_at: '' })
   const [savingProfile, setSavingProfile]       = useState(false)
+  const [briefing, setBriefing]                 = useState(null)
+  const [loadingBriefing, setLoadingBriefing]   = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -684,6 +698,19 @@ export function PatientProfile() {
   }
 
   // Coaching handlers
+  const handleGenerateBriefing = async () => {
+    setLoadingBriefing(true)
+    setBriefing(null)
+    try {
+      const res = await apiService.createCoachingBriefing(id)
+      setBriefing(res.summary)
+    } catch {
+      toast.error('Erro ao gerar briefing')
+    } finally {
+      setLoadingBriefing(false)
+    }
+  }
+
   const handleSaveCoachingProfile = async () => {
     setSavingProfile(true)
     try {
@@ -892,9 +919,216 @@ export function PatientProfile() {
         )}
       </div>
 
+      {/* ── BRIEFING STRIP ─────────────────────────────────────────────────── */}
+      {timelineEvents.length > 0 && (() => {
+        const last = timelineEvents[0]
+        const daysSince = last?.created_at
+          ? Math.floor((Date.now() - new Date(last.created_at).getTime()) / 86400000)
+          : null
+        const alertColor = daysSince != null && daysSince > 14 ? '#EF4444'
+          : daysSince != null && daysSince > 7  ? '#F59E0B'
+          : '#10B981'
+        const alertLabel = daysSince != null && daysSince > 14 ? `sumiu há ${daysSince}d`
+          : daysSince != null && daysSince > 7  ? `sem registro há ${daysSince}d`
+          : null
+
+        return (
+          <div style={{
+            background: T.white, border: `1px solid ${T.border}`, borderRadius: 12,
+            padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10,
+          }}>
+            {/* Linha 1: stats rápidos */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Brain size={13} style={{ color: T.brand }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>Último registro</span>
+                <span style={{ fontSize: 12, color: T.muted }}>{timeAgo(last?.created_at)}</span>
+              </div>
+              {last?.sono && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Moon size={12} style={{ color: '#6366F1' }} />
+                  <span style={{ fontSize: 12, color: T.muted }}>Sono <strong style={{ color: T.text }}>{last.sono}</strong></span>
+                </div>
+              )}
+              {last?.carga && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Dumbbell size={12} style={{ color: '#F59E0B' }} />
+                  <span style={{ fontSize: 12, color: T.muted }}>Carga <strong style={{ color: T.text }}>{last.carga}</strong></span>
+                </div>
+              )}
+              {alertLabel && (
+                <span style={{ fontSize: 11, fontWeight: 600, color: alertColor, background: alertColor + '15', borderRadius: 20, padding: '2px 8px' }}>
+                  {alertLabel}
+                </span>
+              )}
+              <button
+                onClick={handleGenerateBriefing}
+                disabled={loadingBriefing}
+                style={{
+                  marginLeft: 'auto', fontSize: 12, fontWeight: 600, color: T.brand,
+                  background: T.chip, border: 'none', borderRadius: 7,
+                  padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
+                }}
+              >
+                {loadingBriefing
+                  ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Gerando…</>
+                  : <><Brain size={12} /> Preparar consulta</>
+                }
+              </button>
+            </div>
+
+            {/* Linha 2: próxima ação */}
+            {last?.proxima_acao && (
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, paddingTop: 4, borderTop: `1px solid ${T.border}` }}>
+                <ArrowRight size={13} style={{ color: T.brand, marginTop: 2, flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: T.text, fontWeight: 500, lineHeight: 1.4 }}>{last.proxima_acao}</span>
+              </div>
+            )}
+
+            {/* Linha 3: AI briefing expandido */}
+            {briefing && (
+              <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 10 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.muted, margin: '0 0 6px' }}>
+                  Briefing IA
+                </p>
+                <p style={{ fontSize: 13, color: T.text, lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{briefing}</p>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* 1 ── METAS */}
+        {/* 1 ── COACHING (primeiro — funcionalidade principal) */}
+        <Section icon={Brain} title="Coaching" count={timelineEvents.length} defaultOpen={true}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            {/* Perfil de coaching */}
+            {editingProfile ? (
+              <div style={{ border: `1px solid ${T.brand}30`, borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Objetivo</label>
+                  <textarea value={profileForm.goal} onChange={e => setProfileForm(p => ({ ...p, goal: e.target.value }))}
+                    rows={2} placeholder="Ex: hipertrofia, emagrecimento, melhora de desempenho..."
+                    style={{ width: '100%', padding: '8px 10px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Limitações</label>
+                  <textarea value={profileForm.limitations} onChange={e => setProfileForm(p => ({ ...p, limitations: e.target.value }))}
+                    rows={2} placeholder="Ex: dor no joelho, hérnia de disco..."
+                    style={{ width: '100%', padding: '8px 10px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Próxima reavaliação</label>
+                  <input type="date" value={profileForm.next_reassessment_at} onChange={e => setProfileForm(p => ({ ...p, next_reassessment_at: e.target.value }))}
+                    style={{ padding: '7px 10px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none' }} />
+                </div>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingProfile(false)} style={{ fontSize: 11, height: 28 }}>Cancelar</Button>
+                  <Button size="sm" onClick={handleSaveCoachingProfile} disabled={savingProfile} style={{ fontSize: 11, height: 28, gap: 4 }}>
+                    {savingProfile ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Salvar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                <div style={{ fontSize: 12, color: T.muted, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {coachingProfile?.goal && <span><strong style={{ color: T.text }}>Objetivo:</strong> {coachingProfile.goal}</span>}
+                  {coachingProfile?.limitations && <span><strong style={{ color: T.text }}>Limitações:</strong> {coachingProfile.limitations}</span>}
+                  {coachingProfile?.next_reassessment_at && <span><strong style={{ color: T.text }}>Reavaliação:</strong> {new Date(coachingProfile.next_reassessment_at).toLocaleDateString('pt-BR')}</span>}
+                  {!coachingProfile?.goal && !coachingProfile?.limitations && (
+                    <span style={{ fontStyle: 'italic' }}>Nenhum perfil preenchido</span>
+                  )}
+                </div>
+                <button type="button" onClick={() => setEditingProfile(true)}
+                  style={{ background: 'none', border: `1px solid ${T.border}`, borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: 11, color: T.brand, fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  Editar perfil
+                </button>
+              </div>
+            )}
+
+            {/* Registro rápido */}
+            <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
+              <div style={{ padding: '10px 14px 6px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.text, flex: 1 }}>Registro rápido</span>
+                <button type="button" onClick={toggleRecording} disabled={isTranscribing}
+                  className={isRecording ? 'animate-pulse' : ''}
+                  title={isRecording ? 'Parar gravação' : isTranscribing ? 'Transcrevendo…' : 'Gravar por voz'}
+                  style={{ background: isRecording ? '#EF4444' : T.chip, border: 'none', borderRadius: 6, padding: '4px 8px', cursor: isTranscribing ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: isRecording ? '#fff' : T.brand, fontSize: 11, fontWeight: 600, opacity: isTranscribing ? 0.6 : 1 }}>
+                  {isTranscribing ? <Loader2 size={13} className="animate-spin" /> : isRecording ? <MicOff size={13} /> : <Mic size={13} />}
+                  {isTranscribing ? 'Transcrevendo…' : isRecording ? 'Parar' : 'Voz'}
+                </button>
+              </div>
+              <textarea
+                value={coachingInput}
+                onChange={e => setCoachingInput(e.target.value)}
+                placeholder="Cole a transcrição ou descreva o atendimento... A IA vai estruturar sono, carga, observação e próxima ação."
+                rows={4}
+                style={{ width: '100%', padding: '10px 14px', border: 'none', outline: 'none', resize: 'vertical', fontFamily: 'inherit', fontSize: 13, color: T.text, background: T.white, boxSizing: 'border-box' }}
+              />
+              <div style={{ padding: '8px 14px', borderTop: `1px solid ${T.border}`, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button size="sm" onClick={handleCreateTimelineEvent} disabled={savingCoaching || !coachingInput.trim()} style={{ fontSize: 11, gap: 6 }}>
+                  {savingCoaching ? <Loader2 size={11} className="animate-spin" /> : <Brain size={11} />}
+                  {savingCoaching ? 'Processando IA...' : 'Registrar'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Rascunho de feedback */}
+            {timelineEvents.length > 0 && (
+              <div>
+                <Button size="sm" variant="outline" onClick={handleFeedbackDraft} disabled={loadingDraft} style={{ fontSize: 12, gap: 6 }}>
+                  {loadingDraft ? <Loader2 size={12} className="animate-spin" /> : <MessageCircle size={12} />}
+                  Gerar rascunho de feedback
+                </Button>
+                {feedbackDraft && (
+                  <div style={{ marginTop: 8, padding: '12px 14px', background: T.chip, borderRadius: 8, fontSize: 13, color: T.text, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                    {feedbackDraft}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tendências — strip dos últimos 5 registros */}
+            {timelineEvents.length >= 2 && (
+              <CoachingChart events={timelineEvents} />
+            )}
+
+            {/* Busca na timeline */}
+            {timelineEvents.length > 0 && (
+              <div style={{ position: 'relative' }}>
+                <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: T.muted }} />
+                <input
+                  value={coachingSearch}
+                  onChange={e => setCoachingSearch(e.target.value)}
+                  placeholder="Buscar na timeline..."
+                  style={{ width: '100%', padding: '7px 12px 7px 30px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12, fontFamily: 'inherit', outline: 'none', color: T.text, boxSizing: 'border-box' }}
+                />
+              </div>
+            )}
+
+            {/* Timeline */}
+            {timelineEvents.length === 0 ? (
+              <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '8px 0' }}>
+                Nenhum registro de coaching ainda
+              </p>
+            ) : (
+              <div style={{ position: 'relative' }}>
+                {/* linha vertical */}
+                <div style={{ position: 'absolute', left: 15, top: 8, bottom: 8, width: 2, background: T.border, borderRadius: 2 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {filteredEvents.map(ev => (
+                    <TimelineCard key={ev.id} ev={ev} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </Section>
+
+        {/* 2 ── METAS */}
         <Section icon={Target} title="Metas" count={goals.filter(g => g.status === 'active').length}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {goals.length === 0 && !showNewGoal && (
@@ -1322,133 +1556,6 @@ export function PatientProfile() {
           </div>
         </Section>
 
-        {/* COACHING */}
-        <Section icon={Brain} title="Coaching" count={timelineEvents.length} defaultOpen={false}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-            {/* Perfil de coaching */}
-            {editingProfile ? (
-              <div style={{ border: `1px solid ${T.brand}30`, borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Objetivo</label>
-                  <textarea value={profileForm.goal} onChange={e => setProfileForm(p => ({ ...p, goal: e.target.value }))}
-                    rows={2} placeholder="Ex: hipertrofia, emagrecimento, melhora de desempenho..."
-                    style={{ width: '100%', padding: '8px 10px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Limitações</label>
-                  <textarea value={profileForm.limitations} onChange={e => setProfileForm(p => ({ ...p, limitations: e.target.value }))}
-                    rows={2} placeholder="Ex: dor no joelho, hérnia de disco..."
-                    style={{ width: '100%', padding: '8px 10px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 4 }}>Próxima reavaliação</label>
-                  <input type="date" value={profileForm.next_reassessment_at} onChange={e => setProfileForm(p => ({ ...p, next_reassessment_at: e.target.value }))}
-                    style={{ padding: '7px 10px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none' }} />
-                </div>
-                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                  <Button size="sm" variant="ghost" onClick={() => setEditingProfile(false)} style={{ fontSize: 11, height: 28 }}>Cancelar</Button>
-                  <Button size="sm" onClick={handleSaveCoachingProfile} disabled={savingProfile} style={{ fontSize: 11, height: 28, gap: 4 }}>
-                    {savingProfile ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />} Salvar
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                <div style={{ fontSize: 12, color: T.muted, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {coachingProfile?.goal && <span><strong style={{ color: T.text }}>Objetivo:</strong> {coachingProfile.goal}</span>}
-                  {coachingProfile?.limitations && <span><strong style={{ color: T.text }}>Limitações:</strong> {coachingProfile.limitations}</span>}
-                  {coachingProfile?.next_reassessment_at && <span><strong style={{ color: T.text }}>Reavaliação:</strong> {new Date(coachingProfile.next_reassessment_at).toLocaleDateString('pt-BR')}</span>}
-                  {!coachingProfile?.goal && !coachingProfile?.limitations && (
-                    <span style={{ fontStyle: 'italic' }}>Nenhum perfil preenchido</span>
-                  )}
-                </div>
-                <button type="button" onClick={() => setEditingProfile(true)}
-                  style={{ background: 'none', border: `1px solid ${T.border}`, borderRadius: 6, padding: '3px 8px', cursor: 'pointer', fontSize: 11, color: T.brand, fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                  Editar perfil
-                </button>
-              </div>
-            )}
-
-            {/* Registro rápido */}
-            <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
-              <div style={{ padding: '10px 14px 6px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: T.text, flex: 1 }}>Registro rápido</span>
-                <button type="button" onClick={toggleRecording} disabled={isTranscribing}
-                  className={isRecording ? 'animate-pulse' : ''}
-                  title={isRecording ? 'Parar gravação' : isTranscribing ? 'Transcrevendo…' : 'Gravar por voz'}
-                  style={{ background: isRecording ? '#EF4444' : T.chip, border: 'none', borderRadius: 6, padding: '4px 8px', cursor: isTranscribing ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: isRecording ? '#fff' : T.brand, fontSize: 11, fontWeight: 600, opacity: isTranscribing ? 0.6 : 1 }}>
-                  {isTranscribing ? <Loader2 size={13} className="animate-spin" /> : isRecording ? <MicOff size={13} /> : <Mic size={13} />}
-                  {isTranscribing ? 'Transcrevendo…' : isRecording ? 'Parar' : 'Voz'}
-                </button>
-              </div>
-              <textarea
-                value={coachingInput}
-                onChange={e => setCoachingInput(e.target.value)}
-                placeholder="Cole a transcrição ou descreva o atendimento... A IA vai estruturar sono, carga, observação e próxima ação."
-                rows={4}
-                style={{ width: '100%', padding: '10px 14px', border: 'none', outline: 'none', resize: 'vertical', fontFamily: 'inherit', fontSize: 13, color: T.text, background: T.white, boxSizing: 'border-box' }}
-              />
-              <div style={{ padding: '8px 14px', borderTop: `1px solid ${T.border}`, display: 'flex', justifyContent: 'flex-end' }}>
-                <Button size="sm" onClick={handleCreateTimelineEvent} disabled={savingCoaching || !coachingInput.trim()} style={{ fontSize: 11, gap: 6 }}>
-                  {savingCoaching ? <Loader2 size={11} className="animate-spin" /> : <Brain size={11} />}
-                  {savingCoaching ? 'Processando IA...' : 'Registrar'}
-                </Button>
-              </div>
-            </div>
-
-            {/* Rascunho de feedback */}
-            {timelineEvents.length > 0 && (
-              <div>
-                <Button size="sm" variant="outline" onClick={handleFeedbackDraft} disabled={loadingDraft} style={{ fontSize: 12, gap: 6 }}>
-                  {loadingDraft ? <Loader2 size={12} className="animate-spin" /> : <MessageCircle size={12} />}
-                  Gerar rascunho de feedback
-                </Button>
-                {feedbackDraft && (
-                  <div style={{ marginTop: 8, padding: '12px 14px', background: T.chip, borderRadius: 8, fontSize: 13, color: T.text, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                    {feedbackDraft}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Tendências — strip dos últimos 5 registros */}
-            {timelineEvents.length >= 2 && (
-              <CoachingTrends events={timelineEvents.slice(0, 5)} />
-            )}
-
-            {/* Busca na timeline */}
-            {timelineEvents.length > 0 && (
-              <div style={{ position: 'relative' }}>
-                <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: T.muted }} />
-                <input
-                  value={coachingSearch}
-                  onChange={e => setCoachingSearch(e.target.value)}
-                  placeholder="Buscar na timeline..."
-                  style={{ width: '100%', padding: '7px 12px 7px 30px', border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12, fontFamily: 'inherit', outline: 'none', color: T.text, boxSizing: 'border-box' }}
-                />
-              </div>
-            )}
-
-            {/* Timeline */}
-            {timelineEvents.length === 0 ? (
-              <p style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '8px 0' }}>
-                Nenhum registro de coaching ainda
-              </p>
-            ) : (
-              <div style={{ position: 'relative' }}>
-                {/* linha vertical */}
-                <div style={{ position: 'absolute', left: 15, top: 8, bottom: 8, width: 2, background: T.border, borderRadius: 2 }} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {filteredEvents.map(ev => (
-                    <TimelineCard key={ev.id} ev={ev} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </Section>
-
         {/* 5 ── DOCUMENTOS */}
         <Section icon={FileText} title="Documentos" count={docs.length} defaultOpen={false}>
           <button type="button" onClick={() => { setNewDoc({ title: '', document_type: 'plano_alimentar', content: '' }); setShowNewDocDialog(true) }}
@@ -1632,57 +1739,87 @@ function TimelineCard({ ev }) {
   )
 }
 
-// ─── CoachingTrends ───────────────────────────────────────────────────────────
+// ─── CoachingChart ────────────────────────────────────────────────────────────
 
-function CoachingTrends({ events }) {
-  const sonoItems  = events.filter(e => e.sono).slice(0, 4).reverse()
-  const cargaItems = events.filter(e => e.carga).slice(0, 4).reverse()
+function parseMetric(str, type) {
+  if (!str) return null
+  const lower = str.toLowerCase()
+  // fraction "8/10" → scale to 0-10
+  const frac = str.match(/(\d+(?:[.,]\d+)?)\s*\/\s*(\d+)/)
+  if (frac) return Math.round((parseFloat(frac[1]) / parseFloat(frac[2])) * 10 * 10) / 10
+  // plain number
+  const num = str.match(/(\d+(?:[.,]\d+)?)/)
+  if (num) {
+    const v = parseFloat(num[1].replace(',', '.'))
+    if (type === 'sono') return v > 0 && v <= 24 ? v : null
+    if (type === 'carga') return v <= 10 ? v : null
+  }
+  // text quality
+  if (type === 'carga') {
+    if (/baixa|leve|fácil|facil/.test(lower)) return 3
+    if (/modera/.test(lower)) return 5
+    if (/alta|intensa|forte/.test(lower)) return 8
+    if (/máxima|maxima/.test(lower)) return 10
+  }
+  if (type === 'sono') {
+    if (/ruim|péssimo|pessimo/.test(lower)) return 5
+    if (/regular|médio|medio/.test(lower)) return 6.5
+    if (/bom|boa|bem/.test(lower)) return 7.5
+    if (/ótimo|ótima|excelente/.test(lower)) return 9
+  }
+  return null
+}
 
-  if (!sonoItems.length && !cargaItems.length) return null
+function CoachingChart({ events }) {
+  const data = [...events]
+    .reverse()
+    .slice(-12)
+    .map(e => ({
+      label: format(new Date(e.created_at), 'dd/MM'),
+      sono:  parseMetric(e.sono, 'sono'),
+      carga: parseMetric(e.carga, 'carga'),
+    }))
+    .filter(d => d.sono != null || d.carga != null)
+
+  if (data.length < 2) return null
+
+  const hasSono  = data.some(d => d.sono != null)
+  const hasCarga = data.some(d => d.carga != null)
 
   return (
-    <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tendências recentes</span>
-
-      {sonoItems.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Moon size={12} style={{ color: T.muted, flexShrink: 0 }} />
-          <span style={{ fontSize: 11, color: T.muted, width: 32, flexShrink: 0 }}>Sono</span>
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {sonoItems.map((e, i) => {
-              const q = sleepQuality(e.sono)
-              return (
-                <span key={i} title={e.sono} style={{
-                  fontSize: 10, fontWeight: 600, borderRadius: 20, padding: '1px 7px',
-                  background: q === 'bad' ? '#FEF3C7' : q === 'good' ? '#D1FAE5' : T.chip,
-                  color:      q === 'bad' ? '#92400E' : q === 'good' ? '#065F46' : T.muted,
-                  maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>
-                  {e.sono}
-                </span>
-              )
-            })}
-          </div>
+    <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px 8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Tendência
+        </span>
+        <div style={{ display: 'flex', gap: 12 }}>
+          {hasSono  && <span style={{ fontSize: 10, color: '#6366F1', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 2, background: '#6366F1', display: 'inline-block', borderRadius: 1 }} /> Sono</span>}
+          {hasCarga && <span style={{ fontSize: 10, color: '#F59E0B', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 2, background: '#F59E0B', display: 'inline-block', borderRadius: 1 }} /> Carga</span>}
         </div>
-      )}
-
-      {cargaItems.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Dumbbell size={12} style={{ color: T.muted, flexShrink: 0 }} />
-          <span style={{ fontSize: 11, color: T.muted, width: 32, flexShrink: 0 }}>Carga</span>
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {cargaItems.map((e, i) => (
-              <span key={i} title={e.carga} style={{
-                fontSize: 10, fontWeight: 600, borderRadius: 20, padding: '1px 7px',
-                background: '#EDE9FE', color: '#5B21B6',
-                maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>
-                {e.carga}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
+      <ResponsiveContainer width="100%" height={130}>
+        <LineChart data={data} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
+          <XAxis dataKey="label" tick={{ fontSize: 9, fill: T.muted }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+          {hasSono && (
+            <YAxis yAxisId="sono" domain={[4, 10]} tick={{ fontSize: 9, fill: '#6366F1' }} axisLine={false} tickLine={false} width={30} />
+          )}
+          {hasCarga && (
+            <YAxis yAxisId="carga" orientation="right" domain={[0, 10]} tick={{ fontSize: 9, fill: '#F59E0B' }} axisLine={false} tickLine={false} width={24} />
+          )}
+          <Tooltip
+            contentStyle={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12 }}
+            formatter={(v, name) => [v != null ? `${v}${name === 'sono' ? 'h' : '/10'}` : '—', name === 'sono' ? 'Sono' : 'Carga']}
+          />
+          {hasSono && (
+            <Line yAxisId="sono" dataKey="sono" stroke="#6366F1" strokeWidth={2}
+              dot={{ r: 3, fill: '#6366F1', strokeWidth: 0 }} connectNulls activeDot={{ r: 4 }} />
+          )}
+          {hasCarga && (
+            <Line yAxisId="carga" dataKey="carga" stroke="#F59E0B" strokeWidth={2}
+              dot={{ r: 3, fill: '#F59E0B', strokeWidth: 0 }} connectNulls activeDot={{ r: 4 }} />
+          )}
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   )
 }

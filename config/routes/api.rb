@@ -308,6 +308,10 @@ namespace :api, defaults: { format: 'json' } do
     scope '/whatsapp' do
       post 'webhook', to: 'whats_app_webhook#webhook'
       post 'webhook/:account_id', to: 'whats_app_webhook#webhook'
+      # Evolution API sub-paths quando webhookByEvents: true
+      post 'webhook/:account_id/messages-upsert',    to: 'whats_app_webhook#webhook'
+      post 'webhook/:account_id/connection-update',  to: 'whats_app_webhook#webhook'
+      post 'webhook/:account_id/qrcode-updated',     to: 'whats_app_webhook#webhook'
       get 'webhook', to: 'whats_app_webhook#verify'
     end
     
@@ -321,6 +325,7 @@ namespace :api, defaults: { format: 'json' } do
         resource :audio_notes, only: [:create]
         member do
           post :feedback_draft, to: 'feedback_drafts#create'
+          post :briefing,       to: 'briefings#create'
         end
       end
     end

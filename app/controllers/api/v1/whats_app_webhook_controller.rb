@@ -96,8 +96,10 @@ module Api
 
           from_me = msg.dig(:key, :fromMe)
 
-          # Áudio PTT enviado pelo treinador → transcrição Whisper → coaching
-          if msg.dig(:message, :audioMessage).present? && from_me
+          # Áudio PTT de coaching:
+          #   - from_me: true  → treinador gravou no próprio número conectado (fluxo legado)
+          #   - from_me: false → treinador enviou para o número de inbox dedicado Orbi
+          if msg.dig(:message, :audioMessage).present?
             msg_hash  = msg.respond_to?(:to_unsafe_h) ? msg.to_unsafe_h : msg.to_h
             ::Coaching::ProcessWhatsappAudioJob.perform_later(
               account_id:   account.id,
@@ -142,8 +144,12 @@ module Api
         end
 
         # Instância customizada: busca pelo nome armazenado no whatsapp_config
-        Account.joins(:whatsapp_config)
-               .find_by(whatsapp_configs: { evolution_instance_name: instance_name })
+        found = Account.joins(:whatsapp_config)
+                       .find_by(whatsapp_configs: { evolution_instance_name: instance_name })
+        return found if found
+
+        # Fallback: account_id vem na URL (/webhook/:account_id)
+        Account.find_by(id: params[:account_id]) if params[:account_id].present?
       end
 
       def valid_webhook?

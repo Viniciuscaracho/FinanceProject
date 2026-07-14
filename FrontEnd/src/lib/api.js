@@ -2212,6 +2212,10 @@ class ApiService {
     return this.request(`/coaching/contacts/${contactId}/feedback_draft`, { method: 'POST' })
   }
 
+  async createCoachingBriefing(contactId) {
+    return this.request(`/coaching/contacts/${contactId}/briefing`, { method: 'POST' })
+  }
+
   async uploadAudioNote(contactId, audioBlob) {
     const formData = new FormData()
     formData.append('audio', audioBlob, 'recording.webm')
