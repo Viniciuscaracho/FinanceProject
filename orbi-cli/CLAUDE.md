@@ -1,5 +1,19 @@
 # orbi-cli — project notes
 
+## Standing rule: capture discoveries here
+
+Whenever you figure something out that would otherwise have to be re-discovered —
+a data shape, a file's structure, a build/tooling quirk, a non-obvious workflow,
+a gotcha, a decision and its rationale — **append it to this file** as part of the
+same task, before finishing. Treat it as a required step, not an afterthought.
+
+- Add a concise, dated-agnostic note under an existing section, or create a new
+  `##` section if it doesn't fit.
+- Write it so a future session can act without repeating the investigation
+  (include the concrete details: paths, shapes, commands, values).
+- Keep it factual and current — update or remove a note when it goes stale rather
+  than letting it rot.
+
 ## Dashboard preview as an Artifact (reusable procedure)
 
 When asked to "subir o dashboard" / show the screens / publish the UI for review,
