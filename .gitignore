@@ -46,8 +46,6 @@
 /yarn-error.log
 yarn-debug.log*
 
-# Ignore coverage reports
-/coverage
 
 # Ignore IDE files
 .idea
