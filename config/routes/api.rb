@@ -317,12 +317,14 @@ namespace :api, defaults: { format: 'json' } do
     
     # Coaching layer
     namespace :coaching do
-      get 'alerts', to: 'alerts#index'
-      get 'dashboard', to: 'dashboard#index'
+      get 'alerts',           to: 'alerts#index'
+      get 'dashboard',        to: 'dashboard#index'
+      get 'recent_activity',  to: 'recent_activity#index'
       resources :contacts, only: [] do
         resources :timeline_events, only: %i[index create]
         resource :coaching_profile, only: %i[show update]
-        resource :audio_notes, only: [:create]
+        resource :audio_notes,   only: [:create]
+        resource :file_imports,  only: [:create]
         member do
           post :feedback_draft, to: 'feedback_drafts#create'
           post :briefing,       to: 'briefings#create'

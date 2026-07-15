@@ -532,8 +532,10 @@ export function PatientProfile() {
   const [loadingDraft, setLoadingDraft]         = useState(false)
   const [isRecording, setIsRecording]           = useState(false)
   const [isTranscribing, setIsTranscribing]     = useState(false)
+  const [isImporting, setIsImporting]           = useState(false)
   const mediaRecorderRef = useRef(null)
   const audioChunksRef   = useRef([])
+  const fileInputRef     = useRef(null)
   const [coachingProfile, setCoachingProfile]   = useState(null)
   const [editingProfile, setEditingProfile]     = useState(false)
   const [profileForm, setProfileForm]           = useState({ goal: '', limitations: '', next_reassessment_at: '' })
@@ -797,6 +799,22 @@ export function PatientProfile() {
     }
   }
 
+  const handleFileImport = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setIsImporting(true)
+    try {
+      const res = await apiService.uploadFileImport(id, file)
+      setTimelineEvents(prev => [res.event, ...prev])
+      toast.success(`Arquivo importado: ${res.filename}`)
+    } catch {
+      toast.error('Erro ao importar arquivo')
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
   const filteredEvents = coachingSearch.trim()
     ? timelineEvents.filter(e =>
         (e.raw_input || '').toLowerCase().includes(coachingSearch.toLowerCase()) ||
@@ -872,7 +890,7 @@ export function PatientProfile() {
       {/* Back */}
       <button type="button" onClick={() => navigate('/contacts')}
         style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: T.muted, fontSize: 13, fontFamily: 'inherit', marginBottom: 20 }}>
-        <ArrowLeft size={15} /> Pacientes
+        <ArrowLeft size={15} /> Atletas
       </button>
 
       {/* Patient header */}
@@ -1060,6 +1078,13 @@ export function PatientProfile() {
                   {isTranscribing ? <Loader2 size={13} className="animate-spin" /> : isRecording ? <MicOff size={13} /> : <Mic size={13} />}
                   {isTranscribing ? 'Transcrevendo…' : isRecording ? 'Parar' : 'Voz'}
                 </button>
+                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isImporting}
+                  title="Importar PDF, DOCX ou TXT"
+                  style={{ background: T.chip, border: 'none', borderRadius: 6, padding: '4px 8px', cursor: isImporting ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: T.brand, fontSize: 11, fontWeight: 600, opacity: isImporting ? 0.6 : 1 }}>
+                  {isImporting ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                  {isImporting ? 'Importando…' : 'Arquivo'}
+                </button>
+                <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt" style={{ display: 'none' }} onChange={handleFileImport} />
               </div>
               <textarea
                 value={coachingInput}

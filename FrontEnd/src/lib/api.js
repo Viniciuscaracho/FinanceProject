@@ -2192,15 +2192,19 @@ class ApiService {
     return this.request('/coaching/dashboard')
   }
 
+  async getRecentActivity(hours = 24) {
+    return this.request(`/coaching/recent_activity?hours=${hours}`)
+  }
+
   async getTimelineEvents(contactId, q) {
     const qs = q ? `?q=${encodeURIComponent(q)}` : ''
     return this.request(`/coaching/contacts/${contactId}/timeline_events${qs}`)
   }
 
-  async createTimelineEvent(contactId, rawInput) {
+  async createTimelineEvent(contactId, rawInput, source = 'manual') {
     return this.request(`/coaching/contacts/${contactId}/timeline_events`, {
       method: 'POST',
-      body: JSON.stringify({ raw_input: rawInput }),
+      body: JSON.stringify({ raw_input: rawInput, source }),
     })
   }
 
@@ -2222,6 +2226,18 @@ class ApiService {
     const token = localStorage.getItem('auth_token')
     const headers = token ? { Authorization: `Bearer ${token}` } : {}
     return this.request(`/coaching/contacts/${contactId}/audio_notes`, {
+      method: 'POST',
+      body: formData,
+      headers,
+    })
+  }
+
+  async uploadFileImport(contactId, file) {
+    const formData = new FormData()
+    formData.append('file', file, file.name)
+    const token = localStorage.getItem('auth_token')
+    const headers = token ? { Authorization: `Bearer ${token}` } : {}
+    return this.request(`/coaching/contacts/${contactId}/file_imports`, {
       method: 'POST',
       body: formData,
       headers,
