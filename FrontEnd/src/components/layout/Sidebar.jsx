@@ -16,10 +16,18 @@ const NAV = [
     label: null,
     items: [
       { icon: Home,       label: 'Início',       path: '/' },
-      { icon: Calendar,   label: 'Agendamentos', path: '/appointments' },
-      { icon: Users,      label: 'Pacientes',    path: '/contacts' },
       { icon: Brain,      label: 'Coaching',     path: '/coaching' },
+      { icon: Users,      label: 'Atletas',      path: '/contacts' },
+      { icon: Calendar,   label: 'Agendamentos', path: '/appointments' },
       { icon: Globe,      label: 'Vitrine',      path: '/vitrine' },
+    ],
+  },
+  {
+    label: 'Nutrição',
+    collapsible: true,
+    storageKey: 'orbi_nutri_nav',
+    items: [
+      { icon: UtensilsCrossed, label: 'Modelos Alim.', path: '/meal-plan-templates' },
     ],
   },
   {
@@ -33,7 +41,6 @@ const NAV = [
       { icon: Clock,         label: 'Horários',      path: '/working-hours' },
       { icon: FileEdit,         label: 'Documentos',    path: '/document-templates' },
       { icon: ClipboardList,    label: 'Anamnese',      path: '/anamnese' },
-      { icon: UtensilsCrossed,  label: 'Modelos Alim.', path: '/meal-plan-templates' },
     ],
   },
   {

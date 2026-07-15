@@ -26,7 +26,7 @@ module Api
             contact:        @contact,
             account_user:   current_account_user,
             raw_input:      params[:raw_input],
-            source:         'manual',
+            source:         params[:source].presence_in(%w[manual session_note whisper whatsapp_manual import]) || 'manual',
             sono:           structured[:sono],
             carga:          structured[:carga],
             observacao:     structured[:observacao],

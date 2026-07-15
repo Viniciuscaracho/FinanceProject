@@ -194,6 +194,13 @@ export function AppointmentNotes() {
       }
 
       toast.success('Anotação salva com sucesso!')
+
+      // Sincroniza na timeline de coaching do atleta (fire-and-forget)
+      const contactId = selectedAppointment.contact?.id
+      if (contactId && notes.trim().length >= 10) {
+        apiService.createTimelineEvent(contactId, notes.trim(), 'session_note').catch(() => {})
+      }
+
       handleCloseDialog()
       loadAppointments()
     } catch (err) {

@@ -34,7 +34,7 @@ function formatBRL(cents) {
 const PAGES = [
   { icon: Home,          label: 'Início',               desc: 'Dashboard principal',         path: '/',                   kw: 'inicio home dashboard resumo' },
   { icon: Calendar,      label: 'Agendamentos',         desc: 'Gerenciar agenda',             path: '/appointments',       kw: 'agenda scheduling booking consultas' },
-  { icon: Users,         label: 'Pacientes',            desc: 'Lista e prontuários',          path: '/contacts',           kw: 'contatos clientes prontuario ficha historico clinico' },
+  { icon: Users,         label: 'Atletas',               desc: 'Lista e prontuários',          path: '/contacts',           kw: 'contatos clientes prontuario ficha historico clinico atletas' },
   { icon: CreditCard,    label: 'Transações',           desc: 'Fluxo financeiro',             path: '/transactions',       kw: 'financeiro pagamentos receitas despesas caixa' },
   { icon: Globe,         label: 'Vitrine',              desc: 'Perfil público',               path: '/vitrine',            kw: 'publico showcase descobrir' },
   { icon: BarChart3,     label: 'Relatórios',           desc: 'Análises e métricas',          path: '/reports',            kw: 'analytics graficos metricas dre extrato' },
@@ -52,7 +52,7 @@ const PAGES = [
 ]
 
 const ACTIONS = [
-  { icon: Plus, label: 'Novo Paciente',    desc: 'Cadastrar novo paciente',   path: '/contacts',     kw: 'criar add novo prontuario' },
+  { icon: Plus, label: 'Novo Atleta',      desc: 'Cadastrar novo atleta',     path: '/contacts',     kw: 'criar add novo prontuario' },
   { icon: Plus, label: 'Nova Transação',   desc: 'Lançar receita ou despesa', path: '/transactions', kw: 'criar add financeiro' },
   { icon: Plus, label: 'Novo Agendamento', desc: 'Criar agendamento',         path: '/appointments', kw: 'criar add booking' },
 ]
@@ -206,7 +206,7 @@ export function CommandPalette() {
           label: 'Prontuários',
           items: matchedContacts.map(c => ({
             icon: ClipboardCheck,
-            label: c.name || 'Paciente',
+            label: c.name || 'Atleta',
             desc: [c.email, c.phone].filter(Boolean).join(' · ') || 'Abrir prontuário',
             path: `/contacts/${c.id}`,
             type: 'prontuario',
@@ -293,7 +293,7 @@ export function CommandPalette() {
         const professional = a.professional?.name || ''
         return fuzzy(`${patient} ${service} ${professional}`, q)
       }).slice(0, 5).map(a => {
-        const patient = a.contact?.name || a.client?.name || a.whatsapp_number || 'Paciente'
+        const patient = a.contact?.name || a.client?.name || a.whatsapp_number || 'Atleta'
         const service = a.service?.name || ''
         const dataStr = a.start_time
           ? format(new Date(a.start_time), "dd/MM 'às' HH:mm", { locale: ptBR })
@@ -387,7 +387,7 @@ export function CommandPalette() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Pacientes, prontuários, planos, transações, agendamentos..."
+              placeholder="Atletas, prontuários, planos, transações, agendamentos..."
               style={{
                 flex: 1, border: 'none', outline: 'none', background: 'transparent',
                 fontSize: 15, color: T.text,
@@ -446,10 +446,10 @@ export function CommandPalette() {
           {!query && (
             <div style={{ padding: '6px 14px 10px' }}>
               {[
-                { icon: ClipboardCheck, text: 'Nome do paciente → abre o prontuário diretamente',     color: T.brand },
-                { icon: Utensils,       text: 'Nome do paciente → carrega os planos alimentares',     color: '#10B981' },
+                { icon: ClipboardCheck, text: 'Nome do atleta → abre o prontuário diretamente',     color: T.brand },
+                { icon: Utensils,       text: 'Nome do atleta → carrega os planos alimentares',     color: '#10B981' },
                 { icon: CreditCard,     text: 'Descrição da transação → filtra as transações',        color: '#F59E0B' },
-                { icon: Calendar,       text: 'Nome do paciente → filtra os agendamentos',             color: '#8B5CF6' },
+                { icon: Calendar,       text: 'Nome do atleta → filtra os agendamentos',             color: '#8B5CF6' },
               ].map(({ icon: Icon, text, color }) => (
                 <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '4px 2px' }}>
                   <Icon size={13} style={{ color, flexShrink: 0 }} />
