@@ -6,9 +6,11 @@ module Api
       class DashboardController < ApplicationController
         def index
           render json: {
-            alerts:          alerts,
-            active_contacts: active_contacts,
-            total_events:    total_events
+            alerts:           alerts,
+            active_contacts:  active_contacts,
+            total_events:     total_events,
+            today_stats:      today_stats,
+            recent_insights:  recent_insights,
           }
         end
 
@@ -61,6 +63,47 @@ module Api
 
         def total_events
           TimelineEvent.where(account: Current.account).count
+        end
+
+        def recent_insights
+          contact_ids = CoachingInsight
+            .where(account: Current.account)
+            .active
+            .select(:contact_id)
+            .distinct
+            .pluck(:contact_id)
+
+          contacts_map = Contact.where(id: contact_ids).index_by(&:id)
+
+          CoachingInsight
+            .where(account: Current.account)
+            .active
+            .by_severity
+            .limit(5)
+            .map do |ins|
+              {
+                id:            ins.id,
+                contact_id:    ins.contact_id,
+                contact_name:  contacts_map[ins.contact_id]&.name,
+                insight_type:  ins.insight_type,
+                insight_text:  ins.insight_text,
+                severity:      ins.severity,
+                related_dates: ins.related_dates,
+                created_at:    ins.created_at.iso8601,
+              }
+            end
+        end
+
+        def today_stats
+          today_start = Time.current.beginning_of_day
+          base = TimelineEvent.where(account: Current.account, created_at: today_start..)
+          {
+            total:           base.count,
+            whatsapp:        base.where(source: 'whatsapp_manual').count,
+            audio:           base.where(source: 'whisper').count,
+            carga_changes:   base.where.not(carga: nil).count,
+            unique_athletes: base.select(:contact_id).distinct.count,
+          }
         end
       end
     end

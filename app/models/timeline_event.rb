@@ -33,7 +33,8 @@ class TimelineEvent < ApplicationRecord
   belongs_to :contact, foreign_key: :contact_id, class_name: 'Contact'
   belongs_to :account_user, optional: true
 
-  after_create :update_coaching_profile_feedback_at
+  after_create  :update_coaching_profile_feedback_at
+  after_commit  :schedule_context_analysis, on: :create
 
   scope :for_contact, ->(contact_id) { where(contact_id: contact_id) }
   scope :recent, -> { order(created_at: :desc) }
@@ -45,5 +46,9 @@ class TimelineEvent < ApplicationRecord
 
   def update_coaching_profile_feedback_at
     contact.coaching_profile&.touch(:last_feedback_at)
+  end
+
+  def schedule_context_analysis
+    Coaching::ContextAnalysisJob.perform_later(account_id, contact_id, id)
   end
 end

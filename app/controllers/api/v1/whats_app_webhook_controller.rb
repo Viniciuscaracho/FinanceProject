@@ -51,13 +51,19 @@ module Api
         event    = params[:event].to_s
         instance = params[:instance].to_s
 
+        # Número de inbox da plataforma: conta resolvida por mensagem a partir do telefone do remetente
+        if instance == 'orbi_platform'
+          handle_incoming_message(nil, params[:data] || {}) if messages_upsert_event?(event)
+          return
+        end
+
         account = account_from_instance(instance)
         return Rails.logger.warn("⚠️ Webhook Evolution: conta não encontrada para instância #{instance}") unless account
 
         case event
-        when 'CONNECTION_UPDATE'
+        when 'CONNECTION_UPDATE', 'connection.update'
           handle_connection_update(account, params[:data] || {})
-        when 'MESSAGES_UPSERT'
+        when 'MESSAGES_UPSERT', 'messages.upsert'
           handle_incoming_message(account, params[:data] || {})
         end
       end
@@ -94,6 +100,15 @@ module Api
           next if from.blank?
           next if from.include?('@g.us') # ignora grupos
 
+          phone = from.split('@').first
+
+          # Número de inbox da plataforma: resolve conta pelo telefone do treinador remetente
+          resolved_account = account || account_from_sender_phone(phone)
+          unless resolved_account
+            Rails.logger.warn("⚠️ Webhook platform: nenhuma conta encontrada para telefone #{phone}")
+            next
+          end
+
           from_me = msg.dig(:key, :fromMe)
 
           # Áudio PTT de coaching:
@@ -102,10 +117,10 @@ module Api
           if msg.dig(:message, :audioMessage).present?
             msg_hash  = msg.respond_to?(:to_unsafe_h) ? msg.to_unsafe_h : msg.to_h
             ::Coaching::ProcessWhatsappAudioJob.perform_later(
-              account_id:   account.id,
+              account_id:   resolved_account.id,
               message_key:  msg_hash['key']  || {},
               message_body: msg_hash['message'] || {},
-              from:         from.split('@').first
+              from:         phone
             )
             next
           end
@@ -116,15 +131,15 @@ module Api
           # Texto do próprio treinador = nota sobre atleta (formato "Nome: texto")
           if from_me
             ::Coaching::ProcessWhatsappMessageJob.perform_later(
-              account_id:      account.id,
+              account_id:      resolved_account.id,
               message:         body,
-              whatsapp_number: from.split('@').first
+              whatsapp_number: phone
             )
           else
             WhatsApp::ProcessMessageJob.perform_later(
-              account_id:      account.id,
+              account_id:      resolved_account.id,
               message:         body,
-              whatsapp_number: from.split('@').first
+              whatsapp_number: phone
             )
           end
         end
@@ -150,6 +165,20 @@ module Api
 
         # Fallback: account_id vem na URL (/webhook/:account_id)
         Account.find_by(id: params[:account_id]) if params[:account_id].present?
+      end
+
+      def messages_upsert_event?(event)
+        %w[MESSAGES_UPSERT messages.upsert MESSAGES_SET messages.set].include?(event)
+      end
+
+      def account_from_sender_phone(phone)
+        digits = phone.to_s.gsub(/\D/, '')
+        # Tenta com o número exato, depois sem o DDI 55
+        without_country = digits.start_with?('55') ? digits[2..] : nil
+        user = User.find_by(whatsapp_number: digits) ||
+               (without_country && User.find_by(whatsapp_number: without_country))
+        return unless user
+        Account.find_by(id: user.account_id)
       end
 
       def valid_webhook?

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_09_100002) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_16_002735) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -388,6 +388,21 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_09_100002) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["country", "code"], name: "index_banks_on_country_and_code", unique: true
+  end
+
+  create_table "coaching_insights", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.string "insight_type", null: false
+    t.text "insight_text", null: false
+    t.string "severity", default: "medium", null: false
+    t.jsonb "related_dates", default: [], null: false
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "contact_id", "created_at"], name: "idx_coaching_insights_account_contact_date"
+    t.index ["account_id", "created_at"], name: "index_coaching_insights_on_account_id_and_created_at"
+    t.index ["account_id"], name: "index_coaching_insights_on_account_id"
   end
 
   create_table "coaching_profiles", force: :cascade do |t|
@@ -1393,6 +1408,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_09_100002) do
     t.string "api_token"
     t.string "provider"
     t.string "uid"
+    t.string "whatsapp_number"
     t.index ["account_id"], name: "index_users_on_account_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -1514,6 +1530,8 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_09_100002) do
   add_foreign_key "bank_accounts", "banks"
   add_foreign_key "bank_accounts", "users", column: "created_by_id"
   add_foreign_key "bank_accounts", "users", column: "updated_by_id"
+  add_foreign_key "coaching_insights", "accounts"
+  add_foreign_key "coaching_insights", "people", column: "contact_id"
   add_foreign_key "coaching_profiles", "accounts"
   add_foreign_key "coaching_profiles", "people", column: "contact_id"
   add_foreign_key "company_nfse_configs", "people", column: "company_id"

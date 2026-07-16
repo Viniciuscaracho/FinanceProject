@@ -25,7 +25,7 @@
 #  invitation_sent_at                                                       :datetime
 #  invitation_token                                                         :string
 #  invited_by_type                                                          :string
-#  last_announcement_read_at(Date of last read announcement)                :datetime         default(Fri, 25 Jul 2025 15:54:58.899140000 -03 -03:00), not null
+#  last_announcement_read_at(Date of last read announcement)                :datetime         default(Thu, 04 Dec 2025 16:58:50.580944000 UTC +00:00), not null
 #  last_name                                                                :string
 #  last_sign_in_at                                                          :datetime
 #  last_sign_in_ip                                                          :string
@@ -49,6 +49,7 @@
 #  time_zone                                                                :string
 #  uid                                                                      :string
 #  visible_amount(Whether the user can see the amount of the referral code) :boolean          default(TRUE), not null
+#  whatsapp_number                                                          :string
 #  zp_user                                                                  :boolean
 #  created_at                                                               :datetime         not null
 #  updated_at                                                               :datetime         not null

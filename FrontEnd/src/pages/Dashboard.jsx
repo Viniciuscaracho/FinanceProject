@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   AlertCircle, Brain, Users, Activity, Clock, Calendar,
   CheckCircle, Loader2, SmartphoneNfc, RefreshCw, Globe, ArrowRight, ChevronRight,
-  X, Zap, CheckCircle2, Plus, User,
+  X, Zap, CheckCircle2, Plus, User, TrendingUp, TrendingDown, MessageSquare,
 } from 'lucide-react'
 import { apiService } from '../lib/api'
 import { T, DISPLAY } from '@/lib/tokens'
@@ -415,7 +415,7 @@ function WaIcon({ size = 16 }) {
   )
 }
 
-function WhatsAppDashboardCard({ isMobile }) {
+function WhatsAppDashboardCard({ isMobile, todayStats }) {
   const [mode, setMode]               = useState('checking')
   const [qrBase64, setQrBase64]       = useState(null)
   const [qrLoading, setQrLoading]     = useState(false)
@@ -498,15 +498,39 @@ function WhatsAppDashboardCard({ isMobile }) {
   if (dismissed || mode === 'hidden' || mode === 'checking') return null
 
   if (mode === 'connected') {
+    const whatsappCount = todayStats?.whatsapp ?? 0
     return (
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: '10px 16px',
+        background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, overflow: 'hidden',
       }}>
-        <CheckCircle size={15} style={{ color: '#22C55E', flexShrink: 0 }} />
-        <p style={{ fontSize: 13, fontWeight: 600, color: '#15803D', margin: 0 }}>
-          WhatsApp conectado{waPhone ? ` · +${waPhone}` : ''} — envios automáticos ativos
-        </p>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: whatsappCount > 0 ? '10px 16px 8px' : '10px 16px',
+          borderBottom: whatsappCount > 0 ? '1px solid #BBF7D0' : 'none',
+        }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E', flexShrink: 0 }} />
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#15803D', margin: 0, flex: 1 }}>
+            WhatsApp conectado{waPhone ? ` · +${waPhone}` : ''} — envios automáticos ativos
+          </p>
+        </div>
+        {whatsappCount > 0 && (
+          <div style={{ padding: '8px 16px 10px', display: 'flex', gap: 24 }}>
+            <div>
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#15803D', margin: '0 0 1px', lineHeight: 1.2 }}>
+                {whatsappCount}
+              </p>
+              <p style={{ fontSize: 11, color: '#166534', margin: 0 }}>mensagens processadas hoje</p>
+            </div>
+            {todayStats?.unique_athletes > 0 && (
+              <div>
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#15803D', margin: '0 0 1px', lineHeight: 1.2 }}>
+                  {todayStats.unique_athletes}
+                </p>
+                <p style={{ fontSize: 11, color: '#166534', margin: 0 }}>atletas com atividade</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     )
   }
@@ -751,59 +775,17 @@ function WhatsAppDashboardCard({ isMobile }) {
   )
 }
 
-/* ─── Smart Summary Banner ───────────────────────── */
-function SmartSummaryBanner({ alerts, activeContacts, loading }) {
-  if (loading || (alerts.length === 0 && activeContacts.length === 0)) return null
-
-  const urgent    = alerts.filter(a => ['sumiu', 'reclamou_de_dor'].includes(a.alert_type))
-  const sumiu     = alerts.filter(a => a.alert_type === 'sumiu')
-  const dor       = alerts.filter(a => a.alert_type === 'reclamou_de_dor')
-  const semFeed   = alerts.filter(a => a.alert_type === 'sem_feedback')
-  const freq      = alerts.filter(a => a.alert_type === 'perdeu_frequencia')
-  const reav      = alerts.filter(a => a.alert_type === 'reavaliacao_proxima')
-
-  const reasons = []
-  if (sumiu.length > 0)   reasons.push('sem resposta')
-  if (semFeed.length > 0) reasons.push('baixa aderência')
-  if (freq.length > 0)    reasons.push('frequência irregular')
-  if (dor.length > 0)     reasons.push('relatos de dor')
-  if (reav.length > 0)    reasons.push('reavaliações pendentes')
-
-  const isUrgent = urgent.length > 0
-  const total    = alerts.length
-
-  const text = total > 0
-    ? `Hoje há ${total} atleta${total !== 1 ? 's' : ''} que ${total !== 1 ? 'exigem' : 'exige'} atenção${urgent.length > 0 ? ` — ${urgent.length} urgente${urgent.length !== 1 ? 's' : ''}` : ''}. ${reasons.length > 0 ? `Principais motivos: ${reasons.slice(0, 3).join(', ')}.` : ''}`
-    : `${activeContacts.length} atleta${activeContacts.length !== 1 ? 's' : ''} ativo${activeContacts.length !== 1 ? 's' : ''} — tudo em dia.`
-
-  return (
-    <div style={{
-      background: isUrgent ? '#FFF7ED' : '#F0FDF4',
-      border: `1px solid ${isUrgent ? '#FED7AA' : '#BBF7D0'}`,
-      borderRadius: 10,
-      padding: '12px 16px',
-      display: 'flex', alignItems: 'flex-start', gap: 12,
-    }}>
-      <div style={{
-        width: 34, height: 34, borderRadius: 8, flexShrink: 0,
-        background: isUrgent ? '#FED7AA' : '#BBF7D0',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <Brain size={16} style={{ color: isUrgent ? '#C2410C' : '#15803D' }} />
-      </div>
-      <div>
-        <p style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: isUrgent ? '#9A3412' : '#14532D', margin: '0 0 2px' }}>
-          Resumo de hoje
-        </p>
-        <p style={{ fontSize: 13, color: isUrgent ? '#C2410C' : '#166534', margin: 0, lineHeight: 1.5 }}>
-          {text}
-        </p>
-      </div>
-    </div>
-  )
+/* ─── Activity Feed ──────────────────────────────── */
+function getEventMark(ev) {
+  const text = ((ev.summary || '') + ' ' + (ev.observacao || '')).toLowerCase()
+  if (text.match(/dor|lesão|lesao|contusão|contusao/)) return { emoji: '⚠', color: '#EF4444' }
+  if (ev.source === 'whisper')         return { emoji: '🎙', color: '#8B5CF6' }
+  if (ev.carga)                        return { emoji: '📈', color: T.green }
+  if (ev.source === 'whatsapp_manual') return { emoji: '💬', color: '#25D366' }
+  if (ev.source === 'import')          return { emoji: '📁', color: '#0EA5E9' }
+  return { emoji: '✔', color: T.brand }
 }
 
-/* ─── Activity Feed ──────────────────────────────── */
 const SOURCE_LABELS = {
   whisper:          { label: 'Áudio',      color: '#8B5CF6' },
   whatsapp_manual:  { label: 'WhatsApp',   color: '#25D366' },
@@ -846,6 +828,7 @@ function ActivityFeedPanel() {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {events.map((ev, i) => {
               const src    = SOURCE_LABELS[ev.source] || SOURCE_LABELS.manual
+              const mark   = getEventMark(ev)
               const isLast = i === events.length - 1
               const time   = format(parseISO(ev.created_at), 'HH:mm')
               return (
@@ -854,7 +837,7 @@ function ActivityFeedPanel() {
                   onClick={() => navigate(`/contacts/${ev.contact_id}`)}
                   style={{
                     display: 'flex', alignItems: 'flex-start', gap: 10,
-                    padding: '9px 0',
+                    padding: '9px 6px',
                     borderBottom: isLast ? 'none' : `1px solid ${T.border}`,
                     cursor: 'pointer', borderRadius: 6, transition: 'background 100ms',
                   }}
@@ -862,8 +845,8 @@ function ActivityFeedPanel() {
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
                   <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, width: 38, flexShrink: 0, paddingTop: 2 }}>{time}</span>
-                  <div style={{ width: 26, height: 26, borderRadius: 6, background: src.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: src.color }}>{ev.contact_name?.charAt(0)?.toUpperCase() || '?'}</span>
+                  <div style={{ width: 26, height: 26, borderRadius: 6, background: mark.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 13 }}>
+                    {mark.emoji}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
@@ -962,51 +945,109 @@ function DayQueue({ appointments, loading }) {
   )
 }
 
-/* ─── Consultancy Indicators ─────────────────────── */
-function ConsultancyIndicators({ totalAthletes, pendingCheckins, adherence, reavaliacoes, loading }) {
+/* ─── Context Panel ──────────────────────────────── */
+const INSIGHT_CONFIG = {
+  recurrence:      { icon: '↩', label: 'Recorrência',      color: '#EF4444' },
+  regression:      { icon: '↘', label: 'Regressão',        color: '#F59E0B' },
+  improvement:     { icon: '↗', label: 'Evolução',         color: T.green   },
+  absence_pattern: { icon: '⏸', label: 'Padrão ausência', color: '#8B5CF6' },
+}
+
+function ContextPanel({ insights, loading }) {
+  const navigate = useNavigate()
+
+  if (loading) return (
+    <Panel>
+      <SectionHeader label="Contexto detectado" />
+      <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {[1, 2].map(i => (
+          <div key={i} style={{ height: 52, borderRadius: 8, background: T.border, animation: 'skpulse 1.4s ease-in-out infinite', animationDelay: `${i * 100}ms` }} />
+        ))}
+      </div>
+    </Panel>
+  )
+
+  if (insights.length === 0) return null
+
+  return (
+    <Panel>
+      <SectionHeader
+        label="Contexto detectado"
+        badge={insights.length}
+        badgeColor="#8B5CF6"
+      />
+      <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {insights.map(ins => {
+          const cfg   = INSIGHT_CONFIG[ins.insight_type] || INSIGHT_CONFIG.recurrence
+          const isHigh = ins.severity === 'high'
+          return (
+            <div
+              key={ins.id}
+              onClick={() => navigate(`/contacts/${ins.contact_id}`)}
+              style={{
+                display: 'flex', alignItems: 'flex-start', gap: 10,
+                padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
+                border: `1px solid ${isHigh ? cfg.color + '40' : T.border}`,
+                background: cfg.color + '08',
+                transition: 'border-color 120ms',
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = cfg.color}
+              onMouseLeave={e => e.currentTarget.style.borderColor = isHigh ? cfg.color + '40' : T.border}
+            >
+              <span style={{ fontSize: 15, lineHeight: 1, marginTop: 1, flexShrink: 0 }}>{cfg.icon}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: cfg.color }}>{ins.contact_name}</span>
+                  <span style={{
+                    fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+                    color: cfg.color, background: cfg.color + '18', borderRadius: 10, padding: '1px 5px', flexShrink: 0,
+                  }}>
+                    {cfg.label}
+                  </span>
+                </div>
+                <p style={{ fontSize: 13, color: T.text, margin: 0, lineHeight: 1.4 }}>
+                  {ins.insight_text}
+                </p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </Panel>
+  )
+}
+
+/* ─── Coaching KPIs ──────────────────────────────── */
+function CoachingKPIs({ alerts, activeContacts, todayStats, loading }) {
+  const atRisk         = alerts.filter(a => ['sumiu', 'reclamou_de_dor'].includes(a.alert_type)).length
+  const noFeedback     = alerts.filter(a => a.alert_type === 'sem_feedback').length
+  const needResponse   = alerts.filter(a => ['sumiu', 'reclamou_de_dor'].includes(a.alert_type)).length
+  const feedbacksToday = todayStats?.total ?? 0
+  const cargaChanges   = todayStats?.carga_changes ?? 0
+  const whatsappToday  = todayStats?.whatsapp ?? 0
+
   const kpis = [
-    {
-      label: 'Atletas ativos',
-      value: totalAthletes,
-      color: T.brand,
-      Icon: Users,
-    },
-    {
-      label: 'Check-ins pendentes',
-      value: pendingCheckins,
-      color: pendingCheckins > 0 ? T.amber : T.green,
-      Icon: Clock,
-    },
-    {
-      label: 'Aderência',
-      value: adherence !== null ? `${adherence}%` : '—',
-      color: adherence === null ? T.muted : adherence >= 70 ? T.green : T.amber,
-      Icon: Activity,
-    },
-    {
-      label: 'Reavaliações na semana',
-      value: reavaliacoes,
-      color: reavaliacoes > 0 ? T.brand : T.muted,
-      Icon: Calendar,
-    },
+    { label: 'Atletas em risco',    value: atRisk,         color: atRisk > 0 ? T.red : T.muted },
+    { label: 'Sem feedback',        value: noFeedback,     color: noFeedback > 0 ? T.amber : T.muted },
+    { label: 'Feedbacks hoje',      value: feedbacksToday, color: feedbacksToday > 0 ? T.green : T.muted },
+    { label: 'Necessitam resposta', value: needResponse,   color: needResponse > 0 ? T.amber : T.muted },
+    { label: 'Mudança de carga',    value: cargaChanges,   color: cargaChanges > 0 ? T.brand : T.muted },
+    { label: 'Via WhatsApp',        value: whatsappToday,  color: whatsappToday > 0 ? '#25D366' : T.muted },
   ]
 
   return (
     <Panel>
-      <SectionHeader label="Indicadores" />
+      <SectionHeader label="Acompanhamento" />
       <div style={{ padding: '0 16px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        {kpis.map(({ label, value, color, Icon }, i) => (
+        {kpis.map(({ label, value, color }, i) => (
           <div key={i} style={{ background: T.bg, borderRadius: 8, padding: '10px 12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              <Icon size={12} style={{ color, flexShrink: 0 }} />
-              {loading ? (
-                <div style={{ height: 20, width: 48, borderRadius: 4, background: T.border, animation: 'skpulse 1.4s ease-in-out infinite' }} />
-              ) : (
-                <p style={{ fontSize: 18, fontWeight: 700, color, margin: 0, letterSpacing: '-0.02em', lineHeight: 1 }}>
-                  {value}
-                </p>
-              )}
-            </div>
+            {loading ? (
+              <div style={{ height: 22, width: 40, borderRadius: 4, background: T.border, animation: 'skpulse 1.4s ease-in-out infinite', marginBottom: 4 }} />
+            ) : (
+              <p style={{ fontSize: 20, fontWeight: 700, color, margin: '0 0 3px', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                {value}
+              </p>
+            )}
             <p style={{ fontSize: 11, color: T.muted, margin: 0, lineHeight: 1.3 }}>{label}</p>
           </div>
         ))}
@@ -1015,48 +1056,205 @@ function ConsultancyIndicators({ totalAthletes, pendingCheckins, adherence, reav
   )
 }
 
-/* ─── Insights Card ──────────────────────────────── */
-function InsightsCard({ alerts, activeContacts }) {
-  const insights = useMemo(() => {
+/* ─── AI Coach Card ──────────────────────────────── */
+function AiCoachCard({ alerts, activeContacts }) {
+  const navigate = useNavigate()
+
+  const items = useMemo(() => {
     const result = []
+    alerts.filter(a => a.alert_type === 'reclamou_de_dor').slice(0, 2).forEach(a =>
+      result.push({ label: `Revisar treino de ${a.contact_name}`, minutes: 5, contactId: a.contact_id, color: T.red })
+    )
+    alerts.filter(a => a.alert_type === 'sumiu').slice(0, 3).forEach(a =>
+      result.push({ label: `Responder ${a.contact_name}`, minutes: 2, contactId: a.contact_id, color: T.amber })
+    )
+    alerts.filter(a => a.alert_type === 'reavaliacao_proxima' && (a.days_until ?? 99) <= 3).slice(0, 2).forEach(a =>
+      result.push({ label: `Reavaliar ${a.contact_name}`, minutes: 8, contactId: a.contact_id, color: T.brand })
+    )
+    alerts.filter(a => a.alert_type === 'sem_feedback').slice(0, 2).forEach(a =>
+      result.push({ label: `Acompanhar ${a.contact_name}`, minutes: 1, contactId: a.contact_id, color: T.muted })
+    )
+    return result.slice(0, 6)
+  }, [alerts])
 
-    const sumiu      = alerts.filter(a => a.alert_type === 'sumiu')
-    const dor        = alerts.filter(a => a.alert_type === 'reclamou_de_dor')
-    const reavalNear = alerts.filter(a => a.alert_type === 'reavaliacao_proxima' && (a.days_until ?? 99) <= 3)
-    const semFreq    = alerts.filter(a => a.alert_type === 'perdeu_frequencia')
+  if (items.length === 0) {
+    if (activeContacts.length === 0) return null
+    return (
+      <Panel>
+        <SectionHeader label="O que eu faria hoje" />
+        <div style={{ padding: '0 20px 16px' }}>
+          <p style={{ fontSize: 13, color: T.green, margin: 0 }}>✓ Nenhuma ação urgente. Continue monitorando!</p>
+        </div>
+      </Panel>
+    )
+  }
 
-    if (sumiu.length > 0)
-      result.push({ text: `${sumiu.length} atleta${sumiu.length !== 1 ? 's' : ''} sem resposta — considere entrar em contato.`, color: '#EF4444' })
-    if (dor.length > 0)
-      result.push({ text: `${dor.length} relato${dor.length !== 1 ? 's' : ''} de dor recente. Verifique os programas de treino.`, color: '#F59E0B' })
-    if (reavalNear.length > 0)
-      result.push({ text: `${reavalNear.length} reavaliação${reavalNear.length !== 1 ? 'ões' : ''} nos próximos 3 dias. Prepare os protocolos.`, color: T.brand })
-    if (semFreq.length > 0)
-      result.push({ text: `${semFreq.length} atleta${semFreq.length !== 1 ? 's' : ''} com frequência irregular este mês.`, color: '#F59E0B' })
-    if (result.length === 0 && activeContacts.length > 0)
-      result.push({ text: 'Todos os atletas estão em dia. Continue o bom trabalho!', color: T.green })
-
-    return result
-  }, [alerts, activeContacts])
-
-  if (insights.length === 0) return null
+  const totalMin = items.reduce((s, it) => s + it.minutes, 0)
 
   return (
     <Panel>
-      <SectionHeader label="Insights" />
-      <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {insights.map((ins, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 7, flexShrink: 0, marginTop: 1,
-              background: ins.color + '18',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Zap size={12} style={{ color: ins.color }} />
-            </div>
-            <p style={{ fontSize: 13, color: T.text, margin: 0, lineHeight: 1.5, paddingTop: 4 }}>{ins.text}</p>
+      <SectionHeader label="O que eu faria hoje" />
+      <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column' }}>
+        {items.map((item, i) => (
+          <div
+            key={i}
+            onClick={() => navigate(`/contacts/${item.contactId}`)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '7px 6px',
+              borderBottom: i < items.length - 1 ? `1px solid ${T.border}` : 'none',
+              cursor: 'pointer', borderRadius: 6, transition: 'background 100ms',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = T.bg}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <CheckCircle2 size={14} style={{ color: item.color, flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: T.text, flex: 1, lineHeight: 1.4 }}>{item.label}</span>
+            <span style={{ fontSize: 11, color: T.muted, flexShrink: 0 }}>{item.minutes} min</span>
           </div>
         ))}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginTop: 6, paddingTop: 8, borderTop: `1px solid ${T.border}`,
+        }}>
+          <span style={{ fontSize: 11, color: T.muted }}>Tempo estimado</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: T.brand }}>{totalMin} min</span>
+        </div>
+      </div>
+    </Panel>
+  )
+}
+
+/* ─── Forgotten Athletes ─────────────────────────── */
+function ForgottenAthletes({ activeContacts }) {
+  const navigate = useNavigate()
+
+  const forgotten = useMemo(() => {
+    const now = Date.now()
+    const threshold = 7 * 24 * 60 * 60 * 1000
+    return activeContacts
+      .filter(c => c.last_event_at && (now - new Date(c.last_event_at).getTime()) > threshold)
+      .sort((a, b) => new Date(a.last_event_at) - new Date(b.last_event_at))
+      .slice(0, 5)
+  }, [activeContacts])
+
+  if (forgotten.length === 0) return null
+
+  return (
+    <Panel>
+      <SectionHeader label="Atletas esquecidos" badge={forgotten.length} badgeColor={T.red} />
+      <div style={{ padding: '0 20px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {forgotten.map(c => {
+          const daysAgo = Math.floor((Date.now() - new Date(c.last_event_at).getTime()) / (24 * 60 * 60 * 1000))
+          return (
+            <div
+              key={c.contact_id}
+              onClick={() => navigate(`/contacts/${c.contact_id}`)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '7px 10px', borderRadius: 8, cursor: 'pointer',
+                border: `1px solid ${T.border}`, transition: 'border-color 120ms',
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = T.red}
+              onMouseLeave={e => e.currentTarget.style.borderColor = T.border}
+            >
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%', background: T.red + '18',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: T.red }}>
+                  {c.contact_name?.charAt(0)?.toUpperCase() || '?'}
+                </span>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: T.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {c.contact_name}
+              </span>
+              <span style={{ fontSize: 11, color: T.muted, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                {daysAgo === 1 ? 'há 1 dia' : `há ${daysAgo} dias`}
+              </span>
+              <ChevronRight size={13} style={{ color: T.border, flexShrink: 0 }} />
+            </div>
+          )
+        })}
+      </div>
+    </Panel>
+  )
+}
+
+/* ─── Weekly Trends ──────────────────────────────── */
+function WeeklyTrends({ activeContacts }) {
+  const navigate = useNavigate()
+
+  const { evolving, atRisk } = useMemo(() => {
+    const now = Date.now()
+    const recentMs = 3 * 24 * 60 * 60 * 1000
+    const riskMs   = 7 * 24 * 60 * 60 * 1000
+
+    const classified = activeContacts.map(c => ({
+      ...c,
+      daysAgo: c.last_event_at
+        ? Math.floor((now - new Date(c.last_event_at).getTime()) / (24 * 60 * 60 * 1000))
+        : 999,
+      isRecent: c.last_event_at && (now - new Date(c.last_event_at).getTime()) < recentMs,
+      isOld:    c.last_event_at && (now - new Date(c.last_event_at).getTime()) > riskMs,
+    }))
+
+    return {
+      evolving: classified
+        .filter(c => c.isRecent && c.events_count >= 2)
+        .sort((a, b) => b.events_count - a.events_count)
+        .slice(0, 3),
+      atRisk: classified
+        .filter(c => c.isOld)
+        .sort((a, b) => b.daysAgo - a.daysAgo)
+        .slice(0, 3),
+    }
+  }, [activeContacts])
+
+  if (evolving.length === 0 && atRisk.length === 0) return null
+
+  const Row = ({ contact, direction }) => (
+    <div
+      onClick={() => navigate(`/contacts/${contact.contact_id}`)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '5px 6px', borderRadius: 6, cursor: 'pointer', transition: 'background 100ms',
+      }}
+      onMouseEnter={e => e.currentTarget.style.background = T.bg}
+      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+    >
+      <span style={{ fontSize: 14, color: direction === 'up' ? T.green : T.red, width: 16, flexShrink: 0 }}>
+        {direction === 'up' ? '↑' : '↓'}
+      </span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: T.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {contact.contact_name}
+      </span>
+      <span style={{ fontSize: 11, color: T.muted, flexShrink: 0 }}>
+        {direction === 'up' ? `${contact.events_count} reg.` : `${contact.daysAgo}d atrás`}
+      </span>
+    </div>
+  )
+
+  return (
+    <Panel>
+      <SectionHeader label="Tendências da semana" />
+      <div style={{ padding: '0 16px 16px' }}>
+        {evolving.length > 0 && (
+          <div style={{ marginBottom: atRisk.length > 0 ? 10 : 0 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: T.green, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Maior evolução
+            </p>
+            {evolving.map(c => <Row key={c.contact_id} contact={c} direction="up" />)}
+          </div>
+        )}
+        {atRisk.length > 0 && (
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 700, color: T.red, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Maior risco
+            </p>
+            {atRisk.map(c => <Row key={c.contact_id} contact={c} direction="down" />)}
+          </div>
+        )}
       </div>
     </Panel>
   )
@@ -1091,19 +1289,22 @@ export function Dashboard() {
   useEffect(() => {
     apiService.getCoachingDashboard()
       .then(res => setCoachingData(res))
-      .catch(() => setCoachingData({ alerts: [], active_contacts: [], total_events: 0 }))
+      .catch(() => setCoachingData({ alerts: [], active_contacts: [], total_events: 0, today_stats: {} }))
       .finally(() => setCoachingLoading(false))
   }, [])
 
-  const alerts         = coachingData?.alerts || []
-  const activeContacts = coachingData?.active_contacts || []
-  const urgent         = alerts.filter(a => ['sumiu', 'reclamou_de_dor'].includes(a.alert_type))
-  const attention      = alerts.filter(a => ['sem_feedback', 'perdeu_frequencia', 'reavaliacao_proxima'].includes(a.alert_type))
-  const pendingCheckins = alerts.filter(a => a.alert_type === 'sem_feedback').length
-  const reavaliacoes    = alerts.filter(a => a.alert_type === 'reavaliacao_proxima').length
-  const adherence       = activeContacts.length > 0
-    ? Math.round((activeContacts.length - pendingCheckins) / activeContacts.length * 100)
-    : null
+  const alerts          = coachingData?.alerts || []
+  const activeContacts  = coachingData?.active_contacts || []
+  const todayStats      = coachingData?.today_stats || {}
+  const recentInsights  = coachingData?.recent_insights || []
+  const urgent          = alerts.filter(a => ['sumiu', 'reclamou_de_dor'].includes(a.alert_type))
+  const attention       = alerts.filter(a => ['sem_feedback', 'perdeu_frequencia', 'reavaliacao_proxima'].includes(a.alert_type))
+
+  const heroStats = [
+    todayStats.total > 0 ? `${todayStats.total} registro${todayStats.total !== 1 ? 's' : ''}` : null,
+    todayStats.whatsapp > 0 ? `${todayStats.whatsapp} via WhatsApp` : null,
+    todayStats.audio > 0 ? `${todayStats.audio} áudio${todayStats.audio !== 1 ? 's' : ''}` : null,
+  ].filter(Boolean)
 
   return (
     <div data-testid="dashboard" style={{ display: 'flex', flexDirection: 'column', gap: 10, ...DISPLAY }}>
@@ -1112,8 +1313,8 @@ export function Dashboard() {
       <div style={{
         background: 'linear-gradient(135deg, #1E2440 0%, #2C3560 60%, #1a2038 100%)',
         borderRadius: 12,
-        padding: isNarrow ? '14px 16px' : '18px 24px',
-        display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+        padding: isNarrow ? '16px 18px' : '20px 24px',
+        display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start',
         justifyContent: 'space-between', gap: 12,
         boxShadow: '0 4px 20px rgba(30,36,64,0.18)',
         position: 'relative', overflow: 'hidden',
@@ -1121,23 +1322,46 @@ export function Dashboard() {
         <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', right: -10, top: -10, width: 100, height: 100, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
 
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-          <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: '#fff', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
             {greeting}, {firstName}.
           </p>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>
-            {todayLabel}
-          </p>
+          {!coachingLoading && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {heroStats.length > 0 && (
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0, lineHeight: 1.5 }}>
+                  Hoje o Orbi processou{' '}
+                  <span style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+                    {heroStats.join(' · ')}
+                  </span>
+                </p>
+              )}
+              {alerts.length > 0 ? (
+                <p style={{ fontSize: 12, color: '#F87171', margin: 0, fontWeight: 600 }}>
+                  ⚠ {alerts.length} atleta{alerts.length !== 1 ? 's' : ''} precisa{alerts.length !== 1 ? 'm' : ''} de atenção
+                </p>
+              ) : activeContacts.length > 0 ? (
+                <p style={{ fontSize: 12, color: '#86EFAC', margin: 0 }}>
+                  ✓ Todos os atletas estão em dia
+                </p>
+              ) : (
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>{todayLabel}</p>
+              )}
+            </div>
+          )}
+          {coachingLoading && (
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', margin: 0 }}>{todayLabel}</p>
+          )}
         </div>
 
-        <div style={{ display: 'flex', gap: isMobile ? 20 : 28, width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
-          <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
+        <div style={{ display: 'flex', gap: isMobile ? 20 : 28, flexShrink: 0 }}>
+          <div style={{ textAlign: 'right' }}>
             <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: T.amber, margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
               {todayApts.length > 0 ? todayApts.length : '—'}
             </p>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Hoje</p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Consultas</p>
           </div>
-          <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
+          <div style={{ textAlign: 'right' }}>
             {coachingLoading
               ? <Sk w={40} h={18} r={4} />
               : <p style={{ fontSize: isNarrow ? 16 : 18, fontWeight: 700, color: alerts.length > 0 ? '#F87171' : '#86EFAC', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
@@ -1151,11 +1375,8 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* ══ 2. RESUMO INTELIGENTE ══════════════════════ */}
-      <SmartSummaryBanner alerts={alerts} activeContacts={activeContacts} loading={coachingLoading} />
-
-      {/* ══ 3. AÇÕES RÁPIDAS ═══════════════════════════ */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(3, 1fr)', gap: 8 }}>
+      {/* ══ 2. AÇÕES RÁPIDAS ═══════════════════════════ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {[
           { icon: Calendar, label: 'Nova consulta', path: '/appointments' },
           { icon: User,     label: 'Novo atleta',   path: '/contacts' },
@@ -1184,11 +1405,11 @@ export function Dashboard() {
         })}
       </div>
 
+      <WhatsAppDashboardCard isMobile={isMobile} todayStats={todayStats} />
       <VitrineBanner />
       <SetupChecklist allApts={allApts} />
-      <WhatsAppDashboardCard isMobile={isMobile} />
 
-      {/* ══ 4. GRID PRINCIPAL ══════════════════════════ */}
+      {/* ══ 3. GRID PRINCIPAL ══════════════════════════ */}
       <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '65fr 35fr', gap: 10, alignItems: 'start', minWidth: 0 }}>
 
         {/* ─ Esquerda 65% ───────────────────────────── */}
@@ -1206,14 +1427,16 @@ export function Dashboard() {
 
         {/* ─ Direita 35% ────────────────────────────── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
-          <ConsultancyIndicators
-            totalAthletes={activeContacts.length}
-            pendingCheckins={pendingCheckins}
-            adherence={adherence}
-            reavaliacoes={reavaliacoes}
+          <ContextPanel insights={recentInsights} loading={coachingLoading} />
+          <CoachingKPIs
+            alerts={alerts}
+            activeContacts={activeContacts}
+            todayStats={todayStats}
             loading={coachingLoading}
           />
-          <InsightsCard alerts={alerts} activeContacts={activeContacts} />
+          <AiCoachCard alerts={alerts} activeContacts={activeContacts} />
+          <ForgottenAthletes activeContacts={activeContacts} />
+          <WeeklyTrends activeContacts={activeContacts} />
         </div>
       </div>
 
