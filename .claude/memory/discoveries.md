@@ -192,6 +192,46 @@ Arquivo `Panorama_Estrategico_Orbi_2026.docx` compartilhado pelo fundador.
 
 ---
 
+## 2026-07-17 — Migração do inbound WhatsApp para a Cloud API oficial (Meta)
+
+### Contexto
+Decisão de WhatsApp mudou: `project-orbi.md` dizia "próximo passo NÃO é Cloud API";
+agora vamos para a **Cloud API oficial (Meta-hosted)**. O inbound rodava só via
+Evolution API (não-oficial). Branch: `claude/whatsapp-cloud-api` (a partir de `stage`).
+
+### O que foi descoberto / decidido
+- **Bug no handshake:** a Meta manda `hub.mode`/`hub.challenge`/`hub.verify_token`
+  **com ponto**. No Rack a chave é `params['hub.mode']`, NUNCA `params[:hub_mode]`.
+  O `verify` antigo (underscore) nunca confirmaria a assinatura do webhook no painel.
+- **Parsing correto da Cloud API:** iterar `entry[].changes[].value.messages[]`;
+  **ignorar** notificações sem `messages` (status callbacks de sent/delivered/read
+  vêm em `value.statuses` e quebravam com 500 → a Meta reentrega e desabilita o webhook).
+- **Sempre 200** no caminho Meta — qualquer não-2xx faz a Meta reentregar/desabilitar.
+- **Dedupe por wamid** via `Rails.cache.write(key, 1, unless_exist: true, expires_in: 3.days)`
+  (atômico). O model `WhatsappMessage` é de SAÍDA (exige `contact_id`/`event_type`),
+  não serve para dedupe de inbound — por isso cache, sem migration.
+- **Roteamento:** plataforma unidirecional → toda msg recebida é nota do treinador →
+  `Coaching::ProcessWhatsappMessageJob`. Conta resolvida por `account_from_sender_phone`.
+- Detecção do caminho oficial: `params[:object] == 'whatsapp_business_account'`.
+- Assinatura (`X-Hub-Signature-256`, HMAC-SHA256 sobre `request.raw_post`) já estava
+  correta — mantida.
+
+### Impacto prático / pendências
+- **Áudio (PTT) ainda NÃO migrado.** A Cloud API entrega áudio como `media id`; o
+  download exige a **Graph media API** (endpoint separado + bearer token), diferente do
+  `EvolutionApiClient.download_media`. Hoje o webhook loga e ignora áudio (200). Próximo
+  passo: um client Cloud de mídia + adaptar `Coaching::ProcessWhatsappAudioJob`. Como o
+  áudio é o input principal do coaching, isso é prioridade do follow-up.
+- **Envio (outbound)** continua no `EvolutionApiClient` — migrar para a Cloud API é
+  trabalho à parte.
+- **Limitação do ambiente:** a suíte Rails NÃO roda neste sandbox (bundle quebrado —
+  falta o checkout do gem git `city-state`; `bundle install` não completa). Validei só
+  `ruby -c` (sintaxe OK). Os testes de request (`whats_app_webhook_cloud_test.rb`)
+  precisam ser rodados em ambiente com bundle íntegro antes do merge.
+- ENV necessárias: `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`.
+
+---
+
 ## Template para novas descobertas
 
 ```

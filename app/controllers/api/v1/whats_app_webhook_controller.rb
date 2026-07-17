@@ -14,7 +14,15 @@ module Api
           return render json: { status: 'received' }, status: :ok
         end
 
-        # Meta / Twilio: mensagens recebidas
+        # Meta / WhatsApp Cloud API oficial (object: whatsapp_business_account).
+        # Sempre responde 200: a Meta reentrega em qualquer não-2xx e desabilita
+        # o webhook após falhas seguidas.
+        if meta_cloud_request?
+          handle_meta_cloud
+          return head :ok
+        end
+
+        # Twilio (BSP) — payload form-encoded legado
         message_data = extract_message_data
         account      = identify_account(message_data)
 
@@ -33,8 +41,16 @@ module Api
       end
 
       def verify
-        if params[:hub_mode] == 'subscribe' && params[:hub_verify_token] == verify_token
-          render plain: params[:hub_challenge], status: :ok
+        # A Meta envia os parâmetros com ponto (hub.mode, hub.challenge,
+        # hub.verify_token). No Rack a chave é literalmente "hub.mode" — NÃO
+        # "hub_mode". Mantemos o fallback underscore para eventuais proxies.
+        mode      = params['hub.mode']         || params[:hub_mode]
+        token     = params['hub.verify_token'] || params[:hub_verify_token]
+        challenge = params['hub.challenge']    || params[:hub_challenge]
+
+        if mode == 'subscribe' &&
+           ActiveSupport::SecurityUtils.secure_compare(token.to_s, verify_token.to_s)
+          render plain: challenge.to_s, status: :ok
         else
           render json: { error: 'Invalid verification' }, status: :forbidden
         end
@@ -179,6 +195,74 @@ module Api
                (without_country && User.find_by(whatsapp_number: without_country))
         return unless user
         Account.find_by(id: user.account_id)
+      end
+
+      # ── Meta / WhatsApp Cloud API oficial ──────────────────────────────────
+
+      def meta_cloud_request?
+        params[:object] == 'whatsapp_business_account'
+      end
+
+      # Percorre entry[].changes[].value.messages[]. Ignora notificações que não
+      # sejam mensagens (statuses de sent/delivered/read etc.). Nunca levanta —
+      # o webhook precisa retornar 200 mesmo com payload inesperado.
+      def handle_meta_cloud
+        Array(params[:entry]).each do |entry|
+          Array(entry[:changes]).each do |change|
+            value = change[:value] || {}
+            next if Array(value[:messages]).blank? # statuses/outras notificações
+            Array(value[:messages]).each { |msg| process_cloud_message(msg) }
+          end
+        end
+      rescue StandardError => e
+        Rails.logger.error "❌ WhatsApp Cloud webhook error: #{e.message}"
+      end
+
+      def process_cloud_message(msg)
+        wamid = msg[:id].to_s
+        return unless first_delivery?(wamid) # dedupe reentregas/duplicatas da Meta
+
+        from    = msg[:from].to_s # E.164 só dígitos, ex.: "5511999999999"
+        account = account_from_sender_phone(from)
+        return Rails.logger.warn("⚠️ WhatsApp Cloud: conta não encontrada para #{from}") unless account
+
+        case msg[:type]
+        when 'text'
+          enqueue_trainer_note(account, msg.dig(:text, :body), from)
+        when 'interactive'
+          title = msg.dig(:interactive, :button_reply, :title) ||
+                  msg.dig(:interactive, :list_reply, :title)
+          enqueue_trainer_note(account, title, from)
+        when 'button'
+          enqueue_trainer_note(account, msg.dig(:button, :text), from)
+        when 'audio', 'voice'
+          # A Cloud API entrega áudio como media id; o download usa a Graph media
+          # API (endpoint separado + bearer token). Ainda não implementado — não
+          # falha o webhook. Próximo passo registrado em .claude/memory/discoveries.md.
+          Rails.logger.info("ℹ️ WhatsApp Cloud: áudio recebido (media_id=#{msg.dig(:audio, :id)}) — download pendente")
+        else
+          Rails.logger.info("ℹ️ WhatsApp Cloud: tipo '#{msg[:type]}' ignorado")
+        end
+      end
+
+      # Plataforma unidirecional: toda mensagem recebida no número da Orbi é uma
+      # nota do treinador sobre um atleta (formato "Nome: texto").
+      def enqueue_trainer_note(account, body, from)
+        return if body.blank?
+
+        ::Coaching::ProcessWhatsappMessageJob.perform_later(
+          account_id:      account.id,
+          message:         body,
+          whatsapp_number: from
+        )
+      end
+
+      # Idempotência por wamid via cache atômico. Retorna true na primeira vez,
+      # false se o id já foi visto (a Meta reentrega em retries e duplicatas).
+      def first_delivery?(wamid)
+        return true if wamid.blank?
+
+        Rails.cache.write("wa:inbound:#{wamid}", 1, unless_exist: true, expires_in: 3.days)
       end
 
       def valid_webhook?
