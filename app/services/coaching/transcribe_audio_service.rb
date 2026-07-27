@@ -28,7 +28,7 @@ module Coaching
         return nil
       end
 
-      response.body.strip
+      response.body.force_encoding('UTF-8').scrub.strip
     rescue => e
       Rails.logger.error "[Coaching::TranscribeAudioService] #{e.class}: #{e.message}"
       nil

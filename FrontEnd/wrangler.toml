@@ -1,0 +1,10 @@
+name = "orbi-frontend"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-09-23"
+
+[vars]
+PUBLIC_URL = "https://orbinutri.com.br"
+
+# Secrets (configure via dashboard ou: wrangler pages secret put BACKEND_URL)
+# BACKEND_URL   = http://backend.orbinutri.com.br  (após adicionar registro A no Cloudflare DNS)
+# PRERENDER_URL = http://2.24.109.181:3001          (se expor o prerender na porta 3001 do servidor)

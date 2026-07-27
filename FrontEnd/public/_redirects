@@ -1,0 +1,3 @@
+# SPA fallback — serve index.html para todas as rotas não mapeadas
+# Pages Functions têm prioridade (api/*, sitemap.xml, og/*, healthz)
+/*    /index.html   200

@@ -192,6 +192,96 @@ Arquivo `Panorama_Estrategico_Orbi_2026.docx` compartilhado pelo fundador.
 
 ---
 
+## 2026-07-17 — Migração do inbound WhatsApp para a Cloud API oficial (Meta)
+
+### Contexto
+Decisão de WhatsApp mudou: `project-orbi.md` dizia "próximo passo NÃO é Cloud API";
+agora vamos para a **Cloud API oficial (Meta-hosted)**. O inbound rodava só via
+Evolution API (não-oficial). Branch: `claude/whatsapp-cloud-api` (a partir de `stage`).
+
+### O que foi descoberto / decidido
+- **Bug no handshake:** a Meta manda `hub.mode`/`hub.challenge`/`hub.verify_token`
+  **com ponto**. No Rack a chave é `params['hub.mode']`, NUNCA `params[:hub_mode]`.
+  O `verify` antigo (underscore) nunca confirmaria a assinatura do webhook no painel.
+- **Parsing correto da Cloud API:** iterar `entry[].changes[].value.messages[]`;
+  **ignorar** notificações sem `messages` (status callbacks de sent/delivered/read
+  vêm em `value.statuses` e quebravam com 500 → a Meta reentrega e desabilita o webhook).
+- **Sempre 200** no caminho Meta — qualquer não-2xx faz a Meta reentregar/desabilitar.
+- **Dedupe por wamid** via `Rails.cache.write(key, 1, unless_exist: true, expires_in: 3.days)`
+  (atômico). O model `WhatsappMessage` é de SAÍDA (exige `contact_id`/`event_type`),
+  não serve para dedupe de inbound — por isso cache, sem migration.
+- **Roteamento:** plataforma unidirecional → toda msg recebida é nota do treinador →
+  `Coaching::ProcessWhatsappMessageJob`. Conta resolvida por `account_from_sender_phone`.
+- Detecção do caminho oficial: `params[:object] == 'whatsapp_business_account'`.
+- Assinatura (`X-Hub-Signature-256`, HMAC-SHA256 sobre `request.raw_post`) já estava
+  correta — mantida.
+
+### Impacto prático / pendências
+- **Áudio (PTT) ainda NÃO migrado.** A Cloud API entrega áudio como `media id`; o
+  download exige a **Graph media API** (endpoint separado + bearer token), diferente do
+  `EvolutionApiClient.download_media`. Hoje o webhook loga e ignora áudio (200). Próximo
+  passo: um client Cloud de mídia + adaptar `Coaching::ProcessWhatsappAudioJob`. Como o
+  áudio é o input principal do coaching, isso é prioridade do follow-up.
+- **Envio (outbound)** continua no `EvolutionApiClient` — migrar para a Cloud API é
+  trabalho à parte.
+- **Limitação do ambiente:** a suíte Rails NÃO roda neste sandbox (bundle quebrado —
+  falta o checkout do gem git `city-state`; `bundle install` não completa). Validei só
+  `ruby -c` (sintaxe OK). Os testes de request (`whats_app_webhook_cloud_test.rb`)
+  precisam ser rodados em ambiente com bundle íntegro antes do merge.
+- ENV necessárias: `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`.
+
+---
+
+## 2026-07-17 — Runbook: testar o webhook Cloud API localmente (sem VPS)
+
+### Contexto
+Domínio `orbinutri.com.br` registrado mas **sem VPS paga** — sem servidor no ar.
+Objetivo: validar o inbound da Cloud API rodando o Rails **na máquina local**, com
+a Meta alcançando via túnel HTTPS. Branch com o fix: `claude/whatsapp-cloud-api`.
+
+### Fatos do projeto que destravam o teste local
+- `config/environments/development.rb`: **`config.hosts = nil`** → host authorization
+  desligado em dev; o hostname do túnel (ngrok/cloudflare) NÃO é bloqueado.
+- **dotenv-rails** presente → env vars vão no `.env` (gitignored).
+- `Procfile.dev` sobe web:3000 + `worker` (Sidekiq) + js. O job de coaching é
+  `perform_later`, então o Sidekiq precisa estar de pé para processar.
+- Rota do webhook: `POST/GET /api/v1/whatsapp/webhook`.
+
+### Runbook (rodar na máquina do dev, não no sandbox)
+1. `git checkout claude/whatsapp-cloud-api`
+2. `.env`: `WHATSAPP_VERIFY_TOKEN=<token que você escolhe>` e
+   `WHATSAPP_APP_SECRET=<App Secret: Meta → App settings → Basic>`
+3. `foreman start -f Procfile.dev`  (Rails :3000 + Sidekiq + js)
+4. Túnel HTTPS público (uma das opções):
+   - Rápido/temporário: `cloudflared tunnel --url http://localhost:3000`
+     (URL `*.trycloudflare.com`) — ou `ngrok http 3000`.
+   - Fixo no domínio, ainda local (sem VPS): DNS de `orbinutri.com.br` na
+     Cloudflare → `cloudflared tunnel create orbi-wa` →
+     `cloudflared tunnel route dns orbi-wa wa.orbinutri.com.br` →
+     `cloudflared tunnel run --url http://localhost:3000 orbi-wa`.
+5. Meta → WhatsApp → Configuration → Webhooks:
+   Callback URL = `https://<host-do-túnel>/api/v1/whatsapp/webhook`;
+   Verify token = mesmo valor do `WHATSAPP_VERIFY_TOKEN` → **Verify and save**;
+   assinar o campo **`messages`**.
+6. Banco local: o treinador (User) precisa de `whatsapp_number` = número do
+   remetente (só dígitos, ex.: `5511999999999`), senão o webhook responde 200 mas
+   "conta não encontrada" (`account_from_sender_phone`).
+7. Do WhatsApp do treinador (destinatário de teste) → manda `Nome: texto` para o
+   número de teste → `Coaching::ProcessWhatsappMessageJob` → cria `TimelineEvent`.
+
+### Ciladas
+- Handshake só valida com o fix `hub.*` no ar → o túnel/deploy tem que apontar
+  para ESTA branch.
+- Só `WHATSAPP_VERIFY_TOKEN` é preciso para o handshake; `WHATSAPP_APP_SECRET` é
+  necessário para as mensagens (senão 401 na validação da assinatura).
+- ngrok/trycloudflare grátis trocam a URL ao reiniciar → reatualizar na Meta.
+- Túnel Cloudflare **não precisa de VPS**: liga o localhost à borda da Cloudflare;
+  o DNS fica lá. VPS/Render só quando quiser online 24/7 sem a máquina ligada.
+- Número de teste da Meta funciona em modo desenvolvimento (até 5 destinatários);
+  publicar o app só é necessário para número real em produção.
+
+---
+
 ## Template para novas descobertas
 
 ```
