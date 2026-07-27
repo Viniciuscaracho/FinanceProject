@@ -236,10 +236,12 @@ module Api
         when 'button'
           enqueue_trainer_note(account, msg.dig(:button, :text), from)
         when 'audio', 'voice'
-          # A Cloud API entrega áudio como media id; o download usa a Graph media
-          # API (endpoint separado + bearer token). Ainda não implementado — não
-          # falha o webhook. Próximo passo registrado em .claude/memory/discoveries.md.
-          Rails.logger.info("ℹ️ WhatsApp Cloud: áudio recebido (media_id=#{msg.dig(:audio, :id)}) — download pendente")
+          media_id = msg.dig(:audio, :id)
+          ::Coaching::ProcessWhatsappCloudAudioJob.perform_later(
+            account_id: account.id,
+            media_id:   media_id,
+            from:       from
+          )
         else
           Rails.logger.info("ℹ️ WhatsApp Cloud: tipo '#{msg[:type]}' ignorado")
         end
