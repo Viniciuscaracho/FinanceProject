@@ -60,7 +60,8 @@ class Coaching::ParseAudioContextServiceTest < ActiveSupport::TestCase
 
   def stub_anthropic(json_text)
     mock_resp = mock('response')
-    mock_resp.stubs(:parsed_response).returns({ 'content' => [{ 'text' => json_text }] })
+    mock_resp.stubs(:success?).returns(true)
+    mock_resp.stubs(:parsed_response).returns({ 'choices' => [{ 'message' => { 'content' => json_text } }] })
     HTTParty.stubs(:post).returns(mock_resp)
   end
 end

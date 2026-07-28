@@ -8,7 +8,7 @@ module Coaching
     end
 
     def call
-      text = AnthropicClient.new('FeedbackDraftService').complete(prompt: prompt, max_tokens: 512)
+      text = OpenAiClient.new('FeedbackDraftService').complete(prompt: prompt, max_tokens: 512)
       text || 'Não foi possível gerar o rascunho no momento.'
     end
 

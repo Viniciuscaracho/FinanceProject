@@ -5,28 +5,19 @@ module Coaching
   # nome do atleta, campos de coaching (sono/carga/observacao/proxima_acao),
   # objetivo de médio prazo e prazo de reavaliação.
   class ParseAudioContextService
-    ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages'
-    MODEL         = 'claude-haiku-4-5-20251001'
-
     def initialize(transcript)
       @transcript = transcript
     end
 
     def call
-      response = HTTParty.post(
-        ANTHROPIC_URL,
-        headers: {
-          'x-api-key'         => ENV['ANTHROPIC_API_KEY'],
-          'anthropic-version' => '2023-06-01',
-          'content-type'      => 'application/json'
-        },
-        body: {
-          model:      MODEL,
-          max_tokens: 512,
-          messages:   [{ role: 'user', content: prompt }]
-        }.to_json
-      )
-      parse_response(response)
+      text = OpenAiClient.new('ParseAudioContextService').complete(prompt: prompt, max_tokens: 512)
+      return fallback if text.nil?
+
+      clean = text.gsub(/\A```(?:json)?\s*/, '').gsub(/\s*```\z/, '').strip
+      JSON.parse(clean).symbolize_keys
+    rescue JSON::ParserError => e
+      Rails.logger.error "[Coaching::ParseAudioContextService] JSON::ParserError: #{e.message}"
+      fallback
     rescue => e
       Rails.logger.error "[Coaching::ParseAudioContextService] #{e.class}: #{e.message}"
       fallback
@@ -60,16 +51,6 @@ module Coaching
 
         JSON:
       PROMPT
-    end
-
-    def parse_response(response)
-      body = response.parsed_response
-      text = body.dig('content', 0, 'text').to_s.strip
-      text = text.gsub(/\A```(?:json)?\s*/, '').gsub(/\s*```\z/, '').strip
-      JSON.parse(text).symbolize_keys
-    rescue JSON::ParserError => e
-      Rails.logger.error "[Coaching::ParseAudioContextService] JSON::ParserError: #{e.message}"
-      fallback
     end
 
     def fallback

@@ -7,7 +7,7 @@ module Coaching
     end
 
     def call
-      text = AnthropicClient.new('StructureNoteService').complete(prompt: prompt, max_tokens: 512)
+      text = OpenAiClient.new('StructureNoteService').complete(prompt: prompt, max_tokens: 512)
       return fallback_structure if text.nil?
 
       parse_text(text)

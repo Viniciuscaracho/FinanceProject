@@ -73,7 +73,7 @@ class Coaching::StructureNoteServiceTest < ActiveSupport::TestCase
   def stub_anthropic_ok(text)
     mock_response = mock('response')
     mock_response.stubs(:success?).returns(true)
-    mock_response.stubs(:parsed_response).returns({ 'content' => [{ 'text' => text }] })
+    mock_response.stubs(:parsed_response).returns({ 'choices' => [{ 'message' => { 'content' => text } }] })
     HTTParty.stubs(:post).returns(mock_response)
   end
 

@@ -11,7 +11,7 @@ module Coaching
     end
 
     def call
-      text = AnthropicClient.new('PreVisitSummaryService').complete(prompt: prompt, max_tokens: 1024)
+      text = OpenAiClient.new('PreVisitSummaryService').complete(prompt: prompt, max_tokens: 1024)
       text || 'Não foi possível gerar o resumo no momento.'
     end
 

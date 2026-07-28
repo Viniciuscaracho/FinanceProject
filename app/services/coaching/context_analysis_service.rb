@@ -15,7 +15,7 @@ module Coaching
       events = history_events
       return [] if events.size < 3
 
-      response = AnthropicClient.new('ContextAnalysisService').complete(
+      response = OpenAiClient.new('ContextAnalysisService').complete(
         prompt:     build_prompt(events),
         max_tokens: 500,
       )
