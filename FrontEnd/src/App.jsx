@@ -14,6 +14,7 @@ import { CommandPaletteProvider } from './contexts/CommandPaletteContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import { PageSkeleton } from './components/Skeleton'
 import { LandingPage, Dashboard, PublicAppointmentBooking, AppointmentManage, PublicDiscover, PublicProfessionalProfile, PublicAnamneseForm, PublicPatientDocument, protectedRoutes } from './config/routes'
+import { COACHING_ONLY } from './config/featureFlags'
 import { TermsAcceptanceModal } from './components/TermsAcceptanceModal'
 import { Analytics } from './components/Analytics'
 
@@ -174,6 +175,9 @@ function AppContent() {
             }
           />
         ))}
+
+        {/* Modo enxuto de coaching: rotas fora do escopo redirecionam ao Coaching */}
+        {COACHING_ONLY && <Route path="*" element={<Navigate to="/coaching" replace />} />}
       </Routes>
       {needsTermsAcceptance && <TermsAcceptanceModal />}
     </Router>

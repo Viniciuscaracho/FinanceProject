@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { apiService } from '@/lib/api'
+import { COACHING_ONLY } from '@/config/featureFlags'
 import { Button } from '@/components/ui/button'
 import { T } from '@/lib/tokens'
 import { DocumentEditor } from '@/components/DocumentEditor'
@@ -1153,6 +1154,8 @@ export function PatientProfile() {
           </div>
         </Section>
 
+        {/* Seções fora do coaching — ocultas no modo enxuto (COACHING_ONLY) */}
+        {!COACHING_ONLY && (<>
         {/* 2 ── METAS */}
         <Section icon={Target} title="Metas" count={goals.filter(g => g.status === 'active').length}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1626,6 +1629,7 @@ export function PatientProfile() {
             </div>
           )}
         </Section>
+        </>)}
 
         {/* Modal — Novo Documento */}
         {showNewDocDialog && (

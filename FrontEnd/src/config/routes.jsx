@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import { COACHING_ONLY, COACHING_ONLY_ROUTES } from './featureFlags'
 
 // LandingPage — eager (primeira tela para usuários não autenticados)
 export { LandingPage } from '../pages/LandingPage'
@@ -40,7 +41,7 @@ export const MealPlanTemplates       = lazy(() => import('../pages/MealPlanTempl
 export const MealPlanTemplateBuilder = lazy(() => import('../pages/MealPlanTemplateBuilder'))
 export const CoachingDashboard = lazy(() => import('../pages/CoachingDashboard').then(m => ({ default: m.CoachingDashboard })))
 
-export const protectedRoutes = [
+const baseProtectedRoutes = [
   { path: '/',                              element: Dashboard },
   { path: '/transactions',                  element: Transactions },
   { path: '/contacts',                      element: Contacts },
@@ -78,3 +79,14 @@ export const protectedRoutes = [
     }))
   },
 ]
+
+// Modo enxuto de coaching: mantém apenas as rotas essenciais e aponta a home (/)
+// para o dashboard de análise. Fora desse modo, exporta a lista completa.
+export const protectedRoutes = COACHING_ONLY
+  ? [
+      { path: '/', element: CoachingDashboard },
+      ...baseProtectedRoutes.filter(
+        r => r.path !== '/' && COACHING_ONLY_ROUTES.includes(r.path)
+      ),
+    ]
+  : baseProtectedRoutes

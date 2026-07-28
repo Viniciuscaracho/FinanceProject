@@ -3,15 +3,16 @@ import { useLocation, useNavigate, Link } from 'react-router-dom'
 import {
   Home, Users,
   X, ChevronLeft, ChevronRight, ChevronDown,
-  Calendar, Apple, Clock, Link2, Crown, Shield, FileEdit, Globe, ClipboardList, UtensilsCrossed, Brain,
+  Calendar, Apple, Clock, Link2, Crown, Shield, FileEdit, Globe, ClipboardList, UtensilsCrossed, Brain, MessageCircle,
 } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useAuth } from '../../contexts/AuthContext'
+import { COACHING_ONLY } from '../../config/featureFlags'
 
 const BRAND = '#4C60AA'
 
 /* ─── Estrutura de navegação em grupos ────────── */
-const NAV = [
+const FULL_NAV = [
   {
     label: null,
     items: [
@@ -51,6 +52,26 @@ const NAV = [
     ],
   },
 ]
+
+/* Menu enxuto do modo coaching — só o fluxo essencial:
+   análise (Coaching), atletas e a conexão do WhatsApp (recebimento de áudio/mensagem). */
+const COACHING_NAV = [
+  {
+    label: null,
+    items: [
+      { icon: Brain, label: 'Coaching', path: '/coaching' },
+      { icon: Users, label: 'Atletas',  path: '/contacts' },
+    ],
+  },
+  {
+    label: 'Configurar',
+    items: [
+      { icon: MessageCircle, label: 'WhatsApp', path: '/settings' },
+    ],
+  },
+]
+
+const NAV = COACHING_ONLY ? COACHING_NAV : FULL_NAV
 
 export function Sidebar({ isCollapsed, setIsCollapsed, isMobile, setIsMobileOpen }) {
   const location = useLocation()
