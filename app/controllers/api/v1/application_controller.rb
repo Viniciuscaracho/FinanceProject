@@ -28,6 +28,7 @@ module Api
         api/v1/contacts
         api/v1/users
         api/v1/account_settings
+        api/v1/admin
       ].freeze
       
       rescue_from ActiveRecord::RecordNotFound, with: :not_found

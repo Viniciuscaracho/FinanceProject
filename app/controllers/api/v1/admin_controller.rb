@@ -661,7 +661,95 @@ module Api
         render json: { error: 'Token inválido' }, status: :unauthorized
       end
 
+      # Observabilidade de consumo de tokens da IA (coaching).
+      # ?days=N (padrão 30, máx 365) — janela de agregação.
+      def token_usage
+        days = (params[:days].presence || 30).to_i
+        days = 30  if days <= 0
+        days = 365 if days > 365
+        since = days.days.ago
+        scope = AiTokenUsage.since(since)
+
+        by_account = token_rollup(scope, :account_id)
+        account_labels = account_labels_for(by_account.map { |r| r[:key] }.compact)
+        by_account.each do |row|
+          id = row.delete(:key)
+          row[:account_id]   = id
+          row[:account_name] = id ? (account_labels[id] || "Conta ##{id}") : 'Sem atribuição'
+        end
+
+        by_service = token_rollup(scope, :service).each { |row| row[:service] = row.delete(:key) }
+        totals = (token_rollup(scope, nil).first || empty_token_bucket(:all)).except(:key)
+
+        render json: {
+          period_days: days,
+          since:       since.iso8601,
+          totals:      totals,
+          by_day:      token_series_by_day(scope),
+          by_service:  by_service,
+          by_account:  by_account
+        }
+      end
+
       private
+
+      # Agrega tokens e custo estimado por `dimension` (ou geral quando nil).
+      # O custo depende do modelo, então agrupa por [dimension, model] e dobra em Ruby.
+      def token_rollup(scope, dimension)
+        group_cols = [dimension, :model].compact
+        rows = scope.group(*group_cols)
+                    .pluck(*group_cols, Arel.sql('SUM(input_tokens)'),
+                           Arel.sql('SUM(output_tokens)'), Arel.sql('COUNT(*)'))
+        buckets = Hash.new { |h, k| h[k] = empty_token_bucket(k) }
+        rows.each do |row|
+          if dimension
+            key, model, inp, out, cnt = row
+          else
+            key = :all
+            model, inp, out, cnt = row
+          end
+          fold_token_bucket(buckets[key], model, inp, out, cnt)
+        end
+        finalize_token_buckets(buckets.values).sort_by { |b| -b[:estimated_cost_usd] }
+      end
+
+      def token_series_by_day(scope)
+        rows = scope.group(Arel.sql('DATE(created_at)'), :model)
+                    .pluck(Arel.sql('DATE(created_at)'), :model, Arel.sql('SUM(input_tokens)'),
+                           Arel.sql('SUM(output_tokens)'), Arel.sql('COUNT(*)'))
+        buckets = Hash.new { |h, k| h[k] = empty_token_bucket(k) }
+        rows.each do |date, model, inp, out, cnt|
+          fold_token_bucket(buckets[date.to_s], model, inp, out, cnt)
+        end
+        finalize_token_buckets(buckets.values)
+          .map { |b| { date: b[:key] }.merge(b.except(:key)) }
+          .sort_by { |b| b[:date] }
+      end
+
+      def empty_token_bucket(key)
+        { key: key, input_tokens: 0, output_tokens: 0, calls: 0, estimated_cost_usd: 0.0 }
+      end
+
+      def fold_token_bucket(bucket, model, inp, out, cnt)
+        price = AiTokenUsage.pricing_for(model)
+        bucket[:input_tokens]  += inp.to_i
+        bucket[:output_tokens] += out.to_i
+        bucket[:calls]         += cnt.to_i
+        bucket[:estimated_cost_usd] +=
+          (inp.to_i * price[:input] + out.to_i * price[:output]) / 1_000_000.0
+      end
+
+      def finalize_token_buckets(buckets)
+        buckets.each { |b| b[:estimated_cost_usd] = b[:estimated_cost_usd].round(4) }
+      end
+
+      def account_labels_for(ids)
+        return {} if ids.empty?
+
+        Account.where(id: ids).each_with_object({}) do |acc, memo|
+          memo[acc.id] = acc.try(:prefix_id).presence || "Conta ##{acc.id}"
+        end
+      end
 
       def active_subscriptions_count
         statuses = Subscription::ACCESS_GRANTING_STATUSES.map(&:to_s)

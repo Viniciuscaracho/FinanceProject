@@ -1343,6 +1343,11 @@ class ApiService {
     return await this.request('/admin/dashboard');
   }
 
+  // Observabilidade de consumo de tokens da IA (coaching)
+  async getAdminTokenUsage(days = 30) {
+    return await this.request(`/admin/token_usage?days=${days}`);
+  }
+
   async getAdminAccounts(params = {}) {
     const queryParams = new URLSearchParams(params).toString();
     return await this.request(`/admin/accounts${queryParams ? `?${queryParams}` : ''}`);

@@ -39,10 +39,11 @@ import {
 import { apiService } from '../lib/api'
 import { toast } from 'sonner'
 
-const TABS = ['overview', 'accounts', 'subscriptions', 'users', 'webhooks', 'announcements', 'referrals']
+const TABS = ['overview', 'tokens', 'accounts', 'subscriptions', 'users', 'webhooks', 'announcements', 'referrals']
 
 const TAB_LABELS = {
   overview: 'Visão Geral',
+  tokens: 'Tokens / IA',
   accounts: 'Contas',
   subscriptions: 'Assinaturas',
   users: 'Usuários',
@@ -1439,6 +1440,136 @@ function ReferralCodesTab() {
 
 // ─── MAIN ────────────────────────────────────────────────────────────────────
 
+// ─── TOKENS / IA TAB ─────────────────────────────────────────────────────────
+function TokensTab() {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [days, setDays] = useState(30)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await apiService.getAdminTokenUsage(days)
+      setData(res)
+    } catch (e) {
+      toast.error(e?.message || 'Erro ao carregar consumo de tokens')
+    } finally {
+      setLoading(false)
+    }
+  }, [days])
+
+  useEffect(() => { load() }, [load])
+
+  const fmtInt = (n) => (n ?? 0).toLocaleString('pt-BR')
+  const fmtUsd = (n) => `US$ ${(n ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const totals = data?.totals || { input_tokens: 0, output_tokens: 0, calls: 0, estimated_cost_usd: 0 }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <p className="text-sm text-gray-500">
+          Consumo de tokens da IA de coaching (Anthropic) — custo estimado a partir dos tokens de cada chamada.
+        </p>
+        <div className="flex gap-2 items-center">
+          <select
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+            className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-800"
+          >
+            <option value={7}>Últimos 7 dias</option>
+            <option value={30}>Últimos 30 dias</option>
+            <option value={90}>Últimos 90 dias</option>
+          </select>
+          <Button size="sm" variant="outline" onClick={load}>Atualizar</Button>
+        </div>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-gray-500 py-8 text-center">Carregando…</p>
+      ) : (
+        <>
+          {/* Cards de totais */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: 'Custo estimado', value: fmtUsd(totals.estimated_cost_usd) },
+              { label: 'Chamadas', value: fmtInt(totals.calls) },
+              { label: 'Tokens de entrada', value: fmtInt(totals.input_tokens) },
+              { label: 'Tokens de saída', value: fmtInt(totals.output_tokens) },
+            ].map((c) => (
+              <div key={c.label} className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                <p className="text-xs text-gray-500 mb-1">{c.label}</p>
+                <p className="text-xl font-semibold">{c.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Por serviço */}
+          <div>
+            <h3 className="text-sm font-semibold mb-2">Por serviço de IA</h3>
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500">
+                  <tr>
+                    <th className="text-left px-3 py-2">Serviço</th>
+                    <th className="text-right px-3 py-2">Chamadas</th>
+                    <th className="text-right px-3 py-2">Entrada</th>
+                    <th className="text-right px-3 py-2">Saída</th>
+                    <th className="text-right px-3 py-2">Custo est.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.by_service || []).map((r) => (
+                    <tr key={r.service} className="border-t border-gray-100 dark:border-gray-800">
+                      <td className="px-3 py-2">{r.service}</td>
+                      <td className="px-3 py-2 text-right">{fmtInt(r.calls)}</td>
+                      <td className="px-3 py-2 text-right">{fmtInt(r.input_tokens)}</td>
+                      <td className="px-3 py-2 text-right">{fmtInt(r.output_tokens)}</td>
+                      <td className="px-3 py-2 text-right">{fmtUsd(r.estimated_cost_usd)}</td>
+                    </tr>
+                  ))}
+                  {(!data?.by_service || data.by_service.length === 0) && (
+                    <tr><td colSpan={5} className="px-3 py-6 text-center text-gray-400">Sem consumo no período</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Por conta */}
+          <div>
+            <h3 className="text-sm font-semibold mb-2">Por conta</h3>
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500">
+                  <tr>
+                    <th className="text-left px-3 py-2">Conta</th>
+                    <th className="text-right px-3 py-2">Chamadas</th>
+                    <th className="text-right px-3 py-2">Tokens</th>
+                    <th className="text-right px-3 py-2">Custo est.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data?.by_account || []).map((r) => (
+                    <tr key={r.account_id ?? 'none'} className="border-t border-gray-100 dark:border-gray-800">
+                      <td className="px-3 py-2">{r.account_name}</td>
+                      <td className="px-3 py-2 text-right">{fmtInt(r.calls)}</td>
+                      <td className="px-3 py-2 text-right">{fmtInt(r.input_tokens + r.output_tokens)}</td>
+                      <td className="px-3 py-2 text-right">{fmtUsd(r.estimated_cost_usd)}</td>
+                    </tr>
+                  ))}
+                  {(!data?.by_account || data.by_account.length === 0) && (
+                    <tr><td colSpan={4} className="px-3 py-6 text-center text-gray-400">Sem consumo no período</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export function Admin() {
   const [activeTab, setActiveTab] = useState('overview')
   const [dashboard, setDashboard] = useState(null)
@@ -1496,6 +1627,7 @@ export function Admin() {
 
       {/* Content */}
       {activeTab === 'overview' && <OverviewTab dashboard={dashboard} onRefresh={loadDashboard} />}
+      {activeTab === 'tokens' && <TokensTab />}
       {activeTab === 'accounts' && <AccountsTab />}
       {activeTab === 'subscriptions' && <SubscriptionsTab />}
       {activeTab === 'users' && <UsersTab />}

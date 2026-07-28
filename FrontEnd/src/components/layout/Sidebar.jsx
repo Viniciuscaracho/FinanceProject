@@ -69,6 +69,12 @@ const COACHING_NAV = [
       { icon: MessageCircle, label: 'WhatsApp', path: '/settings' },
     ],
   },
+  {
+    label: null,
+    items: [
+      { icon: Shield, label: 'Admin', path: '/admin', adminOnly: true },
+    ],
+  },
 ]
 
 const NAV = COACHING_ONLY ? COACHING_NAV : FULL_NAV

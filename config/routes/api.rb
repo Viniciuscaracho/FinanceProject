@@ -339,6 +339,9 @@ namespace :api, defaults: { format: 'json' } do
 
     # Admin routes (exclusivo para dono do sistema)
     get 'admin/dashboard', to: 'admin#dashboard'
+
+    # Observabilidade de consumo de tokens da IA (coaching)
+    get 'admin/token_usage', to: 'admin#token_usage'
     
     # Accounts management
     get 'admin/accounts', to: 'admin#accounts'

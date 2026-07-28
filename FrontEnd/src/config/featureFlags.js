@@ -18,6 +18,8 @@ export const COACHING_ONLY =
  *   - /contacts/:id    → perfil do atleta (timeline de coaching)
  *   - /settings        → conexão do WhatsApp (recebimento de áudio/mensagem) + conta
  *   - /profile         → perfil do usuário (coach)
+ *   - /admin           → painel do dono do sistema (observabilidade)
+ *   - /admin/accounts/:id → detalhe de conta no admin
  */
 export const COACHING_ONLY_ROUTES = [
   '/coaching',
@@ -25,4 +27,6 @@ export const COACHING_ONLY_ROUTES = [
   '/contacts/:id',
   '/settings',
   '/profile',
+  '/admin',
+  '/admin/accounts/:id',
 ]
