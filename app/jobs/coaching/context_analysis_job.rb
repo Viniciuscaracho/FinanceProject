@@ -4,7 +4,9 @@ module Coaching
   class ContextAnalysisJob < ApplicationJob
     queue_as :default
 
-    DEBOUNCE_HOURS = 2
+    # Padrões históricos não mudam em horas — 1x por dia por atleta é suficiente.
+    # Reduz chamadas ao GPT-4o-mini em ~90% para treinadores ativos.
+    DEBOUNCE_HOURS = 23
 
     def perform(account_id, contact_id, event_id)
       account = Account.find_by(id: account_id)
