@@ -12,6 +12,17 @@ module Api
             return
           end
 
+          # Bloqueia antes de gastar transcrição/IA quando não há crédito.
+          credits = ::Coaching::CreditsService.for(Current.account)
+          unless credits.enough?
+            render json: {
+              error:   'Créditos de áudio esgotados. Recarregue para continuar.',
+              code:    'insufficient_credits',
+              balance: credits.balance
+            }, status: :payment_required
+            return
+          end
+
           transcript = ::Coaching::TranscribeAudioService.new(params[:audio]).call
 
           if transcript.blank?
@@ -34,10 +45,22 @@ module Api
           )
 
           if event.save
-            render json: { event: event_json(event), transcript: transcript }, status: :created
+            # Consome 1 crédito pelo áudio processado, vinculado ao evento gerado.
+            credits.debit_audio!(source: event)
+            render json: {
+              event:           event_json(event),
+              transcript:      transcript,
+              credits_balance: credits.balance
+            }, status: :created
           else
             render json: { errors: event.errors.full_messages }, status: :unprocessable_entity
           end
+        rescue ::Coaching::CreditsService::InsufficientCredits
+          # Corrida rara: saldo esgotou entre a checagem e o débito.
+          render json: {
+            error: 'Créditos de áudio esgotados. Recarregue para continuar.',
+            code:  'insufficient_credits'
+          }, status: :payment_required
         end
 
         private

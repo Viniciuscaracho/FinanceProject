@@ -320,6 +320,7 @@ namespace :api, defaults: { format: 'json' } do
       get 'alerts',           to: 'alerts#index'
       get 'dashboard',        to: 'dashboard#index'
       get 'recent_activity',  to: 'recent_activity#index'
+      get 'credits',          to: 'credits#show'
       resources :contacts, only: [] do
         resources :timeline_events, only: %i[index create]
         resource :coaching_profile, only: %i[show update]

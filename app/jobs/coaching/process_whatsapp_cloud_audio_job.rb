@@ -16,6 +16,13 @@ module Coaching
       account = Account.find_by(id: account_id)
       return unless account
 
+      credits = ::Coaching::CreditsService.for(account)
+      unless credits.enough?
+        Rails.logger.warn "[ProcessWhatsappCloudAudioJob] Créditos esgotados na conta ##{account_id} — áudio ignorado"
+        # TODO: avisar o treinador (mensagem de volta) que os créditos acabaram.
+        return
+      end
+
       media = WhatsApp::CloudApiClient.download_media(media_id: media_id)
       unless media
         Rails.logger.warn "[ProcessWhatsappCloudAudioJob] Falha ao baixar media_id=#{media_id}"
@@ -43,7 +50,7 @@ module Coaching
       profile = ensure_coaching_profile(account, contact)
       update_profile(profile, parsed)
 
-      ActsAsTenant.with_tenant(account) do
+      event = ActsAsTenant.with_tenant(account) do
         TimelineEvent.create!(
           account:      account,
           contact:      contact,
@@ -56,6 +63,7 @@ module Coaching
         )
       end
 
+      credits.debit_audio!(source: event)
       profile.update_columns(last_feedback_at: Time.current)
     rescue StandardError => e
       Rails.logger.error "[ProcessWhatsappCloudAudioJob] #{e.class}: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
