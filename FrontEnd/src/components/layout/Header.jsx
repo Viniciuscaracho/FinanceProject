@@ -16,6 +16,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useBankAccount } from '../../contexts/BankAccountContext'
 import { cn } from '@/lib/utils'
 import { T } from '@/lib/tokens'
+import { COACHING_ONLY } from '@/config/featureFlags'
 
 const BRAND  = '#4C60AA'
 
@@ -126,7 +127,7 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
             </Button>
           )}
 
-          {!loadingAccounts && bankAccounts.length > 0 ? (
+          {!COACHING_ONLY && (!loadingAccounts && bankAccounts.length > 0 ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <div><CaixaWidget hasAccounts /></div>
@@ -206,7 +207,7 @@ export function Header({ onMobileMenuClick, isMobile = false }) {
             </DropdownMenu>
           ) : (
             <CaixaWidget hasAccounts={false} />
-          )}
+          ))}
         </div>
 
         {/* ── Centro: search trigger ────────── */}
