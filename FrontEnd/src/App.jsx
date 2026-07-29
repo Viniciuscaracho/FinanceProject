@@ -19,6 +19,7 @@ import { TermsAcceptanceModal } from './components/TermsAcceptanceModal'
 import { Analytics } from './components/Analytics'
 
 const LandingPageNutri       = lazy(() => import('./pages/LandingPageNutri').then(m => ({ default: m.LandingPageNutri })))
+const LandingPageCoaching    = lazy(() => import('./pages/LandingPageCoaching').then(m => ({ default: m.LandingPageCoaching })))
 const GoogleAuthCallback     = lazy(() => import('./pages/GoogleAuthCallback').then(m => ({ default: m.GoogleAuthCallback })))
 const PrivacyPolicy          = lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })))
 const TermsOfUse             = lazy(() => import('./pages/TermsOfUse').then(m => ({ default: m.TermsOfUse })))
@@ -62,7 +63,11 @@ function ProtectedRoute({ children }) {
 function Root() {
   const { isAuthenticated, loading } = useAuth()
   if (loading) return <PageSkeleton />
-  if (!isAuthenticated) return <LandingPage />
+  if (!isAuthenticated) {
+    // Modo enxuto de coaching: a home dos visitantes é a landing do MVP de coaching.
+    if (COACHING_ONLY) return <Suspense fallback={<PageSkeleton />}><LandingPageCoaching /></Suspense>
+    return <LandingPage />
+  }
   return (
     <Layout>
       <Suspense fallback={<PageSkeleton />}>
@@ -102,6 +107,9 @@ function AppContent() {
             <Suspense fallback={<PageSkeleton />}><LandingPageNutri /></Suspense>
           } />
         )}
+        <Route path="/landing-coaching" element={
+          <Suspense fallback={<PageSkeleton />}><LandingPageCoaching /></Suspense>
+        } />
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/auth/google" element={
           <Suspense fallback={<PageSkeleton />}><GoogleAuthCallback /></Suspense>
