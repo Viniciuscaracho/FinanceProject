@@ -5,15 +5,26 @@
 # Table name: coaching_insights
 #
 #  id            :bigint           not null, primary key
-#  insight_type  :string           not null
-#  insight_text  :text             not null
-#  severity      :string           default("medium"), not null
-#  related_dates :jsonb            default([]), not null
 #  expires_at    :datetime
+#  insight_text  :text             not null
+#  insight_type  :string           not null
+#  related_dates :jsonb            not null
+#  severity      :string           default("medium"), not null
 #  created_at    :datetime         not null
 #  updated_at    :datetime         not null
 #  account_id    :bigint           not null
 #  contact_id    :bigint           not null
+#
+# Indexes
+#
+#  idx_coaching_insights_account_contact_date            (account_id,contact_id,created_at)
+#  index_coaching_insights_on_account_id                 (account_id)
+#  index_coaching_insights_on_account_id_and_created_at  (account_id,created_at)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#  fk_rails_...  (contact_id => people.id)
 #
 class CoachingInsight < ApplicationRecord
   belongs_to :account
