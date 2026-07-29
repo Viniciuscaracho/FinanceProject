@@ -1,5 +1,25 @@
 # frozen_string_literal: true
 
+# == Schema Information
+#
+# Table name: coaching_credit_wallets
+#
+#  id                :bigint           not null, primary key
+#  balance           :integer          default(0), not null
+#  monthly_allowance :integer          default(200), not null
+#  renews_at         :datetime
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  account_id        :bigint           not null
+#
+# Indexes
+#
+#  index_coaching_credit_wallets_on_account_id  (account_id) UNIQUE
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id)
+#
 # Carteira de créditos de áudio do coaching — uma por conta (Account).
 #
 # 1 crédito = 1 áudio transcrito e estruturado pela IA. O plano inclui

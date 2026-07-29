@@ -25,12 +25,6 @@
 #  fk_rails_...  (account_id => accounts.id) ON DELETE => nullify
 #  fk_rails_...  (contact_id => people.id) ON DELETE => nullify
 #
-# Registro de consumo de tokens das chamadas de IA (OpenAI) do coaching.
-# Gravado por Coaching::OpenAiClient a cada chamada bem-sucedida. Serve de
-# base para a observabilidade de custo no painel Admin.
-#
-# Preços em USD por 1 milhão de tokens (input/output). Ajuste aqui se a OpenAI
-# alterar a tabela ou se o modelo padrão mudar.
 class AiTokenUsage < ApplicationRecord
   belongs_to :account, optional: true
   belongs_to :contact, class_name: 'Contact', foreign_key: :contact_id, optional: true

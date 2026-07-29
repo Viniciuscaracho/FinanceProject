@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_28_120000) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_29_130001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -402,6 +402,35 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_28_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["country", "code"], name: "index_banks_on_country_and_code", unique: true
+  end
+
+  create_table "coaching_credit_transactions", force: :cascade do |t|
+    t.bigint "coaching_credit_wallet_id", null: false
+    t.bigint "account_id", null: false
+    t.integer "amount", null: false
+    t.integer "balance_after", null: false
+    t.string "kind", null: false
+    t.string "description"
+    t.string "source_type"
+    t.bigint "source_id"
+    t.jsonb "metadata", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "idx_coaching_credit_tx_account_created"
+    t.index ["account_id"], name: "idx_coaching_credit_tx_account"
+    t.index ["coaching_credit_wallet_id"], name: "idx_coaching_credit_tx_wallet"
+    t.index ["kind", "created_at"], name: "idx_coaching_credit_tx_kind_created"
+    t.index ["source_type", "source_id"], name: "idx_coaching_credit_tx_source"
+  end
+
+  create_table "coaching_credit_wallets", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.integer "balance", default: 0, null: false
+    t.integer "monthly_allowance", default: 200, null: false
+    t.datetime "renews_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_coaching_credit_wallets_on_account_id", unique: true
   end
 
   create_table "coaching_insights", force: :cascade do |t|
@@ -1546,6 +1575,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_28_120000) do
   add_foreign_key "bank_accounts", "banks"
   add_foreign_key "bank_accounts", "users", column: "created_by_id"
   add_foreign_key "bank_accounts", "users", column: "updated_by_id"
+  add_foreign_key "coaching_credit_transactions", "accounts"
+  add_foreign_key "coaching_credit_transactions", "coaching_credit_wallets"
+  add_foreign_key "coaching_credit_wallets", "accounts"
   add_foreign_key "coaching_insights", "accounts"
   add_foreign_key "coaching_insights", "people", column: "contact_id"
   add_foreign_key "coaching_profiles", "accounts"

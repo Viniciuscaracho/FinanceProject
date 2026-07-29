@@ -64,10 +64,10 @@ function Root() {
   const { isAuthenticated, loading } = useAuth()
   if (loading) return <PageSkeleton />
   if (!isAuthenticated) {
-    // Modo enxuto de coaching: a home dos visitantes é a landing do MVP de coaching.
     if (COACHING_ONLY) return <Suspense fallback={<PageSkeleton />}><LandingPageCoaching /></Suspense>
     return <LandingPage />
   }
+  if (COACHING_ONLY) return <Navigate to="/coaching" replace />
   return (
     <Layout>
       <Suspense fallback={<PageSkeleton />}>
@@ -81,6 +81,7 @@ function NutriRoot() {
   const { isAuthenticated, loading } = useAuth()
   if (loading) return <PageSkeleton />
   if (!isAuthenticated) return <LandingPage />
+  if (COACHING_ONLY) return <Navigate to="/coaching" replace />
   return (
     <Layout>
       <Suspense fallback={<PageSkeleton />}>

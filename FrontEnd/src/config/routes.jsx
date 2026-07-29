@@ -80,13 +80,8 @@ const baseProtectedRoutes = [
   },
 ]
 
-// Modo enxuto de coaching: mantém apenas as rotas essenciais e aponta a home (/)
-// para o dashboard de análise. Fora desse modo, exporta a lista completa.
+// Modo enxuto de coaching: mantém apenas as rotas essenciais.
+// A home (/) é tratada pelo Root/NutriRoot que redireciona para /coaching.
 export const protectedRoutes = COACHING_ONLY
-  ? [
-      { path: '/', element: CoachingDashboard },
-      ...baseProtectedRoutes.filter(
-        r => r.path !== '/' && COACHING_ONLY_ROUTES.includes(r.path)
-      ),
-    ]
+  ? baseProtectedRoutes.filter(r => r.path !== '/' && COACHING_ONLY_ROUTES.includes(r.path))
   : baseProtectedRoutes
