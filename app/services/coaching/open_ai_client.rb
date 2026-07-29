@@ -16,7 +16,7 @@ module Coaching
       @tag = "[Coaching::#{caller_tag}]"
     end
 
-    def complete(prompt:, max_tokens: 1024)
+    def complete(prompt:, max_tokens: 1024, account_id: nil, contact_id: nil)
       Rails.logger.warn "#{@tag} OPENAI_API_KEY not set" if ENV['OPENAI_API_KEY'].blank?
 
       response = HTTParty.post(
@@ -39,10 +39,37 @@ module Coaching
         return nil
       end
 
+      record_token_usage(response.parsed_response, account_id, contact_id)
+
       response.parsed_response.dig('choices', 0, 'message', 'content').presence
     rescue StandardError => e
       Rails.logger.error "#{@tag} #{e.class}: #{e.message}"
       nil
+    end
+
+    private
+
+    def record_token_usage(parsed, account_id, contact_id)
+      usage = parsed.is_a?(Hash) ? parsed['usage'] : nil
+      return if usage.blank?
+
+      AiTokenUsage.create!(
+        account_id:    account_id || resolved_account_id,
+        contact_id:    contact_id,
+        service:       @tag.gsub(/\A\[Coaching::|\]\z/, ''),
+        model:         parsed['model'].presence || MODEL,
+        input_tokens:  usage['prompt_tokens'].to_i,
+        output_tokens: usage['completion_tokens'].to_i
+      )
+    rescue StandardError => e
+      Rails.logger.error "#{@tag} falha ao registrar uso de tokens: #{e.class}: #{e.message}"
+    end
+
+    def resolved_account_id
+      return Current.account.id if defined?(Current) && Current.respond_to?(:account) && Current.account
+
+      tenant = ActsAsTenant.current_tenant if defined?(ActsAsTenant)
+      tenant&.id
     end
   end
 end

@@ -1,24 +1,47 @@
 # frozen_string_literal: true
 
-# Registro de consumo de tokens das chamadas de IA (Anthropic) do coaching.
-# Gravado por Coaching::AnthropicClient a cada chamada bem-sucedida. Serve de
+# == Schema Information
+#
+# Table name: ai_token_usages
+#
+#  id            :bigint           not null, primary key
+#  input_tokens  :integer          default(0), not null
+#  model         :string           not null
+#  output_tokens :integer          default(0), not null
+#  service       :string           not null
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  account_id    :bigint
+#  contact_id    :bigint
+#
+# Indexes
+#
+#  index_ai_token_usages_on_account_id_and_created_at  (account_id,created_at)
+#  index_ai_token_usages_on_created_at                 (created_at)
+#  index_ai_token_usages_on_service_and_created_at     (service,created_at)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (account_id => accounts.id) ON DELETE => nullify
+#  fk_rails_...  (contact_id => people.id) ON DELETE => nullify
+#
+# Registro de consumo de tokens das chamadas de IA (OpenAI) do coaching.
+# Gravado por Coaching::OpenAiClient a cada chamada bem-sucedida. Serve de
 # base para a observabilidade de custo no painel Admin.
 #
-# Preços em USD por 1 milhão de tokens (input/output). Ajuste aqui se a Anthropic
+# Preços em USD por 1 milhão de tokens (input/output). Ajuste aqui se a OpenAI
 # alterar a tabela ou se o modelo padrão mudar.
 class AiTokenUsage < ApplicationRecord
   belongs_to :account, optional: true
   belongs_to :contact, class_name: 'Contact', foreign_key: :contact_id, optional: true
 
   PRICING_PER_MTOK = {
-    'claude-haiku-4-5'  => { input: 1.0,  output: 5.0 },
-    'claude-sonnet-4-5' => { input: 3.0,  output: 15.0 },
-    'claude-opus-4-1'   => { input: 15.0, output: 75.0 }
+    'gpt-4o-mini'       => { input: 0.15, output: 0.60 },
+    'gpt-4o'            => { input: 2.50, output: 10.0 },
+    'gpt-4.1-mini'      => { input: 0.40, output: 1.60 },
   }.freeze
 
-  # Fallback usado quando o id do modelo tem sufixo de data (ex.:
-  # "claude-haiku-4-5-20251001") — casa pelo prefixo conhecido mais longo.
-  DEFAULT_PRICING = { input: 1.0, output: 5.0 }.freeze
+  DEFAULT_PRICING = { input: 0.15, output: 0.60 }.freeze
 
   scope :since, ->(time) { where('created_at >= ?', time) }
   scope :for_account, ->(account) { where(account_id: account&.id) }

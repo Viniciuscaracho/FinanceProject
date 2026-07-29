@@ -1468,7 +1468,7 @@ function TokensTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-sm text-gray-500">
-          Consumo de tokens da IA de coaching (Anthropic) — custo estimado a partir dos tokens de cada chamada.
+          Consumo de tokens da IA de coaching (OpenAI GPT-4o mini) — custo estimado a partir dos tokens de cada chamada.
         </p>
         <div className="flex gap-2 items-center">
           <select
