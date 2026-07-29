@@ -19,6 +19,7 @@ import {
   UserPlus,
   Globe,
   Brain,
+  MessageCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -27,11 +28,17 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import { COACHING_ONLY } from '@/config/featureFlags'
 
 const bottomNavItems = [
   { icon: Home,     label: 'Início',   path: '/' },
   { icon: Calendar, label: 'Agenda',   path: '/appointments' },
   { icon: Brain,    label: 'Coaching', path: '/coaching' },
+]
+
+const coachingNavItems = [
+  { icon: Brain, label: 'Coaching', path: '/coaching' },
+  { icon: Users, label: 'Atletas',  path: '/contacts' },
 ]
 
 const moreMenuGroups = [
@@ -80,6 +87,19 @@ const quickActions = [
   { icon: Brain,        label: 'Ir para Coaching', path: '/coaching' },
 ]
 
+const coachingQuickActions = [
+  { icon: UserPlus, label: 'Novo atleta', path: '/contacts', state: { openNew: true } },
+]
+
+const coachingMoreGroups = [
+  {
+    title: 'Configurar',
+    items: [
+      { icon: MessageCircle, label: 'WhatsApp', path: '/settings' },
+    ],
+  },
+]
+
 const moreMenuPaths = moreMenuGroups.flatMap(g => g.items.map(i => i.path))
 
 export function BottomNavigation() {
@@ -98,6 +118,121 @@ export function BottomNavigation() {
   const active   = '#4C60AA'
   const inactive = isDarkMode ? '#4A4A4A' : '#AEAEAD'
 
+  const NavButton = ({ item }) => {
+    const Icon = item.icon
+    const isActive = location.pathname === item.path || (item.path === '/contacts' && location.pathname.startsWith('/contacts'))
+    return (
+      <button
+        onClick={() => handleNavigation(item.path)}
+        style={{
+          flex: 1, height: '100%', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 3,
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: isActive ? active : inactive,
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        <div style={{ position: 'relative' }}>
+          <Icon style={{ width: 22, height: 22 }} />
+          {isActive && (
+            <span style={{
+              position: 'absolute', bottom: -3, left: '50%', transform: 'translateX(-50%)',
+              width: 4, height: 4, borderRadius: '50%', background: active,
+            }} />
+          )}
+        </div>
+        <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, letterSpacing: '-0.01em' }}>
+          {item.label}
+        </span>
+      </button>
+    )
+  }
+
+  const CenterPlus = ({ actions }) => (
+    <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
+        <SheetTrigger asChild>
+          <button
+            style={{
+              width: 48, height: 48, borderRadius: '50%',
+              background: active, border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 14px rgba(76,96,170,0.45)',
+              WebkitTapHighlightColor: 'transparent',
+              transform: quickOpen ? 'rotate(45deg)' : 'rotate(0deg)',
+              transition: 'transform 200ms ease',
+            }}
+            aria-label="Ações rápidas"
+          >
+            <Plus style={{ width: 22, height: 22, color: '#fff' }} />
+          </button>
+        </SheetTrigger>
+        <SheetContent
+          side="bottom"
+          style={{
+            background: navBg, borderColor: navBord,
+            borderTopLeftRadius: 20, borderTopRightRadius: 20,
+            padding: '20px 20px 32px',
+          }}
+        >
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: navBord, margin: '0 auto 20px' }} />
+          <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: inactive, marginBottom: 12 }}>
+            Criar novo
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {actions.map((a) => {
+              const Icon = a.icon
+              return (
+                <button
+                  key={a.label}
+                  onClick={() => { setQuickOpen(false); handleNavigation(a.path, a.state) }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '13px 14px', borderRadius: 14,
+                    background: isDarkMode ? '#1F1F1F' : '#F5F5F2',
+                    border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 10,
+                    background: active + '18', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Icon style={{ width: 18, height: 18, color: active }} />
+                  </div>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: isDarkMode ? '#E0E0E0' : '#1A1A1A' }}>
+                    {a.label}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </div>
+  )
+
+  if (COACHING_ONLY) {
+    return (
+      <>
+        <nav style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+          background: navBg, borderTop: `1.5px solid ${navBord}`,
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', height: 60, paddingLeft: 4, paddingRight: 4 }}>
+            <NavButton item={coachingNavItems[0]} />
+            <CenterPlus actions={coachingQuickActions} />
+            <NavButton item={coachingNavItems[1]} />
+            {/* WhatsApp / configurações como quarto item */}
+            <NavButton item={{ icon: MessageCircle, label: 'WhatsApp', path: '/settings' }} />
+          </div>
+        </nav>
+        <div style={{ height: `calc(60px + env(safe-area-inset-bottom))` }} />
+      </>
+    )
+  }
+
   return (
     <>
       <nav
@@ -109,132 +244,15 @@ export function BottomNavigation() {
       >
         <div style={{ display: 'flex', alignItems: 'center', height: 60, paddingLeft: 4, paddingRight: 4 }}>
 
-          {/* Left nav items */}
-          {bottomNavItems.slice(0, 2).map((item) => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.path
-            return (
-              <button
-                key={item.path}
-                onClick={() => handleNavigation(item.path)}
-                style={{
-                  flex: 1, height: '100%', display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center', gap: 3,
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: isActive ? active : inactive,
-                  WebkitTapHighlightColor: 'transparent',
-                }}
-              >
-                <div style={{ position: 'relative' }}>
-                  <Icon style={{ width: 22, height: 22 }} />
-                  {isActive && (
-                    <span style={{
-                      position: 'absolute', bottom: -3, left: '50%', transform: 'translateX(-50%)',
-                      width: 4, height: 4, borderRadius: '50%', background: active,
-                    }} />
-                  )}
-                </div>
-                <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, letterSpacing: '-0.01em' }}>
-                  {item.label}
-                </span>
-              </button>
-            )
-          })}
+          {bottomNavItems.slice(0, 2).map((item) => (
+            <NavButton key={item.path} item={item} />
+          ))}
 
-          {/* Centro: botão "+" */}
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <Sheet open={quickOpen} onOpenChange={setQuickOpen}>
-              <SheetTrigger asChild>
-                <button
-                  style={{
-                    width: 48, height: 48, borderRadius: '50%',
-                    background: active, border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 4px 14px rgba(76,96,170,0.45)',
-                    WebkitTapHighlightColor: 'transparent',
-                    transform: quickOpen ? 'rotate(45deg)' : 'rotate(0deg)',
-                    transition: 'transform 200ms ease',
-                  }}
-                  aria-label="Ações rápidas"
-                >
-                  <Plus style={{ width: 22, height: 22, color: '#fff' }} />
-                </button>
-              </SheetTrigger>
-              <SheetContent
-                side="bottom"
-                style={{
-                  background: navBg, borderColor: navBord,
-                  borderTopLeftRadius: 20, borderTopRightRadius: 20,
-                  padding: '20px 20px 32px',
-                }}
-              >
-                <div style={{ width: 36, height: 4, borderRadius: 2, background: navBord, margin: '0 auto 20px' }} />
-                <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: inactive, marginBottom: 12 }}>
-                  Criar novo
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {quickActions.map((a) => {
-                    const Icon = a.icon
-                    return (
-                      <button
-                        key={a.label}
-                        onClick={() => { setQuickOpen(false); handleNavigation(a.path, a.state) }}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 14,
-                          padding: '13px 14px', borderRadius: 14,
-                          background: isDarkMode ? '#1F1F1F' : '#F5F5F2',
-                          border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                          WebkitTapHighlightColor: 'transparent',
-                        }}
-                      >
-                        <div style={{
-                          width: 38, height: 38, borderRadius: 10,
-                          background: active + '18', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          <Icon style={{ width: 18, height: 18, color: active }} />
-                        </div>
-                        <span style={{ fontSize: 15, fontWeight: 600, color: isDarkMode ? '#E0E0E0' : '#1A1A1A' }}>
-                          {a.label}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
+          <CenterPlus actions={quickActions} />
 
-          {/* Right nav items */}
-          {bottomNavItems.slice(2).map((item) => {
-            const Icon = item.icon
-            const isActive = location.pathname === item.path
-            return (
-              <button
-                key={item.path}
-                onClick={() => handleNavigation(item.path)}
-                style={{
-                  flex: 1, height: '100%', display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center', gap: 3,
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: isActive ? active : inactive,
-                  WebkitTapHighlightColor: 'transparent',
-                }}
-              >
-                <div style={{ position: 'relative' }}>
-                  <Icon style={{ width: 22, height: 22 }} />
-                  {isActive && (
-                    <span style={{
-                      position: 'absolute', bottom: -3, left: '50%', transform: 'translateX(-50%)',
-                      width: 4, height: 4, borderRadius: '50%', background: active,
-                    }} />
-                  )}
-                </div>
-                <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, letterSpacing: '-0.01em' }}>
-                  {item.label}
-                </span>
-              </button>
-            )
-          })}
+          {bottomNavItems.slice(2).map((item) => (
+            <NavButton key={item.path} item={item} />
+          ))}
 
           {/* Mais */}
           <Sheet>
