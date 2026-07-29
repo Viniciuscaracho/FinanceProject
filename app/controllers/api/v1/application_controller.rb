@@ -10,8 +10,26 @@ module Api
       
       before_action :authenticate_user!
       before_action :set_current_account
+      before_action :enforce_coaching_only_mode!
       before_action :create_or_refresh_session, if: :should_manage_session?
       # validate_session! é chamado automaticamente pelo SessionManagement
+
+      # Modo enxuto de coaching: quando COACHING_ONLY_MODE está ligado, apenas os
+      # controllers essenciais ao fluxo de coaching (recebimento de áudio/mensagem
+      # → análise para o coach) respondem; o restante da plataforma retorna 403.
+      # Reverter = desligar a env. Nada é removido.
+      COACHING_ONLY_ALLOWED_CONTROLLERS = %w[
+        api/v1/auth
+        api/v1/public
+        api/v1/coaching
+        api/v1/whats_app_webhook
+        api/v1/whatsapp_config
+        api/v1/whatsapp_messages
+        api/v1/contacts
+        api/v1/users
+        api/v1/account_settings
+        api/v1/admin
+      ].freeze
       
       rescue_from ActiveRecord::RecordNotFound, with: :not_found
       rescue_from CanCan::AccessDenied, with: :forbidden
@@ -174,6 +192,32 @@ module Api
         end
       end
       
+      # Gate do modo enxuto de coaching. Bloqueia (403) qualquer controller da API
+      # que não faça parte do fluxo essencial de coaching enquanto a env estiver
+      # ligada. Autenticação continua rodando antes (endpoints bloqueados ainda
+      # exigem login), então o comportamento é: 401 se anônimo, 403 se autenticado
+      # mas fora do escopo de coaching.
+      def enforce_coaching_only_mode!
+        return unless coaching_only_mode?
+        return if coaching_only_controller_allowed?
+
+        render json: {
+          error: 'Forbidden',
+          message: 'Recurso indisponível: a plataforma está em modo coaching (apenas o fluxo de coaching está ativo).'
+        }, status: :forbidden
+      end
+
+      def coaching_only_mode?
+        ActiveModel::Type::Boolean.new.cast(ENV['COACHING_ONLY_MODE'])
+      end
+
+      def coaching_only_controller_allowed?
+        path = controller_path # ex.: "api/v1/coaching/timeline_events"
+        COACHING_ONLY_ALLOWED_CONTROLLERS.any? do |allowed|
+          path == allowed || path.start_with?("#{allowed}/")
+        end
+      end
+
       def not_found
         render json: { error: 'Not found' }, status: :not_found
       end
