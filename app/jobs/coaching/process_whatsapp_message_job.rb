@@ -40,10 +40,11 @@ module Coaching
         parts    = message.split(':', 2)
         name     = parts[0].strip
         raw_text = parts[1].strip
-        contact  = account.contacts.where(
-          "LOWER(CONCAT(first_name, ' ', COALESCE(last_name,''))) LIKE ?",
-          "%#{name.downcase}%"
-        ).first
+
+        contact = ::Coaching::ContactResolverService.new(
+          account, extracted_name: name
+        ).call
+
         return [contact, raw_text] if contact
       end
 

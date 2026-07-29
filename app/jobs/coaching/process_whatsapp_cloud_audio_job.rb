@@ -95,49 +95,11 @@ module Coaching
     private
 
     def resolve_contact(account, athlete_name, from_phone)
-      if athlete_name.present?
-        contact = find_by_name(account, athlete_name)
-        return contact if contact
-
-        return create_contact_from_audio(account, athlete_name)
-      end
-
-      find_by_phone(account, from_phone) || fallback_recent(account)
-    end
-
-    def find_by_name(account, name)
-      account.contacts.where(
-        "LOWER(CONCAT(first_name, ' ', COALESCE(last_name, ''))) LIKE ?",
-        "%#{name.downcase}%"
-      ).first
-    end
-
-    def create_contact_from_audio(account, name)
-      contact = account.contacts.create!(
-        name:         name.strip,
-        contact_type: :undefined_contact,
-        person_type:  :natural
-      )
-      Rails.logger.info "[ProcessWhatsappCloudAudioJob] Contato criado via áudio: #{contact.name} (##{contact.id})"
-      contact
-    rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error "[ProcessWhatsappCloudAudioJob] Falha ao criar contato '#{name}': #{e.message}"
-      nil
-    end
-
-    def find_by_phone(account, from_phone)
-      suffix = from_phone.gsub(/\D/, '').last(8)
-      account.contacts.find_by(
-        "REGEXP_REPLACE(cell_phone_number, '[^0-9]', '', 'g') LIKE ?",
-        "%#{suffix}"
-      )
-    end
-
-    def fallback_recent(account)
-      CoachingProfile.where(account: account)
-                     .order(updated_at: :desc)
-                     .first
-                     &.contact
+      ::Coaching::ContactResolverService.new(
+        account,
+        extracted_name: athlete_name,
+        from_phone:     from_phone
+      ).call
     end
 
     def ensure_coaching_profile(account, contact)
