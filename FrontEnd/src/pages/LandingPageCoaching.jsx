@@ -383,66 +383,65 @@ export function LandingPageCoaching() {
       {/* ── Hero ─────────────────────────────────────────── */}
       <section style={{ background: T.bg, minHeight: '100dvh', display: 'flex', alignItems: 'center', paddingTop: 60 }}>
         <div className="max-w-7xl mx-auto px-6 sm:px-10 w-full" style={{ paddingTop: '5rem', paddingBottom: '5rem' }}>
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-12 lg:gap-20 items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            style={{ maxWidth: '52rem', margin: '0 auto', textAlign: 'center' }}
+          >
+            <p style={{ fontSize: 12, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1.25rem' }}>
+              Para treinadores e personal trainers
+            </p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <p style={{ fontSize: 12, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1.25rem' }}>
-                Para treinadores e personal trainers
-              </p>
+            <h1 style={{
+              fontSize: 'clamp(2.75rem, 5.5vw, 4.5rem)',
+              fontWeight: 700,
+              color: T.text,
+              lineHeight: 1.05,
+              letterSpacing: '-0.035em',
+              marginBottom: '1.5rem',
+              textWrap: 'balance',
+            }}>
+              Fale sobre o treino.<br />
+              A IA <em style={{ fontStyle: 'normal', color: T.brand }}>vira memória.</em>
+            </h1>
 
-              <h1 style={{
-                fontSize: 'clamp(2.75rem, 5.5vw, 4.5rem)',
-                fontWeight: 700,
-                color: T.text,
-                lineHeight: 1.05,
-                letterSpacing: '-0.035em',
-                marginBottom: '1.5rem',
+            <p style={{ fontSize: '1.1rem', color: T.muted, lineHeight: 1.75, maxWidth: '52ch', margin: '0 auto 2rem' }}>
+              Depois de cada treino você manda um áudio de segundos. A IA estrutura
+              sono, carga e observações na timeline de cada atleta — e te entrega o
+              resumo pronto antes da próxima sessão. Sem planilha, sem garimpar conversa.
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: '1rem' }}>
+              <a href="/login" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '13px 26px', background: T.text, color: T.white,
+                borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none',
               }}>
-                Fale sobre o<br />
-                treino. A IA<br />
-                <em style={{ fontStyle: 'normal', color: T.brand }}>vira memória.</em>
-              </h1>
+                Começar grátis <ArrowRight size={14} />
+              </a>
+              <a href="#como-funciona" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '12px 20px', background: T.white, color: T.text,
+                borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none',
+                border: `1px solid ${T.border}`,
+              }}>
+                Como funciona
+              </a>
+            </div>
+            <p style={{ fontSize: 12, color: '#999', marginTop: '1rem' }}>
+              14 dias grátis · sem cartão · cancele quando quiser
+            </p>
+          </motion.div>
 
-              <p style={{ fontSize: '1.1rem', color: T.muted, lineHeight: 1.75, maxWidth: '48ch', marginBottom: '2rem' }}>
-                Depois de cada treino você manda um áudio de segundos. A IA estrutura
-                sono, carga e observações na timeline de cada atleta — e te entrega o
-                resumo pronto antes da próxima sessão. Sem planilha, sem garimpar conversa.
-              </p>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: '1rem' }}>
-                <a href="/login" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  padding: '13px 26px', background: T.text, color: T.white,
-                  borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none',
-                }}>
-                  Começar grátis <ArrowRight size={14} />
-                </a>
-                <a href="#como-funciona" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  padding: '12px 20px', background: T.white, color: T.text,
-                  borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none',
-                  border: `1px solid ${T.border}`,
-                }}>
-                  Como funciona
-                </a>
-              </div>
-              <p style={{ fontSize: 12, color: '#999', marginTop: '1rem' }}>
-                14 dias grátis · sem cartão · cancele quando quiser
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <VoiceToStructureUI />
-            </motion.div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            style={{ maxWidth: 460, margin: '3.5rem auto 0' }}
+          >
+            <VoiceToStructureUI />
+          </motion.div>
         </div>
       </section>
 
@@ -456,7 +455,7 @@ export function LandingPageCoaching() {
               { n: 'Resumo',   label: 'pronto antes da sessão',      sub: 'o histórico que importa, sem garimpar' },
             ].map((item, i) => (
               <AnimatedSection key={i} delay={i * 0.08}>
-                <div className="px-6 py-8 sm:px-8 sm:py-10">
+                <div className="px-6 py-8 sm:px-8 sm:py-10" style={{ textAlign: 'center' }}>
                   <p style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.04em', margin: '0 0 6px', lineHeight: 1 }}>{item.n}</p>
                   <p style={{ fontSize: 14, fontWeight: 600, color: T.text, margin: '0 0 4px' }}>{item.label}</p>
                   <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>{item.sub}</p>
@@ -470,7 +469,7 @@ export function LandingPageCoaching() {
       {/* ── Como funciona ────────────────────────────────── */}
       <section id="como-funciona" style={{ background: T.bg, borderTop: `1px solid ${T.border}`, padding: '6rem 0' }}>
         <div className="max-w-7xl mx-auto px-6 sm:px-10">
-          <AnimatedSection style={{ maxWidth: '44ch', marginBottom: '3.5rem' }}>
+          <AnimatedSection style={{ maxWidth: '44ch', margin: '0 auto 3.5rem', textAlign: 'center' }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Como funciona</p>
             <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15 }}>
               Três passos. Um áudio.
@@ -479,8 +478,8 @@ export function LandingPageCoaching() {
           <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: '2rem' }}>
             {STEPS.map((s, i) => (
               <AnimatedSection key={s.title} delay={i * 0.1}>
-                <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 16, padding: '1.75rem', height: '100%' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: T.light, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 16, padding: '1.75rem', height: '100%', textAlign: 'center' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: T.light, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                     <s.icon size={20} color={T.brand} />
                   </div>
                   <p style={{ fontSize: 11, fontWeight: 700, color: T.brand, margin: '0 0 6px' }}>Passo {i + 1}</p>
@@ -498,111 +497,105 @@ export function LandingPageCoaching() {
       {/* Feature 1: Registro por voz */}
       <section style={{ background: T.white, borderTop: `1px solid ${T.border}` }}>
         <div className="max-w-7xl mx-auto px-6 sm:px-10" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-center">
-            <AnimatedSection>
-              <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Registro por voz</p>
-              <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
-                Do jeito que<br />você já pensa.<br />
-                <em style={{ fontStyle: 'normal', color: T.brand }}>Falando.</em>
-              </h2>
-              <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, marginBottom: '1.5rem', maxWidth: '40ch' }}>
-                Você fala como se estivesse contando pra alguém. A IA separa o que é
-                sono, o que é carga, o que é observação clínica e qual a próxima ação —
-                e guarda tudo na timeline do atleta certo.
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[
-                  'Um áudio no número único da plataforma — só você fala',
-                  'Sono, carga, observação e próxima ação estruturados',
-                  'Salvo na timeline do atleta, sem digitar nada',
-                ].map(item => (
-                  <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#444', lineHeight: 1.5 }}>
-                    <Check size={14} color="#16a34a" style={{ flexShrink: 0, marginTop: 3 }} />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </AnimatedSection>
-            <AnimatedSection delay={0.1}><VoiceToStructureUI /></AnimatedSection>
-          </div>
+          <AnimatedSection style={{ maxWidth: '46ch', margin: '0 auto', textAlign: 'center' }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Registro por voz</p>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem', textWrap: 'balance' }}>
+              Do jeito que você já pensa.<br />
+              <em style={{ fontStyle: 'normal', color: T.brand }}>Falando.</em>
+            </h2>
+            <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, margin: '0 auto 1.5rem', maxWidth: '44ch' }}>
+              Você fala como se estivesse contando pra alguém. A IA separa o que é
+              sono, o que é carga, o que é observação clínica e qual a próxima ação —
+              e guarda tudo na timeline do atleta certo.
+            </p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 auto', display: 'inline-flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
+              {[
+                'Um áudio no número único da plataforma — só você fala',
+                'Sono, carga, observação e próxima ação estruturados',
+                'Salvo na timeline do atleta, sem digitar nada',
+              ].map(item => (
+                <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#444', lineHeight: 1.5 }}>
+                  <Check size={14} color="#16a34a" style={{ flexShrink: 0, marginTop: 3 }} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </AnimatedSection>
+          <AnimatedSection delay={0.1} style={{ maxWidth: 460, margin: '3rem auto 0' }}><VoiceToStructureUI /></AnimatedSection>
         </div>
       </section>
 
       {/* Feature 2: Resumo pré-atendimento (dark) */}
       <section style={{ background: T.dark, borderTop: '1px solid #1a1c2e' }}>
         <div className="max-w-7xl mx-auto px-6 sm:px-10" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
-          <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-12 lg:gap-20 items-center">
-            <AnimatedSection><PreVisitSummaryUI /></AnimatedSection>
-            <AnimatedSection delay={0.1}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: '#8B9AD4', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Resumo pré-atendimento</p>
-              <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
-                Chegue na<br />sessão sabendo<br />o que importa.
-              </h2>
-              <p style={{ fontSize: '0.975rem', color: '#9295b0', lineHeight: 1.75, marginBottom: '1.5rem', maxWidth: '38ch' }}>
-                A funcionalidade que vende sozinha. Antes de cada atendimento, a IA lê
-                as últimas semanas e resume a evolução do atleta — carga, sono, queixas
-                e o que ficou pendente. Sem abrir conversa nenhuma.
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[
-                  'Histórico recente resumido em segundos',
-                  'Tendências de carga e sono já agregadas',
-                  'Queixas e próximas ações destacadas',
-                ].map(item => (
-                  <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#8286a3', lineHeight: 1.5 }}>
-                    <Check size={14} color="#8B9AD4" style={{ flexShrink: 0, marginTop: 3 }} />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </AnimatedSection>
-          </div>
+          <AnimatedSection style={{ maxWidth: '44ch', margin: '0 auto', textAlign: 'center' }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: '#8B9AD4', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Resumo pré-atendimento</p>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem', textWrap: 'balance' }}>
+              Chegue na sessão sabendo o que importa.
+            </h2>
+            <p style={{ fontSize: '0.975rem', color: '#9295b0', lineHeight: 1.75, margin: '0 auto 1.5rem', maxWidth: '42ch' }}>
+              A funcionalidade que vende sozinha. Antes de cada atendimento, a IA lê
+              as últimas semanas e resume a evolução do atleta — carga, sono, queixas
+              e o que ficou pendente. Sem abrir conversa nenhuma.
+            </p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 auto', display: 'inline-flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
+              {[
+                'Histórico recente resumido em segundos',
+                'Tendências de carga e sono já agregadas',
+                'Queixas e próximas ações destacadas',
+              ].map(item => (
+                <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#8286a3', lineHeight: 1.5 }}>
+                  <Check size={14} color="#8B9AD4" style={{ flexShrink: 0, marginTop: 3 }} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </AnimatedSection>
+          <AnimatedSection delay={0.1} style={{ maxWidth: 460, margin: '3rem auto 0' }}><PreVisitSummaryUI /></AnimatedSection>
         </div>
       </section>
 
       {/* Feature 3: Alertas automáticos */}
       <section style={{ background: T.white, borderTop: `1px solid ${T.border}` }}>
         <div className="max-w-7xl mx-auto px-6 sm:px-10" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
-          <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-center">
-            <AnimatedSection>
-              <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Alertas automáticos</p>
-              <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem' }}>
-                Quem sumiu<br />aparece antes<br />de você perceber.
-              </h2>
-              <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, marginBottom: '1.5rem', maxWidth: '40ch' }}>
-                Regras simples e confiáveis — sem caixa-preta. O painel destaca quem
-                ficou sem registro, quem reclamou de dor, quem perdeu frequência e as
-                reavaliações que estão chegando.
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[
-                  'Atleta sem registro há X dias',
-                  'Queixa de dor sinalizada no painel',
-                  'Reavaliação próxima antes de virar atraso',
-                ].map(item => (
-                  <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#444', lineHeight: 1.5 }}>
-                    <Check size={14} color="#16a34a" style={{ flexShrink: 0, marginTop: 3 }} />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </AnimatedSection>
-            <AnimatedSection delay={0.1}><AlertsUI /></AnimatedSection>
-          </div>
+          <AnimatedSection style={{ maxWidth: '46ch', margin: '0 auto', textAlign: 'center' }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Alertas automáticos</p>
+            <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem', textWrap: 'balance' }}>
+              Quem sumiu aparece antes de você perceber.
+            </h2>
+            <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, margin: '0 auto 1.5rem', maxWidth: '44ch' }}>
+              Regras simples e confiáveis — sem caixa-preta. O painel destaca quem
+              ficou sem registro, quem reclamou de dor, quem perdeu frequência e as
+              reavaliações que estão chegando.
+            </p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 auto', display: 'inline-flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
+              {[
+                'Atleta sem registro há X dias',
+                'Queixa de dor sinalizada no painel',
+                'Reavaliação próxima antes de virar atraso',
+              ].map(item => (
+                <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#444', lineHeight: 1.5 }}>
+                  <Check size={14} color="#16a34a" style={{ flexShrink: 0, marginTop: 3 }} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </AnimatedSection>
+          <AnimatedSection delay={0.1} style={{ maxWidth: 560, margin: '3rem auto 0' }}><AlertsUI /></AnimatedSection>
         </div>
       </section>
 
       {/* ── Depoimento ───────────────────────────────────── */}
       <section style={{ background: T.dark, borderTop: '1px solid #1a1c2e', padding: '6rem 0' }}>
         <div className="max-w-7xl mx-auto px-6 sm:px-10">
-          <AnimatedSection style={{ maxWidth: '52ch', marginBottom: '5rem' }}>
-            <p style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 700, color: '#fff', lineHeight: 1.3, letterSpacing: '-0.025em', marginBottom: '1.5rem' }}>
+          <AnimatedSection style={{ maxWidth: '56ch', margin: '0 auto 5rem', textAlign: 'center' }}>
+            <p style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 700, color: '#fff', lineHeight: 1.3, letterSpacing: '-0.025em', marginBottom: '1.5rem', textWrap: 'balance' }}>
               "Eu já falava sobre os treinos no áudio pra mim mesmo. Agora esse áudio
               vira histórico organizado — e chego na sessão sem ter que lembrar de tudo de cabeça."
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 32, height: 1, background: '#33364d' }} />
-              <div>
+              <div style={{ textAlign: 'left' }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: '#aaa', margin: 0 }}>Diego Martins</p>
                 <p style={{ fontSize: 12, color: '#555', margin: 0 }}>Personal trainer · 24 atletas</p>
               </div>
@@ -685,7 +678,7 @@ export function LandingPageCoaching() {
       <section style={{ background: T.bg, borderTop: `1px solid ${T.border}`, padding: '5rem 0' }}>
         <div className="max-w-3xl mx-auto px-6 sm:px-10">
           <AnimatedSection>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: T.text, letterSpacing: '-0.025em', marginBottom: '2.5rem' }}>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: T.text, letterSpacing: '-0.025em', marginBottom: '2.5rem', textAlign: 'center' }}>
               Perguntas frequentes
             </h2>
             <Accordion type="single" collapsible>
