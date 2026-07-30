@@ -591,11 +591,15 @@ export function PatientProfile() {
   const [savingProfile, setSavingProfile]       = useState(false)
   const [briefing, setBriefing]                 = useState(null)
   const [loadingBriefing, setLoadingBriefing]   = useState(false)
+  const [assessments, setAssessments]           = useState([])
+  const [showNewAssessment, setShowNewAssessment] = useState(false)
+  const [assessmentForm, setAssessmentForm]     = useState({ assessed_on: '', weight_kg: '', body_fat_pct: '', muscle_mass_kg: '', energy_score: '', sleep_score: '', stress_score: '', motivation_score: '', notes: '', assessment_type: 'monthly' })
+  const [savingAssessment, setSavingAssessment] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [contactRes, goalsRes, docsRes, anamneseRes, plansRes, templatesRes, notesRes, docTplsRes, timelineRes, profileRes] = await Promise.all([
+      const [contactRes, goalsRes, docsRes, anamneseRes, plansRes, templatesRes, notesRes, docTplsRes, timelineRes, profileRes, assessmentsRes] = await Promise.all([
         apiService.getContact(id),
         apiService.getPatientGoals(id).catch(() => ({ goals: [] })),
         apiService.getPatientDocuments(id).catch(() => ({ documents: [] })),
@@ -606,6 +610,7 @@ export function PatientProfile() {
         apiService.getProfessionalDocumentTemplates(1, 50).catch(() => ({ templates: [] })),
         apiService.getTimelineEvents(id).catch(() => ({ events: [] })),
         apiService.getCoachingProfile(id).catch(() => ({ profile: null })),
+        apiService.getAssessments(id).catch(() => ({ assessments: [] })),
       ])
       setContact(contactRes.contact || contactRes)
       setGoals(goalsRes.goals || [])
@@ -616,6 +621,7 @@ export function PatientProfile() {
       setPatientNotes(notesRes.notes || [])
       setDocTemplates(docTplsRes.templates || [])
       setTimelineEvents(timelineRes.events || [])
+      setAssessments(assessmentsRes.assessments || [])
       const p = profileRes.profile || null
       setCoachingProfile(p)
       setProfileForm({ goal: p?.goal || '', limitations: p?.limitations || '', next_reassessment_at: p?.next_reassessment_at?.slice(0,10) || '' })
@@ -790,6 +796,24 @@ export function PatientProfile() {
       toast.error('Erro ao salvar registro')
     } finally {
       setSavingCoaching(false)
+    }
+  }
+
+  const handleCreateAssessment = async () => {
+    if (!assessmentForm.assessed_on) { toast.error('Informe a data da avaliação'); return }
+    setSavingAssessment(true)
+    try {
+      const payload = {}
+      Object.entries(assessmentForm).forEach(([k, v]) => { if (v !== '') payload[k] = v })
+      const res = await apiService.createAssessment(id, payload)
+      setAssessments(prev => [...prev, res.assessment].sort((a, b) => a.assessed_on > b.assessed_on ? 1 : -1))
+      setShowNewAssessment(false)
+      setAssessmentForm({ assessed_on: '', weight_kg: '', body_fat_pct: '', muscle_mass_kg: '', energy_score: '', sleep_score: '', stress_score: '', motivation_score: '', notes: '', assessment_type: 'monthly' })
+      toast.success('Avaliação registrada')
+    } catch {
+      toast.error('Erro ao salvar avaliação')
+    } finally {
+      setSavingAssessment(false)
     }
   }
 
@@ -1155,6 +1179,103 @@ export function PatientProfile() {
                 </div>
               )
             })()}
+
+            {/* Avaliações periódicas */}
+            <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
+              <div style={{ padding: '10px 14px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <TrendingUp size={13} style={{ color: T.brand }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.text, flex: 1 }}>Evolução</span>
+                <span style={{ fontSize: 11, color: T.muted }}>{assessments.length} avaliação{assessments.length !== 1 ? 'ões' : ''}</span>
+                <button type="button" onClick={() => setShowNewAssessment(p => !p)}
+                  style={{ background: T.chip, border: 'none', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontSize: 11, color: T.brand, fontFamily: 'inherit', fontWeight: 600 }}>
+                  {showNewAssessment ? 'Cancelar' : '+ Nova'}
+                </button>
+              </div>
+
+              <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {showNewAssessment && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 12, borderBottom: `1px solid ${T.border}` }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Data *</label>
+                        <input type="date" value={assessmentForm.assessed_on}
+                          onChange={e => setAssessmentForm(p => ({ ...p, assessed_on: e.target.value }))}
+                          style={{ width: '100%', padding: '7px 10px', border: `1px solid ${T.border}`, borderRadius: 7, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Tipo</label>
+                        <select value={assessmentForm.assessment_type}
+                          onChange={e => setAssessmentForm(p => ({ ...p, assessment_type: e.target.value }))}
+                          style={{ width: '100%', padding: '7px 10px', border: `1px solid ${T.border}`, borderRadius: 7, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }}>
+                          <option value="initial">Inicial</option>
+                          <option value="monthly">Mensal</option>
+                          <option value="quarterly">Trimestral</option>
+                          <option value="annual">Anual</option>
+                          <option value="custom">Personalizado</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Composição corporal</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                      {[
+                        { key: 'weight_kg',      label: 'Peso (kg)',       step: '0.1' },
+                        { key: 'body_fat_pct',   label: 'Gordura (%)',     step: '0.1' },
+                        { key: 'muscle_mass_kg', label: 'Massa muscular (kg)', step: '0.1' },
+                      ].map(({ key, label, step }) => (
+                        <div key={key}>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>{label}</label>
+                          <input type="number" step={step} value={assessmentForm[key]}
+                            onChange={e => setAssessmentForm(p => ({ ...p, [key]: e.target.value }))}
+                            style={{ width: '100%', padding: '7px 10px', border: `1px solid ${T.border}`, borderRadius: 7, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                        </div>
+                      ))}
+                    </div>
+
+                    <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bem-estar (1–10)</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                      {[
+                        { key: 'energy_score',     label: 'Energia' },
+                        { key: 'sleep_score',      label: 'Sono' },
+                        { key: 'stress_score',     label: 'Estresse' },
+                        { key: 'motivation_score', label: 'Motivação' },
+                      ].map(({ key, label }) => (
+                        <div key={key}>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>{label}</label>
+                          <input type="number" min={1} max={10} step={1} value={assessmentForm[key]}
+                            onChange={e => setAssessmentForm(p => ({ ...p, [key]: e.target.value }))}
+                            style={{ width: '100%', padding: '7px 10px', border: `1px solid ${T.border}`, borderRadius: 7, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: T.muted, display: 'block', marginBottom: 3 }}>Observações</label>
+                      <textarea value={assessmentForm.notes}
+                        onChange={e => setAssessmentForm(p => ({ ...p, notes: e.target.value }))}
+                        rows={2} placeholder="Contexto, intercorrências, observações do treinador..."
+                        style={{ width: '100%', padding: '8px 10px', border: `1px solid ${T.border}`, borderRadius: 7, fontSize: 13, fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <Button size="sm" onClick={handleCreateAssessment} disabled={savingAssessment} style={{ fontSize: 11, gap: 6 }}>
+                        {savingAssessment ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
+                        {savingAssessment ? 'Salvando...' : 'Salvar avaliação'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {assessments.length >= 2
+                  ? <AssessmentEvolution assessments={assessments} />
+                  : !showNewAssessment && (
+                    <p style={{ margin: 0, fontSize: 13, color: T.muted, textAlign: 'center', padding: '4px 0' }}>
+                      Registre 2 ou mais avaliações para ver a evolução
+                    </p>
+                  )
+                }
+              </div>
+            </div>
 
             {/* Registro rápido */}
             <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
@@ -1852,6 +1973,91 @@ function TimelineCard({ ev }) {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ─── AssessmentEvolution ──────────────────────────────────────────────────────
+
+function AssessmentEvolution({ assessments }) {
+  if (assessments.length < 2) return null
+
+  const data = assessments.map(a => ({
+    label:        a.assessed_on?.slice(0, 7), // "AAAA-MM"
+    weight:       a.weight_kg     != null ? parseFloat(a.weight_kg)     : null,
+    fat:          a.body_fat_pct  != null ? parseFloat(a.body_fat_pct)  : null,
+    muscle:       a.muscle_mass_kg != null ? parseFloat(a.muscle_mass_kg) : null,
+    energy:       a.energy_score,
+    sleep:        a.sleep_score,
+    stress:       a.stress_score,
+    motivation:   a.motivation_score,
+  }))
+
+  const hasBody    = data.some(d => d.weight != null || d.fat != null)
+  const hasWellbeing = data.some(d => d.energy != null || d.sleep != null || d.stress != null || d.motivation != null)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {hasBody && (
+        <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Composição corporal</span>
+            <div style={{ display: 'flex', gap: 12 }}>
+              {data.some(d => d.weight != null) && <span style={{ fontSize: 10, color: '#3B82F6', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 2, background: '#3B82F6', display: 'inline-block', borderRadius: 1 }} /> Peso (kg)</span>}
+              {data.some(d => d.fat != null)    && <span style={{ fontSize: 10, color: '#EF4444', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 2, background: '#EF4444', display: 'inline-block', borderRadius: 1 }} /> Gordura (%)</span>}
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={120}>
+            <LineChart data={data} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
+              <XAxis dataKey="label" tick={{ fontSize: 9, fill: T.muted }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+              {data.some(d => d.weight != null) && (
+                <YAxis yAxisId="w" domain={['auto', 'auto']} tick={{ fontSize: 9, fill: '#3B82F6' }} axisLine={false} tickLine={false} width={30} />
+              )}
+              {data.some(d => d.fat != null) && (
+                <YAxis yAxisId="f" orientation="right" domain={[0, 'auto']} tick={{ fontSize: 9, fill: '#EF4444' }} axisLine={false} tickLine={false} width={24} />
+              )}
+              <Tooltip
+                contentStyle={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12 }}
+                formatter={(v, name) => [v != null ? `${v}${name === 'fat' ? '%' : 'kg'}` : '—', name === 'fat' ? 'Gordura' : name === 'muscle' ? 'Massa' : 'Peso']}
+              />
+              {data.some(d => d.weight != null) && (
+                <Line yAxisId="w" dataKey="weight" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3, fill: '#3B82F6', strokeWidth: 0 }} connectNulls activeDot={{ r: 4 }} />
+              )}
+              {data.some(d => d.fat != null) && (
+                <Line yAxisId="f" dataKey="fat" stroke="#EF4444" strokeWidth={2} dot={{ r: 3, fill: '#EF4444', strokeWidth: 0 }} connectNulls activeDot={{ r: 4 }} />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {hasWellbeing && (
+        <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Bem-estar (1–10)</span>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {data.some(d => d.energy != null)     && <span style={{ fontSize: 10, color: '#F59E0B', display: 'flex', alignItems: 'center', gap: 3 }}><span style={{ width: 8, height: 2, background: '#F59E0B', display: 'inline-block', borderRadius: 1 }} /> Energia</span>}
+              {data.some(d => d.sleep != null)      && <span style={{ fontSize: 10, color: '#6366F1', display: 'flex', alignItems: 'center', gap: 3 }}><span style={{ width: 8, height: 2, background: '#6366F1', display: 'inline-block', borderRadius: 1 }} /> Sono</span>}
+              {data.some(d => d.stress != null)     && <span style={{ fontSize: 10, color: '#EF4444', display: 'flex', alignItems: 'center', gap: 3 }}><span style={{ width: 8, height: 2, background: '#EF4444', display: 'inline-block', borderRadius: 1 }} /> Estresse</span>}
+              {data.some(d => d.motivation != null) && <span style={{ fontSize: 10, color: '#10B981', display: 'flex', alignItems: 'center', gap: 3 }}><span style={{ width: 8, height: 2, background: '#10B981', display: 'inline-block', borderRadius: 1 }} /> Motivação</span>}
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={120}>
+            <LineChart data={data} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
+              <XAxis dataKey="label" tick={{ fontSize: 9, fill: T.muted }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+              <YAxis domain={[1, 10]} tick={{ fontSize: 9, fill: T.muted }} axisLine={false} tickLine={false} width={24} ticks={[1, 4, 7, 10]} />
+              <Tooltip
+                contentStyle={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12 }}
+                formatter={(v, name) => [v ?? '—', { energy: 'Energia', sleep: 'Sono', stress: 'Estresse', motivation: 'Motivação' }[name] ?? name]}
+              />
+              {data.some(d => d.energy != null)     && <Line dataKey="energy"     stroke="#F59E0B" strokeWidth={2} dot={{ r: 3, fill: '#F59E0B', strokeWidth: 0 }} connectNulls activeDot={{ r: 4 }} />}
+              {data.some(d => d.sleep != null)      && <Line dataKey="sleep"      stroke="#6366F1" strokeWidth={2} dot={{ r: 3, fill: '#6366F1', strokeWidth: 0 }} connectNulls activeDot={{ r: 4 }} />}
+              {data.some(d => d.stress != null)     && <Line dataKey="stress"     stroke="#EF4444" strokeWidth={2} dot={{ r: 3, fill: '#EF4444', strokeWidth: 0 }} connectNulls activeDot={{ r: 4 }} />}
+              {data.some(d => d.motivation != null) && <Line dataKey="motivation" stroke="#10B981" strokeWidth={2} dot={{ r: 3, fill: '#10B981', strokeWidth: 0 }} connectNulls activeDot={{ r: 4 }} />}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   )
 }

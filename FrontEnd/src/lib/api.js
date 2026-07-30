@@ -2245,6 +2245,17 @@ class ApiService {
       headers,
     })
   }
+
+  getAssessments(contactId) {
+    return this.request(`/coaching/contacts/${contactId}/assessments`)
+  }
+
+  createAssessment(contactId, data) {
+    return this.request(`/coaching/contacts/${contactId}/assessments`, {
+      method: 'POST',
+      body: JSON.stringify({ assessment: data }),
+    })
+  }
 }
 
 export const apiService = new ApiService(); 
