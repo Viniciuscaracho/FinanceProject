@@ -89,8 +89,9 @@ class Contact < Person
   has_many :patient_documents, foreign_key: :contact_id, dependent: :delete_all
   has_many :patient_goals,     foreign_key: :contact_id, dependent: :delete_all
   has_many :meal_plans,        foreign_key: :contact_id, dependent: :destroy
-  has_one  :coaching_profile,  dependent: :destroy
-  has_many :timeline_events,   foreign_key: :contact_id, dependent: :destroy
+  has_one  :coaching_profile,     dependent: :destroy
+  has_many :timeline_events,      foreign_key: :contact_id, dependent: :destroy
+  has_many :coaching_assessments, foreign_key: :contact_id, dependent: :destroy
 
   validates :contact_type, presence: true, inclusion: { in: CONTACT_TYPES.keys }
   validates :document_1, allow_blank: true, cpf_or_cnpj: true, if: :validate_cpf_or_cnpj?
