@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_29_130001) do
+ActiveRecord::Schema[7.0].define(version: 2026_07_30_100003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -402,6 +402,41 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_29_130001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["country", "code"], name: "index_banks_on_country_and_code", unique: true
+  end
+
+  create_table "coaching_assessments", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "contact_id", null: false
+    t.bigint "account_user_id"
+    t.decimal "weight_kg", precision: 5, scale: 2
+    t.decimal "body_fat_pct", precision: 4, scale: 1
+    t.decimal "muscle_mass_kg", precision: 5, scale: 2
+    t.decimal "visceral_fat_index", precision: 4, scale: 1
+    t.decimal "waist_cm", precision: 5, scale: 1
+    t.decimal "hip_cm", precision: 5, scale: 1
+    t.decimal "chest_cm", precision: 5, scale: 1
+    t.decimal "arm_cm", precision: 5, scale: 1
+    t.decimal "thigh_cm", precision: 5, scale: 1
+    t.integer "resting_hr_bpm"
+    t.string "blood_pressure"
+    t.integer "push_up_reps"
+    t.integer "squat_reps"
+    t.decimal "plank_seconds", precision: 6, scale: 1
+    t.decimal "vo2max_estimate", precision: 4, scale: 1
+    t.integer "energy_score"
+    t.integer "sleep_score"
+    t.integer "stress_score"
+    t.integer "motivation_score"
+    t.date "assessed_on", null: false
+    t.string "assessment_type", default: "monthly", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "assessed_on"], name: "index_coaching_assessments_on_account_id_and_assessed_on"
+    t.index ["account_id", "contact_id", "assessed_on"], name: "idx_coaching_assessments_contact_timeline"
+    t.index ["account_id"], name: "index_coaching_assessments_on_account_id"
+    t.index ["account_user_id"], name: "index_coaching_assessments_on_account_user_id"
+    t.index ["contact_id"], name: "index_coaching_assessments_on_contact_id"
   end
 
   create_table "coaching_credit_transactions", force: :cascade do |t|
@@ -1320,8 +1355,13 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_29_130001) do
     t.text "proxima_acao"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "sono_score"
+    t.integer "carga_score"
+    t.integer "humor_score"
     t.index ["account_id", "contact_id", "created_at"], name: "idx_timeline_events_account_contact_date"
     t.index ["account_id"], name: "index_timeline_events_on_account_id"
+    t.index ["contact_id", "carga_score"], name: "idx_timeline_events_contact_carga_score", where: "(carga_score IS NOT NULL)"
+    t.index ["contact_id", "sono_score"], name: "idx_timeline_events_contact_sono_score", where: "(sono_score IS NOT NULL)"
   end
 
   create_table "transactions", force: :cascade do |t|
@@ -1575,6 +1615,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_29_130001) do
   add_foreign_key "bank_accounts", "banks"
   add_foreign_key "bank_accounts", "users", column: "created_by_id"
   add_foreign_key "bank_accounts", "users", column: "updated_by_id"
+  add_foreign_key "coaching_assessments", "account_users"
+  add_foreign_key "coaching_assessments", "accounts"
+  add_foreign_key "coaching_assessments", "people", column: "contact_id"
   add_foreign_key "coaching_credit_transactions", "accounts"
   add_foreign_key "coaching_credit_transactions", "coaching_credit_wallets"
   add_foreign_key "coaching_credit_wallets", "accounts"
