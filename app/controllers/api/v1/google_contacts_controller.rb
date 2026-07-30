@@ -161,7 +161,7 @@ module Api
       end
 
       def contacts_callback_url
-        "#{request.base_url}/api/v1/google_contacts/callback"
+        "#{ENV.fetch('API_BASE_URL', request.base_url)}/api/v1/google_contacts/callback"
       end
 
       def build_state(account)

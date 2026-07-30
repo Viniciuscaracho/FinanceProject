@@ -107,6 +107,17 @@ module.exports = defineConfig({
       },
     },
 
+    // ── OAuth redirect_uri diagnostics — sem e com autenticação
+    {
+      name: 'oauth-redirect-uri',
+      testMatch: /oauth_redirect_uri\.spec\.js/,
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: STAGING_FRONT,
+        storageState: AUTH_FILE,
+      },
+    },
+
     // ── OrbiNutri — landing + auth (sem storage state)
     {
       name: 'orbinutri',
