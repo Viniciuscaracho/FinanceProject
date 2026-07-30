@@ -14,7 +14,7 @@ const isAndroidWebView = typeof window !== 'undefined' &&
 
 // URL base da API
 // Para emulador Android: usa 10.0.2.2 (IP especial do Android para localhost do host)
-// Para outros: usa variável de ambiente ou padrão
+// Para produção: usa VITE_API_URL (obrigatório) ou fallback relativo /api/v1
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined' && window.APP_API_BASE_URL) {
     return window.APP_API_BASE_URL;
@@ -26,14 +26,11 @@ const getApiBaseUrl = () => {
     return base.endsWith('/api/v1') ? base : `${base}/api/v1`;
   }
 
+  // Emulador Android — único caso onde construímos URL com hostname explícito.
+  // Nunca dispara em produção (hostname seria o domínio real, não 10.0.2.2).
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (isAndroidWebView || isAndroidEmulator || (isMobile && hostname !== 'localhost' && hostname !== '127.0.0.1')) {
-      if (hostname === '10.0.2.2') return 'http://10.0.2.2:3000/api/v1';
-      if (hostname !== 'localhost' && hostname !== '127.0.0.1' && hostname !== '') {
-        return `http://${hostname}:3000/api/v1`;
-      }
-    }
+    if (hostname === '10.0.2.2') return 'http://10.0.2.2:3000/api/v1';
   }
 
   return '/api/v1';

@@ -11,8 +11,18 @@ module Coaching
     end
 
     def call
-      text = OpenAiClient.new('PreVisitSummaryService').complete(prompt: prompt, max_tokens: 1024)
-      text || 'Não foi possível gerar o resumo no momento.'
+      raw = OpenAiClient.new('PreVisitSummaryService').complete(prompt: prompt, max_tokens: 1024)
+      return [] unless raw.present?
+
+      clean = raw.gsub(/\A```(?:json)?\s*/, '').gsub(/\s*```\z/, '').strip
+      data  = JSON.parse(clean)
+      Array(data['items']).select { |i| i['label'].present? && i['text'].present? }
+    rescue JSON::ParserError
+      # IA retornou texto livre — converte em item único para compatibilidade
+      [{ 'label' => 'Resumo', 'text' => raw.to_s.strip }]
+    rescue => e
+      Rails.logger.error "[PreVisitSummaryService] #{e.class}: #{e.message}"
+      []
     end
 
     private
@@ -42,7 +52,16 @@ module Coaching
         === HISTÓRICO RECENTE (#{recent_events.size} registros) ===
         #{events_text}
 
-        Resumo para o treinador (3-5 bullet points, em português):
+        Gere um resumo pré-atendimento com 3-5 pontos objetivos, em português.
+        Retorne APENAS JSON válido, sem texto extra:
+        {
+          "items": [
+            { "label": "categoria curta", "text": "observação objetiva para o treinador" }
+          ]
+        }
+
+        Exemplos de label: "Dor/Lesão", "Sono", "Carga", "Nutrição", "Objetivo", "Frequência", "Alerta", "Reavaliação".
+        Máximo 5 itens. Cada texto em 1-2 frases diretas.
       PROMPT
     end
 

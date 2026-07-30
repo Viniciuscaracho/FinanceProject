@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "deploy": "pnpm build && wrangler pages deploy dist --project-name orbi-frontend",
-    "deploy:preview": "pnpm build && wrangler pages deploy dist --project-name orbi-frontend --branch preview",
+    "deploy": "VITE_COACHING_ONLY=true pnpm build && wrangler pages deploy dist --project-name orbi-frontend --branch main",
+    "deploy:preview": "VITE_COACHING_ONLY=true pnpm build && wrangler pages deploy dist --project-name orbi-frontend --branch stage",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",

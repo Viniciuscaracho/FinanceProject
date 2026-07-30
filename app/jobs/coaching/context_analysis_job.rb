@@ -14,11 +14,13 @@ module Coaching
       event   = TimelineEvent.find_by(id: event_id)
       return unless account && contact && event
 
-      recently_analyzed = CoachingInsight
-        .where(account: account, contact: contact)
-        .where(created_at: DEBOUNCE_HOURS.hours.ago..)
-        .exists?
-      return if recently_analyzed
+      # Cooldown baseado em quando a análise RODOU — não em quando gerou insight.
+      # CoachingInsight-based check falha para atletas cujo histórico não gera
+      # padrões: cada evento dispararia uma chamada ao GPT mesmo sem retorno.
+      cooldown_key = "coaching_analysis_cooldown:#{account_id}:#{contact_id}"
+      return if Rails.cache.exist?(cooldown_key)
+
+      Rails.cache.write(cooldown_key, true, expires_in: DEBOUNCE_HOURS.hours)
 
       Coaching::ContextAnalysisService.new(account, contact, event).call
     end

@@ -20,17 +20,6 @@
 #
 #  fk_rails_...  (account_id => accounts.id)
 #
-# Carteira de créditos de áudio do coaching — uma por conta (Account).
-#
-# 1 crédito = 1 áudio transcrito e estruturado pela IA. O plano inclui
-# `monthly_allowance` créditos por ciclo (padrão 200), que renovam em
-# `renews_at`. Recargas avulsas (+100) somam ao saldo sem alterar a franquia.
-# Resumos pré-atendimento e alertas NÃO consomem créditos.
-#
-# Toda alteração de saldo passa por debit!/recharge!/grant_monthly!, que gravam
-# uma linha imutável em CoachingCreditTransaction (livro-razão) dentro de um
-# lock pessimista — garantindo consistência sob concorrência (dois áudios
-# processados ao mesmo tempo não debitam em cima de um saldo desatualizado).
 class CoachingCreditWallet < ApplicationRecord
   belongs_to :account
   has_many :transactions,

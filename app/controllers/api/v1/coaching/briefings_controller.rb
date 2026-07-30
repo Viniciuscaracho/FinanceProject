@@ -5,7 +5,7 @@ module Api
     module Coaching
       class BriefingsController < ApplicationController
         def create
-          contact = Current.account.contacts.find(params[:contact_id])
+          contact = Current.account.contacts.find(params[:id])
           summary = ::Coaching::PreVisitSummaryService.new(contact).call
           render json: { summary: summary }
         rescue ActiveRecord::RecordNotFound

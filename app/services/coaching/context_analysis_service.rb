@@ -29,6 +29,26 @@ module Coaching
 
     private
 
+    def active_meal_plan_summary
+      plan = MealPlan
+        .where(account: @account, contact: @contact, is_template: false)
+        .where(status: MealPlan::STATUSES[:active])
+        .order(updated_at: :desc)
+        .first
+      return nil unless plan
+
+      parts = ["Plano alimentar ativo: #{plan.title}"]
+      parts << "#{plan.target_kcal.to_i}kcal" if plan.target_kcal.to_f > 0
+
+      macros = []
+      macros << "P:#{plan.target_protein_g.to_i}g" if plan.target_protein_g.to_f > 0
+      macros << "C:#{plan.target_carbs_g.to_i}g"   if plan.target_carbs_g.to_f > 0
+      macros << "G:#{plan.target_fat_g.to_i}g"     if plan.target_fat_g.to_f > 0
+      parts << "(#{macros.join(' / ')})" if macros.any?
+
+      parts.join(' — ')
+    end
+
     def history_events
       TimelineEvent
         .where(account: @account, contact: @contact)
@@ -52,6 +72,8 @@ module Coaching
         "#{date}: #{parts.compact.join(' | ')}"
       end.join("\n")
 
+      meal_plan_line = active_meal_plan_summary
+
       <<~PROMPT
         Você é um assistente especializado em análise de histórico de atletas.
 
@@ -60,7 +82,7 @@ module Coaching
         Seja CONSERVADOR. Retorne insights vazio se não houver padrão relevante. Não invente padrões.
 
         Atleta: #{@contact.name}
-        Evento atual (#{trigger_date}): #{trigger_text}
+        #{meal_plan_line ? "#{meal_plan_line}\n" : ""}Evento atual (#{trigger_date}): #{trigger_text}
 
         Histórico (#{events.size} eventos, últimos #{LOOKBACK_MONTHS} meses):
         #{history_lines}

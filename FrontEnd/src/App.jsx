@@ -80,7 +80,10 @@ function Root() {
 function NutriRoot() {
   const { isAuthenticated, loading } = useAuth()
   if (loading) return <PageSkeleton />
-  if (!isAuthenticated) return <LandingPage />
+  if (!isAuthenticated) {
+    if (COACHING_ONLY) return <Suspense fallback={<PageSkeleton />}><LandingPageCoaching /></Suspense>
+    return <LandingPage />
+  }
   if (COACHING_ONLY) return <Navigate to="/coaching" replace />
   return (
     <Layout>

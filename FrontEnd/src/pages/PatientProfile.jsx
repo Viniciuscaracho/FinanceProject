@@ -465,6 +465,54 @@ function GoalCard({ goal, contactId, onUpdate, onDelete }) {
 
 const BLANK_GOAL = { title: '', unit: '', target_value: '', current_value: '', deadline: '', notes: '' }
 
+const BRIEFING_LABEL_COLORS = {
+  'Dor/Lesão':   { bg: '#FEE2E2', color: '#B91C1C' },
+  'Lesão':       { bg: '#FEE2E2', color: '#B91C1C' },
+  'Dor':         { bg: '#FEE2E2', color: '#B91C1C' },
+  'Alerta':      { bg: '#FEF3C7', color: '#B45309' },
+  'Reavaliação': { bg: '#EDE9FE', color: '#6D28D9' },
+  'Sono':        { bg: '#EFF6FF', color: '#1D4ED8' },
+  'Carga':       { bg: '#F0FDF4', color: '#15803D' },
+  'Nutrição':    { bg: '#FFF7ED', color: '#C2410C' },
+  'Frequência':  { bg: '#F0F9FF', color: '#0369A1' },
+  'Objetivo':    { bg: '#F0FDF4', color: '#166534' },
+}
+
+function getBriefingLabelStyle(label) {
+  const key = Object.keys(BRIEFING_LABEL_COLORS).find(k => label.includes(k))
+  return key ? BRIEFING_LABEL_COLORS[key] : { bg: '#F3F4F6', color: '#374151' }
+}
+
+function BriefingDisplay({ items }) {
+  if (!items?.length) return null
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      {items.map((item, i) => {
+        const style = getBriefingLabelStyle(item.label || '')
+        return (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10,
+            padding: '9px 0',
+            borderBottom: i < items.length - 1 ? `1px solid ${T.border}` : 'none',
+          }}>
+            <span style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: '0.01em',
+              background: style.bg, color: style.color,
+              borderRadius: 20, padding: '2px 10px',
+              whiteSpace: 'nowrap', flexShrink: 0, marginTop: 1,
+            }}>
+              {item.label}
+            </span>
+            <span style={{ fontSize: 13, color: T.text, lineHeight: 1.6 }}>
+              {item.text}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function timeAgo(isoString) {
   if (!isoString) return null
   const diff = Date.now() - new Date(isoString).getTime()
@@ -706,7 +754,9 @@ export function PatientProfile() {
     setBriefing(null)
     try {
       const res = await apiService.createCoachingBriefing(id)
-      setBriefing(res.summary)
+      // summary é agora um array [{label, text}]; fallback para string legacy
+      const items = Array.isArray(res.summary) ? res.summary : []
+      setBriefing(items)
     } catch {
       toast.error('Erro ao gerar briefing')
     } finally {
@@ -1006,12 +1056,12 @@ export function PatientProfile() {
             )}
 
             {/* Linha 3: AI briefing expandido */}
-            {briefing && (
+            {briefing?.length > 0 && (
               <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 10 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.muted, margin: '0 0 6px' }}>
-                  Briefing IA
+                <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.muted, margin: '0 0 4px' }}>
+                  Preparação para consulta
                 </p>
-                <p style={{ fontSize: 13, color: T.text, lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{briefing}</p>
+                <BriefingDisplay items={briefing} />
               </div>
             )}
           </div>
@@ -1067,6 +1117,44 @@ export function PatientProfile() {
                 </button>
               </div>
             )}
+
+            {/* Plano alimentar ativo */}
+            {(() => {
+              const activePlan = mealPlans.find(p => p.status === 'active')
+              if (!activePlan) return null
+              const hasMacros = activePlan.target_protein_g > 0 || activePlan.target_carbs_g > 0 || activePlan.target_fat_g > 0
+              return (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 14px', borderRadius: 10,
+                  border: `1px solid ${T.border}`, background: T.light,
+                }}>
+                  <UtensilsCrossed size={14} style={{ color: T.brand, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{activePlan.title}</span>
+                    {(activePlan.target_kcal > 0 || hasMacros) && (
+                      <span style={{ fontSize: 11, color: T.muted, marginLeft: 8 }}>
+                        {activePlan.target_kcal > 0 && `${Math.round(activePlan.target_kcal)}kcal`}
+                        {hasMacros && (
+                          <span style={{ marginLeft: activePlan.target_kcal > 0 ? 4 : 0 }}>
+                            {[
+                              activePlan.target_protein_g > 0 && `P:${Math.round(activePlan.target_protein_g)}g`,
+                              activePlan.target_carbs_g > 0   && `C:${Math.round(activePlan.target_carbs_g)}g`,
+                              activePlan.target_fat_g > 0     && `G:${Math.round(activePlan.target_fat_g)}g`,
+                            ].filter(Boolean).join(' · ')}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                  <button type="button"
+                    onClick={() => navigate(`/contacts/${id}/meal-plans/${activePlan.id}`)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.brand, padding: 4, flexShrink: 0 }}>
+                    <ExternalLink size={13} />
+                  </button>
+                </div>
+              )
+            })()}
 
             {/* Registro rápido */}
             <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>

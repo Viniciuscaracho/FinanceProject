@@ -25,11 +25,14 @@ module Coaching
       return unless account
 
       # ── Harness 1: dedup de media_id ──────────────────────────────────────
+      # Cache é escrito aqui — antes de qualquer trabalho — para que retries e
+      # webhooks duplicados sejam descartados independente de falha posterior.
       cache_key = "wca_processed:#{account_id}:#{media_id}"
       if Rails.cache.exist?(cache_key)
         Rails.logger.info "[ProcessWhatsappCloudAudioJob] media_id=#{media_id} já processado — ignorado (dedup)"
         return
       end
+      Rails.cache.write(cache_key, true, expires_in: MEDIA_ID_CACHE_TTL)
 
       credits = ::Coaching::CreditsService.for(account)
       unless credits.enough?
@@ -85,9 +88,8 @@ module Coaching
 
       credits.debit_audio!(source: event)
       profile.update_columns(last_feedback_at: Time.current)
-
-      # Marca media_id como processado — qualquer retry do webhook é descartado.
-      Rails.cache.write(cache_key, true, expires_in: MEDIA_ID_CACHE_TTL)
+    rescue Coaching::CreditsService::InsufficientCredits => e
+      Rails.logger.warn "[ProcessWhatsappCloudAudioJob] #{e.message} (conta ##{account_id}) — TimelineEvent criado sem débito"
     rescue StandardError => e
       Rails.logger.error "[ProcessWhatsappCloudAudioJob] #{e.class}: #{e.message}\n#{e.backtrace.first(5).join("\n")}"
     end

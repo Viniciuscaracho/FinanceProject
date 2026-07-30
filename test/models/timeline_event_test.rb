@@ -6,10 +6,13 @@
 #
 #  id              :bigint           not null, primary key
 #  carga           :string
+#  carga_score     :integer
+#  humor_score     :integer
 #  observacao      :text
 #  proxima_acao    :text
 #  raw_input       :text
 #  sono            :string
+#  sono_score      :integer
 #  source          :string           default("manual")
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
@@ -20,6 +23,8 @@
 # Indexes
 #
 #  idx_timeline_events_account_contact_date  (account_id,contact_id,created_at)
+#  idx_timeline_events_contact_carga_score   (contact_id,carga_score) WHERE (carga_score IS NOT NULL)
+#  idx_timeline_events_contact_sono_score    (contact_id,sono_score) WHERE (sono_score IS NOT NULL)
 #  index_timeline_events_on_account_id       (account_id)
 #
 # Foreign Keys

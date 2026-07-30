@@ -10,6 +10,7 @@ import {
 import {
   Check, ArrowRight, Instagram, Twitter, Mail, Mic, Brain,
   Moon, Dumbbell, MessageSquare, ArrowUpRight, AlertCircle, Sparkles, Plus,
+  Clock, RefreshCw, X,
 } from 'lucide-react'
 
 /* ─── Paleta de marca (Orbi Coach — indigo) ──────────────── */
@@ -626,8 +627,8 @@ export function LandingPageCoaching() {
                   Um preço.<br />Créditos que renovam.
                 </h2>
                 <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, maxWidth: '46ch', marginBottom: '2rem' }}>
-                  R$ 40 por mês com 200 áudios inclusos, que renovam todo ciclo. Precisou de
-                  mais? Recarrega +100 áudios por R$ 15, quando quiser — sem tiers e sem fidelidade.
+                  R$ 19,90 por mês com 200 áudios inclusos, que renovam todo ciclo. Precisou de
+                  mais? Recarrega +100 áudios por R$ 25, quando quiser — sem tiers e sem fidelidade.
                   Resumos e alertas não consomem créditos.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: '10px 24px' }}>
@@ -649,39 +650,54 @@ export function LandingPageCoaching() {
             </AnimatedSection>
 
             <AnimatedSection delay={0.1}>
-              <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 20, padding: '2.5rem 2rem' }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 14px' }}>Plano do piloto</p>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
-                  <span style={{ fontSize: 14, color: T.muted, fontWeight: 500 }}>R$</span>
-                  <span style={{ fontSize: 52, fontWeight: 700, color: T.text, letterSpacing: '-0.04em', lineHeight: 1 }}>40</span>
-                  <span style={{ fontSize: 14, color: T.muted, fontWeight: 500 }}>/mês</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-                  <Mic size={13} color={T.brand} />
-                  <p style={{ fontSize: 13, fontWeight: 600, color: T.text, margin: 0 }}>200 áudios inclusos</p>
-                </div>
-                <p style={{ fontSize: 12, color: T.muted, margin: '0 0 1.5rem' }}>renovam todo mês · cancele quando quiser</p>
-                <a href="/login" style={{
-                  display: 'block', width: '100%', padding: '13px 0',
-                  background: T.text, color: T.white, borderRadius: 10,
-                  fontSize: 14, fontWeight: 600, textDecoration: 'none',
-                  textAlign: 'center', marginBottom: '0.75rem',
-                }}>
-                  Começar 14 dias grátis
-                </a>
-                <p style={{ fontSize: 11, color: '#999', textAlign: 'center', margin: '0 0 1.5rem' }}>
-                  Sem cartão de crédito necessário
-                </p>
-                <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: '1.25rem', display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 10, background: T.light, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Plus size={17} color={T.brand} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, alignItems: 'start' }}>
+
+                {/* Card principal */}
+                <div style={{ background: T.white, border: `2px solid ${T.brand}`, borderRadius: 12, padding: '1.25rem' }}>
+                  <div style={{ display: 'inline-block', background: T.light, color: T.brand, fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20, marginBottom: 12 }}>
+                    Preço de fundador
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: T.text, margin: 0 }}>Recarga +100 áudios</p>
-                    <p style={{ fontSize: 12, color: T.muted, margin: 0 }}>avulsa, sem mexer na assinatura</p>
+                  <p style={{ margin: 0, fontSize: 15, fontWeight: 500, color: T.text }}>Plano do piloto</p>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, margin: '8px 0 2px' }}>
+                    <span style={{ fontSize: 32, fontWeight: 500, color: T.text }}>R$19,90</span>
+                    <span style={{ fontSize: 14, color: T.muted }}>/mês</span>
                   </div>
-                  <span style={{ fontSize: 17, fontWeight: 700, color: T.text, flexShrink: 0 }}>R$ 15</span>
+                  <p style={{ margin: '0 0 14px', fontSize: 13, color: T.muted }}>sobe para R$40 depois do piloto — travado para quem entrar agora</p>
+                  <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {[
+                      { Icon: Mic,       text: '200 áudios por mês' },
+                      { Icon: Clock,     text: 'até 5 min por áudio' },
+                      { Icon: RefreshCw, text: 'renova todo mês' },
+                      { Icon: X,         text: 'cancele quando quiser' },
+                    ].map(({ Icon, text }) => (
+                      <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: T.text }}>
+                        <Icon size={15} color={T.muted} style={{ flexShrink: 0 }} />
+                        {text}
+                      </div>
+                    ))}
+                  </div>
+                  <a href="/login" style={{
+                    display: 'block', marginTop: 16, padding: '10px 0',
+                    background: T.text, color: T.white, borderRadius: 8,
+                    fontSize: 14, fontWeight: 600, textDecoration: 'none', textAlign: 'center',
+                  }}>
+                    Começar 14 dias grátis
+                  </a>
+                  <p style={{ margin: '8px 0 0', fontSize: 12, color: T.muted, textAlign: 'center' }}>Sem cartão de crédito</p>
                 </div>
+
+                {/* Recarga */}
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 12, padding: '1rem 1.25rem' }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: T.text }}>Recarga +100 áudios</p>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, margin: '6px 0 2px' }}>
+                      <span style={{ fontSize: 22, fontWeight: 500, color: T.text }}>R$25</span>
+                      <span style={{ fontSize: 13, color: T.muted }}>avulsa</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 13, color: T.muted }}>Sem mexer na assinatura. Não expira.</p>
+                  </div>
+                </div>
+
               </div>
             </AnimatedSection>
           </div>
@@ -701,7 +717,8 @@ export function LandingPageCoaching() {
                 { q: 'De qual número eu mando o áudio?', a: 'Você usa o número único da Orbi (não o seu). Isso elimina a barreira de conectar seu WhatsApp pessoal e o risco de banimento por conexão não oficial.' },
                 { q: 'Como a IA sabe de qual atleta é o registro?', a: 'Você menciona o nome no áudio e a IA roteia para o atleta certo. Quando não identifica com certeza, o registro vira uma pendência no painel para você confirmar com um toque.' },
                 { q: 'A IA decide sozinha o que é alerta?', a: 'Não. Os alertas são regras determinísticas — sem registro há X dias, reavaliação próxima, queixa de dor. A IA é usada só para estruturar o áudio e escrever os resumos.' },
-                { q: 'Como funcionam os créditos de áudio?', a: 'Cada áudio que você envia e a IA transcreve e estrutura consome 1 crédito. O plano inclui 200 créditos por mês, que renovam a cada ciclo. Precisou de mais? Recarrega +100 por R$ 15, sem mexer na assinatura. Resumos pré-atendimento e alertas não consomem créditos.' },
+                { q: 'Como funcionam os créditos de áudio?', a: 'Cada áudio que você envia e a IA transcreve e estrutura consome 1 crédito. O plano inclui 200 créditos por mês, que renovam a cada ciclo. Precisou de mais? Recarrega +100 por R$ 25, avulsa, sem mexer na assinatura — os créditos não expiram. Resumos pré-atendimento e alertas não consomem créditos.' },
+                { q: 'O preço vai mudar?', a: 'O preço de fundador (R$ 19,90/mês) é travado para quem entrar durante o piloto — fica assim enquanto você for assinante. Depois do piloto o plano passa a R$ 40/mês para novos entrantes.' },
                 { q: 'Posso cancelar quando quiser?', a: 'Sim. É um piloto sem fidelidade — cancele a qualquer momento, sem multa.' },
               ].map((item, i) => (
                 <AccordionItem key={i} value={`q${i}`} style={{ borderBottom: `1px solid ${T.border}` }}>

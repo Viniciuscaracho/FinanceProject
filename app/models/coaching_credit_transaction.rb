@@ -30,10 +30,6 @@
 #  fk_rails_...  (account_id => accounts.id)
 #  fk_rails_...  (coaching_credit_wallet_id => coaching_credit_wallets.id)
 #
-# Livro-razão de créditos de áudio do coaching. Cada linha é imutável e registra
-# a variação de saldo (`amount`, + crédito / - débito) e o `balance_after`
-# resultante. `source` referencia a origem quando existe: o TimelineEvent no
-# débito, a cobrança do pacote na recarga.
 class CoachingCreditTransaction < ApplicationRecord
   KINDS = %w[monthly_grant debit recharge adjustment refund].freeze
 
