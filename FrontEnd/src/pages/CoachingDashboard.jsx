@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Brain, AlertCircle, Loader2, Clock, Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { apiService } from '@/lib/api'
 import { T } from '@/lib/tokens'
+import { CoachingOnboarding, useCoachingOnboarding } from '@/components/coaching/CoachingOnboarding'
 
 /* ─── helpers ─────────────────────────────────────────────────────── */
 function timeAgo(iso) {
@@ -225,6 +226,8 @@ export function CoachingDashboard() {
   const alerts         = data?.alerts || []
   const contacts       = data?.active_contacts || []
   const totalEvents    = data?.total_events || 0
+
+  const { show: showOnboarding, dismiss: dismissOnboarding } = useCoachingOnboarding(contacts, loading ? undefined : totalEvents)
   const urgent         = alerts.filter(a => ['sumiu', 'reclamou_de_dor'].includes(a.alert_type))
   const attention      = alerts.filter(a => ['sem_feedback', 'perdeu_frequencia', 'reavaliacao_proxima'].includes(a.alert_type))
 
@@ -241,6 +244,9 @@ export function CoachingDashboard() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {showOnboarding && (
+        <CoachingOnboarding contacts={contacts} onDone={dismissOnboarding} />
+      )}
 
       {/* ── Header ──────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
