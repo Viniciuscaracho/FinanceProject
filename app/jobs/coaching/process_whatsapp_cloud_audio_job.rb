@@ -67,6 +67,7 @@ module Coaching
 
       unless contact
         Rails.logger.warn "[ProcessWhatsappCloudAudioJob] Contato não encontrado para '#{parsed[:athlete_name] || from}' (conta ##{account_id})"
+        notify_trainer_unresolved(from, parsed[:athlete_name])
         return
       end
 
@@ -102,6 +103,20 @@ module Coaching
         extracted_name: athlete_name,
         from_phone:     from_phone
       ).call
+    end
+
+    def notify_trainer_unresolved(trainer_phone, athlete_name)
+      return unless WhatsApp::EvolutionApiClient.platform_configured?
+
+      msg = if athlete_name.present?
+        "⚠️ Áudio recebido, mas não encontrei o atleta *#{athlete_name}* cadastrado. Verifique o nome ou cadastre o atleta no app."
+      else
+        "⚠️ Áudio recebido, mas não consegui identificar o atleta. Mencione o nome no início do áudio ou use o formato:\n\n*Nome do atleta: [observação]*"
+      end
+
+      WhatsApp::EvolutionApiClient.send_via_platform(phone: trainer_phone, message: msg)
+    rescue StandardError => e
+      Rails.logger.warn "[ProcessWhatsappCloudAudioJob] Falha ao notificar treinador #{trainer_phone}: #{e.message}"
     end
 
     def ensure_coaching_profile(account, contact)

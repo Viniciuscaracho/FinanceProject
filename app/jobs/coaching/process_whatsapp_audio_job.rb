@@ -18,10 +18,18 @@ module Coaching
       account = Account.find_by(id: account_id)
       return unless account
 
+      # ── Dedup por message ID (Evolution pode reenviar o mesmo webhook) ────────
+      msg_id    = message_key.is_a?(Hash) ? (message_key['id'] || message_key[:id]) : nil
+      cache_key = "wa_evo_audio:#{account_id}:#{msg_id}" if msg_id.present?
+      if cache_key && Rails.cache.exist?(cache_key)
+        Rails.logger.info "[ProcessWhatsappAudioJob] msg_id=#{msg_id} já processado — ignorado (dedup)"
+        return
+      end
+      Rails.cache.write(cache_key, true, expires_in: 24.hours) if cache_key
+
       credits = ::Coaching::CreditsService.for(account)
       unless credits.enough?
         Rails.logger.warn "[Coaching::ProcessWhatsappAudioJob] Créditos esgotados na conta ##{account_id} — áudio ignorado"
-        # TODO: avisar o treinador (mensagem de volta) que os créditos acabaram.
         return
       end
 
@@ -76,54 +84,14 @@ module Coaching
 
     private
 
-    # Resolve o contato na seguinte ordem de prioridade:
-    #   1. Nome extraído da transcrição → busca por nome, ou cria novo contato
-    #   2. Número do remoteJid → busca por cell_phone_number
-    #   3. Fallback → contato com CoachingProfile mais recentemente atualizado
+    # Delega ao ContactResolverService (cascata unaccent+fuzzy+trigram+telefone)
+    # para consistência com o Cloud Audio path.
     def resolve_contact(account, athlete_name, from_phone)
-      if athlete_name.present?
-        contact = find_by_name(account, athlete_name)
-        return contact if contact
-
-        return create_contact_from_audio(account, athlete_name)
-      end
-
-      find_by_phone(account, from_phone) || fallback_recent(account)
-    end
-
-    def find_by_name(account, name)
-      account.contacts.where(
-        "LOWER(CONCAT(first_name, ' ', COALESCE(last_name, ''))) LIKE ?",
-        "%#{name.downcase}%"
-      ).first
-    end
-
-    def create_contact_from_audio(account, name)
-      contact = account.contacts.create!(
-        name:         name.strip,
-        contact_type: :undefined_contact,
-        person_type:  :natural
-      )
-      Rails.logger.info "[Coaching::ProcessWhatsappAudioJob] Contato criado via áudio: #{contact.name} (##{contact.id})"
-      contact
-    rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error "[Coaching::ProcessWhatsappAudioJob] Falha ao criar contato '#{name}': #{e.message}"
-      nil
-    end
-
-    def find_by_phone(account, from_phone)
-      suffix = from_phone.gsub(/\D/, '').last(8)
-      account.contacts.find_by(
-        "REGEXP_REPLACE(cell_phone_number, '[^0-9]', '', 'g') LIKE ?",
-        "%#{suffix}"
-      )
-    end
-
-    def fallback_recent(account)
-      CoachingProfile.where(account: account)
-                     .order(updated_at: :desc)
-                     .first
-                     &.contact
+      ::Coaching::ContactResolverService.new(
+        account,
+        extracted_name: athlete_name,
+        from_phone:     from_phone
+      ).call
     end
 
     def ensure_coaching_profile(account, contact)

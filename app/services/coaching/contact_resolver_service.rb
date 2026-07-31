@@ -21,6 +21,11 @@ module Coaching
     SIMILARITY_THRESHOLD = 0.35
     MIN_WORD_LENGTH      = 3
 
+    # Palavras genéricas do domínio coaching que geram falsos positivos no
+    # matching por substrings (ex: "Novo Atleta" não deve casar com "Atleta Silva"
+    # via a palavra "atleta"). Usadas apenas no passo de palavras individuais.
+    STOPWORDS = %w[atleta atletas treino treinos carga sono dor joelho lesão objetivo meta].freeze
+
     def initialize(account, extracted_name:, from_phone: nil)
       @account        = account
       @extracted_name = extracted_name.to_s.strip
@@ -89,7 +94,8 @@ module Coaching
       # Ambiguidade no nome completo: tenta cada palavra significativa (>= 3 chars)
       return nil if direct.many?
 
-      words = normalized.split.select { |w| w.length >= MIN_WORD_LENGTH }
+      words = normalized.split
+                        .select { |w| w.length >= MIN_WORD_LENGTH && !STOPWORDS.include?(w) }
                         .sort_by(&:length).reverse  # palavras mais longas primeiro
 
       words.each do |word|
@@ -138,10 +144,16 @@ module Coaching
     end
 
     def fallback_recent
-      CoachingProfile.where(account: @account)
-                     .order(updated_at: :desc)
-                     .first
-                     &.contact
+      profiles = CoachingProfile.where(account: @account)
+
+      # Só usa o fallback quando há exatamente 1 atleta com coaching — situação
+      # inequívoca. Com múltiplos atletas, silenciar seria atribuir ao atleta
+      # errado, o que é pior do que dropar o evento.
+      return nil unless profiles.count == 1
+
+      contact = profiles.first.contact
+      Rails.logger.warn "[ContactResolverService] fallback_recent → #{contact&.name} (conta tem 1 atleta com coaching)"
+      contact
     end
 
     # ── Ruby-side normalization (I18n.transliterate) ───────────────────────────

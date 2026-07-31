@@ -337,8 +337,8 @@ module Api
 
         whatsapp_number = message_data[:from]&.gsub(/\D/, '')
         if whatsapp_number.present?
-          account = Account.joins(:account_users)
-                           .where('account_users.whatsapp_number = ?', whatsapp_number)
+          account = Account.joins(:users)
+                           .where(users: { whatsapp_number: whatsapp_number })
                            .first
           return account if account
         end

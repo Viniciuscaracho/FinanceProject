@@ -27,20 +27,23 @@ class Coaching::PreVisitSummaryServiceTest < ActiveSupport::TestCase
 
   # ── retorno básico ─────────────────────────────────────────────────────────
 
-  test 'retorna string não vazia quando API responde com sucesso' do
+  test 'retorna array de itens quando API responde com sucesso' do
+    stub_openai('{"items":[{"label":"Objetivo","text":"Perder 5kg"}]}')
     result = Coaching::PreVisitSummaryService.new(@contact).call
-    assert_instance_of String, result
-    assert result.present?
+    assert_instance_of Array, result
+    assert result.any?
+    assert result.first.key?('label')
+    assert result.first.key?('text')
   end
 
-  test 'retorna mensagem de fallback quando API falha com SocketError' do
+  test 'retorna array vazio quando API falha com SocketError' do
     HTTParty.stubs(:post).raises(SocketError, 'connection refused')
 
     result = Coaching::PreVisitSummaryService.new(@contact).call
-    assert_equal 'Não foi possível gerar o resumo no momento.', result
+    assert_equal [], result
   end
 
-  test 'retorna mensagem de fallback quando API retorna non-2xx' do
+  test 'retorna array vazio quando API retorna non-2xx' do
     mock_response = mock('response')
     mock_response.stubs(:success?).returns(false)
     mock_response.stubs(:code).returns(503)
@@ -48,7 +51,7 @@ class Coaching::PreVisitSummaryServiceTest < ActiveSupport::TestCase
     HTTParty.stubs(:post).returns(mock_response)
 
     result = Coaching::PreVisitSummaryService.new(@contact).call
-    assert_equal 'Não foi possível gerar o resumo no momento.', result
+    assert_equal [], result
   end
 
   # ── conteúdo do prompt — perfil ────────────────────────────────────────────
@@ -197,9 +200,17 @@ class Coaching::PreVisitSummaryServiceTest < ActiveSupport::TestCase
   private
 
   def stub_anthropic(text)
+    stub_openai(text)
+  end
+
+  # Stub correto para OpenAiClient (formato choices[0].message.content)
+  def stub_openai(text)
     mock_response = mock('response')
     mock_response.stubs(:success?).returns(true)
-    mock_response.stubs(:parsed_response).returns({ 'content' => [{ 'text' => text }] })
+    mock_response.stubs(:parsed_response).returns({
+      'choices' => [{ 'message' => { 'content' => text }, 'finish_reason' => 'stop' }],
+      'usage'   => { 'prompt_tokens' => 10, 'completion_tokens' => 20, 'total_tokens' => 30 }
+    })
     HTTParty.stubs(:post).returns(mock_response)
   end
 

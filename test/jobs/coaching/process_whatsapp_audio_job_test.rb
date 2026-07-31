@@ -41,30 +41,28 @@ class Coaching::ProcessWhatsappAudioJobTest < ActiveSupport::TestCase
     assert_equal '7h',             event.sono
   end
 
-  test 'cria contato novo quando nome extraído não existe na conta' do
+  test 'não cria contato novo quando nome extraído não existe na conta' do
+    # ContactResolverService nunca cria contatos — o job agora delega a ele
+    # em vez de criar contatos a partir de transcrições de IA.
     Coaching::ParseAudioContextService.any_instance.stubs(:call).returns(
       athlete_name: 'Novo Atleta', sono: nil, carga: nil,
       observacao: nil, proxima_acao: nil, goal: 'emagrecimento', days_to_reassessment: 30
     )
 
-    assert_difference('Contact.count') do
-      assert_difference('TimelineEvent.count') do
+    assert_no_difference('Contact.count') do
+      assert_no_difference('TimelineEvent.count') do
         perform_job
       end
     end
-
-    novo = Contact.where(account: @account).find_by(first_name: 'Novo')
-    assert_not_nil novo
-    assert_equal 'Atleta', novo.last_name
   end
 
-  test 'cria CoachingProfile para contato novo' do
+  test 'não cria CoachingProfile quando contato não encontrado' do
     Coaching::ParseAudioContextService.any_instance.stubs(:call).returns(
-      athlete_name: 'Atleta Novo', sono: nil, carga: nil,
+      athlete_name: 'Atleta Desconhecido', sono: nil, carga: nil,
       observacao: nil, proxima_acao: nil, goal: 'resistência', days_to_reassessment: nil
     )
 
-    assert_difference('CoachingProfile.count') do
+    assert_no_difference('CoachingProfile.count') do
       perform_job
     end
   end
