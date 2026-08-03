@@ -390,5 +390,33 @@ namespace :api, defaults: { format: 'json' } do
     post   'admin/referral_codes',     to: 'admin#create_referral_code'
     patch  'admin/referral_codes/:id', to: 'admin#update_referral_code'
     delete 'admin/referral_codes/:id', to: 'admin#destroy_referral_code'
+
+    # Meta Ads (Marketing API) — campanhas de tráfego pago da Orbi
+    scope 'admin/meta_ads' do
+      # Campaigns
+      get    'campaigns',      to: 'meta_ads#campaigns'
+      get    'campaigns/:id',  to: 'meta_ads#show_campaign'
+      post   'campaigns',      to: 'meta_ads#create_campaign'
+      patch  'campaigns/:id',  to: 'meta_ads#update_campaign'
+      delete 'campaigns/:id',  to: 'meta_ads#destroy_campaign'
+
+      # AdSets
+      get    'campaigns/:campaign_id/adsets', to: 'meta_ads#adsets'
+      post   'adsets',                        to: 'meta_ads#create_adset'
+      patch  'adsets/:id',                    to: 'meta_ads#update_adset'
+
+      # Creatives
+      post   'creatives', to: 'meta_ads#create_creative'
+
+      # Ads
+      get    'adsets/:adset_id/ads', to: 'meta_ads#ads'
+      post   'ads',                  to: 'meta_ads#create_ad'
+      patch  'ads/:id',              to: 'meta_ads#update_ad'
+
+      # Insights
+      get    'insights/account',                    to: 'meta_ads#account_insights'
+      get    'insights/campaign/:campaign_id',      to: 'meta_ads#campaign_insights'
+      get    'insights/adset/:adset_id',            to: 'meta_ads#adset_insights'
+    end
   end
 end
