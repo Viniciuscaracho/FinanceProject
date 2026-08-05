@@ -212,9 +212,10 @@ module Meta
 
     def default_targeting
       {
-        geo_locations: { countries: ['BR'] },
-        age_min: 20,
-        age_max: 60
+        geo_locations:         { countries: ['BR'] },
+        age_min:               20,
+        age_max:               60,
+        targeting_automation:  { advantage_audience: 0 }
       }
     end
 
