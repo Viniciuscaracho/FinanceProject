@@ -35,7 +35,11 @@
 class MealPlan < ApplicationRecord
   acts_as_tenant :account
 
-  TEMPLATE_CATEGORIES = %w[low_carb hipertrofia mediterraneo vegetariano emagrecimento outro].freeze
+  TEMPLATE_CATEGORIES = %w[
+    low_carb hipertrofia mediterraneo vegetariano emagrecimento
+    corrida crossfit esportes_coletivos natacao artes_marciais
+    outro
+  ].freeze
 
   belongs_to :account
   belongs_to :contact, class_name: 'Contact', foreign_key: 'contact_id', optional: true

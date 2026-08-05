@@ -7,21 +7,31 @@ import { Button } from '@/components/ui/button'
 import { T } from '@/lib/tokens'
 
 const CATEGORY_LABELS = {
-  low_carb:     'Low Carb',
-  hipertrofia:  'Hipertrofia',
-  mediterraneo: 'Mediterrâneo',
-  vegetariano:  'Vegetariano',
-  emagrecimento:'Emagrecimento',
-  outro:        'Outro',
+  low_carb:          'Low Carb',
+  hipertrofia:       'Hipertrofia',
+  mediterraneo:      'Mediterrâneo',
+  vegetariano:       'Vegetariano',
+  emagrecimento:     'Emagrecimento',
+  corrida:           'Corrida',
+  crossfit:          'CrossFit',
+  esportes_coletivos:'Esportes Coletivos',
+  natacao:           'Natação',
+  artes_marciais:    'Artes Marciais',
+  outro:             'Outro',
 }
 
 const CATEGORY_COLORS = {
-  low_carb:     '#F59E0B',
-  hipertrofia:  '#4C60AA',
-  mediterraneo: '#10B981',
-  vegetariano:  '#22C55E',
-  emagrecimento:'#EF4444',
-  outro:        '#9CA3AF',
+  low_carb:          '#F59E0B',
+  hipertrofia:       '#4C60AA',
+  mediterraneo:      '#10B981',
+  vegetariano:       '#22C55E',
+  emagrecimento:     '#EF4444',
+  corrida:           '#F97316',
+  crossfit:          '#8B5CF6',
+  esportes_coletivos:'#06B6D4',
+  natacao:           '#0EA5E9',
+  artes_marciais:    '#DC2626',
+  outro:             '#9CA3AF',
 }
 
 const BLANK_FORM = { title: '', template_category: 'outro', description: '' }

@@ -67,6 +67,11 @@ FOODS_CATALOG = [
   { name: 'Requeijão cremoso',                kcal: 255, protein: 8.6,  carbs: 4.0,  fat: 22.5, fiber: 0.0 },
   { name: 'Mel',                              kcal: 309, protein: 0.4,  carbs: 84.0, fat: 0.0, fiber: 0.2 },
   { name: 'Pasta de amendoim integral',       kcal: 598, protein: 25.1, carbs: 20.5, fat: 49.9, fiber: 6.0 },
+  # Alimentos adicionais para templates esportivos
+  { name: 'Macarrão integral cozido',         kcal: 124, protein: 5.0,  carbs: 26.3, fat: 0.8, fiber: 3.2 },
+  { name: 'Granola tradicional',              kcal: 408, protein: 9.8,  carbs: 64.5, fat: 14.2, fiber: 5.3 },
+  { name: 'Uva passa',                        kcal: 303, protein: 3.2,  carbs: 79.4, fat: 0.5, fiber: 3.7 },
+  { name: 'Semente de chia',                  kcal: 490, protein: 15.6, carbs: 42.1, fat: 30.7, fiber: 34.4 },
 ].freeze
 
 puts "\n🥦 Inserindo alimentos TACO..."
