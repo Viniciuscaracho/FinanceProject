@@ -277,7 +277,8 @@ module Api
                            prefix_id: account.prefix_id,
                            name: account.name,
                            admin: account.admin == true,
-                           account_type: account.account_type
+                           account_type:     account.account_type,
+                           self_contact_id:  account.preferences&.dig('self_contact_id')
                          }
                        end
 

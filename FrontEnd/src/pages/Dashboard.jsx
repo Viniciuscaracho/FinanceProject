@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { apiService } from '../lib/api'
 import { T, DISPLAY } from '@/lib/tokens'
+import { CoachingOnboarding, useCoachingOnboarding } from '@/components/coaching/CoachingOnboarding'
 
 /* ─── Sub-componentes base ───────────────────────── */
 function Panel({ children, style }) {
@@ -1297,6 +1298,17 @@ export function Dashboard() {
   const activeContacts  = coachingData?.active_contacts || []
   const todayStats      = coachingData?.today_stats || {}
   const recentInsights  = coachingData?.recent_insights || []
+  const totalEvents     = coachingData?.total_events || 0
+
+  const isAthlete = !!user?.account?.self_contact_id
+  const { show: showOnboarding, dismiss: dismissOnboarding } = useCoachingOnboarding(
+    activeContacts,
+    coachingLoading ? undefined : totalEvents
+  )
+
+  const handleRoleSelected = (role, contactId) => {
+    if (role === 'athlete') navigate('/coaching')
+  }
   const urgent          = alerts.filter(a => ['sumiu', 'reclamou_de_dor'].includes(a.alert_type))
   const attention       = alerts.filter(a => ['sem_feedback', 'perdeu_frequencia', 'reavaliacao_proxima'].includes(a.alert_type))
 
@@ -1308,6 +1320,13 @@ export function Dashboard() {
 
   return (
     <div data-testid="dashboard" style={{ display: 'flex', flexDirection: 'column', gap: 10, ...DISPLAY }}>
+      {showOnboarding && !isAthlete && (
+        <CoachingOnboarding
+          contacts={activeContacts}
+          onDone={dismissOnboarding}
+          onRoleSelected={handleRoleSelected}
+        />
+      )}
 
       {/* ══ 1. HERO ════════════════════════════════════ */}
       <div style={{

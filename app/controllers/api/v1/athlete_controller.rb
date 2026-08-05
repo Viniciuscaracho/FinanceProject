@@ -13,20 +13,15 @@ module Api
           return render json: { errors: contact.errors.full_messages }, status: :unprocessable_entity
         end
 
-        account.account_type = :personal
-        account.preferences  = (account.preferences || {}).merge('self_contact_id' => contact.id)
-        account.save!
+        account.update_columns(
+          preferences: (account.preferences || {}).merge('self_contact_id' => contact.id)
+        )
 
-        render json: { contact_id: contact.id, account_type: 'personal' }
+        render json: { contact_id: contact.id }
       end
 
       def self_contact
-        account = Current.account
-
-        unless account.personal?
-          return render json: { error: 'Conta não é do tipo atleta' }, status: :unprocessable_entity
-        end
-
+        account    = Current.account
         contact_id = account.preferences&.dig('self_contact_id')
         return render json: { error: 'Self-contact não encontrado' }, status: :not_found unless contact_id
 

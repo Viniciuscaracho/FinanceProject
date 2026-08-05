@@ -13,9 +13,7 @@ class Api::V1::AthleteControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
-  test "setup converts account to personal and creates self-contact" do
-    assert @account.business?
-
+  test "setup creates self-contact and stores id in preferences" do
     assert_difference "Contact.count", 1 do
       post api_v1_athlete_setup_url(format: :json), headers: @auth_headers
     end
@@ -23,11 +21,9 @@ class Api::V1::AthleteControllerTest < ActionDispatch::IntegrationTest
     assert_response :ok
     body = response.parsed_body
 
-    assert_equal "personal", body["account_type"]
     assert body["contact_id"].present?
 
     @account.reload
-    assert @account.personal?
     assert_equal body["contact_id"], @account.preferences["self_contact_id"]
   end
 
@@ -59,9 +55,9 @@ class Api::V1::AthleteControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
-  test "self_contact returns error when account is not personal" do
+  test "self_contact returns 404 when no setup done" do
     get api_v1_athlete_self_contact_url(format: :json), headers: @auth_headers
-    assert_response :unprocessable_entity
+    assert_response :not_found
   end
 
   test "self_contact returns contact_id after setup" do
@@ -77,7 +73,7 @@ class Api::V1::AthleteControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "self_contact returns 404 when preferences missing self_contact_id" do
-    @account.update!(account_type: :personal, preferences: {})
+    @account.update_columns(preferences: {})
 
     get api_v1_athlete_self_contact_url(format: :json), headers: @auth_headers
     assert_response :not_found

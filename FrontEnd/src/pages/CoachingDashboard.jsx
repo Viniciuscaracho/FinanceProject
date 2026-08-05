@@ -262,7 +262,7 @@ export function CoachingDashboard() {
   const { user }       = useAuth()
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
-  const isAthlete = user?.account?.account_type === 'personal'
+  const isAthlete = !!user?.account?.self_contact_id
 
   // Dev reset: limpa localStorage e reseta conta, força reload para rebuscar user
   useEffect(() => {

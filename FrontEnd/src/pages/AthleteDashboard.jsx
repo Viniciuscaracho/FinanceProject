@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Activity, UtensilsCrossed, Loader2, Plus, Clock, Brain, ChevronRight, FileText } from 'lucide-react'
 import { apiService } from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
 import { T } from '@/lib/tokens'
 
 const BRAND = '#4C60AA'
@@ -302,24 +303,10 @@ function NutritionTab({ contactId, navigate }) {
 
 /* ── Main ────────────────────────────────────────────────────────────── */
 export function AthleteDashboard() {
-  const navigate  = useNavigate()
-  const [tab, setTab]               = useState('performance')
-  const [contactId, setContactId]   = useState(null)
-  const [loadingContact, setLoadingContact] = useState(true)
-
-  useEffect(() => {
-    apiService.getSelfContact()
-      .then(res => setContactId(res?.contact_id || null))
-      .catch(() => setContactId(null))
-      .finally(() => setLoadingContact(false))
-  }, [])
-
-  if (loadingContact) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
-      <Loader2 size={24} style={{ animation: 'spin 1s linear infinite', color: BRAND }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-    </div>
-  )
+  const navigate        = useNavigate()
+  const { user }        = useAuth()
+  const contactId       = user?.account?.self_contact_id || null
+  const [tab, setTab]   = useState('performance')
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 16px' }}>
