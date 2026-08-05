@@ -36,21 +36,22 @@ module Api
         render json: { contact_id: contact.id, name: contact.name }
       end
 
-      private
-
       def dev_reset
         raise ActionController::RoutingError, 'Not Found' unless Rails.env.development?
 
-        account = Current.account
+        account    = Current.account
         contact_id = account.preferences&.dig('self_contact_id')
         Contact.find_by(id: contact_id)&.destroy if contact_id
 
-        account.account_type = :business
-        account.preferences  = (account.preferences || {}).except('self_contact_id')
-        account.save!
+        account.update_columns(
+          account_type_cd: 0,
+          preferences: (account.preferences || {}).except('self_contact_id')
+        )
 
         render json: { reset: true }
       end
+
+      private
 
       def find_or_create_self_contact(account, user)
         existing_id = account.preferences&.dig('self_contact_id')

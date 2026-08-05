@@ -257,44 +257,47 @@ function AlertRow({ alert, navigate }) {
 
 /* ─── Main ───────────────────────────────────────────────────────── */
 export function CoachingDashboard() {
-  const navigate      = useNavigate()
+  const navigate       = useNavigate()
   const [searchParams] = useSearchParams()
-  const { user, login } = useAuth()
-
-  useEffect(() => {
-    if (searchParams.get('reset_onboarding') === null) return
-    localStorage.removeItem('coaching_onboard_v1')
-    if (import.meta.env.DEV) {
-      apiService.request('/athlete/dev_reset', { method: 'POST' }).catch(() => {})
-    }
-    navigate('/coaching', { replace: true })
-  }, [])
-
-  if (user?.account?.account_type === 'personal') {
-    return <AthleteDashboard />
-  }
-
+  const { user }       = useAuth()
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
+  const isAthlete = user?.account?.account_type === 'personal'
 
+  // Dev reset: limpa localStorage e reseta conta, força reload para rebuscar user
   useEffect(() => {
+    if (!searchParams.has('reset_onboarding')) return
+    localStorage.removeItem('coaching_onboard_v1')
+    if (import.meta.env.DEV) {
+      apiService.request('/athlete/dev_reset', { method: 'POST' })
+        .catch(() => {})
+        .finally(() => { window.location.replace('/coaching') })
+    } else {
+      navigate('/coaching', { replace: true })
+    }
+  }, [])
+
+  // Carrega dashboard do treinador (não executa se for atleta)
+  useEffect(() => {
+    if (isAthlete) return
     apiService.getCoachingDashboard()
       .then(res => setData(res))
       .catch(() => setData({ alerts: [], active_contacts: [], total_events: 0 }))
       .finally(() => setLoading(false))
-  }, [])
+  }, [isAthlete])
 
-  const alerts         = data?.alerts || []
-  const contacts       = data?.active_contacts || []
-  const totalEvents    = data?.total_events || 0
+  const alerts      = data?.alerts || []
+  const contacts    = data?.active_contacts || []
+  const totalEvents = data?.total_events || 0
 
   const { show: showOnboarding, dismiss: dismissOnboarding } = useCoachingOnboarding(contacts, loading ? undefined : totalEvents)
-  const urgent         = alerts.filter(a => ['sumiu', 'reclamou_de_dor'].includes(a.alert_type))
-  const attention      = alerts.filter(a => ['sem_feedback', 'perdeu_frequencia', 'reavaliacao_proxima'].includes(a.alert_type))
+  const urgent    = alerts.filter(a => ['sumiu', 'reclamou_de_dor'].includes(a.alert_type))
+  const attention = alerts.filter(a => ['sem_feedback', 'perdeu_frequencia', 'reavaliacao_proxima'].includes(a.alert_type))
 
-  // Map alerts por contact_id para enriquecer os cards
   const alertByContact = {}
   alerts.forEach(a => { alertByContact[a.contact_id] = a })
+
+  if (isAthlete) return <AthleteDashboard />
 
   if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
