@@ -75,7 +75,7 @@ module Meta
     end
 
     def update_adset(adset_id, attrs)
-      post_update("/#{adset_id}", attrs.slice(:name, :status, :daily_budget))
+      post_update("/#{adset_id}", attrs.slice(:name, :status, :daily_budget, :stop_time))
     end
 
     # ── Ad Creatives ──────────────────────────────────────────────────────────
