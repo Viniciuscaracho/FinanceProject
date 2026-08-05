@@ -151,6 +151,25 @@ module Meta
       })
     end
 
+    # Creative a partir de post de imagem/vídeo do Instagram com CTA de URL.
+    # ig_media_id: ID retornado por list_instagram_media.
+    # link: URL de destino obrigatória para campanhas OUTCOME_TRAFFIC.
+    def create_instagram_post_creative(name:, ig_media_id:, link:, cta_type: 'LEARN_MORE')
+      page_id = ENV.fetch('META_FB_PAGE_ID')
+      ig_id   = ENV.fetch('META_IG_ACCOUNT_ID', nil)
+      spec    = { page_id: page_id, link_data: {
+        link:           link,
+        call_to_action: { type: cta_type, value: { link: link } }
+      } }
+      spec[:instagram_actor_id] = ig_id if ig_id.present?
+
+      post("/#{@ad_account_id}/adcreatives", {
+        name:                       name,
+        source_instagram_media_id:  ig_media_id,
+        object_story_spec:          spec.to_json
+      })
+    end
+
     # ── Instagram ─────────────────────────────────────────────────────────────
 
     # Retorna o Instagram Business Account vinculado à página.
