@@ -1,11 +1,53 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Brain, AlertCircle, Loader2, Clock, Activity, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { Brain, AlertCircle, Loader2, Clock, Activity, TrendingUp, TrendingDown, Minus, Users, User } from 'lucide-react'
 import { apiService } from '@/lib/api'
 import { T } from '@/lib/tokens'
 import { useAuth } from '@/contexts/AuthContext'
 import { CoachingOnboarding, useCoachingOnboarding } from '@/components/coaching/CoachingOnboarding'
 import { AthleteDashboard } from './AthleteDashboard'
+
+const BRAND = '#4C60AA'
+const ADMIN_VIEW_KEY = 'orbi_admin_view'
+
+function AdminViewToggle({ viewMode, onSwitch, switching }) {
+  const tabs = [
+    { key: 'trainer', label: 'Treinador', icon: Users },
+    { key: 'athlete', label: 'Atleta',    icon: User  },
+  ]
+  return (
+    <div style={{
+      display: 'inline-flex', borderRadius: 8,
+      border: `1px solid ${T.border}`, overflow: 'hidden',
+      background: T.bg,
+    }}>
+      {tabs.map(({ key, label, icon: Icon }) => {
+        const active = viewMode === key
+        return (
+          <button
+            key={key}
+            onClick={() => !active && !switching && onSwitch(key)}
+            disabled={switching}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '6px 12px', border: 'none', cursor: active || switching ? 'default' : 'pointer',
+              fontFamily: 'inherit', fontSize: 12, fontWeight: active ? 700 : 500,
+              background: active ? BRAND : 'transparent',
+              color: active ? '#fff' : T.muted,
+              transition: 'all 140ms',
+            }}
+          >
+            {switching && key !== viewMode
+              ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+              : <Icon size={12} />
+            }
+            {label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 const WA_LINK = 'https://wa.me/5511989324130'
 const WA_NUMBER_DISPLAY = '(11) 98932-4130'
@@ -262,12 +304,37 @@ export function CoachingDashboard() {
   const { user }       = useAuth()
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
-  const isAthlete = !!user?.account?.self_contact_id
+  const [switching, setSwitching] = useState(false)
+
+  const isAdmin           = !!user?.admin
+  const hasAthleteSetup   = !!user?.account?.self_contact_id
+  const [viewMode, setViewMode] = useState(
+    () => isAdmin ? (localStorage.getItem(ADMIN_VIEW_KEY) || 'trainer') : (hasAthleteSetup ? 'athlete' : 'trainer')
+  )
+
+  const isAthlete = viewMode === 'athlete'
+
+  const handleAdminSwitch = async (target) => {
+    if (target === 'athlete' && !hasAthleteSetup) {
+      setSwitching(true)
+      try {
+        await apiService.setupAthlete()
+        localStorage.setItem(ADMIN_VIEW_KEY, 'athlete')
+        window.location.reload()
+      } catch {
+        setSwitching(false)
+      }
+      return
+    }
+    localStorage.setItem(ADMIN_VIEW_KEY, target)
+    setViewMode(target)
+  }
 
   // Dev reset: limpa localStorage e reseta conta, força reload para rebuscar user
   useEffect(() => {
     if (!searchParams.has('reset_onboarding')) return
     localStorage.removeItem('coaching_onboard_v1')
+    localStorage.removeItem(ADMIN_VIEW_KEY)
     if (import.meta.env.DEV) {
       apiService.request('/athlete/dev_reset', { method: 'POST' })
         .catch(() => {})
@@ -297,7 +364,16 @@ export function CoachingDashboard() {
   const alertByContact = {}
   alerts.forEach(a => { alertByContact[a.contact_id] = a })
 
-  if (isAthlete) return <AthleteDashboard />
+  if (isAthlete) return (
+    <>
+      {isAdmin && (
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: '12px 16px 0' }}>
+          <AdminViewToggle viewMode={viewMode} onSwitch={handleAdminSwitch} switching={switching} />
+        </div>
+      )}
+      <AthleteDashboard />
+    </>
+  )
 
   if (loading) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
@@ -317,6 +393,9 @@ export function CoachingDashboard() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
           <Brain size={20} style={{ color: '#4C60AA' }} />
           <h1 style={{ fontSize: 18, fontWeight: 700, color: T.text, margin: 0 }}>Coaching</h1>
+          {isAdmin && (
+            <AdminViewToggle viewMode={viewMode} onSwitch={handleAdminSwitch} switching={switching} />
+          )}
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           {[
