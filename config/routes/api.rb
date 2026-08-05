@@ -56,6 +56,13 @@ namespace :api, defaults: { format: 'json' } do
     post 'auth/accept_terms',            to: 'auth#accept_terms'
     post 'auth/dev_login', to: 'auth#dev_login' if Rails.env.development?
 
+    # Athlete self-service tier
+    scope :athlete, as: 'athlete' do
+      post 'setup',        to: 'athlete#setup'
+      get  'self_contact', to: 'athlete#self_contact'
+      post 'dev_reset',    to: 'athlete#dev_reset' if Rails.env.development?
+    end
+
     # Google Calendar integration
     scope :google_calendar do
       get    'status',      to: 'google_calendar#status'

@@ -2287,6 +2287,14 @@ class ApiService {
       body: JSON.stringify({ assessment: data }),
     })
   }
+
+  setupAthlete() {
+    return this.request('/athlete/setup', { method: 'POST' })
+  }
+
+  getSelfContact() {
+    return this.request('/athlete/self_contact')
+  }
 }
 
 export const apiService = new ApiService(); 
