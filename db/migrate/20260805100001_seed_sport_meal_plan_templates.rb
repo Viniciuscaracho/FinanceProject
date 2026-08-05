@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Adiciona 4 alimentos globais TACO + 5 templates esportivos a todas as contas existentes.
-class SeedSportMealPlanTemplates < ActiveRecord::Migration[7.1]
+class SeedSportMealPlanTemplates < ActiveRecord::Migration[7.0]
   def up
     new_foods = [
       { name: 'Macarrão integral cozido', kcal: 124, protein: 5.0,  carbs: 26.3, fat: 0.8,  fiber: 3.2 },
