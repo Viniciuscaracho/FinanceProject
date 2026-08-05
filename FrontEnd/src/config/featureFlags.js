@@ -25,6 +25,7 @@ export const COACHING_ONLY_ROUTES = [
   '/coaching',
   '/contacts',
   '/contacts/:id',
+  '/contacts/:contactId/meal-plans/:planId',
   '/settings',
   '/profile',
   '/admin',
