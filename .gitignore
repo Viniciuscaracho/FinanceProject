@@ -86,3 +86,6 @@ secrets.yml
 
 tests/.auth/
 tests/test-results/
+
+# Claude Code local settings (não versionar)
+.claude/settings.local.json
