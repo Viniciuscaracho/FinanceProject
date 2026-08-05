@@ -33,9 +33,9 @@ module Api
 
         if params[:search].present?
           search_term = "%#{params[:search]}%"
-          accounts = accounts.joins(:company).where(
-            "people.email ILIKE ? OR people.first_name ILIKE ? OR accounts.prefix_id ILIKE ?",
-            search_term, search_term, search_term
+          accounts = accounts.references(:company).where(
+            "people.email ILIKE ? OR people.first_name ILIKE ?",
+            search_term, search_term
           )
         end
 
@@ -130,9 +130,9 @@ module Api
 
         if params[:search].present?
           search_term = "%#{params[:search]}%"
-          subscriptions = subscriptions.joins(account: :company).where(
-            "people.email ILIKE ? OR people.first_name ILIKE ? OR accounts.prefix_id ILIKE ?",
-            search_term, search_term, search_term
+          subscriptions = subscriptions.references(account: :company).where(
+            "people.email ILIKE ? OR people.first_name ILIKE ?",
+            search_term, search_term
           )
         end
 
