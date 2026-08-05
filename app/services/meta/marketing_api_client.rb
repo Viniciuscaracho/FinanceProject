@@ -23,7 +23,9 @@ module Meta
 
     def list_campaigns
       get("/#{@ad_account_id}/campaigns",
-          fields: 'id,name,status,objective,daily_budget,created_time')
+          fields:           'id,name,status,effective_status,objective,daily_budget,created_time',
+          effective_status: %w[ACTIVE PAUSED WITH_ISSUES CAMPAIGN_PAUSED
+                               PENDING_REVIEW DISAPPROVED ARCHIVED].to_json)
     end
 
     def get_campaign(campaign_id)
@@ -66,6 +68,7 @@ module Meta
         daily_budget:      daily_budget.to_s,
         billing_event:     'IMPRESSIONS',
         optimization_goal: 'LINK_CLICKS',
+        bid_strategy:      'LOWEST_COST_WITHOUT_CAP',
         targeting:         normalized.to_json,
         status:            status
       })
@@ -104,6 +107,61 @@ module Meta
     # Upload de imagem — retorna image_hash para usar no creative.
     def upload_image(file_path:)
       post("/#{@ad_account_id}/adimages", { filename: File.basename(file_path) }, file_path: file_path)
+    end
+
+    # Upload de vídeo — retorna { video_id, title } para usar no creative.
+    # Vídeos até ~1 GB: multipart simples via /advideos.
+    def upload_video(file_path:, title: nil)
+      body = { filename: File.basename(file_path) }
+      body[:title] = title if title.present?
+      post("/#{@ad_account_id}/advideos", body, file_path: file_path, file_field: :source)
+    end
+
+    # Creative de vídeo (Reels, Feed, Stories).
+    # video_id: retornado por upload_video.
+    # instagram_actor_id: ID da conta IG vinculada (opcional — se presente, publica pelo IG).
+    def create_video_creative(name:, page_id:, video_id:, message:, link:,
+                              cta_type: 'LEARN_MORE', instagram_actor_id: nil, image_hash: nil)
+      video_data = {
+        video_id:       video_id,
+        message:        message,
+        call_to_action: {
+          type:  cta_type,
+          value: { link: link }
+        }
+      }
+      video_data[:image_hash] = image_hash if image_hash.present?
+
+      story_spec = { page_id: page_id, video_data: video_data }
+      story_spec[:instagram_actor_id] = instagram_actor_id if instagram_actor_id.present?
+
+      post("/#{@ad_account_id}/adcreatives", {
+        name:              name,
+        object_story_spec: story_spec.to_json
+      })
+    end
+
+    # Creative a partir de post orgânico existente do Instagram.
+    # object_story_id: "{page_id}_{ig_media_id}" — obtido via list_instagram_media.
+    def create_post_creative(name:, object_story_id:, instagram_actor_id:)
+      post("/#{@ad_account_id}/adcreatives", {
+        name:                name,
+        instagram_actor_id:  instagram_actor_id,
+        object_story_id:     object_story_id
+      })
+    end
+
+    # ── Instagram ─────────────────────────────────────────────────────────────
+
+    # Retorna o Instagram Business Account vinculado à página.
+    def get_instagram_account(page_id)
+      get("/#{page_id}", fields: 'instagram_business_account')
+    end
+
+    # Lista posts de mídia da conta IG. Retorna id, caption, media_type, timestamp.
+    def list_instagram_media(ig_account_id)
+      get("/#{ig_account_id}/media",
+          fields: 'id,caption,media_type,media_url,thumbnail_url,timestamp,permalink')
     end
 
     # ── Ads ───────────────────────────────────────────────────────────────────
@@ -169,15 +227,15 @@ module Meta
       handle_response(response, "GET #{path}")
     end
 
-    def post(path, body = {}, file_path: nil)
+    def post(path, body = {}, file_path: nil, file_field: :source)
       opts = {
         query:   { access_token: @access_token },
         body:    body,
-        timeout: 30
+        timeout: 120
       }
       if file_path
         opts[:multipart] = true
-        opts[:body][:source] = File.new(file_path)
+        opts[:body][file_field] = File.new(file_path)
       end
 
       response = HTTParty.post("#{GRAPH_BASE}#{path}", opts)

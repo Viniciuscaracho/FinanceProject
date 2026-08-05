@@ -1510,6 +1510,37 @@ class ApiService {
     return await this.request(`/admin/referral_codes/${id}`, { method: 'DELETE' });
   }
 
+  // Meta Ads (Marketing API)
+  async getMetaAdsCampaigns() {
+    return await this.request('/admin/meta_ads/campaigns');
+  }
+
+  async updateMetaAdsCampaign(id, attrs) {
+    return await this.request(`/admin/meta_ads/campaigns/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(attrs),
+    });
+  }
+
+  async getMetaAdsAccountInsights(datePreset = 'last_30d') {
+    return await this.request(`/admin/meta_ads/insights/account?date_preset=${datePreset}`);
+  }
+
+  async getMetaAdsCampaignInsights(campaignId, datePreset = 'last_30d') {
+    return await this.request(`/admin/meta_ads/insights/campaign/${campaignId}?date_preset=${datePreset}`);
+  }
+
+  async getMetaAdsAdsets(campaignId) {
+    return await this.request(`/admin/meta_ads/campaigns/${campaignId}/adsets`);
+  }
+
+  async updateMetaAdsAdset(id, attrs) {
+    return await this.request(`/admin/meta_ads/adsets/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(attrs),
+    });
+  }
+
   // Account Settings (somente para admins da conta)
   async getAccountSettings() {
     return await this.request('/account_settings');

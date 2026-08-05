@@ -34,12 +34,18 @@ import {
   Edit3,
   Gift,
   Copy,
-  Tag
+  Tag,
+  BarChart2,
+  MousePointerClick,
+  Activity,
+  PauseCircle,
+  PlayCircle,
+  ChevronRight
 } from 'lucide-react'
 import { apiService } from '../lib/api'
 import { toast } from 'sonner'
 
-const TABS = ['overview', 'tokens', 'accounts', 'subscriptions', 'users', 'webhooks', 'announcements', 'referrals']
+const TABS = ['overview', 'tokens', 'accounts', 'subscriptions', 'users', 'webhooks', 'announcements', 'referrals', 'meta_ads']
 
 const TAB_LABELS = {
   overview: 'Visão Geral',
@@ -49,7 +55,8 @@ const TAB_LABELS = {
   users: 'Usuários',
   webhooks: 'Webhooks',
   announcements: 'Comunicados',
-  referrals: 'Indicações'
+  referrals: 'Indicações',
+  meta_ads: 'Anúncios Meta'
 }
 
 const STATUS_COLORS = {
@@ -1570,6 +1577,287 @@ function TokensTab() {
   )
 }
 
+const DATE_PRESETS = [
+  { value: 'last_7d',  label: '7 dias' },
+  { value: 'last_14d', label: '14 dias' },
+  { value: 'last_30d', label: '30 dias' },
+  { value: 'last_90d', label: '90 dias' },
+]
+
+function fmtBRL(cents) {
+  if (cents == null) return '—'
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(cents) / 100)
+}
+
+function fmtNum(n) {
+  if (n == null) return '—'
+  return Number(n).toLocaleString('pt-BR')
+}
+
+function fmtPct(n) {
+  if (n == null) return '—'
+  return `${Number(n).toFixed(2)}%`
+}
+
+function CampaignStatusBadge({ status, effectiveStatus }) {
+  const display = effectiveStatus || status
+  if (display === 'ACTIVE') return <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full"><Activity className="h-3 w-3" />Ativa</span>
+  if (display === 'PAUSED') return <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-700 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded-full"><PauseCircle className="h-3 w-3" />Pausada</span>
+  if (display === 'WITH_ISSUES') return <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full"><Activity className="h-3 w-3" />Com problemas</span>
+  if (display === 'PENDING_REVIEW') return <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full"><Activity className="h-3 w-3" />Em revisão</span>
+  if (display === 'DISAPPROVED') return <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full"><PauseCircle className="h-3 w-3" />Reprovada</span>
+  if (display === 'CAMPAIGN_PAUSED') return <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-700 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 px-2 py-0.5 rounded-full"><PauseCircle className="h-3 w-3" />Pausada (campanha)</span>
+  return <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">{display}</span>
+}
+
+function MetaInsightCards({ insights }) {
+  const d = insights?.[0] || {}
+  const spend = d.spend ? Number(d.spend) * 100 : null
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-2">
+          <DollarSign className="h-4 w-4 text-blue-500" />
+          <span className="text-xs">Gasto</span>
+        </div>
+        <p className="text-xl font-bold">{spend != null ? fmtBRL(spend) : '—'}</p>
+      </div>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-2">
+          <BarChart2 className="h-4 w-4 text-purple-500" />
+          <span className="text-xs">Impressões</span>
+        </div>
+        <p className="text-xl font-bold">{fmtNum(d.impressions)}</p>
+      </div>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-2">
+          <MousePointerClick className="h-4 w-4 text-green-500" />
+          <span className="text-xs">Cliques</span>
+        </div>
+        <p className="text-xl font-bold">{fmtNum(d.clicks)}</p>
+      </div>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-2">
+          <TrendingUp className="h-4 w-4 text-orange-500" />
+          <span className="text-xs">CTR</span>
+        </div>
+        <p className="text-xl font-bold">{fmtPct(d.ctr)}</p>
+      </div>
+    </div>
+  )
+}
+
+function MetaAdsTab() {
+  const [datePreset, setDatePreset] = useState('last_30d')
+  const [insights, setInsights] = useState(null)
+  const [campaigns, setCampaigns] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [toggling, setToggling] = useState({})
+  const [expandedCampaign, setExpandedCampaign] = useState(null)
+  const [adsets, setAdsets] = useState({})
+
+  const load = async (preset = datePreset) => {
+    setLoading(true)
+    try {
+      const [insRes, campRes] = await Promise.all([
+        apiService.getMetaAdsAccountInsights(preset),
+        apiService.getMetaAdsCampaigns(),
+      ])
+      setInsights(insRes?.data || insRes)
+      setCampaigns(campRes?.data?.data || [])
+    } catch {
+      toast.error('Não foi possível carregar dados de anúncios')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleDateChange = (preset) => {
+    setDatePreset(preset)
+    load(preset)
+  }
+
+  const toggleCampaign = async (campaign) => {
+    const newStatus = campaign.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE'
+    setToggling(t => ({ ...t, [campaign.id]: true }))
+    try {
+      await apiService.updateMetaAdsCampaign(campaign.id, { status: newStatus })
+      setCampaigns(cs => cs.map(c => c.id === campaign.id ? { ...c, status: newStatus } : c))
+      toast.success(`Campanha ${newStatus === 'ACTIVE' ? 'ativada' : 'pausada'}`)
+    } catch {
+      toast.error('Falha ao atualizar campanha')
+    } finally {
+      setToggling(t => ({ ...t, [campaign.id]: false }))
+    }
+  }
+
+  const loadAdsets = async (campaignId) => {
+    if (adsets[campaignId]) {
+      setExpandedCampaign(expandedCampaign === campaignId ? null : campaignId)
+      return
+    }
+    try {
+      const res = await apiService.getMetaAdsAdsets(campaignId)
+      setAdsets(a => ({ ...a, [campaignId]: res?.data?.data || [] }))
+      setExpandedCampaign(campaignId)
+    } catch {
+      toast.error('Não foi possível carregar conjuntos de anúncios')
+    }
+  }
+
+  const toggleAdset = async (adset) => {
+    const newStatus = adset.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE'
+    setToggling(t => ({ ...t, [`adset_${adset.id}`]: true }))
+    try {
+      await apiService.updateMetaAdsAdset(adset.id, { status: newStatus })
+      setAdsets(prev => {
+        const updated = { ...prev }
+        Object.keys(updated).forEach(cid => {
+          updated[cid] = updated[cid].map(a => a.id === adset.id ? { ...a, status: newStatus } : a)
+        })
+        return updated
+      })
+      toast.success(`Conjunto ${newStatus === 'ACTIVE' ? 'ativado' : 'pausado'}`)
+    } catch {
+      toast.error('Falha ao atualizar conjunto de anúncios')
+    } finally {
+      setToggling(t => ({ ...t, [`adset_${adset.id}`]: false }))
+    }
+  }
+
+  const insightData = insights?.data || (Array.isArray(insights) ? insights : null)
+
+  return (
+    <div className="space-y-6">
+      {/* Header com seletor de período */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <BarChart2 className="h-5 w-5 text-blue-500" />
+            Gerenciador de Anúncios
+          </h2>
+          <p className="text-sm text-gray-500 mt-0.5">Conta: act_1083020410824270 · pizzariatorres20</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            {DATE_PRESETS.map(p => (
+              <button
+                key={p.value}
+                onClick={() => handleDateChange(p.value)}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  datePreset === p.value
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => load()} className="flex items-center gap-1">
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+      </div>
+
+      {/* Métricas da conta */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12 text-gray-400">
+          <Loader2 className="h-6 w-6 animate-spin mr-2" /> Carregando...
+        </div>
+      ) : (
+        <>
+          <MetaInsightCards insights={insightData} />
+
+          {/* Lista de campanhas */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300">Campanhas</h3>
+            {campaigns.length === 0 ? (
+              <div className="text-center py-10 text-gray-400 text-sm border border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
+                Nenhuma campanha encontrada na conta
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {campaigns.map(campaign => (
+                  <div key={campaign.id} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center gap-3">
+                      <button
+                        onClick={() => loadAdsets(campaign.id)}
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                      >
+                        <ChevronRight className={`h-4 w-4 transition-transform ${expandedCampaign === campaign.id ? 'rotate-90' : ''}`} />
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{campaign.name}</p>
+                        <p className="text-xs text-gray-400">ID: {campaign.id}</p>
+                      </div>
+                      <CampaignStatusBadge status={campaign.status} effectiveStatus={campaign.effective_status} />
+                      {campaign.daily_budget && (
+                        <span className="text-xs text-gray-500 hidden sm:block">
+                          {fmtBRL(Number(campaign.daily_budget))} /dia
+                        </span>
+                      )}
+                      <button
+                        onClick={() => toggleCampaign(campaign)}
+                        disabled={toggling[campaign.id]}
+                        className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                        title={campaign.status === 'ACTIVE' ? 'Pausar' : 'Ativar'}
+                      >
+                        {toggling[campaign.id]
+                          ? <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                          : campaign.status === 'ACTIVE'
+                            ? <PauseCircle className="h-4 w-4 text-yellow-500" />
+                            : <PlayCircle className="h-4 w-4 text-green-500" />
+                        }
+                      </button>
+                    </div>
+
+                    {/* AdSets expandidos */}
+                    {expandedCampaign === campaign.id && (
+                      <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40">
+                        {(adsets[campaign.id] || []).length === 0 ? (
+                          <p className="text-xs text-gray-400 px-8 py-3">Nenhum conjunto de anúncios</p>
+                        ) : (
+                          adsets[campaign.id].map(adset => (
+                            <div key={adset.id} className="flex items-center gap-3 px-8 py-2.5 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium truncate">{adset.name}</p>
+                                {adset.daily_budget && (
+                                  <p className="text-xs text-gray-400">{fmtBRL(Number(adset.daily_budget))} /dia</p>
+                                )}
+                              </div>
+                              <CampaignStatusBadge status={adset.status} effectiveStatus={adset.effective_status} />
+                              <button
+                                onClick={() => toggleAdset(adset)}
+                                disabled={toggling[`adset_${adset.id}`]}
+                                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
+                                title={adset.status === 'ACTIVE' ? 'Pausar' : 'Ativar'}
+                              >
+                                {toggling[`adset_${adset.id}`]
+                                  ? <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
+                                  : adset.status === 'ACTIVE'
+                                    ? <PauseCircle className="h-3.5 w-3.5 text-yellow-500" />
+                                    : <PlayCircle className="h-3.5 w-3.5 text-green-500" />
+                                }
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export function Admin() {
   const [activeTab, setActiveTab] = useState('overview')
   const [dashboard, setDashboard] = useState(null)
@@ -1634,6 +1922,7 @@ export function Admin() {
       {activeTab === 'webhooks' && <WebhooksTab />}
       {activeTab === 'announcements' && <AnnouncementsTab />}
       {activeTab === 'referrals' && <ReferralCodesTab />}
+      {activeTab === 'meta_ads' && <MetaAdsTab />}
     </div>
   )
 }
