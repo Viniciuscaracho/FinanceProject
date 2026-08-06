@@ -306,7 +306,7 @@ export function CoachingDashboard() {
   const [loading, setLoading] = useState(true)
   const [switching, setSwitching] = useState(false)
 
-  const isAdmin           = !!user?.admin
+  const isAdmin           = !!(user?.admin || user?.account_owner || user?.account_admin)
   const hasAthleteSetup   = !!user?.account?.self_contact_id
   const [viewMode, setViewMode] = useState(
     () => isAdmin ? (localStorage.getItem(ADMIN_VIEW_KEY) || 'trainer') : (hasAthleteSetup ? 'athlete' : 'trainer')
