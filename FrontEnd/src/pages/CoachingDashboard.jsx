@@ -308,9 +308,20 @@ export function CoachingDashboard() {
 
   const isAdmin           = !!(user?.admin || user?.account_owner || user?.account_admin)
   const hasAthleteSetup   = !!user?.account?.self_contact_id
-  const [viewMode, setViewMode] = useState(
-    () => isAdmin ? (localStorage.getItem(ADMIN_VIEW_KEY) || 'trainer') : (hasAthleteSetup ? 'athlete' : 'trainer')
-  )
+  const [viewMode, setViewMode] = useState('trainer')
+
+  // Quando o user carrega, aplica a view correta baseada em admin/localStorage
+  useEffect(() => {
+    if (!user) return
+    const admin = !!(user.admin || user.account_owner || user.account_admin)
+    console.log('[Orbi] user loaded — admin:', user.admin, 'account_owner:', user.account_owner, 'account_admin:', user.account_admin, 'resolved isAdmin:', admin, 'self_contact_id:', user.account?.self_contact_id)
+    if (admin) {
+      setViewMode(localStorage.getItem(ADMIN_VIEW_KEY) || 'trainer')
+    } else if (user.account?.self_contact_id) {
+      setViewMode('athlete')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   const isAthlete = viewMode === 'athlete'
 
