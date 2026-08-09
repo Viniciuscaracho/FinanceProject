@@ -101,10 +101,16 @@ module Api
       end
 
       def google_oauth_url
-        redirect_uri = "#{ENV.fetch('API_BASE_URL', request.base_url)}/api/v1/auth/google_oauth_callback"
+        cid = google_client_id
+        if cid.blank?
+          Rails.logger.error "[GoogleOAuth] GOOGLE_CLIENT_ID não configurado"
+          return render json: { error: 'Autenticação Google não configurada no servidor' }, status: :service_unavailable
+        end
+
+        redirect_uri = google_callback_uri
         render json: {
           auth_url: "https://accounts.google.com/o/oauth2/v2/auth?" + URI.encode_www_form(
-            client_id:     ENV.fetch('GOOGLE_CLIENT_ID', ''),
+            client_id:     cid,
             redirect_uri:  redirect_uri,
             scope:         'openid email profile',
             response_type: 'code',
@@ -318,27 +324,52 @@ module Api
         Base64.strict_encode64({ user_id: user.id, email: user.email, exp: 24.hours.from_now.to_i }.to_json)
       end
 
-      def exchange_code_for_token(code)
-        redirect_uri = "#{ENV.fetch('API_BASE_URL', request.base_url)}/api/v1/auth/google_oauth_callback"
+      # Lê o Client ID do Google: env var tem prioridade, credentials como fallback.
+      # dotenv-rails só carrega .env em dev/test, logo em prod a env var precisa ser
+      # setada explicitamente no servidor (EasyPanel / Docker env) OU nas credentials.
+      def google_client_id
+        ENV['GOOGLE_CLIENT_ID'].presence ||
+          Rails.application.credentials.dig(:google, :client_id)
+      end
 
+      def google_client_secret
+        ENV['GOOGLE_CLIENT_SECRET'].presence ||
+          Rails.application.credentials.dig(:google, :client_secret)
+      end
+
+      def google_callback_uri
+        "#{ENV.fetch('API_BASE_URL', request.base_url)}/api/v1/auth/google_oauth_callback"
+      end
+
+      def exchange_code_for_token(code)
         uri = URI('https://oauth2.googleapis.com/token')
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true
+        http.open_timeout = 10
+        http.read_timeout = 10
 
         http_request = Net::HTTP::Post.new(uri)
         http_request['Content-Type'] = 'application/x-www-form-urlencoded'
         http_request.body = URI.encode_www_form({
-          client_id:     ENV['GOOGLE_CLIENT_ID'],
-          client_secret: ENV['GOOGLE_CLIENT_SECRET'],
+          client_id:     google_client_id,
+          client_secret: google_client_secret,
           code:          code,
           grant_type:    'authorization_code',
-          redirect_uri:  redirect_uri
+          redirect_uri:  google_callback_uri
         })
 
         response = http.request(http_request)
         data = JSON.parse(response.body)
 
-        response.code == '200' ? { access_token: data['access_token'] } : { error: data['error_description'] || 'Erro ao trocar código por token' }
+        if response.code == '200'
+          { access_token: data['access_token'] }
+        else
+          Rails.logger.error "[GoogleOAuth] Token exchange HTTP #{response.code}: #{data.inspect}"
+          { error: data['error_description'] || data['error'] || 'Erro ao trocar código por token' }
+        end
+      rescue Net::OpenTimeout, Net::ReadTimeout => e
+        Rails.logger.error "[GoogleOAuth] Timeout connecting to Google: #{e.message}"
+        { error: "Timeout ao conectar com Google" }
       rescue => e
         { error: "Erro na comunicação com Google: #{e.message}" }
       end
