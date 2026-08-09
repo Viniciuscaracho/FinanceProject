@@ -105,6 +105,9 @@ class User < ApplicationRecord
 
   # Callbacks
   after_create :create_default_account_if_needed
+  after_create_commit :notify_admin_of_signup
+
+
 
   scope :confirmeds, -> { where.not(confirmed_at: nil) }
 
@@ -306,6 +309,12 @@ class User < ApplicationRecord
 
   def set_preferred_language
     self.preferred_language = :'pt-BR' if preferred_language.blank?
+  end
+
+  def notify_admin_of_signup
+    AdminNotificationMailer.new_user_signup(self).deliver_later
+  rescue => e
+    Rails.logger.error "[AdminNotification] Falha ao enviar alerta de cadastro: #{e.message}"
   end
 
   def create_default_account_if_needed

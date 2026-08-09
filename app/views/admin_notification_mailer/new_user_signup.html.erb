@@ -1,0 +1,22 @@
+<p style="color:#374151;font-size:15px;margin:0 0 20px">
+  Novo usuário cadastrado na Orbi.
+</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:14px;color:#374151">
+  <tr>
+    <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;font-weight:600;width:120px">Nome</td>
+    <td style="padding:10px 0;border-bottom:1px solid #f3f4f6"><%= @name %></td>
+  </tr>
+  <tr>
+    <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;font-weight:600">Email</td>
+    <td style="padding:10px 0;border-bottom:1px solid #f3f4f6"><%= @email %></td>
+  </tr>
+  <tr>
+    <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;font-weight:600">Login via</td>
+    <td style="padding:10px 0;border-bottom:1px solid #f3f4f6"><%= @provider %></td>
+  </tr>
+  <tr>
+    <td style="padding:10px 0;font-weight:600">Cadastrado em</td>
+    <td style="padding:10px 0"><%= @signup_at %></td>
+  </tr>
+</table>
