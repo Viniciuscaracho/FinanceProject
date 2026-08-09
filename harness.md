@@ -101,23 +101,53 @@ Caminho: Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 
 
 #### Diagnóstico rápido (checklist)
 
-```bash
-# 1. O controller vai retornar 503 se client_id não estiver configurado:
-curl https://backend.orbinutri.com.br/api/v1/oauth/google_oauth_url
-
-# Resposta OK:  { "auth_url": "https://accounts.google.com/o/oauth2/v2/auth?client_id=840..." }
-# Resposta ERRO: { "error": "Autenticação Google não configurada no servidor" } (HTTP 503)
-
-# 2. Se o callback redirecionar para /login?google_error=1&detail=..., o detail diz a causa:
-#    - "token_exchange: The OAuth client was not found." → client_id ou secret errado
-#    - "token_exchange: redirect_uri_mismatch"           → URI não cadastrada no Console
-#    - "no_code"                                         → Google rejeitou antes do callback
+**1. Endpoint de health check (abrir no browser ou curl)**
 ```
+GET https://backend.orbinutri.com.br/api/v1/auth/google_auth_health
+```
+Retorna JSON com:
+- `ok: true/false` — se client_id está configurado
+- `callback_uri` — URI exata que deve estar no Google Console
+- `frontend_url` — para onde o backend redireciona pós-auth
+- `request_ssl`, `x_forwarded_proto` — diagnóstico do Cloudflare
+
+**2. Se `ok: false`** → credentials ou env var faltando → rode `bin/fix_google_credentials`
+
+**3. Se `ok: true` mas login falha em "iniciar login com Google"**
+```bash
+curl https://backend.orbinutri.com.br/api/v1/oauth/google_oauth_url
+# OK: { "auth_url": "https://accounts.google.com/o/oauth2/v2/auth?client_id=840..." }
+# ERRO: { "error": "Autenticação Google não configurada no servidor" } (HTTP 503)
+```
+
+**4. Se o Google mostra erro "redirect_uri_mismatch"**
+→ A URI `https://backend.orbinutri.com.br/api/v1/auth/google_oauth_callback` não está cadastrada no Google Console.
+→ Google Console → APIs & Services → Credentials → OAuth 2.0 Client IDs → Authorized redirect URIs
+
+**5. Se callback redireciona para `/login?google_error=1&detail=...`**
+- `token_exchange: The OAuth client was not found.` → client_id ou secret errado
+- `token_exchange: redirect_uri_mismatch` → URI não cadastrada no Console
+- `no_code` → Google rejeitou antes do callback (scope, consent, etc.)
+
+**6. Verificar SSL/Cloudflare no health check**
+- `request_ssl: false` + `x_forwarded_proto: null` → Cloudflare não está passando `X-Forwarded-Proto`
+  → Adicionar no EasyPanel/Cloudflare: header `X-Forwarded-Proto: https`
+- `frontend_url: "http://localhost:5173"` → FRONTEND_URL não configurado em produção
+  → Rode novamente `bin/fix_google_credentials`
 
 #### Regra permanente para vars novas
 
 **Toda var de ambiente usada em produção DEVE estar em pelo menos um de:**
 1. EasyPanel → Env Variables do serviço, OU
-2. `config/credentials/staging.yml.enc` (acessada via `Rails.application.credentials.dig(...)`)
+2. `config/credentials/staging.yml.enc` (via `Rails.application.credentials.dig(...)`)
 
 `.env` sozinho → só funciona em desenvolvimento local.
+
+Para adicionar novas vars às credentials:
+```bash
+# Edite .env com o novo valor, depois:
+RAILS_ENV=staging bundle exec ruby bin/fix_google_credentials
+git add config/credentials/staging.yml.enc
+git commit -m "chore: atualiza credentials staging"
+git push origin stage
+```

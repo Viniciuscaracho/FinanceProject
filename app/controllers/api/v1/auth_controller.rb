@@ -3,9 +3,14 @@
 module Api
   module V1
     class AuthController < Api::V1::ApplicationController
-      skip_before_action :authenticate_user!, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register, :dev_login]
-      skip_before_action :set_current_account, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register, :dev_login]
-      skip_before_action :create_or_refresh_session, only: [:login, :login_simple, :google_oauth_url, :google_oauth_callback, :firebase_login, :supabase_login, :register, :dev_login]
+      PUBLIC_ACTIONS = %i[
+        login login_simple google_oauth_url google_oauth_callback
+        firebase_login supabase_login register dev_login google_auth_health
+      ].freeze
+
+      skip_before_action :authenticate_user!,       only: PUBLIC_ACTIONS
+      skip_before_action :set_current_account,      only: PUBLIC_ACTIONS
+      skip_before_action :create_or_refresh_session, only: PUBLIC_ACTIONS
       before_action :set_user, only: [:me, :logout, :accept_terms]
       before_action :force_json_format
 
@@ -168,6 +173,31 @@ module Api
           accepted_privacy_at: Time.current
         )
         render json: { success: true, user: user_data(@user) }
+      end
+
+      # Diagnóstico público do Google Auth — sem credenciais no response.
+      # GET /api/v1/auth/google_auth_health
+      def google_auth_health
+        cid         = google_client_id
+        callback    = google_callback_uri
+        fe_url      = frontend_url
+        ssl_ok      = request.ssl?
+        proto_hdr   = request.headers['X-Forwarded-Proto']
+        rails_env   = Rails.env
+
+        render json: {
+          ok:                     cid.present?,
+          rails_env:              rails_env,
+          client_id_configured:  cid.present?,
+          callback_uri:          callback,
+          frontend_url:          fe_url,
+          request_ssl:           ssl_ok,
+          x_forwarded_proto:     proto_hdr,
+          request_base_url:      request.base_url,
+          registered_uri_expected: callback,
+          note: cid.present? ? "Configuração OK. Verifique se callback_uri está cadastrada no Google Console." :
+                               "ERRO: GOOGLE_CLIENT_ID não configurado (env var nem credentials)."
+        }
       end
 
       def dev_login

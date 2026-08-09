@@ -51,8 +51,9 @@ namespace :api, defaults: { format: 'json' } do
     post 'auth/logout', to: 'auth#logout'
     get 'auth/me', to: 'auth#me'
     post 'auth/register', to: 'auth#register'
-    get  'oauth/google_oauth_url',       to: 'auth#google_oauth_url'
+    get  'oauth/google_oauth_url',        to: 'auth#google_oauth_url'
     get  'auth/google_oauth_callback',   to: 'auth#google_oauth_callback'
+    get  'auth/google_auth_health',      to: 'auth#google_auth_health'
     post 'auth/accept_terms',            to: 'auth#accept_terms'
     post 'auth/dev_login', to: 'auth#dev_login' if Rails.env.development?
 
