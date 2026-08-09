@@ -338,7 +338,10 @@ module Api
       end
 
       def google_callback_uri
-        "#{ENV.fetch('API_BASE_URL', request.base_url)}/api/v1/auth/google_oauth_callback"
+        base = ENV['API_BASE_URL'].presence ||
+               Rails.application.credentials.dig(:api_base_url) ||
+               request.base_url
+        "#{base}/api/v1/auth/google_oauth_callback"
       end
 
       def exchange_code_for_token(code)
@@ -375,7 +378,9 @@ module Api
       end
 
       def frontend_url
-        ENV.fetch('FRONTEND_URL', 'http://localhost:5173')
+        ENV['FRONTEND_URL'].presence ||
+          Rails.application.credentials.dig(:frontend_url) ||
+          'http://localhost:5173'
       end
 
       def get_google_user_info(access_token)
