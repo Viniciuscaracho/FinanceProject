@@ -29,11 +29,12 @@ const DISPLAY = { fontFamily: "'Space Grotesk', system-ui, sans-serif" }
 
 /* ─── Dados de demo ──────────────────────────────────────── */
 
-// Transcrição bruta do áudio do treinador (o que ele fala depois do treino)
+// Transcrição bruta do áudio (registro pessoal após o treino)
 const RAW_NOTE =
-  'Marcos treinou pesado hoje, subiu a carga no agachamento pra 100 quilos. ' +
-  'Dormiu mal essa semana, umas 5 horas por noite, tá reclamando de cansaço. ' +
-  'Reclamou de um leve incômodo no joelho direito. Semana que vem baixa o volume e marca reavaliação.'
+  'Treinei perna pesado hoje, subi o agachamento pra 100 quilos. ' +
+  'Tô dormindo mal essa semana, umas 5 horas por noite, sinto bastante cansaço. ' +
+  'Tive um leve incômodo no joelho direito nos agachamentos. ' +
+  'Semana que vem vou baixar o volume e marcar uma avaliação.'
 
 // Como a IA estrutura a nota
 const STRUCTURED = [
@@ -46,7 +47,7 @@ const STRUCTURED = [
 /* ─── Hero: registro por voz → IA estrutura ──────────────── */
 function VoiceToStructureUI() {
   // 0 = idle, 1 = gravando, 2 = transcrevendo, 3 = estruturando, 4 = pronto
-  const [stage, setStage] = useState(0)
+  const [stage, setStage] = useState(4)
   const timers = useRef([])
 
   const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = [] }
@@ -68,8 +69,8 @@ function VoiceToStructureUI() {
           <Brain size={16} color="#fff" />
         </div>
         <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: 0, ...DISPLAY }}>Orbi Coach</p>
-          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', margin: 0 }}>número único da plataforma · só você fala</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: 0, ...DISPLAY }}>Orbi</p>
+          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', margin: 0 }}>seu assistente de treino e nutrição</p>
         </div>
         <span style={{ fontSize: 10, fontWeight: 600, color: '#fff', background: 'rgba(255,255,255,0.15)', borderRadius: 20, padding: '3px 9px' }}>online</span>
       </div>
@@ -111,8 +112,8 @@ function VoiceToStructureUI() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             style={{ alignSelf: 'flex-start', width: '100%', background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden', boxShadow: '0 6px 20px rgba(14,16,32,0.06)' }}>
             <div style={{ padding: '10px 14px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', background: T.light, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: T.brand }}>M</div>
-              <p style={{ fontSize: 12, fontWeight: 700, color: T.text, margin: 0, flex: 1, ...DISPLAY }}>Marcos Lima · timeline</p>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', background: T.light, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Dumbbell size={12} color={T.brand} /></div>
+              <p style={{ fontSize: 12, fontWeight: 700, color: T.text, margin: 0, flex: 1, ...DISPLAY }}>Meu treino · hoje</p>
               <span style={{ fontSize: 10, fontWeight: 600, color: '#10B981', background: '#ECFDF5', border: '1px solid #A7D4B6', borderRadius: 6, padding: '2px 8px' }}>salvo</span>
             </div>
             <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -145,7 +146,7 @@ function VoiceToStructureUI() {
           {stage === 1 && <><span className="oc-pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', display: 'block' }} /> Gravando…</>}
           {stage === 2 && <>Transcrevendo…</>}
           {stage === 3 && <>Estruturando…</>}
-          {stage === 4 && <><ArrowRight size={15} /> Ver de novo</>}
+          {stage === 4 && <><ArrowRight size={15} /> Ver como funciona</>}
         </button>
       </div>
 
@@ -324,9 +325,9 @@ function AnimatedSection({ children, className, delay = 0, style }) {
 
 /* ─── Como funciona (3 passos) ───────────────────────────── */
 const STEPS = [
-  { icon: Mic,   title: 'Você fala', text: 'Depois do treino, manda um áudio de segundos pro número único da Orbi. Só você fala — o atleta nunca recebe nada.' },
-  { icon: Brain, title: 'A IA estrutura', text: 'Sono, carga, observação e próxima ação são extraídos e salvos na timeline do atleta certo. Sem digitar, sem planilha.' },
-  { icon: Sparkles, title: 'Você chega pronto', text: 'Resumo pré-atendimento na hora da sessão e alertas de quem sumiu ou precisa de atenção — sem garimpar conversa.' },
+  { icon: Mic,      title: 'Você fala', text: 'Depois do treino, do check-in de sono ou da refeição, manda um áudio de segundos. A Orbi ouve — você nunca perde nada.' },
+  { icon: Brain,    title: 'A IA organiza', text: 'Sono, carga, nutrição e observações são separados e salvos no seu histórico. Sem digitar, sem planilha, sem perder no chat.' },
+  { icon: Sparkles, title: 'Você evolui', text: 'Seu histórico completo sempre disponível — o que melhorou, o que mudou, o que precisa de atenção. Tudo numa linha do tempo só sua.' },
 ]
 
 /* ─── Main ───────────────────────────────────────────────── */
@@ -342,11 +343,11 @@ export function LandingPageCoaching() {
   return (
     <div style={{ ...DISPLAY }}>
       <Helmet>
-        <title>Orbi Coach — o registro de voz que vira memória do atleta</title>
-        <meta name="description" content="Treinadores: mande um áudio depois do treino e a IA estrutura sono, carga e observações na timeline de cada atleta. Resumo pré-atendimento pronto e alertas de quem precisa de você." />
+        <title>Orbi Coach — chega de perder suas informações de treino e nutrição no ChatGPT</title>
+        <meta name="description" content="Pare de perder informações de treino e nutrição no ChatGPT. A Orbi organiza tudo — sono, carga, queixas, dieta — por pessoa, para sempre. 14 dias grátis, sem cartão." />
         <link rel="canonical" href="https://orbi.com.br/coaching" />
-        <meta property="og:title" content="Orbi Coach — o registro de voz que vira memória do atleta" />
-        <meta property="og:description" content="Mande um áudio depois do treino. A IA estrutura e resume o histórico de cada atleta. Chegue em toda sessão sabendo o que importa." />
+        <meta property="og:title" content="Orbi Coach — chega de perder o histórico dos seus atletas no ChatGPT" />
+        <meta property="og:description" content="A IA organiza todas as informações dos seus atletas — carga, sono, queixas, reavaliações. Resumo pronto antes de cada sessão. Sem perder contexto, sem planilha." />
         <meta property="og:type" content="website" />
       </Helmet>
 
@@ -391,7 +392,7 @@ export function LandingPageCoaching() {
             style={{ maxWidth: '52rem', margin: '0 auto', textAlign: 'center' }}
           >
             <p style={{ fontSize: 12, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1.25rem' }}>
-              Para treinadores e personal trainers
+              Para quem usa ChatGPT para treino e nutrição
             </p>
 
             <h1 style={{
@@ -403,15 +404,22 @@ export function LandingPageCoaching() {
               marginBottom: '1.5rem',
               textWrap: 'balance',
             }}>
-              Fale sobre o treino.<br />
-              A IA <em style={{ fontStyle: 'normal', color: T.brand }}>vira memória.</em>
+              Chega de perder suas<br />
+              informações no ChatGPT.<br />
+              <em style={{ fontStyle: 'normal', color: T.brand }}>A Orbi organiza tudo.</em>
             </h1>
 
             <p style={{ fontSize: '1.1rem', color: T.muted, lineHeight: 1.75, maxWidth: '52ch', margin: '0 auto 2rem' }}>
-              Depois de cada treino você manda um áudio de segundos. A IA estrutura
-              sono, carga e observações na timeline de cada atleta — e te entrega o
-              resumo pronto antes da próxima sessão. Sem planilha, sem garimpar conversa.
+              Fale sobre o treino, a dieta, o sono. A IA estrutura tudo —
+              carga, queixas, nutrição e próximas ações — organizado por pessoa,
+              sem perder nada entre uma conversa e outra. Resumo pronto sempre
+              que precisar. Sem planilha, sem garimpar chat.
             </p>
+
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#ECFDF5', border: '1px solid #A7D4B6', borderRadius: 20, padding: '6px 16px', marginBottom: 20 }}>
+              <Check size={13} color="#16a34a" />
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#15803d' }}>14 dias grátis · sem cartão de crédito</span>
+            </div>
 
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: '1rem' }}>
               <a href="/login" style={{
@@ -419,7 +427,7 @@ export function LandingPageCoaching() {
                 padding: '13px 26px', background: T.text, color: T.white,
                 borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none',
               }}>
-                Começar grátis <ArrowRight size={14} />
+                Testar grátis agora <ArrowRight size={14} />
               </a>
               <a href="#como-funciona" style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -427,11 +435,11 @@ export function LandingPageCoaching() {
                 borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: 'none',
                 border: `1px solid ${T.border}`,
               }}>
-                Como funciona
+                Ver como funciona
               </a>
             </div>
-            <p style={{ fontSize: 12, color: '#999', marginTop: '1rem' }}>
-              14 dias grátis · sem cartão · cancele quando quiser
+            <p style={{ fontSize: 12, color: '#999', marginTop: '0.5rem' }}>
+              Cancele quando quiser · sem fidelidade
             </p>
           </motion.div>
 
@@ -506,14 +514,14 @@ export function LandingPageCoaching() {
             </h2>
             <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, margin: '0 auto 1.5rem', maxWidth: '44ch' }}>
               Você fala como se estivesse contando pra alguém. A IA separa o que é
-              sono, o que é carga, o que é observação clínica e qual a próxima ação —
-              e guarda tudo na timeline do atleta certo.
+              sono, o que é carga, o que é nutrição e qual a próxima ação —
+              e guarda tudo no seu histórico organizado.
             </p>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 auto', display: 'inline-flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
               {[
-                'Um áudio no número único da plataforma — só você fala',
-                'Sono, carga, observação e próxima ação estruturados',
-                'Salvo na timeline do atleta, sem digitar nada',
+                'Áudio de segundos — qualquer hora, do jeito que você já fala',
+                'Sono, carga, nutrição e próxima ação estruturados',
+                'Salvo no seu histórico, sem digitar nada',
               ].map(item => (
                 <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#444', lineHeight: 1.5 }}>
                   <Check size={14} color="#16a34a" style={{ flexShrink: 0, marginTop: 3 }} />
@@ -530,19 +538,19 @@ export function LandingPageCoaching() {
       <section style={{ background: T.dark, borderTop: '1px solid #1a1c2e' }}>
         <div className="max-w-7xl mx-auto px-6 sm:px-10" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
           <AnimatedSection style={{ maxWidth: '44ch', margin: '0 auto', textAlign: 'center' }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: '#8B9AD4', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Resumo pré-atendimento</p>
+            <p style={{ fontSize: 11, fontWeight: 600, color: '#8B9AD4', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Seu histórico sempre pronto</p>
             <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem', textWrap: 'balance' }}>
-              Chegue na sessão sabendo o que importa.
+              Saiba exatamente onde você parou e como está evoluindo.
             </h2>
             <p style={{ fontSize: '0.975rem', color: '#9295b0', lineHeight: 1.75, margin: '0 auto 1.5rem', maxWidth: '42ch' }}>
-              A funcionalidade que vende sozinha. Antes de cada atendimento, a IA lê
-              as últimas semanas e resume a evolução do atleta — carga, sono, queixas
-              e o que ficou pendente. Sem abrir conversa nenhuma.
+              Antes de treinar, a IA lê seus últimos registros e resume sua evolução —
+              carga, sono, nutrição e o que ficou pendente. Sem garimpar chat, sem
+              abrir planilha nenhuma.
             </p>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 auto', display: 'inline-flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
               {[
-                'Histórico recente resumido em segundos',
-                'Tendências de carga e sono já agregadas',
+                'Sua evolução recente resumida em segundos',
+                'Tendências de carga, sono e nutrição já agregadas',
                 'Queixas e próximas ações destacadas',
               ].map(item => (
                 <li key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#8286a3', lineHeight: 1.5 }}>
@@ -562,16 +570,16 @@ export function LandingPageCoaching() {
           <AnimatedSection style={{ maxWidth: '46ch', margin: '0 auto', textAlign: 'center' }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: T.brand, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>Alertas automáticos</p>
             <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 700, color: T.text, letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: '1.25rem', textWrap: 'balance' }}>
-              Quem sumiu aparece antes de você perceber.
+              O que está fora do trilho aparece antes de você perceber.
             </h2>
             <p style={{ fontSize: '0.975rem', color: T.muted, lineHeight: 1.75, margin: '0 auto 1.5rem', maxWidth: '44ch' }}>
-              Regras simples e confiáveis — sem caixa-preta. O painel destaca quem
-              ficou sem registro, quem reclamou de dor, quem perdeu frequência e as
-              reavaliações que estão chegando.
+              Regras simples e confiáveis — sem caixa-preta. O painel destaca dias
+              sem registro, queixas de dor, perda de frequência e reavaliações
+              que estão chegando.
             </p>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 auto', display: 'inline-flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
               {[
-                'Atleta sem registro há X dias',
+                'Dias sem registro detectados automaticamente',
                 'Queixa de dor sinalizada no painel',
                 'Reavaliação próxima antes de virar atraso',
               ].map(item => (
