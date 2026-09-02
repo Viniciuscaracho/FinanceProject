@@ -7,6 +7,7 @@
 #  id              :bigint           not null, primary key
 #  carga           :string
 #  carga_score     :integer
+#  extras          :jsonb
 #  humor_score     :integer
 #  observacao      :text
 #  proxima_acao    :text

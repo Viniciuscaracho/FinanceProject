@@ -121,7 +121,8 @@ module Api
           # Número de inbox da plataforma: resolve conta pelo telefone do treinador remetente
           resolved_account = account || account_from_sender_phone(phone)
           unless resolved_account
-            Rails.logger.warn("⚠️ Webhook platform: nenhuma conta encontrada para telefone #{phone}")
+            msg_type = msg.dig(:message, :audioMessage) ? 'audio' : 'text'
+            log_unregistered_number(phone, msg_type, source: 'evolution')
             next
           end
 
@@ -224,7 +225,10 @@ module Api
 
         from    = msg[:from].to_s # E.164 só dígitos, ex.: "5511999999999"
         account = account_from_sender_phone(from)
-        return Rails.logger.warn("⚠️ WhatsApp Cloud: conta não encontrada para #{from}") unless account
+        unless account
+          log_unregistered_number(from, msg[:type], source: 'cloud')
+          return
+        end
 
         case msg[:type]
         when 'text'
@@ -256,6 +260,19 @@ module Api
           account_id:      account.id,
           message:         body,
           whatsapp_number: from
+        )
+      end
+
+      # Loga número não cadastrado com rate-limit de 1h para não poluir os logs
+      # com o mesmo remetente repetidamente.
+      def log_unregistered_number(phone, msg_type, source:)
+        cache_key = "wa:unregistered:#{phone}"
+        return if Rails.cache.exist?(cache_key)
+
+        Rails.cache.write(cache_key, true, expires_in: 1.hour)
+        Rails.logger.warn(
+          "[WhatsApp][#{source}] número_não_cadastrado " \
+          "phone=#{phone} type=#{msg_type}"
         )
       end
 

@@ -1908,10 +1908,21 @@ function sleepQuality(text) {
 
 // ─── TimelineCard ─────────────────────────────────────────────────────────────
 
+const DAYS_PT_PROFILE = { seg: 'Seg', ter: 'Ter', qua: 'Qua', qui: 'Qui', sex: 'Sex', sab: 'Sáb', dom: 'Dom' }
+
+function evSourceLabel(src) {
+  if (!src) return 'Manual'
+  if (src.startsWith('whatsapp')) return 'WhatsApp'
+  if (src === 'whisper') return '🎤 Áudio'
+  return 'Manual'
+}
+
 function TimelineCard({ ev }) {
   const pain     = hasPain(ev.observacao) || hasPain(ev.raw_input)
   const sleepQ   = sleepQuality(ev.sono)
   const dotColor = pain ? '#EF4444' : sleepQ === 'bad' ? '#F59E0B' : T.brand
+  const ex       = ev.extras || {}
+  const hasExtras = ex.modalidade?.length || ex.volume || ex.metodo || ex.exercicios?.length || ex.divisao_treino
 
   return (
     <div style={{ display: 'flex', gap: 12, paddingLeft: 8 }}>
@@ -1930,7 +1941,7 @@ function TimelineCard({ ev }) {
           <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
             {pain && <span style={{ fontSize: 10, fontWeight: 700, color: '#EF4444', background: '#FEE2E2', borderRadius: 20, padding: '1px 7px' }}>dor</span>}
             <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 20, background: T.chip, color: T.brand }}>
-              {ev.source === 'whatsapp' ? 'WhatsApp' : ev.source === 'whisper' ? '🎤 Áudio' : 'Manual'}
+              {evSourceLabel(ev.source)}
             </span>
           </div>
         </div>
@@ -1969,6 +1980,45 @@ function TimelineCard({ ev }) {
             <div style={{ display: 'flex', gap: 5, alignItems: 'flex-start', fontSize: 12, color: T.brand }}>
               <ArrowRight size={11} style={{ marginTop: 1, flexShrink: 0 }} />
               <span style={{ lineHeight: 1.4 }}>{ev.proxima_acao}</span>
+            </div>
+          )}
+
+          {/* ── Extras de treino ── */}
+          {hasExtras && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 3, paddingTop: 6, borderTop: `1px dashed ${T.border}` }}>
+              {/* Modalidade + Volume */}
+              {(ex.modalidade?.length > 0 || ex.volume) && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+                  {ex.modalidade?.map(m => (
+                    <span key={m} style={{ fontSize: 10, fontWeight: 700, background: '#EEF2FF', color: '#4338CA', borderRadius: 20, padding: '2px 8px' }}>{m}</span>
+                  ))}
+                  {ex.volume && <span style={{ fontSize: 10, color: T.muted }}>· {ex.volume}</span>}
+                </div>
+              )}
+              {/* Método */}
+              {ex.metodo && (
+                <span style={{ fontSize: 11, color: T.muted, fontStyle: 'italic' }}>{ex.metodo}</span>
+              )}
+              {/* Exercícios */}
+              {ex.exercicios?.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                  {ex.exercicios.slice(0, 7).map(e => (
+                    <span key={e} style={{ fontSize: 10, background: T.chip, color: T.muted, borderRadius: 4, padding: '1px 6px' }}>{e}</span>
+                  ))}
+                  {ex.exercicios.length > 7 && <span style={{ fontSize: 10, color: T.muted }}>+{ex.exercicios.length - 7}</span>}
+                </div>
+              )}
+              {/* Divisão de treino */}
+              {ex.divisao_treino && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {Object.entries(ex.divisao_treino).filter(([, v]) => v).map(([k, v]) => (
+                    <span key={k} style={{ fontSize: 10, borderRadius: 6, padding: '2px 7px', background: T.chip }}>
+                      <span style={{ fontWeight: 700, color: T.brand }}>{DAYS_PT_PROFILE[k] || k}</span>
+                      <span style={{ color: T.muted }}> {v}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

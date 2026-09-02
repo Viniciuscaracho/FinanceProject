@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2 } from 'lucide-react';
+import { COACHING_ONLY } from '../config/featureFlags';
 
 const IS_LOCAL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
@@ -102,23 +103,32 @@ export function Login() {
           marginBottom: '24px',
           boxShadow: '0 4px 12px rgba(91,122,158,0.35)',
         }}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
-            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-          </svg>
+          {COACHING_ONLY ? (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6.5 6.5a6 6 0 1 0 11 0 6 6 0 0 0-11 0"/>
+              <path d="M6 17.5 5 22l7-3 7 3-1-4.5"/>
+            </svg>
+          ) : (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+          )}
         </div>
 
         <h1 style={{
           fontSize: '24px', fontWeight: 700, color: '#111827',
           margin: '0 0 8px', textAlign: 'center', lineHeight: 1.2,
         }}>
-          Bem-vindo ao Orbi
+          {COACHING_ONLY ? 'Crie sua conta grátis' : 'Bem-vindo ao Orbi'}
         </h1>
         <p style={{
           fontSize: '14px', color: '#6B7280',
           margin: '0 0 32px', textAlign: 'center', lineHeight: 1.5,
         }}>
-          Gerencie seu negócio em um só lugar
+          {COACHING_ONLY
+            ? '14 dias grátis · sem cartão de crédito'
+            : 'Gerencie seu negócio em um só lugar'}
         </p>
 
         {displayError && (

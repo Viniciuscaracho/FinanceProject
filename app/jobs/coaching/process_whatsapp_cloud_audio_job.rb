@@ -63,7 +63,12 @@ module Coaching
       Rails.logger.info "[ProcessWhatsappCloudAudioJob] Transcrição: #{transcript.truncate(120)}"
 
       parsed  = ::Coaching::ParseAudioContextService.new(transcript).call
-      contact = resolve_contact(account, parsed[:athlete_name], from)
+      contact = if parsed[:is_self]
+        Rails.logger.info "[ProcessWhatsappCloudAudioJob] is_self=true — resolvendo contato do próprio treinador"
+        resolve_self_contact(account)
+      else
+        resolve_contact(account, parsed[:athlete_name], from)
+      end
 
       unless contact
         Rails.logger.warn "[ProcessWhatsappCloudAudioJob] Contato não encontrado para '#{parsed[:athlete_name] || from}' (conta ##{account_id})"
@@ -83,7 +88,8 @@ module Coaching
           sono:         parsed[:sono],
           carga:        parsed[:carga],
           observacao:   parsed[:observacao],
-          proxima_acao: parsed[:proxima_acao]
+          proxima_acao: parsed[:proxima_acao],
+          extras:       build_extras(parsed)
         )
       end
 
@@ -105,16 +111,53 @@ module Coaching
       ).call
     end
 
-    def notify_trainer_unresolved(trainer_phone, athlete_name)
-      return unless WhatsApp::EvolutionApiClient.platform_configured?
+    def resolve_self_contact(account)
+      owner = account.owner
 
+      # 1. Contato com mesmo e-mail do dono
+      if owner.email.present?
+        contact = account.contacts.kept.find_by(email: owner.email)
+        return contact if contact
+      end
+
+      # 2. Contato pelo nome do dono (via resolver fuzzy)
+      owner_name = [owner.first_name, owner.last_name.presence].compact.join(' ')
+      contact = ::Coaching::ContactResolverService.new(account, extracted_name: owner_name).call
+      return contact if contact
+
+      # 3. Cria contato "eu mesmo" para o treinador
+      ActsAsTenant.with_tenant(account) do
+        Contact.create!(
+          account:    account,
+          first_name: owner.first_name,
+          last_name:  owner.last_name.presence || '',
+          email:      owner.email
+        )
+      end
+    rescue StandardError => e
+      Rails.logger.error "[ProcessWhatsappCloudAudioJob] resolve_self_contact: #{e.class} #{e.message}"
+      nil
+    end
+
+    def build_extras(parsed)
+      h = {
+        modalidade:     parsed[:modalidade],
+        divisao_treino: parsed[:divisao_treino],
+        exercicios:     parsed[:exercicios],
+        volume:         parsed[:volume],
+        metodo:         parsed[:metodo]
+      }.compact
+      h.empty? ? nil : h
+    end
+
+    def notify_trainer_unresolved(trainer_phone, athlete_name)
       msg = if athlete_name.present?
         "⚠️ Áudio recebido, mas não encontrei o atleta *#{athlete_name}* cadastrado. Verifique o nome ou cadastre o atleta no app."
       else
         "⚠️ Áudio recebido, mas não consegui identificar o atleta. Mencione o nome no início do áudio ou use o formato:\n\n*Nome do atleta: [observação]*"
       end
 
-      WhatsApp::EvolutionApiClient.send_via_platform(phone: trainer_phone, message: msg)
+      WhatsApp::CloudApiClient.send_text_message(to: trainer_phone, body: msg)
     rescue StandardError => e
       Rails.logger.warn "[ProcessWhatsappCloudAudioJob] Falha ao notificar treinador #{trainer_phone}: #{e.message}"
     end

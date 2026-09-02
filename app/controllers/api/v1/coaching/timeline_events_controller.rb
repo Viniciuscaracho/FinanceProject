@@ -30,7 +30,8 @@ module Api
             sono:           structured[:sono],
             carga:          structured[:carga],
             observacao:     structured[:observacao],
-            proxima_acao:   structured[:proxima_acao]
+            proxima_acao:   structured[:proxima_acao],
+            extras:         build_extras(structured)
           )
 
           if event.save
@@ -52,6 +53,17 @@ module Api
           AccountUser.find_by(account: Current.account, user: @current_user)
         end
 
+        def build_extras(parsed)
+          h = {
+            modalidade:     parsed[:modalidade],
+            divisao_treino: parsed[:divisao_treino],
+            exercicios:     parsed[:exercicios],
+            volume:         parsed[:volume],
+            metodo:         parsed[:metodo]
+          }.compact
+          h.empty? ? nil : h
+        end
+
         def event_json(event)
           {
             id:           event.id,
@@ -61,6 +73,7 @@ module Api
             carga:        event.carga,
             observacao:   event.observacao,
             proxima_acao: event.proxima_acao,
+            extras:       event.extras,
             created_at:   event.created_at.iso8601
           }
         end

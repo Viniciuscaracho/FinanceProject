@@ -1,17 +1,22 @@
 # frozen_string_literal: true
 
 module WhatsApp
-  # Baixa mídia do WhatsApp Cloud API (Meta Graph API).
-  #
-  # Fluxo de 2 etapas:
-  #   1. GET /v20.0/{media_id} → retorna { url, mime_type, file_size }
-  #   2. GET {url} com Authorization: Bearer → retorna bytes do arquivo
+  # Baixa mídia e envia mensagens via WhatsApp Cloud API (Meta Graph API).
   class CloudApiClient
     GRAPH_BASE = 'https://graph.facebook.com/v20.0'
 
     # Retorna { bytes:, mime_type:, filename: } ou nil em caso de erro.
     def self.download_media(media_id:, access_token: ENV['WHATSAPP_ACCESS_TOKEN'])
       new(access_token).download_media(media_id)
+    end
+
+    # Envia mensagem de texto simples. Retorna true/false.
+    def self.send_text_message(to:, body:,
+                               access_token: ENV['WHATSAPP_ACCESS_TOKEN'],
+                               phone_number_id: ENV['WHATSAPP_PHONE_NUMBER_ID'])
+      return false if access_token.blank? || phone_number_id.blank?
+
+      new(access_token).send_text_message(to: to, body: body, phone_number_id: phone_number_id)
     end
 
     def initialize(access_token)
@@ -34,6 +39,34 @@ module WhatsApp
     rescue StandardError => e
       Rails.logger.error "[CloudApiClient] download_media #{media_id}: #{e.class} #{e.message}"
       nil
+    end
+
+    def send_text_message(to:, body:, phone_number_id:)
+      uri = URI("#{GRAPH_BASE}/#{phone_number_id}/messages")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      http.read_timeout = 15
+
+      req = Net::HTTP::Post.new(uri)
+      req['Authorization'] = "Bearer #{@access_token}"
+      req['Content-Type']  = 'application/json'
+      req.body = JSON.generate(
+        messaging_product: 'whatsapp',
+        to:                to,
+        type:              'text',
+        text:              { body: body }
+      )
+
+      res = http.request(req)
+      unless res.is_a?(Net::HTTPSuccess)
+        Rails.logger.error "[CloudApiClient] send_text_message to=#{to}: HTTP #{res.code} #{res.body.truncate(200)}"
+        return false
+      end
+
+      true
+    rescue StandardError => e
+      Rails.logger.error "[CloudApiClient] send_text_message #{e.class}: #{e.message}"
+      false
     end
 
     private

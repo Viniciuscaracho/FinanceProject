@@ -1,11 +1,104 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Brain, AlertCircle, Loader2, Clock, Activity, TrendingUp, TrendingDown, Minus, Users, User } from 'lucide-react'
+import { Brain, AlertCircle, Loader2, Clock, Activity, TrendingUp, TrendingDown, Minus, Users, User, Sparkles, X, Mic } from 'lucide-react'
 import { apiService } from '@/lib/api'
 import { T } from '@/lib/tokens'
 import { useAuth } from '@/contexts/AuthContext'
 import { CoachingOnboarding, useCoachingOnboarding } from '@/components/coaching/CoachingOnboarding'
 import { AthleteDashboard } from './AthleteDashboard'
+import { BrowserAudioRecorder } from '@/components/coaching/BrowserAudioRecorder'
+
+/* ─── Dados de demonstração (usuário sem atletas) ─────────────────── */
+const now = Date.now()
+const daysAgo = (d) => new Date(now - d * 86400000).toISOString()
+
+const DEMO_DATA = {
+  alerts: [
+    { contact_id: -1, contact_name: 'Bruno Alves',   alert_type: 'sumiu',               days_since: 9,   days_until: null },
+    { contact_id: -2, contact_name: 'Rafael Souza',  alert_type: 'reclamou_de_dor',     days_since: null, days_until: null },
+    { contact_id: -3, contact_name: 'Carla Mendes',  alert_type: 'sem_feedback',        days_since: 6,   days_until: null },
+    { contact_id: -4, contact_name: 'Marcos Lima',   alert_type: 'reavaliacao_proxima', days_since: null, days_until: 3   },
+  ],
+  active_contacts: [
+    { contact_id: -5, contact_name: 'Marcos Lima',    events_count: 12, last_event_at: daysAgo(0), recent_carga: ['6/10','7/10','7/10','8/10','8/10','9/10'], recent_sono: ['7h','6.5h','7h','6h','7h','7.5h'], last_carga: '9/10', last_sono: '7h'  },
+    { contact_id: -6, contact_name: 'Júlia Ferreira', events_count: 8,  last_event_at: daysAgo(1), recent_carga: ['5/10','5/10','6/10','6/10','7/10','7/10'], recent_sono: ['8h','7.5h','8h','7h','8h','8h'],   last_carga: '7/10', last_sono: '8h'  },
+    { contact_id: -7, contact_name: 'Ana Rodrigues',  events_count: 5,  last_event_at: daysAgo(2), recent_carga: ['4/10','5/10','4/10','5/10','5/10','6/10'], recent_sono: ['6h','6.5h','6h','7h','6h','7h'],   last_carga: '6/10', last_sono: '6h'  },
+    { contact_id: -1, contact_name: 'Bruno Alves',    events_count: 15, last_event_at: daysAgo(9), recent_carga: ['8/10','8/10','9/10','9/10','8/10','8/10'], recent_sono: ['7h','7h','6.5h','7h'],              last_carga: '8/10', last_sono: '7h'  },
+    { contact_id: -2, contact_name: 'Rafael Souza',   events_count: 7,  last_event_at: daysAgo(1), recent_carga: ['7/10','6/10','7/10','7/10','8/10'],        recent_sono: ['6h','5.5h','6h','5h'],              last_carga: '7/10', last_sono: '5.5h'},
+    { contact_id: -3, contact_name: 'Carla Mendes',   events_count: 10, last_event_at: daysAgo(6), recent_carga: ['6/10','6/10','7/10','7/10','6/10'],        recent_sono: ['7h','7h','6h','7h'],                last_carga: '6/10', last_sono: '7h'  },
+    { contact_id: -4, contact_name: 'Marcos Lima',    events_count: 21, last_event_at: daysAgo(0), recent_carga: ['7/10','8/10','8/10','9/10','9/10','8/10'], recent_sono: ['6h','6.5h','7h','6h'],              last_carga: '8/10', last_sono: '6h'  },
+  ],
+  total_events: 68,
+}
+
+/* ─── Banner de modo demo ──────────────────────────────────────────── */
+function DemoBanner({ onAddAthlete, onRecord, onDismiss }) {
+  return (
+    <div style={{
+      padding: '16px',
+      background: 'linear-gradient(135deg, #EEF2FF 0%, #E8EDFF 100%)',
+      border: '1px solid #C7D2FE',
+      borderRadius: 14,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
+        <div style={{
+          width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+          background: '#4C60AA',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Sparkles size={16} color="#fff" />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#3730A3', margin: '0 0 3px' }}>
+            Você está vendo dados de exemplo
+          </p>
+          <p style={{ fontSize: 12.5, color: '#4338CA', margin: 0, lineHeight: 1.55 }}>
+            Assim fica o seu painel quando seus atletas começam a mandar áudios.
+            Experimente gravar o primeiro agora — direto pelo browser.
+          </p>
+        </div>
+        <button
+          onClick={onDismiss}
+          style={{
+            width: 26, height: 26, borderRadius: '50%',
+            border: 'none', background: 'rgba(76,96,170,0.12)',
+            cursor: 'pointer', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+          title="Fechar"
+        >
+          <X size={13} color="#4338CA" />
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button
+          onClick={onRecord}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            fontSize: 13, fontWeight: 700, color: '#fff',
+            background: '#4C60AA',
+            border: 'none', borderRadius: 9,
+            padding: '8px 16px', cursor: 'pointer',
+          }}
+        >
+          <Mic size={14} /> Gravar primeiro áudio
+        </button>
+        <button
+          onClick={onAddAthlete}
+          style={{
+            fontSize: 13, fontWeight: 600, color: '#4338CA',
+            background: 'rgba(76,96,170,0.1)',
+            border: '1px solid rgba(76,96,170,0.2)', borderRadius: 9,
+            padding: '8px 16px', cursor: 'pointer',
+          }}
+        >
+          Adicionar atleta →
+        </button>
+      </div>
+    </div>
+  )
+}
 
 const BRAND = '#4C60AA'
 const ADMIN_VIEW_KEY = 'orbi_admin_view'
@@ -302,9 +395,14 @@ export function CoachingDashboard() {
   const navigate       = useNavigate()
   const [searchParams] = useSearchParams()
   const { user }       = useAuth()
-  const [data, setData]       = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData]           = useState(null)
+  const [loading, setLoading]     = useState(true)
   const [switching, setSwitching] = useState(false)
+  const [isDemoMode, setIsDemoMode]   = useState(false)
+  const [demoDismissed, setDemoDismissed] = useState(
+    () => !!localStorage.getItem('orbi_demo_dismissed')
+  )
+  const [showRecorder, setShowRecorder] = useState(false)
 
   const isAdmin           = !!(user?.admin || user?.account_owner || user?.account_admin)
   const hasAthleteSetup   = !!user?.account?.self_contact_id
@@ -359,7 +457,15 @@ export function CoachingDashboard() {
   useEffect(() => {
     if (isAthlete) return
     apiService.getCoachingDashboard()
-      .then(res => setData(res))
+      .then(res => {
+        const isEmpty = (res.active_contacts?.length ?? 0) === 0 && (res.total_events ?? 0) === 0
+        if (isEmpty) {
+          setData(DEMO_DATA)
+          setIsDemoMode(true)
+        } else {
+          setData(res)
+        }
+      })
       .catch(() => setData({ alerts: [], active_contacts: [], total_events: 0 }))
       .finally(() => setLoading(false))
   }, [isAthlete])
@@ -368,7 +474,19 @@ export function CoachingDashboard() {
   const contacts    = data?.active_contacts || []
   const totalEvents = data?.total_events || 0
 
-  const { show: showOnboarding, dismiss: dismissOnboarding } = useCoachingOnboarding(contacts, loading ? undefined : totalEvents)
+  // Em modo demo, cliques em atletas levam para a lista de contatos real
+  const demoNavigate = () => navigate('/contacts')
+  const activeNavigate = isDemoMode ? demoNavigate : navigate
+
+  const showDemoBanner = isDemoMode && !demoDismissed
+  const handleDismissDemo = () => {
+    localStorage.setItem('orbi_demo_dismissed', '1')
+    setDemoDismissed(true)
+  }
+
+  // Passa totalEvents=undefined enquanto loading, ou 0 em modo demo (não disparar onboarding junto)
+  const onboardingTotal = loading ? undefined : (isDemoMode ? undefined : totalEvents)
+  const { show: showOnboarding, dismiss: dismissOnboarding } = useCoachingOnboarding(contacts, onboardingTotal)
   const urgent    = alerts.filter(a => ['sumiu', 'reclamou_de_dor'].includes(a.alert_type))
   const attention = alerts.filter(a => ['sem_feedback', 'perdeu_frequencia', 'reavaliacao_proxima'].includes(a.alert_type))
 
@@ -397,6 +515,14 @@ export function CoachingDashboard() {
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 24 }}>
       {showOnboarding && (
         <CoachingOnboarding contacts={contacts} onDone={dismissOnboarding} />
+      )}
+
+      {showDemoBanner && (
+        <DemoBanner
+          onAddAthlete={() => navigate('/contacts')}
+          onRecord={() => setShowRecorder(true)}
+          onDismiss={handleDismissDemo}
+        />
       )}
 
       {/* ── Header ──────────────────────────────────────────────── */}
@@ -436,7 +562,7 @@ export function CoachingDashboard() {
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {urgent.map(a => <AlertRow key={`u-${a.contact_id}`} alert={a} navigate={navigate} />)}
+            {urgent.map(a => <AlertRow key={`u-${a.contact_id}`} alert={a} navigate={activeNavigate} />)}
           </div>
         </section>
       )}
@@ -451,7 +577,7 @@ export function CoachingDashboard() {
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {attention.map(a => <AlertRow key={`a-${a.contact_id}`} alert={a} navigate={navigate} />)}
+            {attention.map(a => <AlertRow key={`a-${a.contact_id}`} alert={a} navigate={activeNavigate} />)}
           </div>
         </section>
       )}
@@ -475,7 +601,7 @@ export function CoachingDashboard() {
                 key={c.contact_id}
                 contact={c}
                 alert={alertByContact[c.contact_id]}
-                navigate={navigate}
+                navigate={activeNavigate}
               />
             ))}
           </div>
@@ -497,6 +623,29 @@ export function CoachingDashboard() {
             Ver atletas
           </button>
         </div>
+      )}
+
+      {/* ── Botão flutuante de gravação ─────────────────────────── */}
+      <button
+        onClick={() => setShowRecorder(true)}
+        title="Gravar áudio"
+        style={{
+          position: 'fixed', bottom: 28, right: 24, zIndex: 50,
+          width: 54, height: 54, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #4C60AA 0%, #6B80D4 100%)',
+          border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 6px 20px rgba(76,96,170,0.5)',
+          transition: 'transform 150ms, box-shadow 150ms',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.boxShadow = '0 10px 28px rgba(76,96,170,0.65)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)';    e.currentTarget.style.boxShadow = '0 6px 20px rgba(76,96,170,0.5)' }}
+      >
+        <Mic size={22} color="#fff" />
+      </button>
+
+      {showRecorder && (
+        <BrowserAudioRecorder onClose={() => setShowRecorder(false)} />
       )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>

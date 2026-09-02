@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_07_30_110001) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_02_150816) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -1358,6 +1358,7 @@ ActiveRecord::Schema[7.0].define(version: 2026_07_30_110001) do
     t.integer "sono_score"
     t.integer "carga_score"
     t.integer "humor_score"
+    t.jsonb "extras"
     t.index ["account_id", "contact_id", "created_at"], name: "idx_timeline_events_account_contact_date"
     t.index ["account_id"], name: "index_timeline_events_on_account_id"
     t.index ["contact_id", "carga_score"], name: "idx_timeline_events_contact_carga_score", where: "(carga_score IS NOT NULL)"
