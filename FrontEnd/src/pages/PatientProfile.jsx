@@ -1923,7 +1923,7 @@ function evSourceLabel(src) {
 }
 
 function TimelineCard({ ev, contactId, onDelete }) {
-  const [deleting, setDeleting] = React.useState(false)
+  const [deleting, setDeleting] = useState(false)
   const pain     = hasPain(ev.observacao) || hasPain(ev.raw_input)
   const sleepQ   = sleepQuality(ev.sono)
   const dotColor = pain ? '#EF4444' : sleepQ === 'bad' ? '#F59E0B' : T.brand

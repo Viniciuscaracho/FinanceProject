@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Activity, UtensilsCrossed, Loader2, Plus, Clock, Brain, ChevronRight, FileText } from 'lucide-react'
+import { Activity, UtensilsCrossed, Loader2, Plus, Clock, Brain, ChevronRight, FileText, Trash2 } from 'lucide-react'
 import { apiService } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { T } from '@/lib/tokens'
@@ -61,7 +61,20 @@ function sourceLabel(src) {
   return 'Manual'
 }
 
-function EventRow({ event }) {
+function EventRow({ event, contactId, onDelete }) {
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    if (!window.confirm('Apagar este registro?')) return
+    setDeleting(true)
+    try {
+      await apiService.deleteTimelineEvent(contactId, event.id)
+      onDelete(event.id)
+    } catch {
+      setDeleting(false)
+    }
+  }
+
   const fields = [
     { key: 'sono',         label: 'Sono',       color: '#6366F1' },
     { key: 'carga',        label: 'Carga',      color: '#F59E0B' },
@@ -89,6 +102,16 @@ function EventRow({ event }) {
             {sourceLabel(event.source)}
           </span>
         )}
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          title="Apagar"
+          style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: deleting ? 'not-allowed' : 'pointer', padding: '2px 4px', borderRadius: 4, color: T.muted, opacity: deleting ? 0.4 : 1, display: 'flex', alignItems: 'center' }}
+          onMouseEnter={e => e.currentTarget.style.color = '#EF4444'}
+          onMouseLeave={e => e.currentTarget.style.color = T.muted}
+        >
+          <Trash2 size={13} />
+        </button>
       </div>
       {event.raw_input && (
         <p style={{ margin: 0, fontSize: 13, color: T.muted, fontStyle: 'italic', lineHeight: 1.5 }}>
@@ -277,7 +300,14 @@ function PerformanceTab({ contactId }) {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {events.map((e, i) => <EventRow key={e.id || i} event={e} />)}
+          {events.map((e, i) => (
+            <EventRow
+              key={e.id || i}
+              event={e}
+              contactId={contactId}
+              onDelete={evId => setEvents(prev => prev.filter(x => x.id !== evId))}
+            />
+          ))}
         </div>
       )}
     </div>
