@@ -2241,6 +2241,12 @@ class ApiService {
     })
   }
 
+  async deleteTimelineEvent(contactId, eventId) {
+    return this.request(`/coaching/contacts/${contactId}/timeline_events/${eventId}`, {
+      method: 'DELETE',
+    })
+  }
+
   async getPreVisitSummary(appointmentId) {
     return this.request(`/appointments/${appointmentId}/pre_visit_summary`, { method: 'POST' })
   }

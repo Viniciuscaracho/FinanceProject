@@ -18,6 +18,18 @@ module Api
           render json: { events: events.map { |e| event_json(e) } }
         end
 
+        def destroy
+          event = TimelineEvent
+            .for_contact(@contact.id)
+            .where(account: Current.account)
+            .find(params[:id])
+
+          event.destroy!
+          head :no_content
+        rescue ActiveRecord::RecordNotFound
+          render json: { error: 'Registro não encontrado' }, status: :not_found
+        end
+
         def create
           structured = ::Coaching::StructureNoteService.new(params[:raw_input]).call
 

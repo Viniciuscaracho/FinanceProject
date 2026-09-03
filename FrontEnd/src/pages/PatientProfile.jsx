@@ -1355,7 +1355,12 @@ export function PatientProfile() {
                 <div style={{ position: 'absolute', left: 15, top: 8, bottom: 8, width: 2, background: T.border, borderRadius: 2 }} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {filteredEvents.map(ev => (
-                    <TimelineCard key={ev.id} ev={ev} />
+                    <TimelineCard
+                      key={ev.id}
+                      ev={ev}
+                      contactId={id}
+                      onDelete={evId => setTimelineEvents(prev => prev.filter(e => e.id !== evId))}
+                    />
                   ))}
                 </div>
               </div>
@@ -1917,12 +1922,24 @@ function evSourceLabel(src) {
   return 'Manual'
 }
 
-function TimelineCard({ ev }) {
+function TimelineCard({ ev, contactId, onDelete }) {
+  const [deleting, setDeleting] = React.useState(false)
   const pain     = hasPain(ev.observacao) || hasPain(ev.raw_input)
   const sleepQ   = sleepQuality(ev.sono)
   const dotColor = pain ? '#EF4444' : sleepQ === 'bad' ? '#F59E0B' : T.brand
   const ex       = ev.extras || {}
   const hasExtras = ex.modalidade?.length || ex.volume || ex.metodo || ex.exercicios?.length || ex.divisao_treino
+
+  const handleDelete = async () => {
+    if (!window.confirm('Apagar este registro? A ação não pode ser desfeita.')) return
+    setDeleting(true)
+    try {
+      await apiService.deleteTimelineEvent(contactId, ev.id)
+      onDelete(ev.id)
+    } catch {
+      setDeleting(false)
+    }
+  }
 
   return (
     <div style={{ display: 'flex', gap: 12, paddingLeft: 8 }}>
@@ -1943,6 +1960,16 @@ function TimelineCard({ ev }) {
             <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 20, background: T.chip, color: T.brand }}>
               {evSourceLabel(ev.source)}
             </span>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              title="Apagar registro"
+              style={{ background: 'none', border: 'none', cursor: deleting ? 'not-allowed' : 'pointer', padding: '2px 4px', borderRadius: 4, color: T.muted, opacity: deleting ? 0.4 : 1, display: 'flex', alignItems: 'center' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#EF4444'}
+              onMouseLeave={e => e.currentTarget.style.color = T.muted}
+            >
+              <Trash2 size={12} />
+            </button>
           </div>
         </div>
 

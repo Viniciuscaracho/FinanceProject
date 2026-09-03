@@ -330,7 +330,7 @@ namespace :api, defaults: { format: 'json' } do
       get 'recent_activity',  to: 'recent_activity#index'
       get 'credits',          to: 'credits#show'
       resources :contacts, only: [] do
-        resources :timeline_events, only: %i[index create]
+        resources :timeline_events, only: %i[index create destroy]
         resources :assessments,     only: %i[index create]
         resource :coaching_profile, only: %i[show update]
         resource :audio_notes,   only: [:create]
