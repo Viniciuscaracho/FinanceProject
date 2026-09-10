@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Brain, AlertCircle, Loader2, Clock, Activity, TrendingUp, TrendingDown, Minus, Users, User, Sparkles, X, Mic } from 'lucide-react'
+import { Brain, AlertCircle, Loader2, Clock, Activity, TrendingUp, TrendingDown, Minus, Users, User, Sparkles, X, Mic, BookMarked } from 'lucide-react'
 import { apiService } from '@/lib/api'
 import { T } from '@/lib/tokens'
 import { useAuth } from '@/contexts/AuthContext'
@@ -534,7 +534,20 @@ export function CoachingDashboard() {
             <AdminViewToggle viewMode={viewMode} onSwitch={handleAdminSwitch} switching={switching} />
           )}
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button
+            onClick={() => navigate('/english')}
+            title="English Cards"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '5px 11px', borderRadius: 8, border: `1px solid ${T.border}`,
+              background: 'transparent', color: T.muted, cursor: 'pointer',
+              fontSize: 12, fontWeight: 600,
+            }}
+          >
+            <BookMarked size={13} />
+            English
+          </button>
           {[
             { label: 'Atletas',  value: contacts.length },
             { label: 'Alertas',  value: alerts.length,  color: alerts.length > 0 ? '#EF4444' : undefined },
