@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2026_09_02_150816) do
+ActiveRecord::Schema[7.0].define(version: 2026_09_10_100002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "fuzzystrmatch"
   enable_extension "pg_trgm"
@@ -587,6 +587,36 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_02_150816) do
     t.index ["tsv_body"], name: "index_domains_on_tsv_body", using: :gin
     t.index ["type"], name: "index_domains_on_type"
     t.index ["updated_by_id"], name: "index_domains_on_updated_by_id"
+  end
+
+  create_table "english_cards", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "english_session_id"
+    t.string "card_type", null: false
+    t.text "front", null: false
+    t.text "back", null: false
+    t.text "example"
+    t.string "status", default: "learning", null: false
+    t.datetime "next_review_at"
+    t.integer "review_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["english_session_id"], name: "index_english_cards_on_english_session_id"
+    t.index ["user_id", "card_type"], name: "index_english_cards_on_user_id_and_card_type"
+    t.index ["user_id", "status"], name: "index_english_cards_on_user_id_and_status"
+    t.index ["user_id"], name: "index_english_cards_on_user_id"
+  end
+
+  create_table "english_sessions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "url"
+    t.text "raw_content"
+    t.text "summary"
+    t.string "status", default: "pending", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "created_at"], name: "index_english_sessions_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_english_sessions_on_user_id"
   end
 
   create_table "enums", force: :cascade do |t|
@@ -1633,6 +1663,9 @@ ActiveRecord::Schema[7.0].define(version: 2026_09_02_150816) do
   add_foreign_key "domains", "accounts"
   add_foreign_key "domains", "users", column: "created_by_id"
   add_foreign_key "domains", "users", column: "updated_by_id"
+  add_foreign_key "english_cards", "english_sessions"
+  add_foreign_key "english_cards", "users"
+  add_foreign_key "english_sessions", "users"
   add_foreign_key "enums", "enums", column: "parent_id"
   add_foreign_key "exports", "accounts"
   add_foreign_key "feedbacks", "users"

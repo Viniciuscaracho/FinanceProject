@@ -32,4 +32,5 @@ export const COACHING_ONLY_ROUTES = [
   '/profile',
   '/admin',
   '/admin/accounts/:id',
+  '/english',
 ]

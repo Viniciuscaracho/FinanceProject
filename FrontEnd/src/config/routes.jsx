@@ -40,6 +40,7 @@ export const MealPlanBuilder         = lazy(() => import('../pages/MealPlanBuild
 export const MealPlanTemplates       = lazy(() => import('../pages/MealPlanTemplates'))
 export const MealPlanTemplateBuilder = lazy(() => import('../pages/MealPlanTemplateBuilder'))
 export const CoachingDashboard = lazy(() => import('../pages/CoachingDashboard').then(m => ({ default: m.CoachingDashboard })))
+export const EnglishLearning  = lazy(() => import('../pages/EnglishLearning').then(m => ({ default: m.EnglishLearning })))
 
 const baseProtectedRoutes = [
   { path: '/',                              element: Dashboard },
@@ -47,6 +48,7 @@ const baseProtectedRoutes = [
   { path: '/contacts',                      element: Contacts },
   { path: '/contacts/:id',                  element: PatientProfile },
   { path: '/coaching',                      element: CoachingDashboard },
+  { path: '/english',                       element: EnglishLearning },
   { path: '/contacts/:contactId/meal-plans/:planId', element: MealPlanBuilder },
   { path: '/meal-plan-templates',                   element: MealPlanTemplates },
   { path: '/meal-plan-templates/:templateId',        element: MealPlanTemplateBuilder },

@@ -350,6 +350,12 @@ namespace :api, defaults: { format: 'json' } do
     # Admin routes (exclusivo para dono do sistema)
     get 'admin/dashboard', to: 'admin#dashboard'
 
+    # English learning cards
+    namespace :english do
+      resources :sessions, only: %i[index create]
+      resources :cards,    only: %i[index update destroy]
+    end
+
     # Observabilidade de consumo de tokens da IA (coaching)
     get 'admin/token_usage', to: 'admin#token_usage'
     
