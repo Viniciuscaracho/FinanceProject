@@ -120,7 +120,7 @@ function FlashCard({ card, onDelete, reviewMode, onReview }) {
 function ImportForm({ onImported }) {
   const [url, setUrl]         = useState('')
   const [text, setText]       = useState('')
-  const [mode, setMode]       = useState('url')  // 'url' | 'paste'
+  const [mode, setMode]       = useState('paste')  // 'paste' | 'url'
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
 
@@ -162,7 +162,7 @@ function ImportForm({ onImported }) {
 
       {/* mode toggle */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 14, border: '1.5px solid #E5E7EB', borderRadius: 10, overflow: 'hidden', width: 'fit-content' }}>
-        {[{ key: 'url', label: 'Share URL', icon: Link }, { key: 'paste', label: 'Paste text', icon: FileText }].map(opt => (
+        {[{ key: 'paste', label: 'Paste text', icon: FileText }, { key: 'url', label: 'Share URL', icon: Link }].map(opt => (
           <button key={opt.key} onClick={() => setMode(opt.key)} style={{
             display: 'flex', alignItems: 'center', gap: 6,
             padding: '6px 14px', border: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
@@ -177,10 +177,14 @@ function ImportForm({ onImported }) {
       </div>
 
       {mode === 'url' ? (
-        <input
-          value={url}
-          onChange={e => setUrl(e.target.value)}
-          placeholder="https://chatgpt.com/share/..."
+        <>
+          <p style={{ margin: '0 0 8px', fontSize: 12, color: '#F59E0B' }}>
+            ⚠️ O ChatGPT renderiza via JavaScript — a extração por URL pode falhar. Se der erro, use "Paste text".
+          </p>
+          <input
+            value={url}
+            onChange={e => setUrl(e.target.value)}
+            placeholder="https://chatgpt.com/share/..."
           style={{
             width: '100%', boxSizing: 'border-box',
             padding: '9px 12px', borderRadius: 9, border: '1.5px solid #D1D5DB',
@@ -188,11 +192,12 @@ function ImportForm({ onImported }) {
             outline: 'none', marginBottom: 10,
           }}
         />
+        </>
       ) : (
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
-          placeholder="Paste the conversation here (copy everything from ChatGPT)..."
+          placeholder="Cole aqui a conversa do ChatGPT. No ChatGPT: selecione tudo (Ctrl+A na conversa) e copie. Ou abra a conversa, clique com botão direito → 'Selecionar Tudo' → Copiar."
           rows={6}
           style={{
             width: '100%', boxSizing: 'border-box',
